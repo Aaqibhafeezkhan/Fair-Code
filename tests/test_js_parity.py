@@ -1866,3 +1866,24 @@ def test_web_encoding_picker_is_wired_and_recorded_in_provenance():
     assert "provenance.encoding_a = slot.A.encoding" in cmp_js and "provenance.encoding_b = slot.B.encoding" in cmp_js
     held = (REPO_ROOT / "assets" / "profiler-heldout.js").read_text(encoding="utf-8")
     assert "decodeText" in held
+
+
+def test_web_reference_file_honours_the_encoding_picker():
+    """#890: the reference baseline is read as bytes and decoded with the picker's choice
+    like the dataset, so a latin-1 census label matches the dataset's group."""
+    ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
+    assert "readAsText(" not in ui
+    handler = ui.split("referenceInput.addEventListener('change'")[1].split("referenceClearBtn.addEventListener")[0]
+    assert "E.decodeText(reader.result, encodingSelect ? encodingSelect.value : 'auto')" in handler
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "var bytes=Buffer.from('column,group,share\\nrace,Caf\\u00e9,0.5\\nrace,Other,0.5\\n','latin1');"
+        "var buf=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.length);"
+        "var viaUtf8=E.parseReference(E.parseCSV(new TextDecoder('utf-8').decode(buf)));"
+        "var viaPicker=E.parseReference(E.parseCSV(E.decodeText(buf,'latin-1').text));"
+        "process.stdout.write(JSON.stringify({utf8:Object.keys(viaUtf8.race),picker:Object.keys(viaPicker.race)}));"
+    )
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    out = json.loads(done.stdout)
+    assert "Café" in out["picker"] and "Café" not in out["utf8"]

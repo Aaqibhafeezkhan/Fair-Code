@@ -786,7 +786,9 @@
     } else {
       reader.onload = function () {
         try {
-          var text = String(reader.result);
+          // Same decoding as the dataset (picker choice, else a sniffed BOM, else UTF-8), so a
+          // latin-1 census file's labels match the dataset's groups (#890).
+          var text = E.decodeText(reader.result, encodingSelect ? encodingSelect.value : 'auto').text;
           var table = (/\.json$/i.test(f.name) || f.type === 'application/json')
             ? E.parseJSON(text) : E.parseCSV(text);
           applyReferenceTable(table);
@@ -794,7 +796,7 @@
           showError('Could not read reference baseline: ' + err.message);
         }
       };
-      reader.readAsText(f);
+      reader.readAsArrayBuffer(f);
     }
   });
   referenceClearBtn.addEventListener('click', function () {

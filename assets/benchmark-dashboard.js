@@ -43,6 +43,8 @@
     bundled: { fairness: false, performance: false, summary: false } // loaded from results/ (figures exist)
   };
 
+  // The five Export colours choices; the deep link only accepts these (#893).
+  var CHART_THEMES = ['page', 'light', 'dark', 'transparent', 'colorblind'];
   var pending = { filters: {}, sort: {} }; // from the URL, applied when that tab's data loads
   var exportBtn = document.getElementById('benchExportBtn');
   var clearBtn = document.getElementById('benchClearBtn');
@@ -675,7 +677,7 @@
   exportBtn.addEventListener('click', downloadFiltered);
 
   // ── URL deep-linking (issue #764) ──────────────────────────────────────
-  // Only the active tab's view is encoded: ?tab=fairness&audit=compas&sig=1&sort=value:asc
+  // Only the active tab's view is encoded: ?tab=fairness&audit=compas&sig=1&sort=value:asc&chart=dark
   function writeUrlState() {
     try {
       var kind = state.tab, params = new URLSearchParams();
@@ -685,6 +687,9 @@
       });
       if (hasSignificance(kind) && state.significantOnly[kind]) params.set('sig', '1');
       if (state.sort[kind]) params.set('sort', state.sort[kind].field + ':' + state.sort[kind].dir);
+      if (chartThemeSelect && chartThemeSelect.value && chartThemeSelect.value !== 'page') {
+        params.set('chart', chartThemeSelect.value);
+      }
       history.replaceState(null, '', '?' + params.toString());
     } catch (e) { /* file:// or sandboxed frames: deep-linking is best-effort */ }
   }
@@ -706,6 +711,8 @@
       state.significantOnly[tab] = true;
       significantOnlyInput.checked = true;
     }
+    var chart = params.get('chart');
+    if (chartThemeSelect && CHART_THEMES.indexOf(chart) !== -1) chartThemeSelect.value = chart;
     tabButtons.forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
     return true;
   }
@@ -751,6 +758,8 @@
     legendEl.hidden = !(kind === 'fairness' && rows.some(function (r) { return r.small_sample_warning; }));
     writeUrlState();
   }
+
+  if (chartThemeSelect) chartThemeSelect.addEventListener('change', writeUrlState);
 
   var restored = readUrlState();
   render();

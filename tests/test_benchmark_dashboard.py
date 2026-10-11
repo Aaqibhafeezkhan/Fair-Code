@@ -242,6 +242,20 @@ var results = {};
     return;
   }
 
+  if (process.argv[4] === 'chart-url') {
+    // #893: the Export colours choice is restored from ?chart= and written back on change.
+    results.restored_theme = elements.benchChartThemeSelect.value;
+    function choose(v) {
+      elements.benchChartThemeSelect.value = v;
+      (elements.benchChartThemeSelect._listeners.change || []).forEach(function (f) { f(); });
+      return global.__lastUrl;
+    }
+    results.url_colorblind = choose('colorblind');
+    results.url_page = choose('page');
+    process.stdout.write(JSON.stringify(results));
+    return;
+  }
+
   if (process.argv[4] === 'chart-theme') {
     // #813: render the same chart under each export theme and read the SVG back.
     function pick(field, value) {
@@ -696,3 +710,17 @@ def test_benchmark_dashboard_chart_does_not_rely_on_colour_alone():
     assert ".bar-fill.bad" in css and "repeating-linear-gradient" in css
     html = (REPO_ROOT / "benchmark.html").read_text(encoding="utf-8")
     assert '<option value="colorblind"' in html
+
+
+def test_benchmark_dashboard_export_colours_are_part_of_the_deep_link():
+    """#893: ?chart=<theme> restores the select, a change rewrites the link, "page" is
+    left out, and an unknown value is ignored."""
+    r = _run_dom_stub("?tab=fairness&chart=dark", mode="chart-url")
+    assert r["restored_theme"] == "dark"
+    assert "chart=dark" in r["last_url_after_first_render"]
+    assert "chart=colorblind" in r["url_colorblind"]
+    assert "chart" not in r["url_page"] and "tab=fairness" in r["url_page"]
+
+    bad = _run_dom_stub("?tab=fairness&chart=evil", mode="chart-url")
+    assert bad.get("restored_theme") in ("", "page", None)  # never "evil"
+    assert "chart" not in bad["last_url_after_first_render"]

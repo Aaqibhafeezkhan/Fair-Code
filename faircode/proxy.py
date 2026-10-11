@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 
 import pandas as pd
 
@@ -193,10 +194,11 @@ _DIGITS_ONLY = re.compile(r"[0-9]+")
 
 
 def normalize_key_text(value):
-    """Opt-in key normalisation (#859): trim, lower-case, and drop leading zeros
-    from an all-digit value, so ` A1`/`a1` and `0042`/`42` match. Mirrored by
-    `normalizeKeyText` in assets/profiler-engine.js."""
-    text = str(value).strip().lower()
+    """Opt-in key normalisation (#859, #884): trim, compose Unicode (NFC),
+    case-fold (so `ß` equals `ss`), and drop leading zeros from an all-digit
+    value, so ` A1`/`a1`, `0042`/`42`, `e` + U+0301 / `é` and `Straße`/`STRASSE`
+    match. Mirrored by `normalizeKeyText` in assets/profiler-engine.js."""
+    text = unicodedata.normalize("NFC", unicodedata.normalize("NFC", str(value).strip()).casefold())
     if _DIGITS_ONLY.fullmatch(text):
         text = text.lstrip("0") or "0"
     return text

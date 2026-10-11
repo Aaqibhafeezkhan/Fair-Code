@@ -447,3 +447,11 @@ def test_exact_flag_notes_and_csv_column(tmp_path, capsys):
                  "--no-provenance"]) == 0
     import json as _json
     assert _json.loads(capsys.readouterr().out)["proxy_hints"][0]["p_method"] == "fisher"
+
+
+def test_normalize_key_text_composes_unicode_and_folds_case():
+    # #884: a combining accent equals the precomposed letter, and ß equals ss.
+    from faircode.proxy import normalize_key_text as n
+    assert n("é") == n("é")
+    assert n("Straße") == n("STRASSE")
+    assert n("  0042 ") == "42"

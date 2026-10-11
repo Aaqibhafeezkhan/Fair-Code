@@ -1053,10 +1053,14 @@
     return null;
   }
 
-  // Opt-in key normalisation: trim, lower-case, drop leading zeros of an all-digit value.
-  // Mirrors proxy.py normalize_key_text (#859).
+  // Opt-in key normalisation: trim, compose (NFC), case-fold, drop leading zeros of an
+  // all-digit value. Mirrors proxy.py normalize_key_text (#859, #884); toLowerCase plus
+  // the few folds Python's casefold() adds (sharp s, final sigma, long s) stands in for it.
+  function foldKeyCase(text) {
+    return text.toLowerCase().replace(/\u00df/g, 'ss').replace(/\u03c2/g, '\u03c3').replace(/\u017f/g, 's');
+  }
   function normalizeKeyText(value) {
-    var text = String(value).trim().toLowerCase();
+    var text = foldKeyCase(String(value).trim().normalize('NFC')).normalize('NFC');
     if (/^[0-9]+$/.test(text)) text = text.replace(/^0+/, '') || '0';
     return text;
   }

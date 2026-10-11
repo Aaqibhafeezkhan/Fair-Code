@@ -547,7 +547,7 @@ parity obligation of its own - there is no equivalent MCP surface for the JS eng
 |------|-------|-------|
 | `profile_dataset` | `profile()` | Same shape as `profile --json` (section 6), `provenance` (section 10) attached by default via `include_provenance`; accepts `format` ("json" default, or "csv" returning `{"csv": "<text>"}`) |
 | `compare_datasets` | `compare()` | Same shape as `compare --json` (section 8), `dataset_hash_a`/`dataset_hash_b` in provenance; accepts `format` ("json" default, or "csv"); `proxy_hints=true` attaches `proxy_hints_a`/`proxy_hints_b`, matching `compare --proxy-hints`, and accepts `alpha`, `correction` ("bonferroni"\|"holm"), and `held_out_with_a`/`held_out_with_b` |
-| `proxy_hints` | `proxy_hints()` | Returns `{"hints": [...]}`, never a bare list - a list return value gets split by the MCP SDK into one content block per element, and an empty list becomes zero blocks, indistinguishable from an error to a caller. Accepts `alpha`, `correction`, `held_out_with`, and `include_provenance` (default true, attaching dataset hash, params, overrides, and held-out files, section 10) |
+| `proxy_hints` | `proxy_hints()` | Returns `{"hints": [...]}`, never a bare list - a list return value gets split by the MCP SDK into one content block per element, and an empty list becomes zero blocks, indistinguishable from an error to a caller. Accepts `alpha`, `correction`, `held_out_with`, the dimension knobs `max_age`/`age_reference_year`/`keywords`/`max_categorical_card`/`max_dimension_groups` (#883), and `include_provenance` (default true, attaching dataset hash, params, overrides, and held-out files, section 10) |
 | `list_explainers` | `faircode/_explainers/data.json` (mirrored from `assets/explainers-data.json`) | Phase 2: read-only lookup, no analysis. Returns `{"explainers": [{slug, title, subtitle, summary, tags}, ...]}`; optional `tag` filters to explainers carrying it, erroring if none match |
 | `get_explainer` | `faircode/_explainers/<slug>.md` (mirrored from `explainers/<slug>.md`) | Phase 2: returns `{slug, title, subtitle, tags, content}` - `content` is the raw Markdown source. Errors clearly (`FileNotFoundError`) for an unknown slug |
 | `get_benchmark_results` | `faircode/_results_frozen/results_{fairness,performance}.csv` (mirrored from `paper/results-frozen/`) | Phase 2: filters the frozen CSV named by `kind` on exact-match `audit`/`model`/`strategy`/`metric`/`protected_attribute` (a filter naming a column `kind` doesn't have raises `ValueError` rather than being ignored). Returns `{results, total_matches, truncated}`, capped at 200 rows |
@@ -559,10 +559,12 @@ than repeated `--map COL=KIND` strings) and the relevant section 7 thresholds by
 "csv" returning `{"csv": "<text>"}` matching the CLI's `--csv` output, section 12); any other format
 raises a `ValueError`.
 
-`proxy_hints` takes no threshold parameters at all - only `path`, `overrides`, `held_out_with`,
-`alpha` (significance level, default `0.05`, must be in `(0, 1]`), and `correction` (`"bonferroni"`
-or `"holm"`, defaulting to unadjusted p-values) - since it only surfaces candidate proxy pairs for
-a human/agent to review, not a scored or filtered result the section 7 thresholds would narrow. An
+`proxy_hints` takes none of the section 7 scoring thresholds - only `path`, `overrides`, `held_out_with`,
+`alpha` (significance level, default `0.05`, must be in `(0, 1]`), `correction` (`"bonferroni"`
+or `"holm"`, defaulting to unadjusted p-values), `exact`, `key_normalize`, and the dimension-shaping
+`max_categorical_card`, `max_dimension_groups`, `max_age`, `age_reference_year` and `keywords` (#883), which
+decide *which* dimensions and age bands are tested and so must match what was profiled - since it only
+surfaces candidate proxy pairs for a human/agent to review, not a scored or filtered result. An
 invalid `alpha` or unknown `correction` raises a `ValueError` converted to a `ToolError`.
 
 `compare_datasets`'s `proxy_hints=true` mode similarly accepts `alpha`, `correction`, and

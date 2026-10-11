@@ -1016,6 +1016,7 @@ faircode profile data.csv --proxy-hints            # chi-squared proxy hints (ne
 faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race  # test a column you already removed
 faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race:id  # ...matching rows on an id column, not by position
 faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race:id+visit --proxy-key-normalize  # composite key, ignoring case/spaces/leading zeros
+faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race:id~    # a trailing ~ normalises just this spec's key
 faircode profile data.csv --min-share 0.1          # tune the flagging thresholds
 faircode profile data.csv --json --no-provenance   # drop the run-metadata block
 ```
@@ -1061,7 +1062,8 @@ CSV layout in [section 12](faircode/SPEC.md#12-csv-export)):
 | `held_out_with_a` / `held_out_with_b` | `compare_datasets` | `"PATH=COLUMN"` (or `"PATH=COLUMN:KEY"` to join on a key column) lists testing a column already dropped from dataset A / B; need `proxy_hints=true` (CLI `--proxy-hints-with-a`/`-b`) |
 | `format` | `profile_dataset`, `compare_datasets` | `"json"` (default) or `"csv"`, which returns `{"csv": "..."}`, the same text `--csv` writes |
 | `encoding` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Text encoding of delimited and JSON files (e.g. `"latin-1"`, `"utf-16"`); default is a UTF-8/16/32 BOM if present, else UTF-8 (CLI `--encoding`) |
-| `max_age` | `profile_dataset`, `compare_datasets` | Age above which a numeric age is flagged as implausible instead of banded into `75+`, default 120 (CLI `--max-age`) |
+| `max_age` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Age above which a numeric age is flagged as implausible instead of banded into `75+`, default 120 (CLI `--max-age`) |
+| `age_reference_year`, `keywords` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Birth-year conversion and extra column-name vocabulary, same meaning as the CLI's `--age-reference-year` and `--keywords`; pass the values you profiled with to `proxy_hints` so it tests the same dimensions |
 
 The engine is domain-agnostic - it works on any tabular CSV (health, hiring, lending, justice),
 auto-detecting demographic columns (sex, race, age, geography) by name. Beyond the single-dataset

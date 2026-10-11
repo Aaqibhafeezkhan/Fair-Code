@@ -177,9 +177,12 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Proxy follow-ups: composite and normalised held-out keys (#859), provenance on the MCP `proxy_hints` tool (#860), an exact-test fallback for small cells (#861), colon-named held-out columns (#869)
 - [x] Age handling: birth-year conversion with `--age-reference-year` (#862) and negative-sentinel flagging (#863)
 - [x] Dashboard and compare: a per-tab significance toggle (#864), a hatch cue and colour-blind palette (#865), rename suggestions (#866) and data-quality flags (#868) in `compare`, `--csv-bom` (#867) and an ignored-`--encoding` notice (#870)
-- [ ] Proxy and MCP follow-ups: the MCP `proxy_hints` tool honouring `max_age`/`age_reference_year`/`keywords` (#883), Unicode-safe key normalisation (#884), a visible note when `--proxy-exact` is capped (#885), faster permutation p-values (#886), per-spec key normalisation on the CLI (#895), held-out encodings in provenance (#892)
-- [ ] Compare and web polish: renames in the compare CSV (#896) and from column-name similarity (#887), keywords textarea persistence and error text (#888, #889), the reference baseline honouring the encoding picker (#890)
-- [ ] Dashboard and tooling: Export colours in the deep link (#893), a key for the hatched bars (#894), and a `slow` marker so the benchmark tests do not dominate local runs (#891)
+- [x] Proxy and MCP follow-ups: the MCP `proxy_hints` tool honouring `max_age`/`age_reference_year`/`keywords` (#883), Unicode-safe key normalisation (#884), a visible `chi2-capped` note when `--proxy-exact` is capped (#885), faster permutation p-values (#886), held-out encodings in provenance (#891) and per-spec key normalisation on the CLI (#892)
+- [x] Compare and web polish: rename suggestions for recoded labels (#887) and in the compare CSV (#896), keywords textarea persistence and error text (#888, #889), the reference baseline honouring the encoding picker (#890)
+- [x] Dashboard and tooling: Export colours in the deep link (#893), a key for the hatched bars (#894), and a `slow` marker with `make test-fast` so the benchmark tests do not dominate local runs (#895)
+- [ ] Reproducibility and parity follow-ups: Python/JS key-normalisation parity for trimmed characters and case folding (#897, #911), proxy alpha/correction/exact and the xlsx sheet recorded in provenance (#898, #899), `42.0` against `42` keys (#903), the `~` marker and an exact-match marker in the web and CLI (#912, #907), per-file held-out encodings (#914)
+- [ ] Compare and web follow-ups: rename suggestions from column-name similarity (#902) and a `--rename` option to act on them (#913), the reference baseline re-decoded when the picker changes (#900), the two keyword boxes staying in sync (#901), the Summary-tab chart key wording (#905), and a "Copy as CLI command" button (#915)
+- [ ] Exact-test and tooling follow-ups: configurable permutation count and row cap (#906), a re-measured `PERMUTATION_MAX_ROWS` (#909), a warning for near-unique held-out columns (#908), the pre-push hook skipping slow tests (#904) and batched node calls in the parity tests (#910)
 
 ---
 

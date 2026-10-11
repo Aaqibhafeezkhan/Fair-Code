@@ -43,6 +43,11 @@ faircode = [
     "_results_frozen/*.csv",
 ]
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: trains models (tests/test_benchmark.py); skip locally with -m \"not slow\", CI runs everything",
+]
+
 [tool.ruff]
 target-version = "py38"
 

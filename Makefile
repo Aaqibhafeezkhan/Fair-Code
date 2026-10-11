@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 PY := python3
 
-.PHONY: help setup test coverage build-explainers favicons fix-explainer-count lint audits check
+.PHONY: help setup test test-fast coverage build-explainers favicons fix-explainer-count lint audits check
 
 help:  ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -16,6 +16,9 @@ setup:  ## Install the package plus the dev tools (pytest, pytest-cov, pre-commi
 
 test:  ## Run the full test suite (mirrors CI)
 	$(PY) -m pytest tests/ -q
+
+test-fast:  ## Run the suite without the slow model-training benchmark tests (CI still runs everything)
+	$(PY) -m pytest tests/ -q -m "not slow"
 
 coverage:  ## Run the full test suite with a faircode/ coverage report (informational only)
 	$(PY) -m pytest tests/ -q --cov=faircode --cov-report=term-missing

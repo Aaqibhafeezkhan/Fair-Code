@@ -63,6 +63,7 @@ A `Makefile` and a `.pre-commit-config.yaml` reproduce what CI runs, so you can 
 make setup             # install faircode + pytest + pre-commit + ruff
 make check             # everything CI runs: lint + full test suite + audits
 make test              # just the test suite
+make test-fast         # the suite minus the ~80 s model-training benchmark tests (marked `slow`); CI still runs everything
 make audits            # every audit's unfair.py/fair.py + the CLI smoke tests (mirrors audits.yml's required run-audits job, plus the profiler/benchmark-harness jobs' CLI steps)
 make coverage          # test suite with pytest-cov line coverage (informational, not a CI gate)
 make build-explainers  # regenerate explainer pages, sitemap, and OG images (dark + light) after editing explainers/*.md

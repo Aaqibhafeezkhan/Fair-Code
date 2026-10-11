@@ -21,6 +21,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+# Every test here trains models (about 80 s in total); `make test-fast` skips them.
+pytestmark = pytest.mark.slow
+
 pytest.importorskip("sklearn", reason="the benchmark harness needs the optional benchmark extra")
 pytest.importorskip("fairlearn", reason="the benchmark harness needs the optional benchmark extra")
 yaml = pytest.importorskip("yaml", reason="the benchmark harness needs the optional benchmark extra")

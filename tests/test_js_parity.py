@@ -460,6 +460,20 @@ def test_python_js_compare_parity_for_quality_flags_and_renames(tmp_path):
         assert [f for f in py_flags if needle in f] == [f for f in js_flags if needle in f] != []
     assert python_result["possible_renames"][0]["b"] == "ethnicity"
 
+    # #887: recoded labels (M/F vs Male/Female, White/Black vs white/black) still pair up.
+    path_c = tmp_path / "c.csv"
+    path_d = tmp_path / "d.csv"
+    path_c.write_text("sex,race\n" + "\n".join(
+        f"{'M' if i % 2 else 'F'},{['White', 'Black'][i % 3 % 2]}" for i in range(48)) + "\n")
+    path_d.write_text("gender,ethnicity\n" + "\n".join(
+        f"{'Male' if i % 2 else 'Female'},{['white', 'black'][i % 3 % 2]}" for i in range(48)) + "\n")
+    py_cd = compare(profile(pd.read_csv(path_c)), profile(pd.read_csv(path_d)), "c.csv", "d.csv")
+    js_cd = json.loads(subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_c), str(path_d)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert js_cd["possible_renames"] == py_cd["possible_renames"]
+    assert [(r["a"], r["b"]) for r in py_cd["possible_renames"]] == [("sex", "gender"), ("race", "ethnicity")]
+
 
 def test_python_js_parity_for_extra_keywords_and_italian_dutch_terms(tmp_path):
     """#856: the user vocabulary (normalised, exact_only, validation errors) and the new

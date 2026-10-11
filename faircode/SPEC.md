@@ -427,7 +427,9 @@ compare adds "NAME: no column name was recognised ..." for that side. Neither se
 
 **Probable renames (#866).** Dimensions are matched by name. For each dimension present only in A,
 compare looks for a B-only dimension of the *same kind* whose group labels overlap (Jaccard) at least
-`RENAME_MIN_OVERLAP` = 0.5, greedily in A order, each B-only dimension used once, and reports
+`RENAME_MIN_OVERLAP` = 0.5 (labels are matched one-to-one: exactly, then ignoring case, then when an
+alphabetic label is a case-insensitive prefix of the other, so `M`/`Male` and `White`/`white` count, #887),
+greedily in A order, each B-only dimension used once, and reports
 `possible_renames: [{ "a": "race", "b": "ethnicity", "overlap": 1.0 }]` (key present only when
 non-empty, `overlap` to 4 dp) plus a flag "'race' (A) and 'ethnicity' (B) look like the same
 dimension ... rename one column so the names match to compare them". It is a suggestion only: nothing

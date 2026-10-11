@@ -154,10 +154,44 @@ def _compare_dimension(dim_a: dict, dim_b: dict) -> dict:
     }
 
 
+def _label_overlap(labels_a: set, labels_b: set) -> float:
+    """Jaccard overlap of two label sets after a one-to-one match: exact labels
+    first, then case-insensitive equality, then an alphabetic label that is a
+    case-insensitive prefix of the other (`M`/`Male`, `White`/`white`). Greedy over
+    sorted labels so the answer is deterministic; mirrored in profiler-engine.js
+    (#887)."""
+    rest_a, rest_b = sorted(labels_a), sorted(labels_b)
+    matched = 0
+
+    def take(same):
+        nonlocal matched, rest_a, rest_b
+        left_a = []
+        for a in rest_a:
+            hit = next((b for b in rest_b if same(a, b)), None)
+            if hit is None:
+                left_a.append(a)
+            else:
+                rest_b.remove(hit)
+                matched += 1
+        rest_a = left_a
+
+    take(lambda a, b: a == b)
+    take(lambda a, b: a.lower() == b.lower())
+    take(lambda a, b: _alpha_prefix(a.lower(), b.lower()) or _alpha_prefix(b.lower(), a.lower()))
+    total = len(labels_a) + len(labels_b) - matched
+    return matched / total if total else 0.0
+
+
+def _alpha_prefix(short: str, long: str) -> bool:
+    return short.isalpha() and long.startswith(short)
+
+
 def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list) -> list:
     """Pair each A-only dimension with the B-only dimension of the same kind whose
-    group labels overlap most (Jaccard >= RENAME_MIN_OVERLAP), each B used once.
-    A suggestion only - nothing is compared across the pair (#866)."""
+    group labels overlap most (Jaccard >= RENAME_MIN_OVERLAP, counting a label that
+    differs only in case or is an alphabetic prefix of the other, `M`/`Male`, as a
+    match), each B used once. A suggestion only - nothing is compared across the
+    pair (#866, #887)."""
     by_a = {d["name"]: d for d in result_a["dimensions"]}
     by_b = {d["name"]: d for d in result_b["dimensions"]}
     taken: set[str] = set()
@@ -169,8 +203,7 @@ def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list
             if name_b in taken or by_b[name_b]["kind"] != by_a[name_a]["kind"]:
                 continue
             labels_b = {g["label"] for g in by_b[name_b]["groups"]}
-            union = labels_a | labels_b
-            overlap = len(labels_a & labels_b) / len(union) if union else 0.0
+            overlap = _label_overlap(labels_a, labels_b)
             if overlap > best_overlap:
                 best, best_overlap = name_b, overlap
         if best is not None and best_overlap >= RENAME_MIN_OVERLAP:

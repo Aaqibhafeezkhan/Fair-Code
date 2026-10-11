@@ -1731,22 +1731,46 @@
   // Mirrors faircode/compare.py RENAME_MIN_OVERLAP / _possible_renames (#866).
   var RENAME_MIN_OVERLAP = 0.5;
 
+  // One-to-one label match: exact, then case-insensitive, then alphabetic prefix; Jaccard of
+  // the result. Mirrors compare.py _label_overlap (#887).
+  function labelOverlap(labelsA, labelsB) {
+    var restA = labelsA.slice().sort(), restB = labelsB.slice().sort(), matched = 0;
+    function take(same) {
+      var left = [];
+      restA.forEach(function (a) {
+        var hit = -1;
+        for (var i = 0; i < restB.length; i++) if (same(a, restB[i])) { hit = i; break; }
+        if (hit === -1) left.push(a); else { restB.splice(hit, 1); matched++; }
+      });
+      restA = left;
+    }
+    function alphaPrefix(s, l) { return /^\p{L}+$/u.test(s) && l.indexOf(s) === 0; }
+    take(function (a, b) { return a === b; });
+    take(function (a, b) { return a.toLowerCase() === b.toLowerCase(); });
+    take(function (a, b) {
+      var x = a.toLowerCase(), y = b.toLowerCase();
+      return alphaPrefix(x, y) || alphaPrefix(y, x);
+    });
+    var total = labelsA.length + labelsB.length - matched;
+    return total ? matched / total : 0;
+  }
+
+  function uniqueLabels(dim) {
+    var seen = {}, out = [];
+    dim.groups.forEach(function (g) { if (!seen[g.label]) { seen[g.label] = 1; out.push(g.label); } });
+    return out;
+  }
+
   function possibleRenames(resultA, resultB, removed, added) {
     var byA = {}, byB = {}, taken = {}, pairs = [];
     resultA.dimensions.forEach(function (d) { byA[d.name] = d; });
     resultB.dimensions.forEach(function (d) { byB[d.name] = d; });
     removed.forEach(function (nameA) {
-      var labelsA = {};
-      byA[nameA].groups.forEach(function (g) { labelsA[g.label] = 1; });
+      var labelsA = uniqueLabels(byA[nameA]);
       var best = null, bestOverlap = 0;
       added.forEach(function (nameB) {
         if (taken[nameB] || byB[nameB].kind !== byA[nameA].kind) return;
-        var labelsB = {}, union = {}, inter = 0;
-        byB[nameB].groups.forEach(function (g) { labelsB[g.label] = 1; });
-        Object.keys(labelsA).forEach(function (l) { union[l] = 1; if (labelsB[l]) inter++; });
-        Object.keys(labelsB).forEach(function (l) { union[l] = 1; });
-        var size = Object.keys(union).length;
-        var overlap = size ? inter / size : 0;
+        var overlap = labelOverlap(labelsA, uniqueLabels(byB[nameB]));
         if (overlap > bestOverlap) { best = nameB; bestOverlap = overlap; }
       });
       if (best !== null && bestOverlap >= RENAME_MIN_OVERLAP) {

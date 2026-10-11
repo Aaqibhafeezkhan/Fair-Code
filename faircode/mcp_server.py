@@ -291,9 +291,14 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
 
 def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
                       correction=None, encoding=None, include_provenance=True,
-                      key_normalize=False, exact=False):
+                      key_normalize=False, exact=False, max_categorical_card=None,
+                      max_dimension_groups=None, max_age=None, age_reference_year=None,
+                      keywords=None):
     """`overrides` forces a column's detected kind the same way profile()'s
-    own `overrides` does; no other threshold knob affects this tool -
+    own `overrides` does; the dimension-shaping knobs (max_categorical_card,
+    max_dimension_groups, max_age, age_reference_year, keywords) are passed
+    through to profile() so the tested dimensions match profile_dataset's
+    (#883). No other threshold knob affects this tool -
     proxy_hints() (faircode/proxy.py) tests every detected dimension
     unconditionally, reading only each dimension's `name`/`kind`, neither of
     which min_share/intersection_floor/imbalance_flag/missing_flag/
@@ -322,13 +327,21 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     overrides = overrides or {}
     df = _read_table_or_raise(path, encoding)
     _check_overrides(overrides, df.columns)
-    result = profile(df, overrides)
+    # Same dimension-shaping knobs as profile_dataset, so the hints describe the
+    # dimensions (and age bands) the agent just profiled (#883).
+    opts = _build_opts(max_categorical_card=max_categorical_card,
+                       max_dimension_groups=max_dimension_groups, max_age=max_age,
+                       age_reference_year=age_reference_year, keywords=keywords)
+    resolved = _resolve_opts(opts)
+    result = profile(df, overrides, opts)
     held_out = parse_held_out_specs(held_out_with, df, functools.partial(_read_table_or_raise, encoding=encoding),
                                     flag="held_out_with",
                                     normalize_keys=key_normalize) if held_out_with else None
     kw = {} if alpha is None else {"alpha": alpha}
     kw["correction"] = correction
     kw["exact"] = exact
+    kw["max_age"] = resolved["max_age"]
+    kw["age_reference_year"] = resolved["age_reference_year"]
     output = {"hints": compute_proxy_hints(df, result["dimensions"], held_out=held_out, **kw)}
     notes = [n for n in (_sheet_note(path),) if n]
     notes += [n for spec in (held_out_with or []) for n in (_sheet_note(spec.partition("=")[0]),) if n]
@@ -342,7 +355,9 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
         enc = encoding or sniff_effective_encoding(path)
         output["provenance"] = build_provenance(
             [("dataset_hash", path)],
-            params={"alpha": PROXY_ALPHA if alpha is None else alpha, "correction": correction},
+            params={"alpha": PROXY_ALPHA if alpha is None else alpha, "correction": correction,
+                    **{k: resolved[k] for k in ("max_categorical_card", "max_dimension_groups",
+                                                "max_age", "age_reference_year", "keywords")}},
             overrides=overrides,
             held_out=[("proxy_hints_with", held_out_with, list(df.columns))] if held_out_with else (),
             key_normalize=key_normalize,
@@ -622,7 +637,12 @@ def build_server():
                     encoding: str | None = None,
                     include_provenance: bool = True,
                     key_normalize: bool = False,
-                    exact: bool = False) -> dict:
+                    exact: bool = False,
+                    max_categorical_card: int | None = None,
+                    max_dimension_groups: int | None = None,
+                    max_age: float | None = None,
+                    age_reference_year: int | None = None,
+                    keywords: dict[str, list[str]] | None = None) -> dict:
         """Flag pairs of detected demographic columns that are strongly
         statistically associated (chi-squared test of independence, p < `alpha`,
         default 0.05, in (0, 1])
@@ -648,13 +668,21 @@ def build_server():
         dropped attribute's original values from. See faircode/SPEC.md
         section 3 and issue #328.
 
+        `max_categorical_card`, `max_dimension_groups`, `max_age`,
+        `age_reference_year` and `keywords` mean what they do on `profile_dataset`
+        and decide which dimensions (and age bands) are tested, so pass the same
+        values you profiled with and the hints describe the same data (#883).
+
         `include_provenance` (default true) attaches a provenance block
-        (dataset_hash, alpha, correction, overrides, proxy_hints_with) to
-        tie the hints back to the exact dataset and parameters that produced them (#860).
+        (dataset_hash, alpha, correction, those dimension knobs, overrides,
+        proxy_hints_with) to tie the hints back to the exact dataset and
+        parameters that produced them (#860).
         """
         try:
             return _proxy_hints_impl(path, overrides, held_out_with, alpha, correction, encoding,
-                                     include_provenance, key_normalize, exact)
+                                     include_provenance, key_normalize, exact,
+                                     max_categorical_card, max_dimension_groups, max_age,
+                                     age_reference_year, keywords)
         except (ValueError, FileNotFoundError, RuntimeError) as exc:
             raise _as_tool_error(exc) from exc
 

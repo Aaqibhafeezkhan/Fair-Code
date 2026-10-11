@@ -83,22 +83,24 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
 
     One {path, column, sha256} per spec (plus `key` when a join key was given), in the order given; an unreadable path
     (or stdin) gets a null `sha256` and a `sha256_note`, like every other digest.
-    `key_normalize` adds `key_normalize: true` to entries that have a join key (#859).
+    `key_normalize` adds `key_normalize: true` to entries that have a join key (#859);
+    a spec ending in `~` does so for that entry alone (#892).
     `encoding` is the explicit --encoding choice; each text file's entry records it, or
     its own sniffed byte-order mark, and omits it for plain UTF-8 and for binary
     workbooks/Parquet, the same rule as the dataset's `encoding` (#891).
     `profiled_columns` is forwarded to split_held_out_spec so a colon in a
     column name is resolved the same way as the live parse (#869).
     """
-    from .proxy import split_held_out_spec
+    from .proxy import split_held_out_spec, strip_key_normalize_marker
 
     entries = []
     for spec in specs or []:
+        spec, marked = strip_key_normalize_marker(spec, profiled_columns)
         path, column, key = split_held_out_spec(spec, profiled_columns)
         entry = {"path": path, "column": column}
         if key is not None:
             entry["key"] = key
-            if key_normalize:
+            if key_normalize or marked:
                 entry["key_normalize"] = True
         _add_digest(entry, "sha256", path)
         if not str(path).lower().endswith(_BINARY_SUFFIXES):

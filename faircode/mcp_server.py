@@ -545,7 +545,8 @@ def build_server():
         `key_normalize` (default false) makes `PATH=COLUMN:KEY` join keys match
         case-insensitively, ignoring surrounding spaces and leading zeros; a key
         may be composite (`id+visit`). Same on `proxy_hints` (CLI
-        `--proxy-key-normalize`).
+        `--proxy-key-normalize`). A spec ending in `~` (`PATH=COLUMN:KEY~`)
+        normalises just that file's key.
 
         `encoding` names the text encoding of delimited files (e.g. "latin-1",
         "cp1252", "utf-16"); default is a UTF-8/16/32 byte-order mark if present,

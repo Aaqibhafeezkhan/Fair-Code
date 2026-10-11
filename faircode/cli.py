@@ -311,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--proxy-key-normalize", action="store_true",
                    help="make --proxy-hints-with join keys (PATH=COLUMN:KEY) match case-insensitively, "
                         "ignoring surrounding spaces and leading zeros (default: exact text; "
+                        "append ~ to one spec, PATH=COLUMN:KEY~, to normalise just that one; "
                         "needs --proxy-hints)")
     p.add_argument("--min-share", type=float, metavar="F",
                    help="under-representation threshold (default 0.05)")
@@ -391,6 +392,7 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--proxy-key-normalize", action="store_true",
                    help="make --proxy-hints-with-a/-b join keys (PATH=COLUMN:KEY) match case-insensitively, "
                         "ignoring surrounding spaces and leading zeros (default: exact text; "
+                        "append ~ to one spec, PATH=COLUMN:KEY~, to normalise just that one; "
                         "needs --proxy-hints)")
     c.add_argument("--min-share", type=float, metavar="F",
                    help="under-representation threshold (default 0.05)")

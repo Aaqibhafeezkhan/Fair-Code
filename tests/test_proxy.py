@@ -498,3 +498,27 @@ def test_permutation_p_value_matches_the_scalar_mulberry_reference():
             shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
         hits += stat(shuffled) >= observed - 1e-9
     assert permutation_p_value(rows, cols, n_r, n_c, permutations=100) == (1 + hits) / 101
+
+
+def test_per_spec_tilde_marker_normalises_only_that_specs_key(tmp_path):
+    # #892: PATH=COLUMN:KEY~ normalises one spec; others stay exact.
+    from faircode.proxy import parse_held_out_specs, strip_key_normalize_marker
+    from faircode.provenance import held_out_entries
+    df = pd.DataFrame({"id": ["A1", "B2", "C3"], "x": [1, 2, 3]})
+    messy = pd.DataFrame({"id": [" a1", "b2", "C3 "], "race": ["u", "v", "w"]})
+    clean = pd.DataFrame({"id": ["A1", "B2", "C3"], "age": [5, 6, 7]})
+    tables = {"messy.csv": messy, "clean.csv": clean}
+    read = lambda path: tables[path]  # noqa: E731
+
+    held = parse_held_out_specs(["messy.csv=race:id~", "clean.csv=age:id"], df, read)
+    assert list(held["race"]) == ["u", "v", "w"] and list(held["age"]) == [5, 6, 7]
+    with pytest.raises(ValueError, match="no row for"):
+        parse_held_out_specs(["messy.csv=race:id"], df, read)
+    with pytest.raises(ValueError, match="no row for"):
+        parse_held_out_specs(["messy.csv=race:id~"], df.assign(id=["A1", "B2", "Z9"]), read)
+
+    assert strip_key_normalize_marker("m.csv=race:id~", ["id"]) == ("m.csv=race:id", True)
+    assert strip_key_normalize_marker("m.csv=race~", ["id"]) == ("m.csv=race~", False)   # no key: not a marker
+    entries = held_out_entries(["messy.csv=race:id~", "clean.csv=age:id"], ["id", "x"])
+    assert [e.get("key_normalize") for e in entries] == [True, None]
+    assert [e["key"] for e in entries] == ["id", "id"]

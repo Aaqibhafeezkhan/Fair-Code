@@ -195,6 +195,21 @@ def split_held_out_spec(spec, profiled_columns=None):
     return path, column, key
 
 
+def strip_key_normalize_marker(spec, profiled_columns=None):
+    """Split a trailing `~` off "PATH=COLUMN:KEY~" and return (spec, marked).
+
+    The marker turns on `--proxy-key-normalize` for that one spec (#892), so the
+    CLI can express what the web's per-row "Normalise key" checkbox does. It only
+    counts on a spec that has a join key, so a column that happens to end in `~`
+    in a key-less spec is left alone.
+    """
+    if spec.endswith("~") and not spec.endswith("\\~"):
+        stripped = spec[:-1]
+        if split_held_out_spec(stripped, profiled_columns)[2]:
+            return stripped, True
+    return spec, False
+
+
 def key_columns(key, columns):
     """The column names a join key refers to: `[key]` when it is itself a column,
     else the `+`-separated parts of a composite key (`id+visit`) when every part is
@@ -255,10 +270,13 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
     held-out file (extra held-out rows are ignored), so a re-sorted or filtered
     export still lines up. The key may be composite (`PATH=COLUMN:id+visit`), and
     `normalize_keys` makes the comparison tolerant of case, surrounding spaces and
-    leading zeros (#859); both stay off by default so matching is exact.
+    leading zeros (#859); both stay off by default so matching is exact. A spec
+    ending in `~` (`PATH=COLUMN:KEY~`) normalises just that spec's key (#892).
     """
     held_out = {}
     for spec in specs or []:
+        spec, marked = strip_key_normalize_marker(spec, df.columns)
+        normalize = normalize_keys or marked
         path, column, key = split_held_out_spec(spec, df.columns)
         if not path or not column or key == "" or "=" not in spec:
             raise ValueError(f"invalid {flag} '{spec}', expected PATH=COLUMN or PATH=COLUMN:KEY")
@@ -279,8 +297,8 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
                 raise ValueError(f"{flag} join key '{key}' not found in the profiled dataset")
             if not all(c in held_df.columns for c in cols):
                 raise ValueError(f"{flag} join key '{key}' not found in {path}")
-            df_keys = _key_labels(df, cols, f"'{key}' in the profiled dataset", flag, normalize_keys)
-            held_keys = _key_labels(held_df, cols, f"'{key}' in {path}", flag, normalize_keys)
+            df_keys = _key_labels(df, cols, f"'{key}' in the profiled dataset", flag, normalize)
+            held_keys = _key_labels(held_df, cols, f"'{key}' in {path}", flag, normalize)
             lookup = pd.Series(held_df[column].to_numpy(), index=held_keys.to_numpy())
             missing = ~df_keys.isin(lookup.index)
             if missing.any():

@@ -616,6 +616,17 @@
   // the same name (faircode/SPEC.md section 7). Left blank, each falls back
   // to the engine's own default via resolveOpts() the same way an unset
   // CLI flag falls back to profiler.py's module constant.
+  // Extra keywords describe the user's data conventions, not one file, so the text
+  // survives file loads and page reloads (#888); localStorage can throw or be absent.
+  var KEYWORDS_KEY = 'faircode.keywords.v1';
+  function readStoredKeywords() {
+    try { return window.localStorage.getItem(KEYWORDS_KEY) || ''; } catch (err) { return ''; }
+  }
+  function writeStoredKeywords(text) {
+    try {
+      if (text) window.localStorage.setItem(KEYWORDS_KEY, text); else window.localStorage.removeItem(KEYWORDS_KEY);
+    } catch (err) { /* private window or blocked storage: the box just forgets */ }
+  }
   // Names the problem under the textarea (role=alert, linked by aria-describedby) as well as
   // marking it invalid; an empty message clears both (#889).
   function setKeywordsError(area, message) {
@@ -639,10 +650,14 @@
       input.classList.remove('overridden');
     });
     if (thresholdControls) {
+      // The keywords box is not a per-file tweak: it is refilled from storage and
+      // re-applied to the fresh currentOpts instead of being cleared (#888).
       Array.prototype.forEach.call(thresholdControls.querySelectorAll('[data-opt-json]'), function (area) {
-        area.value = '';
-        area.classList.remove('overridden');
+        var checked = checkKeywordsText(readStoredKeywords().trim());
+        area.value = checked.value !== undefined ? readStoredKeywords() : '';
+        area.classList.toggle('overridden', checked.value !== undefined);
         setKeywordsError(area, '');
+        if (checked.value !== undefined) currentOpts[area.dataset.optJson] = checked.value;
       });
     }
   }
@@ -708,8 +723,12 @@
         reprofile(false);
         return;
       }
+      writeStoredKeywords(checked.empty ? '' : area.value);
     });
   });
+
+  // Page load: bring back the remembered vocabulary (#888).
+  resetThresholdInputs();
 
   // ── Reference baseline (issue #56) ──────────────────────────────────────
   referenceBtn.addEventListener('click', function () { referenceInput.click(); });

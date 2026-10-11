@@ -56,34 +56,51 @@ def _mulberry32(seed):
     return next_float
 
 
+def _mulberry32_block(seed, start, count):
+    """`count` consecutive mulberry32 floats starting after `start` draws, as a
+    numpy array. The state is just `seed + k * 0x6D2B79F5`, so a whole block is
+    computed at once (uint32 arithmetic wraps exactly like the masked scalar
+    version), giving the identical stream to `_mulberry32` (#886)."""
+    import numpy as np
+    k = np.arange(start + 1, start + count + 1, dtype=np.uint64)
+    state = ((np.uint64(seed & _MASK32) + k * np.uint64(0x6D2B79F5)) & np.uint64(_MASK32)).astype(np.uint32)
+    t = (state ^ (state >> np.uint32(15))) * (np.uint32(1) | state)
+    t = (t + (((t ^ (t >> np.uint32(7))) * (np.uint32(61) | t)))) ^ t
+    return (t ^ (t >> np.uint32(14))).astype(np.float64) / 4294967296
+
+
 def permutation_p_value(row_idx, col_idx, n_rows, n_cols, permutations=PERMUTATIONS,
                         seed=PERMUTATION_SEED):
     """Monte-Carlo p-value for independence: shuffle the column labels with a
     seeded Fisher-Yates, recompute the plain chi-squared statistic each time, and
-    return (1 + #{stat >= observed}) / (permutations + 1)."""
+    return (1 + #{stat >= observed}) / (permutations + 1).
+
+    The statistic is `sum(o^2 / e) - n` over the occupied cells only (an empty
+    cell contributes exactly its expected count, and those sum to n), so a sparse
+    table costs O(rows) per shuffle instead of O(cells) (#886). Same formula in
+    assets/profiler-engine.js."""
+    import numpy as np
     n = len(row_idx)
-    row_tot = [0] * n_rows
-    col_tot = [0] * n_cols
-    for r, c in zip(row_idx, col_idx):
-        row_tot[r] += 1
-        col_tot[c] += 1
-    expected = [row_tot[r] * col_tot[c] / n for r in range(n_rows) for c in range(n_cols)]
+    rows = np.asarray(row_idx, dtype=np.int64)
+    row_tot = np.bincount(rows, minlength=n_rows)
+    col_tot = np.bincount(np.asarray(col_idx, dtype=np.int64), minlength=n_cols)
 
     def statistic(cols):
-        counts = [0] * (n_rows * n_cols)
-        for r, c in zip(row_idx, cols):
-            counts[r * n_cols + c] += 1
-        return sum((o - e) ** 2 / e for o, e in zip(counts, expected))
+        cells, counts = np.unique(rows * n_cols + cols, return_counts=True)
+        expected = row_tot[cells // n_cols] * col_tot[cells % n_cols] / n
+        return float((counts.astype(np.float64) ** 2 / expected).sum() - n)
 
-    observed = statistic(col_idx)
-    rand = _mulberry32(seed)
     cols = list(col_idx)
+    observed = statistic(np.asarray(cols, dtype=np.int64))
     hits = 0
-    for _ in range(permutations):
-        for i in range(n - 1, 0, -1):
-            j = int(rand() * (i + 1))
+    steps = max(n - 1, 0)
+    for b in range(permutations):
+        js = (_mulberry32_block(seed, b * steps, steps) * np.arange(n, 1, -1)).astype(np.int64).tolist()
+        i = n - 1
+        for j in js:
             cols[i], cols[j] = cols[j], cols[i]
-        if statistic(cols) >= observed - 1e-9:
+            i -= 1
+        if statistic(np.asarray(cols, dtype=np.int64)) >= observed - 1e-9:
             hits += 1
     return (1 + hits) / (permutations + 1)
 

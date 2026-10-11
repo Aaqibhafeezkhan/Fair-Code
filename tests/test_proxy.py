@@ -455,3 +455,33 @@ def test_normalize_key_text_composes_unicode_and_folds_case():
     assert n("é") == n("é")
     assert n("Straße") == n("STRASSE")
     assert n("  0042 ") == "42"
+
+
+def test_permutation_p_value_matches_the_scalar_mulberry_reference():
+    # #886: the vectorised PRNG block and sparse statistic must equal a plain-loop reference.
+    import random
+    from faircode.proxy import PERMUTATION_SEED, _mulberry32, _mulberry32_block, permutation_p_value
+    rand = _mulberry32(PERMUTATION_SEED)
+    assert list(_mulberry32_block(PERMUTATION_SEED, 0, 40)) == [rand() for _ in range(40)]
+    rng = random.Random(3)
+    rows = [rng.randrange(5) for _ in range(120)]
+    cols = [rng.randrange(30) for _ in range(120)]
+    n_r, n_c = 5, 30
+    rt = [rows.count(r) for r in range(n_r)]
+    ct = [cols.count(c) for c in range(n_c)]
+
+    def stat(cs):
+        counts = [0] * (n_r * n_c)
+        for r, c in zip(rows, cs):
+            counts[r * n_c + c] += 1
+        return sum((counts[r * n_c + c] - rt[r] * ct[c] / 120) ** 2 / (rt[r] * ct[c] / 120)
+                   for r in range(n_r) for c in range(n_c))
+
+    rand = _mulberry32(PERMUTATION_SEED)
+    shuffled, hits, observed = list(cols), 0, stat(cols)
+    for _ in range(100):
+        for i in range(119, 0, -1):
+            j = int(rand() * (i + 1))
+            shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+        hits += stat(shuffled) >= observed - 1e-9
+    assert permutation_p_value(rows, cols, n_r, n_c, permutations=100) == (1 + hits) / 101

@@ -1211,19 +1211,24 @@
     return Math.min(1, p);
   }
 
+  // Statistic is sum(o^2 / e) - n over occupied cells only (an empty cell adds exactly its
+  // expected count, which sums to n), so a sparse table costs O(rows) per shuffle (#886).
+  // Mirrors proxy.py permutation_p_value.
   function permutationPValue(rowIdx, colIdx, nRows, nCols) {
     var n = rowIdx.length, rowTot = [], colTot = [], i, r, c;
     for (r = 0; r < nRows; r++) rowTot.push(0);
     for (c = 0; c < nCols; c++) colTot.push(0);
     for (i = 0; i < n; i++) { rowTot[rowIdx[i]]++; colTot[colIdx[i]]++; }
-    var expected = [];
-    for (r = 0; r < nRows; r++) for (c = 0; c < nCols; c++) expected.push(rowTot[r] * colTot[c] / n);
     function statistic(cols) {
-      var counts = [], k, s = 0;
-      for (k = 0; k < nRows * nCols; k++) counts.push(0);
-      for (k = 0; k < n; k++) counts[rowIdx[k] * nCols + cols[k]]++;
-      for (k = 0; k < counts.length; k++) s += (counts[k] - expected[k]) * (counts[k] - expected[k]) / expected[k];
-      return s;
+      var counts = new Map(), k, s = 0;
+      for (k = 0; k < n; k++) {
+        var key = rowIdx[k] * nCols + cols[k];
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+      counts.forEach(function (o, key) {
+        s += o * o / (rowTot[Math.floor(key / nCols)] * colTot[key % nCols] / n);
+      });
+      return s - n;
     }
     var observed = statistic(colIdx), rand = mulberry32(PERMUTATION_SEED), cols = colIdx.slice(), hits = 0;
     for (var b = 0; b < PERMUTATIONS; b++) {

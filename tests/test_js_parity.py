@@ -1559,6 +1559,14 @@ def test_python_js_exact_p_values_agree_for_small_cell_tables(tmp_path):
     assert py2[0]["p_method"] == js2[0]["p_method"] == "permutation"
     assert py2[0]["p_value"] == js2[0]["p_value"]          # same seeded stream, same count
 
+    # a larger sparse table: same seeded stream through the sparse statistic (#886)
+    rows = ["sex,race"] + [f"s{(i * 7) % 40},r{(i * 13 + i // 5) % 60}" for i in range(400)]
+    csv3 = tmp_path / "sparse_big.csv"
+    csv3.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    df3 = pd.read_csv(csv3)
+    (py3,), (js3,) = proxy_hints(df3, dims, alpha=1.0, exact=True), _run_js_proxy_hints(csv3, alpha=1.0, exact=True)
+    assert py3["p_method"] == js3["p_method"] == "permutation" and py3["p_value"] == js3["p_value"]
+
     # off by default: no p_method key, p-values untouched
     assert "p_method" not in proxy_hints(df2, dims, alpha=1.0)[0]
     assert "p_method" not in _run_js_proxy_hints(csv2, alpha=1.0)[0]

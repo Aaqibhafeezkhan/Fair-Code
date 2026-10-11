@@ -153,6 +153,10 @@
   background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.45) 0 2px, transparent 2px 6px); }
 .bar-fill.good { background: var(--accent3); }
 
+.bench-key { display: flex; gap: 18px; flex-wrap: wrap; margin: 0 0 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.bench-key-item { display: inline-flex; align-items: center; gap: 6px; }
+.bench-key-swatch { display: inline-block; width: 28px; height: 10px; border-radius: 3px; }
+
 .bench-small-badge { color: var(--warn); font-size: 11px; white-space: nowrap; }
 .bench-note { white-space: normal; min-width: 180px; color: var(--muted); }
 .bar-track.signed { background-image: linear-gradient(var(--border2), var(--border2));

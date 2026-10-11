@@ -75,7 +75,7 @@ function makeEl(id) {
 var ids = ['loadBundledBtn', 'benchDropzone', 'benchFileInput', 'benchError', 'benchStatus',
   'benchResults', 'benchFilters', 'significantOnlyInput', 'benchSummary', 'benchTable',
   'benchChart', 'benchChartNote', 'benchChartBlock', 'benchExportBtn', 'benchResetBtn',
-  'benchClearBtn', 'benchLegend', 'benchChartButtons', 'benchChartSvgBtn',
+  'benchClearBtn', 'benchLegend', 'benchKey', 'benchChartButtons', 'benchChartSvgBtn',
   'benchChartPngBtn', 'benchFigureBlock', 'benchFigureImg'];
 var elements = {};
 ids.forEach(function (id) { elements[id] = makeEl(id); });
@@ -354,6 +354,7 @@ var results = {};
     (sel._listeners.change || []).forEach(function (f) { f(); });
   });
   results.svg_button_visible = elements.benchChartButtons.hidden === false;
+  results.key_hidden_fairness = elements.benchKey.hidden;
   lastBlob = null;
   elements.benchChartSvgBtn.click();
   results.svg = lastBlob;
@@ -392,6 +393,10 @@ var results = {};
   (metricSelect._listeners.change || []).forEach(function (f) { f(); });
   results.perf_chart_bars = (elements.benchChart.innerHTML.match(/class="bar-row"/g) || []).length;
   results.perf_chart_hidden = elements.benchChart.hidden;
+  results.key_hidden_performance = elements.benchKey.hidden;
+  lastBlob = null;
+  elements.benchChartSvgBtn.click();
+  results.perf_svg = lastBlob;
   results.perf_chart_unsigned = elements.benchChart.innerHTML.indexOf('bar-track signed') === -1;
 
   // Summary tab (#794) and committed figure (#795).
@@ -724,3 +729,15 @@ def test_benchmark_dashboard_export_colours_are_part_of_the_deep_link():
     bad = _run_dom_stub("?tab=fairness&chart=evil", mode="chart-url")
     assert bad.get("restored_theme") in ("", "page", None)  # never "evil"
     assert "chart" not in bad["last_url_after_first_render"]
+
+
+def test_benchmark_dashboard_chart_has_a_key_for_the_hatched_bars():
+    """#894: a two-item key above the chart (and inside the SVG export) says hatched means
+    significant; performance charts, which have no significance flag, get neither."""
+    r = _run_dom_stub()
+    assert r["key_hidden_fairness"] is False and r["key_hidden_performance"] is True
+    assert "hatched = significant gap" in r["svg"] and "plain = not significant" in r["svg"]
+    assert "hatched = significant gap" not in r["perf_svg"]
+    html = (REPO_ROOT / "benchmark.html").read_text(encoding="utf-8")
+    assert 'id="benchKey"' in html and "hatched = significant gap" in html and "plain = not significant" in html
+    assert ".bench-key-swatch" in (REPO_ROOT / "assets" / "benchmark.css").read_text(encoding="utf-8")

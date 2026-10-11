@@ -49,6 +49,7 @@
   var exportBtn = document.getElementById('benchExportBtn');
   var clearBtn = document.getElementById('benchClearBtn');
   var legendEl = document.getElementById('benchLegend');
+  var keyEl = document.getElementById('benchKey');
   var chartButtons = document.getElementById('benchChartButtons');
   var chartSvgBtn = document.getElementById('benchChartSvgBtn');
   var chartPngBtn = document.getElementById('benchChartPngBtn');
@@ -462,6 +463,8 @@
     var sorted = rows.slice().sort(function (a, b) { return Math.abs(b.value || 0) - Math.abs(a.value || 0); });
     return {
       signed: signed,
+      // Only fairness/summary bars carry a significance flag; performance bars are all neutral.
+      keyed: kind !== 'performance',
       bars: sorted.map(function (r) {
         var mag = r.value === null ? 0 : Math.abs(r.value) / maxAbs * (signed ? 50 : 100);
         var neg = r.value !== null && r.value < 0;
@@ -486,12 +489,14 @@
           'audit x strategy' + (kind === 'fairness' ? ' x model' : '') + ' combination on the same scale.';
       chartHost.hidden = true;
       chartButtons.hidden = true;
+      keyEl.hidden = true;
       return;
     }
     chartNote.textContent = '';
     chartHost.hidden = false;
-    if (!rows.length) { chartHost.innerHTML = ''; chartButtons.hidden = true; return; }
+    if (!rows.length) { chartHost.innerHTML = ''; chartButtons.hidden = true; keyEl.hidden = true; return; }
     chartButtons.hidden = false;
+    keyEl.hidden = kind === 'performance';
 
     var model = chartModel(kind, rows);
     chartHost.innerHTML = model.bars.map(function (bar) {
@@ -550,7 +555,8 @@
   }
 
   function chartToSvg(model, title, theme) {
-    var LABEL_W = 380, TRACK_W = 400, ROW_H = 24, TOP = 34, W = LABEL_W + TRACK_W + 130;
+    var LABEL_W = 380, TRACK_W = 400, ROW_H = 24, W = LABEL_W + TRACK_W + 130;
+    var TOP = model.keyed ? 52 : 34;   // room for the key row under the title
     var H = TOP + model.bars.length * ROW_H + 12;
     var c = chartPalette(theme);
     var out = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H +
@@ -561,6 +567,14 @@
         '<line x1="0" y1="0" x2="0" y2="6" stroke="#fff" stroke-opacity="0.55" stroke-width="2"/></pattern></defs>' +
       (c.bg ? '<rect width="100%" height="100%" fill="' + svgEsc(c.bg) + '"/>' : '') +
       '<text x="12" y="22" font-family="monospace" font-size="13" fill="' + svgEsc(c.text) + '">' + svgEsc(title) + '</text>';
+    if (model.keyed) {
+      // Two-item key, drawn with the same fills as the bars so the export explains itself (#894).
+      out += '<rect x="12" y="32" width="26" height="10" rx="3" fill="' + svgEsc(c.bad) + '"/>' +
+        '<rect x="12" y="32" width="26" height="10" rx="3" fill="url(#hatch)"/>' +
+        '<text x="44" y="41" font-family="monospace" font-size="11" fill="' + svgEsc(c.muted) + '">hatched = significant gap</text>' +
+        '<rect x="232" y="32" width="26" height="10" rx="3" fill="' + svgEsc(c.good) + '"/>' +
+        '<text x="264" y="41" font-family="monospace" font-size="11" fill="' + svgEsc(c.muted) + '">plain = not significant</text>';
+    }
     if (model.signed) {
       out += '<line x1="' + (LABEL_W + TRACK_W / 2) + '" y1="' + (TOP - 4) + '" x2="' + (LABEL_W + TRACK_W / 2) +
         '" y2="' + (H - 8) + '" stroke="' + svgEsc(c.axis) + '"/>';
@@ -730,6 +744,7 @@
       tableHost.innerHTML = '<p class="section-note">Load ' + kind + ' results above to explore them.</p>';
       chartHost.innerHTML = ''; chartHost.hidden = true; chartNote.textContent = '';
       chartButtons.hidden = true;
+      keyEl.hidden = true;
       figureBlock.hidden = true;
       exportBtn.hidden = true;
       clearBtn.hidden = true;

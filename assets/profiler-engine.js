@@ -1246,7 +1246,9 @@
   function proxyNotes(h) {
     if (!h.low_expected) return '';
     return (h.p_method === 'fisher' || h.p_method === 'permutation')
-      ? ', small cells (' + h.p_method + ' exact p)' : ', small cells (p-value unreliable)';
+      ? ', small cells (' + h.p_method + ' exact p)'
+      : h.p_method === 'chi2-capped' ? ', small cells (too large for the exact fallback, p-value unreliable)'
+        : ', small cells (p-value unreliable)';
   }
 
   // " (m=N pairs)" - the family size an adjusted p was computed over (#821).
@@ -1342,6 +1344,8 @@
               hint.p_chi2 = pValue;
               hint.p_value = permutationPValue(rowIdx, colIdx, aKeys.length, bKeys.length);
               hint.p_method = 'permutation';
+            } else {
+              hint.p_method = 'chi2-capped';
             }
           }
         }

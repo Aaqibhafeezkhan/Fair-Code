@@ -1567,6 +1567,23 @@ def test_python_js_exact_p_values_agree_for_small_cell_tables(tmp_path):
     (py3,), (js3,) = proxy_hints(df3, dims, alpha=1.0, exact=True), _run_js_proxy_hints(csv3, alpha=1.0, exact=True)
     assert py3["p_method"] == js3["p_method"] == "permutation" and py3["p_value"] == js3["p_value"]
 
+    # sparse but over the 5000-row cap: chi-squared p kept and labelled (#885). Too many
+    # categories for detection, so the dimensions are handed to the engines directly.
+    rows = ["sex,race"] + [f"s{i // 2},r{i // 3}" for i in range(5100)]
+    csv4 = tmp_path / "capped.csv"
+    csv4.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    (py4,) = proxy_hints(pd.read_csv(csv4), dims, alpha=1.0, exact=True)
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "var t=E.parseCSV(require('fs').readFileSync(process.argv[2],'utf-8'));"
+        "process.stdout.write(JSON.stringify(E.proxyHints(t,[{name:'sex',kind:'sex'},{name:'race',kind:'race'}],1,null,null,undefined,undefined,true)));"
+    )
+    (js4,) = json.loads(subprocess.run(
+        ["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(csv4)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert py4["p_method"] == js4["p_method"] == "chi2-capped"
+    assert "p_chi2" not in js4 and py4["low_expected"] and js4["low_expected"]
+
     # off by default: no p_method key, p-values untouched
     assert "p_method" not in proxy_hints(df2, dims, alpha=1.0)[0]
     assert "p_method" not in _run_js_proxy_hints(csv2, alpha=1.0)[0]

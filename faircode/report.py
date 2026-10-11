@@ -94,6 +94,8 @@ def _hint_notes(h) -> str:
     if h.get("low_expected"):
         if h.get("p_method") in ("fisher", "permutation"):
             text += f", small cells ({h['p_method']} exact p)"
+        elif h.get("p_method") == "chi2-capped":
+            text += ", small cells (too large for the exact fallback, p-value unreliable)"
         else:
             text += ", small cells (p-value unreliable)"
     return text

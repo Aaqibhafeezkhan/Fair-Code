@@ -182,8 +182,9 @@ p-value of a `low_expected` hint: a 2x2 table gets Fisher's exact test (two-side
 `scipy.stats.fisher_exact`), a larger table a seeded Monte-Carlo permutation p-value - 1000 shuffles
 of the column labels with the `mulberry32` PRNG (seed 42, Fisher-Yates), `(1 + hits) / 1001`, so both
 engines return the identical number (the statistic is `sum(o^2/e) - n` over occupied cells, so it is
-cheap on sparse tables, #886); tables over 5000 observations keep the chi-squared p. Every
-hint then carries `p_method` (`chi2`, `fisher` or `permutation`) and a replaced p-value keeps the
+cheap on sparse tables, #886); a small-cell table over 5000 observations keeps the chi-squared p and
+is marked `chi2-capped` (#885), noted "too large for the exact fallback". Every
+hint then carries `p_method` (`chi2`, `chi2-capped`, `fisher` or `permutation`) and a replaced p-value keeps the
 original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by default.
 
 **Family size (#821).** Every hint also carries `n_tests`, the number of pairs actually tested

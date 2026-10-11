@@ -457,6 +457,19 @@ def test_normalize_key_text_composes_unicode_and_folds_case():
     assert n("  0042 ") == "42"
 
 
+def test_exact_marks_small_cell_tables_over_the_row_cap_as_chi2_capped():
+    # #885: sparse and too big for the permutation fallback, so the chi-squared p stays
+    # but the hint says why.
+    from faircode.proxy import PERMUTATION_MAX_ROWS
+    from faircode.report import _hint_notes
+    n = PERMUTATION_MAX_ROWS + 100
+    df = pd.DataFrame({"sex": [f"s{i // 2}" for i in range(n)], "race": [f"r{i // 3}" for i in range(n)]})
+    dims = [{"name": "sex", "kind": "sex"}, {"name": "race", "kind": "race"}]
+    (h,) = proxy_hints(df, dims, alpha=1.0, exact=True)
+    assert h["low_expected"] and h["p_method"] == "chi2-capped" and "p_chi2" not in h
+    assert "too large for the exact fallback" in _hint_notes(h)
+
+
 def test_permutation_p_value_matches_the_scalar_mulberry_reference():
     # #886: the vectorised PRNG block and sparse statistic must equal a plain-loop reference.
     import random

@@ -386,6 +386,10 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
                         hint["p_chi2"] = float(p_value)
                         hint["p_value"] = permutation_p_value(row_idx, col_idx, ct.shape[0], ct.shape[1])
                         hint["p_method"] = "permutation"
+                    else:
+                        # Too large for the permutation fallback: keep the chi-squared
+                        # p-value but say why it was not replaced (#885).
+                        hint["p_method"] = "chi2-capped"
             tested.append(hint)
     for h in tested:
         h["n_tests"] = len(tested)

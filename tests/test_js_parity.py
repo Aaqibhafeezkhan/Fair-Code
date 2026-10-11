@@ -521,6 +521,49 @@ def test_keywords_textarea_is_wired_into_both_web_views():
     for name in ("profiler-ui.js", "profiler-compare.js"):
         js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
         assert "[data-opt-json]" in js and "JSON.parse(raw)" in js
+    # #889: a role=alert message linked to each textarea, filled by setKeywordsError.
+    for box, note in (("keywordsInput", "keywordsError"), ("compareKeywordsInput", "compareKeywordsError")):
+        assert f'aria-describedby="{note}"' in html and f'id="{note}" role="alert"' in html
+
+
+def test_keywords_helpers_validate_and_explain_errors():
+    """#889: the real validation helpers of both views, run in node against a stub DOM."""
+    script = r"""
+    var fs=require('fs');
+    require(process.argv[1]);var E=globalThis.FairCodeProfiler;
+    var out={};
+    process.argv.slice(2).forEach(function(file){
+      var src=fs.readFileSync(file,'utf-8');
+      var helpers=src.slice(src.indexOf('function setKeywordsError'),src.indexOf('function resetThresholdInputs'));
+            var note={hidden:true,textContent:''};
+      var document={getElementById:function(id){return id==='n'?note:null;}};
+      var attrs={};
+      var area={getAttribute:function(k){return k==='aria-describedby'?'n':attrs[k]||null;},
+        setAttribute:function(k,v){attrs[k]=v;},removeAttribute:function(k){delete attrs[k];}};
+      var api=new Function('E','document','area',helpers+
+        ';return {check:checkKeywordsText,err:setKeywordsError};');
+      var h=api(E,document,area),r={};
+      r.ok=h.check('{"sex":["sesso"]}'); r.empty=h.check('');
+      r.badJson=h.check('{"sex": [').error;
+      r.unknown=h.check('{"colour":["x"]}').error;
+      r.twoWords=h.check('{"sex":["two words"]}').error;
+      h.err(area,'boom'); r.shown=[attrs['aria-invalid'],note.hidden,note.textContent];
+      h.err(area,''); r.hidden=[attrs['aria-invalid']||null,note.hidden,note.textContent];
+      out[file.split('/').pop()]=r;
+    });
+    process.stdout.write(JSON.stringify(out));
+    """
+    done = subprocess.run(
+        ["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"),
+         str(REPO_ROOT / "assets" / "profiler-ui.js"), str(REPO_ROOT / "assets" / "profiler-compare.js")],
+        capture_output=True, text=True, encoding="utf-8", check=True)
+    results = json.loads(done.stdout)
+    assert set(results) == {"profiler-ui.js", "profiler-compare.js"}
+    for r in results.values():
+        assert r["ok"] == {"value": {"sex": ["sesso"]}} and r["empty"] == {"empty": True}
+        assert r["badJson"].startswith("Not valid JSON")
+        assert "unknown key" in r["unknown"] and "single word" in r["twoWords"]
+        assert r["shown"] == ["true", False, "boom"] and r["hidden"] == [None, True, ""]
 
 
 def test_python_js_profiler_parity_with_overrides_cross_and_thresholds(tmp_path):

@@ -281,8 +281,9 @@
                    step="1" min="1900" placeholder="e.g. 2026" inputmode="numeric">
           </label>
           <label class="keywords-label">Extra column-name keywords (<code>--keywords</code>, JSON)
-            <textarea class="threshold-input keywords-input" id="keywordsInput" data-opt-json="keywords" rows="2"
+            <textarea class="threshold-input keywords-input" id="keywordsInput" data-opt-json="keywords" rows="2" aria-describedby="keywordsError"
                       spellcheck="false" placeholder='{"sex": ["sesso"], "age": ["eta"]}'></textarea>
+            <span class="keywords-error" id="keywordsError" role="alert" hidden></span>
           </label>
         </div>
       </details>
@@ -435,8 +436,9 @@
                    step="1" min="1900" placeholder="e.g. 2026" inputmode="numeric">
           </label>
           <label class="keywords-label">Extra column-name keywords (<code>--keywords</code>, JSON)
-            <textarea class="threshold-input keywords-input" id="compareKeywordsInput" data-opt-json="keywords" rows="2"
+            <textarea class="threshold-input keywords-input" id="compareKeywordsInput" data-opt-json="keywords" rows="2" aria-describedby="compareKeywordsError"
                       spellcheck="false" placeholder='{"sex": ["sesso"], "age": ["eta"]}'></textarea>
+            <span class="keywords-error" id="compareKeywordsError" role="alert" hidden></span>
           </label>
         </div>
       </details>

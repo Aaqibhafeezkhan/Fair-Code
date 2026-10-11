@@ -234,6 +234,23 @@
   }
 
 
+  // Names the problem under the textarea (role=alert, linked by aria-describedby) as well as
+  // marking it invalid; an empty message clears both (#889).
+  function setKeywordsError(area, message) {
+    var note = document.getElementById(area.getAttribute('aria-describedby') || '');
+    if (message) area.setAttribute('aria-invalid', 'true'); else area.removeAttribute('aria-invalid');
+    if (note) { note.textContent = message || ''; note.hidden = !message; }
+  }
+  // Parses and validates the textarea text. Returns {empty:true}, {value:parsed} or
+  // {error:message}; the engine's own vocabulary check supplies the rejection text.
+  function checkKeywordsText(raw) {
+    if (raw === '') return { empty: true };
+    var parsed;
+    try { parsed = JSON.parse(raw); } catch (err) { return { error: 'Not valid JSON: ' + err.message }; }
+    try { E.normalizeKeywords(parsed); } catch (err) { return { error: err.message }; }
+    return { value: parsed };
+  }
+
   function resetThresholdInputs() {
     thresholdInputs.forEach(function (input) {
       input.value = '';
@@ -243,7 +260,7 @@
       Array.prototype.forEach.call(thresholdControls.querySelectorAll('[data-opt-json]'), function (area) {
         area.value = '';
         area.classList.remove('overridden');
-        area.removeAttribute('aria-invalid');
+        setKeywordsError(area, '');
       });
     }
   }
@@ -272,18 +289,15 @@
     thresholdControls ? thresholdControls.querySelectorAll('[data-opt-json]') : []
   ).forEach(function (area) {
     area.addEventListener('input', function () {
-      var opt = area.dataset.optJson, raw = area.value.trim();
-      var hadPrevious = Object.prototype.hasOwnProperty.call(currentOpts, opt);
-      var previous = currentOpts[opt];
-      if (raw === '') {
+      var opt = area.dataset.optJson;
+      var checked = checkKeywordsText(area.value.trim());
+      if (checked.error) { setKeywordsError(area, checked.error); return; }
+      setKeywordsError(area, '');
+      if (checked.empty) {
         delete currentOpts[opt];
         area.classList.remove('overridden');
-        area.removeAttribute('aria-invalid');
       } else {
-        var parsed;
-        try { parsed = JSON.parse(raw); } catch (err) { area.setAttribute('aria-invalid', 'true'); return; }
-        area.removeAttribute('aria-invalid');
-        currentOpts[opt] = parsed;
+        currentOpts[opt] = checked.value;
         area.classList.add('overridden');
       }
       maybeCompare(false);

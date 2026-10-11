@@ -1215,6 +1215,33 @@ def test_web_compare_csv_lists_one_sided_dimensions_like_python(tmp_path):
     assert section in py.replace("\r\n", "\n")
 
 
+def test_web_compare_csv_lists_rename_suggestions_like_python(tmp_path):
+    """#896: possible_renames gets a dimension_a,dimension_b,overlap section after the
+    present_in one in both writers (and no section when there are none)."""
+    from faircode.report import compare_to_csv
+
+    path_a = tmp_path / "a.csv"
+    path_a.write_text("sex,race\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
+    path_b = tmp_path / "b.csv"
+    path_b.write_text("sex,ethnicity\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
+
+    src = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
+    csvs = src[src.index("var csvRow = E.csvRow"):src.index("async function downloadCompareCsvReport")]
+    script = (
+        "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;" + csvs +
+        "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"
+        "var pa=E.profile(load(process.argv[2]),{},{}),pb=E.profile(load(process.argv[3]),{},{});"
+        "process.stdout.write(buildCompareCsvReport(E.compare(pa,pb,'a.csv','b.csv')));"
+    )
+    web = subprocess.run(
+        ["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(path_a), str(path_b)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    py = compare_to_csv(compare(profile(pd.read_csv(path_a)), profile(pd.read_csv(path_b)), "a.csv", "b.csv"))
+    section = "\n\ndimension,present_in\nrace,a_only\nethnicity,b_only\n\ndimension_a,dimension_b,overlap\nrace,ethnicity,1\n\nflag\n"
+    assert section in web.replace("\r\n", "\n")
+    assert section in py.replace("\r\n", "\n")
+
+
 def test_compare_view_download_csv_and_proxy_controls_are_wired():
     """#789: the compare view's new controls exist in profiler.html and are
     bound in profiler-compare.js; renaming an id in either file would

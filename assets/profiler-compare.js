@@ -724,6 +724,10 @@
       cmp.removed_dimensions.forEach(function (n) { out += csvRow([n, 'a_only']); });
       cmp.added_dimensions.forEach(function (n) { out += csvRow([n, 'b_only']); });
     }
+    if (cmp.possible_renames && cmp.possible_renames.length) {
+      out += csvRow([]) + csvRow(['dimension_a', 'dimension_b', 'overlap']);
+      cmp.possible_renames.forEach(function (r) { out += csvRow([r.a, r.b, r.overlap]); });
+    }
     out += csvRow([]) + csvRow(['flag']);
     cmp.flags.forEach(function (f) { out += csvRow([f]); });
     [['proxy_hints_a', 'A'], ['proxy_hints_b', 'B']].forEach(function (k) {

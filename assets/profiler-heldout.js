@@ -84,12 +84,15 @@
         var normalize = !!inputs[3].checked;
         if (!file && !column) continue;
         if (!file || !column) throw new Error('each held-out row needs both a file and a column name');
-        var data;
+        var data, encoding;
         if (/\.xlsx$/i.test(file.name)) data = await file.arrayBuffer();
         else if (getEncoding && window.FairCodeProfiler && window.FairCodeProfiler.decodeText) {
-          data = window.FairCodeProfiler.decodeText(await file.arrayBuffer(), getEncoding()).text;
+          // `encoding` is the explicit pick or the sniffed BOM (null for plain UTF-8), recorded in provenance (#891).
+          var decoded = window.FairCodeProfiler.decodeText(await file.arrayBuffer(), getEncoding());
+          data = decoded.text;
+          encoding = decoded.encoding || undefined;
         } else data = await file.text();
-        specs.push({ name: file.name, column: column, key: key || undefined, normalize: (key && normalize) || undefined, data: data, file: file });
+        specs.push({ name: file.name, column: column, key: key || undefined, normalize: (key && normalize) || undefined, encoding: encoding, data: data, file: file });
       }
       return specs;
     }

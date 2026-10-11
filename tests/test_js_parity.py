@@ -1887,3 +1887,14 @@ def test_web_reference_file_honours_the_encoding_picker():
                           capture_output=True, text=True, encoding="utf-8", check=True)
     out = json.loads(done.stdout)
     assert "Café" in out["picker"] and "Café" not in out["utf8"]
+
+
+def test_web_held_out_provenance_records_the_encoding():
+    """#891: each held-out spec carries the decoded encoding and both views copy it into
+    the entry after the digest, like provenance.held_out_entries()."""
+    held = (REPO_ROOT / "assets" / "profiler-heldout.js").read_text(encoding="utf-8")
+    assert "encoding = decoded.encoding || undefined" in held and "encoding: encoding" in held
+    for name in ("profiler-ui.js", "profiler-compare.js"):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        body = js.split("async function heldOutEntries")[1].split("async function build")[0]
+        assert body.index("sha256_note") < body.index("entry.encoding = specs[i].encoding")

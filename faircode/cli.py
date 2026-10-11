@@ -164,7 +164,8 @@ def _profile_provenance(args, opts, overrides, df=None):
     provenance = build_provenance(digests, _resolve_opts(opts), overrides,
                                   held_out=[("proxy_hints_with", args.proxy_hints_with, columns)],
                                   encodings={"dataset_hash": enc} if enc else None,
-                                  key_normalize=args.proxy_key_normalize)
+                                  key_normalize=args.proxy_key_normalize,
+                                  held_out_encoding=getattr(args, "encoding", None))
     if args.sample:
         provenance["dataset_hash"] = "sha256:" + hashlib.sha256(
             build_sample_csv().encode("utf-8")).hexdigest()
@@ -189,7 +190,8 @@ def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
         held_out=[("proxy_hints_with_a", args.proxy_hints_with_a, cols_a),
                   ("proxy_hints_with_b", args.proxy_hints_with_b, cols_b)],
         encodings=encs if encs else None,
-        key_normalize=args.proxy_key_normalize)
+        key_normalize=args.proxy_key_normalize,
+        held_out_encoding=enc)
 
 
 def _write_csv_export(path, text, bom=False):

@@ -260,3 +260,26 @@ def test_build_provenance_places_encoding_beside_dataset_hash(dataset):
     keys = list(prov)
     assert keys.index("dataset_hash") + 1 == keys.index("encoding")
 
+
+
+def test_held_out_entries_record_the_encoding_like_the_dataset(dataset, tmp_path, capsys):
+    # #891: explicit choice, sniffed BOM, or nothing for plain UTF-8.
+    pytest.importorskip("scipy")
+    held = tmp_path / "dropped.csv"
+    held.write_text("race\nw\nb\nw\n", encoding="utf-8")
+    assert main(["profile", str(dataset), "--proxy-hints", "--proxy-hints-with", f"{held}=race",
+                 "--encoding", "latin-1", "--json"]) == 0
+    entry = json.loads(capsys.readouterr().out)["provenance"]["proxy_hints_with"][0]
+    assert entry["encoding"] == "latin-1"
+    assert list(entry) == ["path", "column", "sha256", "encoding"]
+
+    assert main(["profile", str(dataset), "--proxy-hints", "--proxy-hints-with", f"{held}=race",
+                 "--json"]) == 0
+    assert "encoding" not in json.loads(capsys.readouterr().out)["provenance"]["proxy_hints_with"][0]
+
+    bom = tmp_path / "bom.csv"
+    bom.write_bytes(b"\xef\xbb\xbf" + b"race\nw\nb\nw\n")
+    assert main(["profile", str(dataset), "--proxy-hints", "--proxy-hints-with", f"{bom}=race",
+                 "--json"]) == 0
+    entry = json.loads(capsys.readouterr().out)["provenance"]["proxy_hints_with"][0]
+    assert entry["encoding"] == "utf-8-sig"

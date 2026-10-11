@@ -38,6 +38,9 @@ _CHUNK = 1024 * 1024
 # into `params` would be noise.
 _OPAQUE_PARAMS = ("reference",)
 
+# Formats whose bytes carry no text encoding to record.
+_BINARY_SUFFIXES = (".xlsx", ".xls", ".parquet")
+
 
 def file_digest(path):
     """Return ("sha256:<hex>", None) for a readable file, or (None, reason).
@@ -75,12 +78,15 @@ def public_params(resolved: dict) -> dict:
     return {k: v for k, v in sorted(resolved.items()) if k not in _OPAQUE_PARAMS}
 
 
-def held_out_entries(specs, profiled_columns=None, key_normalize=False) -> list:
+def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding=None) -> list:
     """Provenance entries for repeated PATH=COLUMN held-out specs (#811).
 
     One {path, column, sha256} per spec (plus `key` when a join key was given), in the order given; an unreadable path
     (or stdin) gets a null `sha256` and a `sha256_note`, like every other digest.
     `key_normalize` adds `key_normalize: true` to entries that have a join key (#859).
+    `encoding` is the explicit --encoding choice; each text file's entry records it, or
+    its own sniffed byte-order mark, and omits it for plain UTF-8 and for binary
+    workbooks/Parquet, the same rule as the dataset's `encoding` (#891).
     `profiled_columns` is forwarded to split_held_out_spec so a colon in a
     column name is resolved the same way as the live parse (#869).
     """
@@ -95,6 +101,10 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False) -> list:
             if key_normalize:
                 entry["key_normalize"] = True
         _add_digest(entry, "sha256", path)
+        if not str(path).lower().endswith(_BINARY_SUFFIXES):
+            enc = sniff_effective_encoding(path, encoding)
+            if enc:
+                entry["encoding"] = enc
         entries.append(entry)
     return entries
 
@@ -120,7 +130,7 @@ def sniff_effective_encoding(path: str | None, explicit_encoding: str | None = N
 
 
 def build(digests=(), params=None, overrides=None, held_out=(), encodings=None,
-          key_normalize=False) -> dict:
+          key_normalize=False, held_out_encoding=None) -> dict:
     """Assemble the provenance block attached to an exported result.
 
     `digests` is a sequence of (field_name, path) pairs, emitted in the order
@@ -138,7 +148,8 @@ def build(digests=(), params=None, overrides=None, held_out=(), encodings=None,
     export can be tied to the files that produced them. Omitted when empty, so
     a run without held-out files keeps its existing shape. The optional
     profiled_columns list makes colon-in-column-name resolution match the
-    live parse (#869).
+    live parse (#869). `held_out_encoding` is the explicit encoding the held-out
+    files were read with, recorded per entry (#891).
     """
     block = {
         "faircode_version": __version__,
@@ -158,5 +169,5 @@ def build(digests=(), params=None, overrides=None, held_out=(), encodings=None,
             field, specs = item
             columns = None
         if specs:
-            block[field] = held_out_entries(specs, columns, key_normalize)
+            block[field] = held_out_entries(specs, columns, key_normalize, held_out_encoding)
     return block

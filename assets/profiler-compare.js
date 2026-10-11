@@ -899,6 +899,7 @@
       }
       entry.sha256 = h.digest;
       if (h.note !== null) entry.sha256_note = h.note;
+      if (specs[i].encoding) entry.encoding = specs[i].encoding;
       out.push(entry);
     }
     return out;

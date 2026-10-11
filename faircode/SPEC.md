@@ -515,7 +515,10 @@ edit.
   files were given to `--proxy-hints-with` (section 3; the web proxy results; MCP
   `compare_datasets`'s `held_out_with_a`/`_b`): a list of `{ "path", "column", "sha256" }` (plus `"key"` when a join key was given), one per
   file in the order given, with `sha256` hashed like `dataset_hash` and a `sha256_note` when it is
-  `null`. It ties the proxy results in the same export to the files that produced them (#811).
+  `null`. A text file's entry also carries `"encoding"` after its digest - the explicit `--encoding` /
+  picker choice, else its own sniffed BOM - by the same rule as the dataset's `encoding`, omitted for
+  plain UTF-8 and for `.xlsx`/`.parquet` (#891). It ties the proxy results in the same export to the
+  files that produced them (#811).
 - **`<field>_note`** - present only when the matching digest is `null`, saying why the bytes were
   not available (stdin, an in-memory frame). An absent digest must not look like a present one, and
   must say why it is absent.

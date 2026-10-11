@@ -284,7 +284,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
             _resolve_opts(opts), overrides,
             held_out=[("proxy_hints_with_a", held_out_with_a, list(df_a.columns)),
                       ("proxy_hints_with_b", held_out_with_b, list(df_b.columns))] if proxy_hints else (),
-            encodings=encs if encs else None)
+            encodings=encs if encs else None, held_out_encoding=encoding)
         result = dict(result, provenance=provenance)
     return result
 
@@ -361,6 +361,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
             overrides=overrides,
             held_out=[("proxy_hints_with", held_out_with, list(df.columns))] if held_out_with else (),
             key_normalize=key_normalize,
+            held_out_encoding=encoding,
             encodings={"dataset_hash": enc} if enc else None,
         )
     return output

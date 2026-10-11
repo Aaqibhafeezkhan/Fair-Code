@@ -752,3 +752,17 @@ def test_proxy_hints_include_provenance_false_omits_the_block(tmp_path):
     result = _proxy_hints_impl(str(p), include_provenance=False)
     assert "provenance" not in result
 
+
+
+@requires_scipy
+def test_proxy_hints_provenance_records_held_out_encoding(tmp_path):
+    # #891
+    path = tmp_path / "a.csv"
+    path.write_text("sex,occupation\n" + "\n".join(
+        f"{'m' if i % 2 else 'f'},{'x' if i % 2 else 'y'}" for i in range(40)) + "\n", encoding="utf-8")
+    held = tmp_path / "h.csv"
+    held.write_text("race\n" + "\n".join("ab"[i % 2] for i in range(40)) + "\n", encoding="utf-8")
+    result = _proxy_hints_impl(str(path), held_out_with=[f"{held}=race"], encoding="latin-1")
+    assert result["provenance"]["proxy_hints_with"][0]["encoding"] == "latin-1"
+    plain = _proxy_hints_impl(str(path), held_out_with=[f"{held}=race"])
+    assert "encoding" not in plain["provenance"]["proxy_hints_with"][0]

@@ -299,11 +299,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--proxy-correction", choices=("bonferroni", "holm"), default=None,
                    help="multiple-comparison correction across all tested pairs for "
                         "--proxy-hints (default: none; adds p_adjusted to each hint)")
-    p.add_argument("--proxy-hints-with", action="append", metavar="PATH=COLUMN[:KEY]",
+    p.add_argument("--proxy-hints-with", action="append", metavar="PATH=COLUMN[:KEY][@ENCODING]",
                    help="also test proxy_hints against a column already dropped from "
                         "the dataset; PATH's rows must align 1:1 with the profiled "
                         "dataset, or be joined on a key column present in both files "
-                        "with :KEY (repeatable, needs --proxy-hints)")
+                         "with :KEY; append @ENCODING to override --encoding for this file "
+                         "(repeatable, needs --proxy-hints)")
     p.add_argument("--proxy-exact", action="store_true",
                    help="for proxy hints whose chi-squared table has small expected cells, "
                         "use Fisher's exact test (2x2) or a seeded permutation p-value "
@@ -342,7 +343,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="treat whole numbers from 1900 up to YEAR in an age column as "
                         "birth years and convert them to ages as of YEAR (default: off)")
     p.add_argument("--encoding", metavar="NAME",
-                   help="text encoding of the dataset (and any held-out/reference files), "
+                   help="text encoding of the dataset, reference, and held-out files unless a "
+                        "held-out spec has its own @ENCODING suffix, "
                         "e.g. latin-1, cp1252, utf-16 (default: a UTF-8/16/32 byte-order "
                         "mark if present, else utf-8)")
     p.add_argument("--no-provenance", action="store_true",
@@ -374,13 +376,14 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--proxy-correction", choices=("bonferroni", "holm"), default=None,
                    help="multiple-comparison correction across all tested pairs for "
                         "--proxy-hints (default: none; adds p_adjusted to each hint)")
-    c.add_argument("--proxy-hints-with-a", action="append", metavar="PATH=COLUMN[:KEY]",
+    c.add_argument("--proxy-hints-with-a", action="append", metavar="PATH=COLUMN[:KEY][@ENCODING]",
                    help="also test dataset A's proxy_hints against a column already "
                         "dropped from A; PATH's rows must align 1:1 with csv_a, or be "
-                        "joined on a key column with :KEY (repeatable, needs --proxy-hints)")
-    c.add_argument("--proxy-hints-with-b", action="append", metavar="PATH=COLUMN[:KEY]",
+                         "joined on a key column with :KEY; append @ENCODING to override --encoding "
+                         "for this file (repeatable, needs --proxy-hints)")
+    c.add_argument("--proxy-hints-with-b", action="append", metavar="PATH=COLUMN[:KEY][@ENCODING]",
                    help="same as --proxy-hints-with-a, for dataset B (rows must align "
-                        "1:1 with csv_b, or be joined with :KEY)")
+                         "1:1 with csv_b, or be joined with :KEY; accepts a per-file @ENCODING suffix)")
     c.add_argument("--map", action="append", metavar="COL=KIND",
                    help="force a column's dimension when auto-detection misses it "
                         "(applied to both datasets); KIND is one of " +

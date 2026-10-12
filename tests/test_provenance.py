@@ -283,3 +283,10 @@ def test_held_out_entries_record_the_encoding_like_the_dataset(dataset, tmp_path
                  "--json"]) == 0
     entry = json.loads(capsys.readouterr().out)["provenance"]["proxy_hints_with"][0]
     assert entry["encoding"] == "utf-8-sig"
+
+
+def test_held_out_entry_records_its_per_file_encoding_over_the_global_one(dataset):
+    from faircode.provenance import held_out_entries
+
+    (entry,) = held_out_entries([f"{dataset}=race@utf-8"], encoding="latin-1")
+    assert entry["encoding"] == "utf-8"

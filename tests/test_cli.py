@@ -25,6 +25,28 @@ requires_scipy = pytest.mark.skipif(
 )
 
 
+@requires_scipy
+def test_profile_held_out_file_can_override_the_dataset_encoding(tmp_path, capsys):
+    dataset = tmp_path / "dataset-latin1.csv"
+    held = tmp_path / "held-utf8.csv"
+    dataset.write_bytes(
+        ("sex,city\n" + "M,Café\nF,Thé\n" * 20).encode("latin-1")
+    )
+    held.write_bytes(
+        ("ráce\n" + "A\nB\n" * 20).encode("utf-8")
+    )
+
+    assert main([
+        "profile", str(dataset), "--encoding", "latin-1", "--proxy-hints",
+        "--proxy-hints-with", f"{held}=ráce@utf-8", "--json",
+    ]) == 0
+
+    provenance = json.loads(capsys.readouterr().out)["provenance"]
+    assert provenance["encoding"] == "latin-1"
+    assert provenance["proxy_hints_with"][0]["column"] == "ráce"
+    assert provenance["proxy_hints_with"][0]["encoding"] == "utf-8"
+
+
 def test_profile_fail_under_returns_nonzero_and_explains_score(tmp_path, capsys):
     path = tmp_path / "skewed.csv"
     path.write_text("sex\n" + "M\n" * 80 + "F\n" * 20, encoding="utf-8")

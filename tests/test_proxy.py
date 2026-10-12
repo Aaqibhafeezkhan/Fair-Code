@@ -239,6 +239,43 @@ def test_held_out_without_key_still_requires_equal_row_counts():
         parse_held_out_specs(["h.csv=race"], df, lambda _p: held)
 
 
+def test_held_out_encoding_suffix_overrides_the_shared_reader_encoding():
+    from faircode.proxy import parse_held_out_specs, split_held_out_encoding
+
+    df = pd.DataFrame({"id": [1, 2]})
+    held = pd.DataFrame({"race": ["Café", "Thé"]})
+    seen = []
+
+    def read(_path, encoding="latin-1"):
+        seen.append(encoding)
+        return held
+
+    assert split_held_out_encoding("h.csv=race@utf-8") == ("h.csv=race", "utf-8")
+    out = parse_held_out_specs(["h.csv=race@utf-8"], df, read)
+    assert list(out["race"]) == ["Café", "Thé"]
+    assert seen == ["utf-8"]
+
+
+def test_held_out_encoding_composes_with_key_normalize_marker():
+    from faircode.proxy import parse_held_out_specs
+
+    df = pd.DataFrame({"id": ["A1", "B2"]})
+    held = pd.DataFrame({"id": [" a1 ", "b2"], "race": ["x", "y"]})
+    out = parse_held_out_specs(
+        ["h.csv=race:id~@utf-8"],
+        df,
+        lambda _path, encoding=None: held,
+    )
+    assert list(out["race"]) == ["x", "y"]
+
+
+def test_held_out_encoding_rejects_unknown_codec():
+    from faircode.proxy import split_held_out_encoding
+
+    with pytest.raises(ValueError, match="unknown held-out encoding"):
+        split_held_out_encoding("h.csv=race@definitely-not-a-codec")
+
+
 @pytest.mark.parametrize("held_override, df_override, message", [
     ({"id": [1, 1, 2, 3, 4], "race": list("ABABA")}, None, "duplicate"),
     ({"id": [1, 2], "race": list("AB")}, None, "no row for 2 key"),

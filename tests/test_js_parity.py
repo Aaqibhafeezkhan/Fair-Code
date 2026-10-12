@@ -1757,7 +1757,7 @@ def test_held_out_control_adds_rows_collects_specs_and_validates():
       inputs(1)[1].value='orphan';
       try{await ctl.collect();}catch(e){out.half=e.message;}
       inputs(1)[1].value='';
-      container.children[2].children[4].click();       // remove row 3
+      container.children[2].children[5].click();       // remove row 3
       out.rows_after_remove=container.children.length;
       ctl.reset();
       out.rows_after_reset=container.children.length;
@@ -1776,6 +1776,40 @@ def test_held_out_control_adds_rows_collects_specs_and_validates():
     assert "needs both a file and a column name" in out["half"]
     assert out["rows_after_remove"] == 2
     assert out["rows_after_reset"] == 1 and out["specs_after_reset"] == []
+
+
+def test_held_out_control_has_a_per_row_encoding_override():
+    """#914: each held-out row can override the dataset encoding without changing siblings."""
+    script = r"""
+    function El(tag){this.tag=tag;this.children=[];this.listeners={};this.value='';this.files=[];
+      this.attrs={};}
+    El.prototype.appendChild=function(c){this.children.push(c);c.parent=this;return c;};
+    El.prototype.removeChild=function(c){this.children.splice(this.children.indexOf(c),1);};
+    El.prototype.setAttribute=function(k,v){this.attrs[k]=v;};
+    El.prototype.addEventListener=function(t,f){(this.listeners[t]=this.listeners[t]||[]).push(f);};
+    El.prototype.querySelectorAll=function(sel){var out=[];(function walk(n){n.children.forEach(function(c){
+      if(c.tag===sel)out.push(c);walk(c);});})(this);return out;};
+    global.document={createElement:function(t){return new El(t);}};
+    global.window=global;
+    var seen=[];
+    global.FairCodeProfiler={decodeText:function(_data,encoding){seen.push(encoding);
+      return {text:'race\nCafé\n',encoding:encoding};}};
+    require(process.argv[1]);
+    var container=new El('div'),addBtn=new El('button');
+    var ctl=FairCodeHeldOut.init(container,addBtn,'held-out',function(){return 'latin-1';});
+    var inputs=container.children[0].querySelectorAll('input');
+    var select=container.children[0].querySelectorAll('select')[0];
+    inputs[0].files=[{name:'held.csv',arrayBuffer:async function(){return 'bytes';}}];
+    inputs[1].value='race';select.value='utf-8';
+    ctl.collect().then(function(specs){process.stdout.write(JSON.stringify({seen:seen,spec:specs[0]}));});
+    """
+    done = subprocess.run(
+        ["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-heldout.js")],
+        capture_output=True, text=True, encoding="utf-8", check=True)
+    out = json.loads(done.stdout)
+    assert out["seen"] == ["utf-8"]
+    assert out["spec"]["encoding"] == "utf-8"
+    assert out["spec"]["data"] == "race\nCafé\n"
 
 
 

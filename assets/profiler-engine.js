@@ -1056,11 +1056,13 @@
   // Opt-in key normalisation: trim, compose (NFC), case-fold, drop leading zeros of an
   // all-digit value. Mirrors proxy.py normalize_key_text (#859, #884); toLowerCase plus
   // the few folds Python's casefold() adds (sharp s, final sigma, long s) stands in for it.
+  // Same trimmed set as proxy.py KEY_TRIM_CHARS (#897): not String.prototype.trim(), which differs.
+  var KEY_TRIM = /^[\t\n\v\f\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\t\n\v\f\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$/g;
   function foldKeyCase(text) {
     return text.toLowerCase().replace(/\u00df/g, 'ss').replace(/\u03c2/g, '\u03c3').replace(/\u017f/g, 's');
   }
   function normalizeKeyText(value) {
-    var text = foldKeyCase(String(value).trim().normalize('NFC')).normalize('NFC');
+    var text = foldKeyCase(String(value).replace(KEY_TRIM, '').normalize('NFC')).normalize('NFC');
     if (/^[0-9]+$/.test(text)) text = text.replace(/^0+/, '') || '0';
     return text;
   }

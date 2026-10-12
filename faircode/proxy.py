@@ -249,12 +249,18 @@ def key_columns(key, columns):
 _DIGITS_ONLY = re.compile(r"[0-9]+")
 
 
+# The characters trimmed from both ends of a key: the Unicode White_Space set plus U+FEFF
+# (a BOM that survived in a first cell), spelled out so Python's str.strip() and JS's
+# String.prototype.trim() cannot drift apart (#897). The same list is in profiler-engine.js.
+KEY_TRIM_CHARS = "\t\n\v\f\r \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
+
+
 def normalize_key_text(value):
     """Opt-in key normalisation (#859, #884): trim, compose Unicode (NFC),
     case-fold (so `ß` equals `ss`), and drop leading zeros from an all-digit
     value, so ` A1`/`a1`, `0042`/`42`, `e` + U+0301 / `é` and `Straße`/`STRASSE`
     match. Mirrored by `normalizeKeyText` in assets/profiler-engine.js."""
-    text = unicodedata.normalize("NFC", unicodedata.normalize("NFC", str(value).strip()).casefold())
+    text = unicodedata.normalize("NFC", unicodedata.normalize("NFC", str(value).strip(KEY_TRIM_CHARS)).casefold())
     if _DIGITS_ONLY.fullmatch(text):
         text = text.lstrip("0") or "0"
     return text

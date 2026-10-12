@@ -1710,6 +1710,7 @@ def test_build_held_out_composite_and_normalised_keys_match_python(tmp_path):
         "out.ok=await E.buildHeldOut([{name:'h.csv',column:'race',key:'id+visit',normalize:true,data:held}],t);"
         "try{await E.buildHeldOut([{name:'h.csv',column:'race',key:'id+visit',data:held}],t)}catch(e){out.exact=e.message}"
         "out.norm=['  A01 ','a01','0042','000','x'].map(E.normalizeKeyText);"
+        "out.ws=['\\u001fa\\u001f','\\ufeffa\\ufeff','\\u0085a\\u0085','\\u00a0a\\u3000','\\u180ea'].map(E.normalizeKeyText);"
         "out.uni=['e\\u0301','\\u00e9','Stra\\u00dfe','STRASSE','\\u03a3\\u03a3','\\u03c3\\u03c2'].map(E.normalizeKeyText);"
         "process.stdout.write(JSON.stringify(out));})();"
     )
@@ -1721,6 +1722,8 @@ def test_build_held_out_composite_and_normalised_keys_match_python(tmp_path):
     assert "no row for" in out["exact"]
     from faircode.proxy import normalize_key_text
     assert out["norm"] == [normalize_key_text(v) for v in ["  A01 ", "a01", "0042", "000", "x"]] == ["a01", "a01", "42", "0", "x"]
+    spaced = ["\x1fa\x1f", "\ufeffa\ufeff", "\x85a\x85", "\xa0a\u3000", "\u180ea"]   # #897
+    assert out["ws"] == [normalize_key_text(v) for v in spaced] == ["\x1fa\x1f", "a", "a", "a", "\u180ea"]
     accented = ["e\u0301", "\u00e9", "Stra\u00dfe", "STRASSE", "\u03a3\u03a3", "\u03c3\u03c2"]
     assert out["uni"] == [normalize_key_text(v) for v in accented]
     assert out["uni"][0] == out["uni"][1] and out["uni"][2] == out["uni"][3]

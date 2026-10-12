@@ -75,7 +75,7 @@ function makeEl(id) {
 var ids = ['loadBundledBtn', 'benchDropzone', 'benchFileInput', 'benchError', 'benchStatus',
   'benchResults', 'benchFilters', 'significantOnlyInput', 'benchSummary', 'benchTable',
   'benchChart', 'benchChartNote', 'benchChartBlock', 'benchExportBtn', 'benchResetBtn',
-  'benchClearBtn', 'benchLegend', 'benchKey', 'benchChartButtons', 'benchChartSvgBtn',
+  'benchClearBtn', 'benchLegend', 'benchKey', 'benchKeySigText', 'benchChartButtons', 'benchChartSvgBtn',
   'benchChartPngBtn', 'benchFigureBlock', 'benchFigureImg'];
 var elements = {};
 ids.forEach(function (id) { elements[id] = makeEl(id); });
@@ -238,6 +238,27 @@ var results = {};
     toggle(false);                                  // fairness: off
     global.__tabButtons[2].click();
     results.summary_still_checked = !!elements.significantOnlyInput.checked;
+    process.stdout.write(JSON.stringify(results));
+    return;
+  }
+
+  if (process.argv[4] === 'summary-key') {
+    // #905: the Summary tab's key says significant in every model; fairness keeps "gap".
+    function pick2(field, value) {
+      var sel = createdSelects[field];
+      sel.value = value;
+      (sel._listeners.change || []).forEach(function (f) { f(); });
+    }
+    pick2('metric', 'demographic_parity_diff');
+    pick2('protected_attribute', 'race');
+    results.fairness_key = elements.benchKeySigText.textContent;
+    global.__tabButtons[2].click();
+    pick2('metric', 'demographic_parity_diff');
+    pick2('protected_attribute', 'race');
+    results.summary_key = elements.benchKeySigText.textContent;
+    lastBlob = null;
+    elements.benchChartSvgBtn.click();
+    results.summary_svg = lastBlob;
     process.stdout.write(JSON.stringify(results));
     return;
   }
@@ -741,3 +762,12 @@ def test_benchmark_dashboard_chart_has_a_key_for_the_hatched_bars():
     html = (REPO_ROOT / "benchmark.html").read_text(encoding="utf-8")
     assert 'id="benchKey"' in html and "hatched = significant gap" in html and "plain = not significant" in html
     assert ".bench-key-swatch" in (REPO_ROOT / "assets" / "benchmark.css").read_text(encoding="utf-8")
+
+
+def test_benchmark_dashboard_key_wording_follows_the_tab():
+    """#905: Summary-tab hatching means significant in every model, on screen and in the export."""
+    r = _run_dom_stub("", mode="summary-key")
+    assert r["fairness_key"] == "hatched = significant gap (p < 0.05)"
+    assert r["summary_key"] == "hatched = significant in every model"
+    assert "hatched = significant in every model" in r["summary_svg"]
+    assert "significant gap" not in r["summary_svg"]

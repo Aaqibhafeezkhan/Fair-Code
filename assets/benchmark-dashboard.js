@@ -50,6 +50,7 @@
   var clearBtn = document.getElementById('benchClearBtn');
   var legendEl = document.getElementById('benchLegend');
   var keyEl = document.getElementById('benchKey');
+  var keySigText = document.getElementById('benchKeySigText');
   var chartButtons = document.getElementById('benchChartButtons');
   var chartSvgBtn = document.getElementById('benchChartSvgBtn');
   var chartPngBtn = document.getElementById('benchChartPngBtn');
@@ -465,6 +466,8 @@
       signed: signed,
       // Only fairness/summary bars carry a significance flag; performance bars are all neutral.
       keyed: kind !== 'performance',
+      // On the Summary tab a bar is only flagged when significant in every model (#905).
+      keyLabel: kind === 'summary' ? 'hatched = significant in every model' : 'hatched = significant gap (p < 0.05)',
       bars: sorted.map(function (r) {
         var mag = r.value === null ? 0 : Math.abs(r.value) / maxAbs * (signed ? 50 : 100);
         var neg = r.value !== null && r.value < 0;
@@ -497,6 +500,7 @@
     if (!rows.length) { chartHost.innerHTML = ''; chartButtons.hidden = true; keyEl.hidden = true; return; }
     chartButtons.hidden = false;
     keyEl.hidden = kind === 'performance';
+    if (keySigText) keySigText.textContent = chartModel(kind, rows).keyLabel;
 
     var model = chartModel(kind, rows);
     chartHost.innerHTML = model.bars.map(function (bar) {
@@ -571,9 +575,9 @@
       // Two-item key, drawn with the same fills as the bars so the export explains itself (#894).
       out += '<rect x="12" y="32" width="26" height="10" rx="3" fill="' + svgEsc(c.bad) + '"/>' +
         '<rect x="12" y="32" width="26" height="10" rx="3" fill="url(#hatch)"/>' +
-        '<text x="44" y="41" font-family="monospace" font-size="11" fill="' + svgEsc(c.muted) + '">hatched = significant gap</text>' +
-        '<rect x="232" y="32" width="26" height="10" rx="3" fill="' + svgEsc(c.good) + '"/>' +
-        '<text x="264" y="41" font-family="monospace" font-size="11" fill="' + svgEsc(c.muted) + '">plain = not significant</text>';
+        '<text x="44" y="41" font-family="monospace" font-size="11" fill="' + svgEsc(c.muted) + '">' + svgEsc(model.keyLabel) + '</text>' +
+        '<rect x="332" y="32" width="26" height="10" rx="3" fill="' + svgEsc(c.good) + '"/>' +
+        '<text x="364" y="41" font-family="monospace" font-size="11" fill="' + svgEsc(c.muted) + '">plain = not significant</text>';
     }
     if (model.signed) {
       out += '<line x1="' + (LABEL_W + TRACK_W / 2) + '" y1="' + (TOP - 4) + '" x2="' + (LABEL_W + TRACK_W / 2) +

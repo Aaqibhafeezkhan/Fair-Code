@@ -784,3 +784,17 @@ def test_proxy_hints_provenance_records_held_out_encoding(tmp_path):
     assert result["provenance"]["proxy_hints_with"][0]["encoding"] == "latin-1"
     plain = _proxy_hints_impl(str(path), held_out_with=[f"{held}=race"])
     assert "encoding" not in plain["provenance"]["proxy_hints_with"][0]
+
+
+@requires_scipy
+def test_proxy_hints_exact_tuning_parameters_reach_hints_and_provenance(tmp_path):
+    # #906
+    path = tmp_path / "s.csv"
+    path.write_text("sex,race\n" + "\n".join(
+        f"{'M' if i % 2 else 'F'},{'abcdef'[i % 6]}" for i in range(24)) + "\n", encoding="utf-8")
+    result = _proxy_hints_impl(str(path), alpha=1.0, exact=True, exact_permutations=99, exact_max_rows=10)
+    assert result["hints"][0]["p_method"] == "chi2-capped"
+    params = result["provenance"]["params"]
+    assert (params["exact_permutations"], params["exact_max_rows"]) == (99, 10)
+    with pytest.raises(ValueError, match="positive integer"):
+        _proxy_hints_impl(str(path), alpha=1.0, exact=True, exact_permutations=0)

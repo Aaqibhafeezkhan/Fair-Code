@@ -1333,3 +1333,24 @@ def test_keywords_file_flag_types_columns_and_records_vocabulary(tmp_path, capsy
     words.write_text('{"colour": ["x"]}', encoding="utf-8")
     assert main(["profile", str(data), "--keywords", str(words)]) == 2
     assert "unknown key(s): colour" in capsys.readouterr().err
+
+
+def test_proxy_exact_tuning_flags_need_proxy_exact_and_reach_provenance(tmp_path, capsys):
+    # #906
+    path = tmp_path / "d.csv"
+    path.write_text("sex,race\n" + "\n".join(
+        f"{'M' if i % 2 else 'F'},{'abcdef'[i % 6]}" for i in range(24)) + "\n", encoding="utf-8")
+    assert main(["profile", str(path), "--proxy-hints", "--proxy-exact-permutations", "50"]) == 2
+    assert "--proxy-exact-permutations needs --proxy-exact" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        main(["profile", str(path), "--proxy-hints", "--proxy-exact", "--proxy-exact-max-rows", "0"])
+    capsys.readouterr()
+    assert main(["profile", str(path), "--proxy-hints", "--proxy-alpha", "1", "--proxy-exact",
+                 "--proxy-exact-permutations", "99", "--proxy-exact-max-rows", "10", "--json"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["provenance"]["params"]["exact_permutations"] == 99
+    assert out["provenance"]["params"]["exact_max_rows"] == 10
+    assert out["proxy_hints"][0]["p_method"] == "chi2-capped"
+    assert main(["profile", str(path), "--proxy-hints", "--proxy-alpha", "1", "--proxy-exact", "--json"]) == 0
+    params = json.loads(capsys.readouterr().out)["provenance"]["params"]
+    assert (params["exact_permutations"], params["exact_max_rows"]) == (1000, 5000)

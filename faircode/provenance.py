@@ -89,12 +89,17 @@ def sheet_fields(path) -> dict:
     return {} if info is None else {"sheet": info[0], "sheets_ignored": len(info[1])}
 
 
-def proxy_params(alpha, correction=None, exact=False) -> dict:
+def proxy_params(alpha, correction=None, exact=False, permutations=None, max_rows=None) -> dict:
     """The proxy-hint settings recorded in `params` whenever hints were requested:
     the significance level, the multiple-comparison correction (null when none)
     and whether the exact-test fallback was on, so the same p-values can be
     reproduced (#898). Same keys from the CLI, MCP and the web."""
-    return {"alpha": alpha, "correction": correction, "exact": bool(exact)}
+    params = {"alpha": alpha, "correction": correction, "exact": bool(exact)}
+    if exact:   # the exact-test settings that decide the p-values (#906)
+        from .proxy import PERMUTATION_MAX_ROWS, PERMUTATIONS
+        params["exact_permutations"] = PERMUTATIONS if permutations is None else permutations
+        params["exact_max_rows"] = PERMUTATION_MAX_ROWS if max_rows is None else max_rows
+    return params
 
 
 def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding=None) -> list:

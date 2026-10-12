@@ -576,3 +576,21 @@ def test_per_spec_bang_marker_keeps_one_key_exact_under_the_global_flag():
     assert resolve_key_marker("m.csv=race!", ["id"], True) == ("m.csv=race!", True)   # no key: not a marker
     entries = held_out_entries(["a.csv=race:id!", "b.csv=age:id"], ["id"], key_normalize=True)
     assert [e.get("key_normalize") for e in entries] == [None, True]
+
+
+def test_exact_permutations_and_row_cap_are_parameters():
+    # #906: a different shuffle count changes the resolution; a lowered cap labels the pair.
+    from faircode.proxy import PERMUTATIONS
+    sparse = pd.DataFrame({"sex": ["M", "F"] * 12, "race": list("abcdef") * 4})
+    dims = [{"name": "sex", "kind": "sex"}, {"name": "race", "kind": "race"}]
+    (default,) = proxy_hints(sparse, dims, alpha=1.0, exact=True)
+    (fewer,) = proxy_hints(sparse, dims, alpha=1.0, exact=True, permutations=99)
+    (more,) = proxy_hints(sparse, dims, alpha=1.0, exact=True, permutations=3000)
+    assert default["p_value"] * (PERMUTATIONS + 1) == pytest.approx(round(default["p_value"] * (PERMUTATIONS + 1)))
+    assert fewer["p_value"] * 100 == pytest.approx(round(fewer["p_value"] * 100))
+    assert more["p_value"] * 3001 == pytest.approx(round(more["p_value"] * 3001))
+    (capped,) = proxy_hints(sparse, dims, alpha=1.0, exact=True, max_rows=10)
+    assert capped["p_method"] == "chi2-capped" and "p_chi2" not in capped
+    for bad in ({"permutations": 0}, {"max_rows": -1}, {"permutations": 2.5}, {"max_rows": True}):
+        with pytest.raises(ValueError, match="positive integer"):
+            proxy_hints(sparse, dims, alpha=1.0, exact=True, **bad)

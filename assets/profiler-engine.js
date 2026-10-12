@@ -105,7 +105,13 @@
     var resolved = resolveOpts(opts);
     // `proxy` ({alpha, correction, exact}) is added when proxy hints were run, like
     // provenance.proxy_params() (#898).
-    if (proxy) resolved = Object.assign({}, resolved, { alpha: proxy.alpha, correction: proxy.correction || null, exact: !!proxy.exact });
+    if (proxy) {
+      resolved = Object.assign({}, resolved, { alpha: proxy.alpha, correction: proxy.correction || null, exact: !!proxy.exact });
+      if (proxy.exact) {   // the settings that decide the exact p-values (#906)
+        resolved.exact_permutations = proxy.permutations || PERMUTATIONS;
+        resolved.exact_max_rows = proxy.maxRows || PERMUTATION_MAX_ROWS;
+      }
+    }
     var out = {};
     Object.keys(resolved).sort().forEach(function (k) {
       if (!OPAQUE_PARAMS[k]) out[k] = resolved[k];
@@ -1320,7 +1326,8 @@
   // Statistic is sum(o^2 / e) - n over occupied cells only (an empty cell adds exactly its
   // expected count, which sums to n), so a sparse table costs O(rows) per shuffle (#886).
   // Mirrors proxy.py permutation_p_value.
-  function permutationPValue(rowIdx, colIdx, nRows, nCols) {
+  function permutationPValue(rowIdx, colIdx, nRows, nCols, permutations) {
+    if (permutations === undefined) permutations = PERMUTATIONS;
     var n = rowIdx.length, rowTot = [], colTot = [], i, r, c;
     for (r = 0; r < nRows; r++) rowTot.push(0);
     for (c = 0; c < nCols; c++) colTot.push(0);
@@ -1337,14 +1344,14 @@
       return s - n;
     }
     var observed = statistic(colIdx), rand = mulberry32(PERMUTATION_SEED), cols = colIdx.slice(), hits = 0;
-    for (var b = 0; b < PERMUTATIONS; b++) {
+    for (var b = 0; b < permutations; b++) {
       for (i = n - 1; i > 0; i--) {
         var j = Math.floor(rand() * (i + 1)), tmp = cols[i];
         cols[i] = cols[j]; cols[j] = tmp;
       }
       if (statistic(cols) >= observed - 1e-9) hits++;
     }
-    return (1 + hits) / (PERMUTATIONS + 1);
+    return (1 + hits) / (permutations + 1);
   }
 
   // Suffix for a hint's text line, mirroring report.py's _hint_notes() minus the
@@ -1362,8 +1369,13 @@
     return h.p_adjusted !== undefined && h.n_tests !== undefined ? ' (m=' + h.n_tests + ' pairs)' : '';
   }
 
-  function proxyHints(table, dimensions, alpha, heldOut, multiCorrection, maxAge, referenceYear, exact) {
+  function proxyHints(table, dimensions, alpha, heldOut, multiCorrection, maxAge, referenceYear, exact, permutations, maxRows) {
     if (alpha === undefined) alpha = PROXY_ALPHA;
+    if (permutations === undefined || permutations === null) permutations = PERMUTATIONS;
+    if (maxRows === undefined || maxRows === null) maxRows = PERMUTATION_MAX_ROWS;
+    [['permutations', permutations], ['max_rows', maxRows]].forEach(function (kv) {
+      if (!(Number.isInteger(kv[1]) && kv[1] >= 1)) throw new Error(kv[0] + ' must be a positive integer, got ' + kv[1]);
+    });
     if (!(alpha > 0 && alpha <= 1)) throw new Error('alpha must be in (0, 1], got ' + alpha);
     if (multiCorrection) adjustPValues([], multiCorrection); // validates the method name
     var labelized = {}, i, j, k;
@@ -1439,7 +1451,7 @@
               hint.p_value = fisherExact2x2(cell(aKeys[0], bKeys[0]), cell(aKeys[0], bKeys[1]),
                                             cell(aKeys[1], bKeys[0]), cell(aKeys[1], bKeys[1]));
               hint.p_method = 'fisher';
-            } else if (n <= PERMUTATION_MAX_ROWS) {
+            } else if (n <= maxRows) {
               var aIndex = Object.create(null), bIndex = Object.create(null), rowIdx = [], colIdx = [];
               aKeys.forEach(function (v, vi) { aIndex[v] = vi; });
               bKeys.forEach(function (v, vi) { bIndex[v] = vi; });
@@ -1448,7 +1460,7 @@
                 rowIdx.push(aIndex[la[k]]); colIdx.push(bIndex[lb[k]]);
               }
               hint.p_chi2 = pValue;
-              hint.p_value = permutationPValue(rowIdx, colIdx, aKeys.length, bKeys.length);
+              hint.p_value = permutationPValue(rowIdx, colIdx, aKeys.length, bKeys.length, permutations);
               hint.p_method = 'permutation';
             } else {
               hint.p_method = 'chi2-capped';
@@ -2032,7 +2044,7 @@
                               // Opt-in, informational only (issue #738) - see
                               // proxyHints()'s own comment for why this is
                               // kept out of profile()/compare().
-                              proxyHints: proxyHints, proxyNotes: proxyNotes, normalizeKeyText: normalizeKeyText, normalizeKeywords: normalizeKeywords, decodeText: decodeText, proxyFamily: proxyFamily, parseHeldOut: parseHeldOut, buildHeldOut: buildHeldOut,
+                              proxyHints: proxyHints, proxyNotes: proxyNotes, normalizeKeyText: normalizeKeyText, normalizeKeywords: normalizeKeywords, decodeText: decodeText, proxyFamily: proxyFamily, permutationPValue: permutationPValue, parseHeldOut: parseHeldOut, buildHeldOut: buildHeldOut,
                               adjustPValues: adjustPValues,
                               csvField: csvField, csvRow: csvRow, provenanceCsv: provenanceCsv,
                               // publicParams: resolved knobs for an export's

@@ -143,6 +143,16 @@ def _check_overrides(overrides, known_columns):
         raise ValueError(f"invalid kind for {pairs}; choose from {', '.join(_MAP_CHOICES)}")
 
 
+def _exact_kwargs(permutations, max_rows):
+    """exact_permutations / exact_max_rows as proxy_hints() keywords, only when given (#906)."""
+    kw = {}
+    if permutations is not None:
+        kw["permutations"] = permutations
+    if max_rows is not None:
+        kw["max_rows"] = max_rows
+    return kw
+
+
 def _build_opts(min_share=None, intersection_floor=None, imbalance_flag=None,
                 missing_flag=None, min_group_size=None, cross=None,
                 reference_path=None, max_categorical_card=None,
@@ -227,7 +237,8 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
                            max_dimension_groups=None, held_out_with_a=None,
                            held_out_with_b=None, alpha=None, correction=None,
                            encoding=None, max_age=None, age_reference_year=None,
-                           key_normalize=False, exact=False, keywords=None):
+                           key_normalize=False, exact=False, keywords=None,
+                           exact_permutations=None, exact_max_rows=None):
     overrides = overrides or {}
     df_a = _read_table_or_raise(path_a, encoding)
     df_b = _read_table_or_raise(path_b, encoding)
@@ -263,6 +274,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
         kw["max_age"] = _resolve_opts(opts)["max_age"]
         kw["age_reference_year"] = _resolve_opts(opts)["age_reference_year"]
         kw["exact"] = exact
+        kw.update(_exact_kwargs(exact_permutations, exact_max_rows))
         held_a = parse_held_out_specs(held_out_with_a, df_a, read_held, flag="held_out_with_a",
                                       normalize_keys=key_normalize) if held_out_with_a else None
         held_b = parse_held_out_specs(held_out_with_b, df_b, read_held, flag="held_out_with_b",
@@ -283,7 +295,8 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
         provenance = build_provenance(
             [("dataset_hash_a", path_a), ("dataset_hash_b", path_b)],
             {**_resolve_opts(opts),
-             **(proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact) if proxy_hints else {})},
+             **(proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact,
+                           exact_permutations, exact_max_rows) if proxy_hints else {})},
             overrides,
             held_out=[("proxy_hints_with_a", held_out_with_a, list(df_a.columns)),
                       ("proxy_hints_with_b", held_out_with_b, list(df_b.columns))] if proxy_hints else (),
@@ -296,7 +309,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
                       correction=None, encoding=None, include_provenance=True,
                       key_normalize=False, exact=False, max_categorical_card=None,
                       max_dimension_groups=None, max_age=None, age_reference_year=None,
-                      keywords=None):
+                      keywords=None, exact_permutations=None, exact_max_rows=None):
     """`overrides` forces a column's detected kind the same way profile()'s
     own `overrides` does; the dimension-shaping knobs (max_categorical_card,
     max_dimension_groups, max_age, age_reference_year, keywords) are passed
@@ -343,6 +356,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     kw = {} if alpha is None else {"alpha": alpha}
     kw["correction"] = correction
     kw["exact"] = exact
+    kw.update(_exact_kwargs(exact_permutations, exact_max_rows))
     kw["max_age"] = resolved["max_age"]
     kw["age_reference_year"] = resolved["age_reference_year"]
     output = {"hints": compute_proxy_hints(df, result["dimensions"], held_out=held_out, **kw)}
@@ -358,7 +372,8 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
         enc = encoding or sniff_effective_encoding(path)
         output["provenance"] = build_provenance(
             [("dataset_hash", path)],
-            params={**proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact),
+            params={**proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact,
+                                   exact_permutations, exact_max_rows),
                     **{k: resolved[k] for k in ("max_categorical_card", "max_dimension_groups",
                                                 "max_age", "age_reference_year", "keywords")}},
             overrides=overrides,
@@ -544,6 +559,9 @@ def build_server():
         `exact` (default false, CLI `--proxy-exact`) replaces the chi-squared p-value
         of a small-expected-cell hint with Fisher's exact test (2x2) or a seeded
         permutation p-value, and adds `p_method` to every hint.
+        `exact_permutations` (default 1000) and `exact_max_rows` (default 20000) set the
+        shuffle count and the row cap above which a small-cell table is labelled
+        `chi2-capped` (CLI `--proxy-exact-permutations` / `--proxy-exact-max-rows`).
 
         `key_normalize` (default false) makes `PATH=COLUMN:KEY` join keys match
         case-insensitively, ignoring surrounding spaces and leading zeros; a key
@@ -597,6 +615,8 @@ def build_server():
                          key_normalize: bool = False,
                          exact: bool = False,
                          keywords: dict[str, list[str]] | None = None,
+                         exact_permutations: int | None = None,
+                         exact_max_rows: int | None = None,
                          format: str = "json") -> dict:
         """Compare two tabular datasets (e.g. a training set and a production
         snapshot) for representation drift: which dimensions/groups appeared,
@@ -629,7 +649,8 @@ def build_server():
                 imbalance_flag, missing_flag, min_group_size, include_provenance,
                 proxy_hints, max_categorical_card, max_dimension_groups,
                 held_out_with_a, held_out_with_b, alpha, correction, encoding, max_age,
-                age_reference_year, key_normalize, exact, keywords),
+                age_reference_year, key_normalize, exact, keywords,
+                exact_permutations, exact_max_rows),
                 format, compare_to_csv)
         except (ValueError, FileNotFoundError, RuntimeError) as exc:
             raise _as_tool_error(exc) from exc
@@ -647,7 +668,9 @@ def build_server():
                     max_dimension_groups: int | None = None,
                     max_age: float | None = None,
                     age_reference_year: int | None = None,
-                    keywords: dict[str, list[str]] | None = None) -> dict:
+                    keywords: dict[str, list[str]] | None = None,
+                    exact_permutations: int | None = None,
+                    exact_max_rows: int | None = None) -> dict:
         """Flag pairs of detected demographic columns that are strongly
         statistically associated (chi-squared test of independence, p < `alpha`,
         default 0.05, in (0, 1])
@@ -688,7 +711,8 @@ def build_server():
             return _proxy_hints_impl(path, overrides, held_out_with, alpha, correction, encoding,
                                      include_provenance, key_normalize, exact,
                                      max_categorical_card, max_dimension_groups, max_age,
-                                     age_reference_year, keywords)
+                                     age_reference_year, keywords,
+                                     exact_permutations, exact_max_rows)
         except (ValueError, FileNotFoundError, RuntimeError) as exc:
             raise _as_tool_error(exc) from exc
 

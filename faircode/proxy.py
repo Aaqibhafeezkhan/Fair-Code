@@ -369,7 +369,8 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
 
 def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
                 held_out: dict | None = None, correction: str | None = None,
-                max_age=MAX_AGE, age_reference_year=None, exact=False) -> list:
+                max_age=MAX_AGE, age_reference_year=None, exact=False,
+                permutations=PERMUTATIONS, max_rows=PERMUTATION_MAX_ROWS) -> list:
     """Chi-squared test of independence over every pair of detected dimensions.
 
     Returns pairs with p < alpha, most-significant first, each with its p-value
@@ -400,6 +401,9 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
     a seeded permutation estimate (tables over 5000 observations keep the
     chi-squared p). Every hint then carries `p_method` ("chi2", "fisher" or
     "permutation"); a replaced p-value keeps the original as `p_chi2`.
+    `permutations` (default 1000) is the number of shuffles and `max_rows` the
+    observation count above which a small-cell table keeps the chi-squared p
+    (labelled "chi2-capped"); both are positive integers (#906).
 
     `correction` (None, "bonferroni" or "holm") opts in to a multiple-comparison
     adjustment across every testable pair (#806): a pair is reported only if its
@@ -410,6 +414,9 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
         raise ValueError(f"alpha must be in (0, 1], got {alpha}")
     if correction is not None and correction not in PROXY_CORRECTIONS:
         raise ValueError(f"correction must be one of {PROXY_CORRECTIONS}, got {correction!r}")
+    for name, value in (("permutations", permutations), ("max_rows", max_rows)):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError(f"{name} must be a positive integer, got {value!r}")
     try:
         from scipy.stats import chi2_contingency, fisher_exact
     except ImportError as exc:  # pragma: no cover - depends on optional extra
@@ -448,12 +455,12 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
                     if ct.shape == (2, 2):
                         hint["p_chi2"], hint["p_value"] = float(p_value), float(fisher_exact(ct.to_numpy())[1])
                         hint["p_method"] = "fisher"
-                    elif n <= PERMUTATION_MAX_ROWS:
+                    elif n <= max_rows:
                         keep = labelized[name_a].notna().to_numpy() & labelized[name_b].notna().to_numpy()
                         row_idx = pd.factorize(labelized[name_a][keep])[0].tolist()
                         col_idx = pd.factorize(labelized[name_b][keep])[0].tolist()
                         hint["p_chi2"] = float(p_value)
-                        hint["p_value"] = permutation_p_value(row_idx, col_idx, ct.shape[0], ct.shape[1])
+                        hint["p_value"] = permutation_p_value(row_idx, col_idx, ct.shape[0], ct.shape[1], permutations)
                         hint["p_method"] = "permutation"
                     else:
                         # Too large for the permutation fallback: keep the chi-squared

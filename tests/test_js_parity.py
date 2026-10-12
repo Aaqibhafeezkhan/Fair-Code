@@ -2053,3 +2053,31 @@ def test_keywords_boxes_of_both_views_stay_in_sync():
         assert "announceKeywords(area);" in js and "new CustomEvent(KEYWORDS_EVENT" in js
         listener = js.split("document.addEventListener(KEYWORDS_EVENT")[1].split("// Page load")[0]
         assert "ev.detail.source === area.id" in listener and "readStoredKeywords()" in listener and rerun in listener
+
+
+def test_python_js_exact_permutations_and_row_cap_parameters_agree(tmp_path):
+    """#906: a non-default shuffle count draws the same seeded stream in both engines; a lowered
+    cap labels the pair chi2-capped in both; bad values are rejected by both."""
+    from faircode.proxy import proxy_hints
+    rows = ["sex,race"] + [f"{'male' if i % 2 == 0 else 'female'},{'abcdef'[(i // 2 + i) % 6]}" for i in range(24)]
+    csv = tmp_path / "sparse.csv"
+    csv.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    df = pd.read_csv(csv)
+    dims = [{"name": "sex", "kind": "sex"}, {"name": "race", "kind": "race"}]
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "var t=E.parseCSV(require('fs').readFileSync(process.argv[2],'utf-8'));"
+        "var d=[{name:'sex',kind:'sex'},{name:'race',kind:'race'}];"
+        "function run(p,m){try{return E.proxyHints(t,d,1,null,null,undefined,undefined,true,p,m)[0]}catch(e){return e.message}}"
+        "process.stdout.write(JSON.stringify({p99:run(99,undefined),p3000:run(3000,undefined),capped:run(undefined,10),"
+        "bad:run(0,undefined),badrows:run(undefined,1.5)}));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(csv)],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    for js_key, kwargs in (("p99", {"permutations": 99}), ("p3000", {"permutations": 3000})):
+        (py,) = proxy_hints(df, dims, alpha=1.0, exact=True, **kwargs)
+        assert out[js_key]["p_method"] == py["p_method"] == "permutation"
+        assert out[js_key]["p_value"] == py["p_value"]
+    (py_capped,) = proxy_hints(df, dims, alpha=1.0, exact=True, max_rows=10)
+    assert out["capped"]["p_method"] == py_capped["p_method"] == "chi2-capped"
+    assert "positive integer" in out["bad"] and "positive integer" in out["badrows"]

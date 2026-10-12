@@ -185,7 +185,7 @@ engines return the identical number (the statistic is `sum(o^2/e) - n` over occu
 cheap on sparse tables, #886); a small-cell table over 5000 observations keeps the chi-squared p and
 is marked `chi2-capped` (#885), noted "too large for the exact fallback". Every
 hint then carries `p_method` (`chi2`, `chi2-capped`, `fisher` or `permutation`) and a replaced p-value keeps the
-original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by default.
+original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by default. `--proxy-exact-permutations N` (default 1000) and `--proxy-exact-max-rows N` (default 5000; both positive integers, need `--proxy-exact`; MCP `exact_permutations` / `exact_max_rows`; `proxy_hints(permutations=, max_rows=)`; the JS `proxyHints()` takes the same two trailing arguments) set the shuffle count and the row cap, and are recorded as `exact_permutations` / `exact_max_rows` in provenance `params` when `--proxy-exact` is on (#906).
 
 **Family size (#821).** Every hint also carries `n_tests`, the number of pairs actually tested
 (a pair with a constant column is skipped and does not count), so `p_adjusted` can be re-derived

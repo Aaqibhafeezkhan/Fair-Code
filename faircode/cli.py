@@ -147,6 +147,16 @@ def _lower_first(text: str) -> str:
     return text[:1].lower() + text[1:]
 
 
+def _exact_kwargs(args):
+    """--proxy-exact-permutations / --proxy-exact-max-rows as proxy_hints() keywords (#906)."""
+    kw = {}
+    if args.proxy_exact_permutations is not None:
+        kw["permutations"] = args.proxy_exact_permutations
+    if args.proxy_exact_max_rows is not None:
+        kw["max_rows"] = args.proxy_exact_max_rows
+    return kw
+
+
 def _alpha(args):
     from .proxy import PROXY_ALPHA
     return PROXY_ALPHA if args.proxy_alpha is None else args.proxy_alpha
@@ -163,7 +173,8 @@ def _profile_provenance(args, opts, overrides, df=None):
         enc = sniff_effective_encoding(args.csv)
     params = dict(_resolve_opts(opts))
     if args.proxy_hints:
-        params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact))
+        params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact,
+                                    args.proxy_exact_permutations, args.proxy_exact_max_rows))
     provenance = build_provenance(digests, params, overrides,
                                   held_out=[("proxy_hints_with", args.proxy_hints_with, columns)],
                                   encodings={"dataset_hash": enc} if enc else None,
@@ -189,7 +200,8 @@ def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
         encs["dataset_hash_b"] = enc_b
     params = dict(_resolve_opts(opts))
     if args.proxy_hints:
-        params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact))
+        params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact,
+                                    args.proxy_exact_permutations, args.proxy_exact_max_rows))
     return build_provenance(
         [("dataset_hash_a", args.csv_a), ("dataset_hash_b", args.csv_b)],
         params, overrides,
@@ -315,6 +327,12 @@ def main(argv: list[str] | None = None) -> int:
                    help="for proxy hints whose chi-squared table has small expected cells, "
                         "use Fisher's exact test (2x2) or a seeded permutation p-value "
                         "instead (adds p_method to each hint; needs --proxy-hints)")
+    p.add_argument("--proxy-exact-permutations", type=_positive_int, default=None, metavar="N",
+                   help="number of shuffles for the --proxy-exact permutation p-value "
+                        "(positive integer, default: 1000; needs --proxy-exact)")
+    p.add_argument("--proxy-exact-max-rows", type=_positive_int, default=None, metavar="N",
+                   help="row count above which --proxy-exact keeps the chi-squared p-value "
+                        "and labels it chi2-capped (positive integer, default: 20000; needs --proxy-exact)")
     p.add_argument("--proxy-key-normalize", action="store_true",
                    help="make --proxy-hints-with join keys (PATH=COLUMN:KEY) match case-insensitively, "
                         "ignoring surrounding spaces and leading zeros (default: exact text; "
@@ -398,6 +416,12 @@ def main(argv: list[str] | None = None) -> int:
                    help="for proxy hints whose chi-squared table has small expected cells, "
                         "use Fisher's exact test (2x2) or a seeded permutation p-value "
                         "instead (adds p_method to each hint; needs --proxy-hints)")
+    c.add_argument("--proxy-exact-permutations", type=_positive_int, default=None, metavar="N",
+                   help="number of shuffles for the --proxy-exact permutation p-value "
+                        "(positive integer, default: 1000; needs --proxy-exact)")
+    c.add_argument("--proxy-exact-max-rows", type=_positive_int, default=None, metavar="N",
+                   help="row count above which --proxy-exact keeps the chi-squared p-value "
+                        "and labels it chi2-capped (positive integer, default: 20000; needs --proxy-exact)")
     c.add_argument("--proxy-key-normalize", action="store_true",
                    help="make --proxy-hints-with-a/-b join keys (PATH=COLUMN:KEY) match case-insensitively, "
                         "ignoring surrounding spaces and leading zeros (default: exact text; "
@@ -481,6 +505,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.proxy_key_normalize and not args.proxy_hints:
             print("error: --proxy-key-normalize needs --proxy-hints", file=sys.stderr)
             return 2
+        for flag, value in (("--proxy-exact-permutations", args.proxy_exact_permutations),
+                            ("--proxy-exact-max-rows", args.proxy_exact_max_rows)):
+            if value is not None and not args.proxy_exact:
+                print(f"error: {flag} needs --proxy-exact", file=sys.stderr)
+                return 2
         if args.proxy_exact and not args.proxy_hints:
             print("error: --proxy-exact needs --proxy-hints", file=sys.stderr)
             return 2
@@ -575,7 +604,7 @@ def main(argv: list[str] | None = None) -> int:
                 result["proxy_hints"] = proxy_hints(df, result["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out,
                                                 max_age=_resolve_opts(opts)["max_age"],
                                                 age_reference_year=_resolve_opts(opts)["age_reference_year"],
-                                                exact=args.proxy_exact)
+                                                exact=args.proxy_exact, **_exact_kwargs(args))
             except RuntimeError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2
@@ -641,6 +670,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.proxy_key_normalize and not args.proxy_hints:
             print("error: --proxy-key-normalize needs --proxy-hints", file=sys.stderr)
             return 2
+        for flag, value in (("--proxy-exact-permutations", args.proxy_exact_permutations),
+                            ("--proxy-exact-max-rows", args.proxy_exact_max_rows)):
+            if value is not None and not args.proxy_exact:
+                print(f"error: {flag} needs --proxy-exact", file=sys.stderr)
+                return 2
         if args.proxy_exact and not args.proxy_hints:
             print("error: --proxy-exact needs --proxy-hints", file=sys.stderr)
             return 2
@@ -719,11 +753,11 @@ def main(argv: list[str] | None = None) -> int:
                 result["proxy_hints_a"] = proxy_hints(df_a, profile_a["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out_a,
                                                         max_age=_resolve_opts(opts)["max_age"],
                                                 age_reference_year=_resolve_opts(opts)["age_reference_year"],
-                                                exact=args.proxy_exact)
+                                                exact=args.proxy_exact, **_exact_kwargs(args))
                 result["proxy_hints_b"] = proxy_hints(df_b, profile_b["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out_b,
                                                         max_age=_resolve_opts(opts)["max_age"],
                                                 age_reference_year=_resolve_opts(opts)["age_reference_year"],
-                                                exact=args.proxy_exact)
+                                                exact=args.proxy_exact, **_exact_kwargs(args))
             except RuntimeError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2

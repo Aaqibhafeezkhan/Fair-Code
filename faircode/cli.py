@@ -86,6 +86,21 @@ def _parse_map(pairs):
     return overrides
 
 
+def _parse_rename(pairs):
+    """Parse repeated --rename A_NAME=B_NAME flags into an {a_name: b_name} dict (#913)."""
+    renames = {}
+    for pair in pairs or []:
+        a_name, sep, b_name = pair.partition("=")
+        if not sep or not a_name.strip() or not b_name.strip():
+            print(f"error: invalid --rename '{pair}', expected A_NAME=B_NAME", file=sys.stderr)
+            raise SystemExit(2)
+        if a_name.strip() in renames:
+            print(f"error: --rename '{a_name.strip()}' given twice", file=sys.stderr)
+            raise SystemExit(2)
+        renames[a_name.strip()] = b_name.strip()
+    return renames
+
+
 def _check_map_columns(overrides, known_columns):
     """Error out on any --map key that isn't an actual column, instead of
     silently no-opping - detect_columns() only applies an override `if col
@@ -207,6 +222,8 @@ def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
     if args.proxy_hints:
         params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact,
                                     args.proxy_exact_permutations, args.proxy_exact_max_rows))
+    if getattr(args, "rename", None):
+        params["renames"] = _parse_rename(args.rename)   # which dimensions were compared as one (#913)
     return build_provenance(
         [("dataset_hash_a", args.csv_a), ("dataset_hash_b", args.csv_b)],
         params, overrides,
@@ -417,6 +434,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="force a column's dimension when auto-detection misses it "
                         "(applied to both datasets); KIND is one of " +
                         ", ".join(_MAP_CHOICES) + " (repeatable)")
+    c.add_argument("--rename", action="append", metavar="A_NAME=B_NAME",
+                   help="compare the second dataset's dimension B_NAME as the first one's A_NAME, "
+                        "for a column renamed between exports (repeatable; the tables are not edited)")
     c.add_argument("--proxy-exact", action="store_true",
                    help="for proxy hints whose chi-squared table has small expected cells, "
                         "use Fisher's exact test (2x2) or a seeded permutation p-value "
@@ -750,7 +770,12 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
-        result = compare(profile_a, profile_b, name_a=args.csv_a, name_b=args.csv_b)
+        try:
+            result = compare(profile_a, profile_b, name_a=args.csv_a, name_b=args.csv_b,
+                             renames=_parse_rename(args.rename))
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
 
         if args.proxy_hints or args.proxy_hints_with_a or args.proxy_hints_with_b:
             held_out_a = _build_held_out(args.proxy_hints_with_a, df_a, args.encoding, args.proxy_key_normalize,

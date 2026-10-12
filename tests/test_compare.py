@@ -203,3 +203,25 @@ def test_compare_does_not_suggest_unrelated_or_different_kind_dimensions():
     assert "possible_renames" not in _cmp(a, b)
     c = pd.DataFrame({"sex": ["M", "F"] * 4, "colX": ["White", "Black"] * 4})   # categorical, not race
     assert "possible_renames" not in _cmp(a, c)
+
+
+def test_rename_compares_a_renamed_dimension_as_one_without_touching_the_tables():
+    # #913
+    import pytest
+    a = profile(pd.DataFrame({"race": ["x", "y", "x", "y"] * 20}))
+    b = profile(pd.DataFrame({"ethnicity": ["x", "y", "x", "x"] * 20}))
+    plain = compare(a, b)
+    assert plain["possible_renames"][0]["b"] == "ethnicity" and plain["added_dimensions"] == ["ethnicity"]
+    joined = compare(a, b, renames={"race": "ethnicity"})
+    assert [d["name"] for d in joined["dimensions"]] == ["race"]
+    assert joined["added_dimensions"] == [] == joined["removed_dimensions"]
+    assert "possible_renames" not in joined
+    assert joined["renamed_dimensions"] == [{"a": "race", "b": "ethnicity"}]
+    assert any("compared as 'race'" in f for f in joined["flags"])
+    assert [d["name"] for d in b["dimensions"]] == ["ethnicity"]     # input result untouched
+    for bad, msg in (({"nope": "ethnicity"}, "first dataset"), ({"race": "nope"}, "second dataset")):
+        with pytest.raises(ValueError, match=msg):
+            compare(a, b, renames=bad)
+    c = profile(pd.DataFrame({"race": ["x", "y"] * 40, "ethnicity": ["x", "y"] * 40}))
+    with pytest.raises(ValueError, match="already has a dimension named 'race'"):
+        compare(a, c, renames={"race": "ethnicity"})

@@ -1943,8 +1943,33 @@
     return pairs;
   }
 
-  function compare(resultA, resultB, nameA, nameB) {
+  // Mirrors compare.py apply_renames (#913): a copy of resultB with each renames[aName] dimension
+  // renamed to aName.
+  function applyRenames(resultA, resultB, renames) {
+    var namesA = {}, namesB = {}, byB = {}, targets = {};
+    resultA.dimensions.forEach(function (d) { namesA[d.name] = 1; });
+    resultB.dimensions.forEach(function (d) { namesB[d.name] = 1; });
+    Object.keys(renames).forEach(function (aName) {
+      var bName = renames[aName];
+      if (!namesA[aName]) throw new Error("--rename: '" + aName + "' is not a dimension of the first dataset");
+      if (!namesB[bName]) throw new Error("--rename: '" + bName + "' is not a dimension of the second dataset");
+      if (namesB[aName] && aName !== bName) throw new Error("--rename: the second dataset already has a dimension named '" + aName + "'");
+      if (byB[bName]) throw new Error("--rename: '" + bName + "' is renamed more than once");
+      byB[bName] = aName;
+      if (targets[aName]) throw new Error('--rename: two columns cannot be renamed to the same name');
+      targets[aName] = 1;
+    });
+    var out = Object.assign({}, resultB);
+    out.dimensions = resultB.dimensions.map(function (d) {
+      return byB[d.name] ? Object.assign({}, d, { name: byB[d.name] }) : d;
+    });
+    return out;
+  }
+
+  function compare(resultA, resultB, nameA, nameB, renameMap) {
     nameA = nameA || 'A'; nameB = nameB || 'B';
+    var renamedB = renameMap || {};
+    if (Object.keys(renamedB).length) resultB = applyRenames(resultA, resultB, renamedB);
     var dimsA = {}, dimsB = {};
     resultA.dimensions.forEach(function (d) { dimsA[d.name] = d; });
     resultB.dimensions.forEach(function (d) { dimsB[d.name] = d; });
@@ -2039,6 +2064,10 @@
       }
     });
 
+    Object.keys(renamedB).forEach(function (a) {
+      flags.push("dimension '" + renamedB[a] + "' (" + nameB + ") was compared as '" + a + "' (" + nameA + ') because of --rename');
+    });
+
     var out = {
       a: { name: nameA, n_rows: resultA.n_rows,
            overall_score: resultA.overall_score, grade: resultA.grade,
@@ -2051,12 +2080,14 @@
       drift_detected: driftDetected
     };
     if (renames.length) out.possible_renames = renames;
+    var renamedKeys = Object.keys(renamedB);
+    if (renamedKeys.length) out.renamed_dimensions = renamedKeys.map(function (a) { return { a: a, b: renamedB[a] }; });
     return out;
   }
 
   global.FairCodeProfiler = { parseCSV: parseCSV, parseJSON: parseJSON, parseXLSX: parseXLSX,
                               sniffDelimiter: sniffDelimiter,
-                              profile: profile, compare: compare,
+                              profile: profile, compare: compare, applyRenames: applyRenames,
                               parseReference: parseReference,
                               // Opt-in, informational only (issue #738) - see
                               // proxyHints()'s own comment for why this is

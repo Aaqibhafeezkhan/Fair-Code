@@ -1008,6 +1008,7 @@ faircode compare train.csv prod.csv --html drift.html  # standalone HTML drift r
 faircode compare train.csv prod.csv --csv drift.csv     # flat CSV export (groups + summary)
 faircode compare train.csv prod.csv --map gndr=sex # --map/threshold flags apply to both sides
 faircode compare train.csv prod.csv --fail-on-drift # fail CI if any dimension drifted
+faircode compare train.csv prod.csv --rename race=ethnicity # compare a renamed column as one dimension
 faircode compare train.csv prod.csv --proxy-hints  # chi-squared proxy hints for both datasets
 faircode profile data.csv --map gndr=sex           # fix a missed column
 faircode profile data.csv --keywords words.json    # teach detection extra column names, e.g. {"sex": ["sesso"]}

@@ -238,7 +238,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
                            held_out_with_b=None, alpha=None, correction=None,
                            encoding=None, max_age=None, age_reference_year=None,
                            key_normalize=False, exact=False, keywords=None,
-                           exact_permutations=None, exact_max_rows=None):
+                           exact_permutations=None, exact_max_rows=None, renames=None):
     overrides = overrides or {}
     df_a = _read_table_or_raise(path_a, encoding)
     df_b = _read_table_or_raise(path_b, encoding)
@@ -253,7 +253,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
                        age_reference_year=age_reference_year, keywords=keywords)
     profile_a = profile(df_a, overrides, opts)
     profile_b = profile(df_b, overrides, opts)
-    result = compare(profile_a, profile_b, name_a=path_a, name_b=path_b)
+    result = compare(profile_a, profile_b, name_a=path_a, name_b=path_b, renames=renames)
     note_a, note_b = _sheet_note(path_a), _sheet_note(path_b)
     if note_a:
         result["sheet_note_a"] = note_a
@@ -300,6 +300,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
         provenance = build_provenance(
             [("dataset_hash_a", path_a), ("dataset_hash_b", path_b)],
             {**_resolve_opts(opts),
+             **({"renames": dict(renames)} if renames else {}),
              **(proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact,
                            exact_permutations, exact_max_rows) if proxy_hints else {})},
             overrides,
@@ -624,6 +625,7 @@ def build_server():
                          keywords: dict[str, list[str]] | None = None,
                          exact_permutations: int | None = None,
                          exact_max_rows: int | None = None,
+                         renames: dict[str, str] | None = None,
                          format: str = "json") -> dict:
         """Compare two tabular datasets (e.g. a training set and a production
         snapshot) for representation drift: which dimensions/groups appeared,
@@ -649,6 +651,11 @@ def build_server():
         (--proxy-correction) and adds `p_adjusted` to each hint. `format`
         ("json" default, or "csv") returns `{"csv": "..."}` - the same text
         `faircode compare --csv` writes.
+
+        `renames` ({"race": "ethnicity"}, CLI `--rename`) compares the second dataset's
+        dimension `ethnicity` as the first one's `race`, for a column renamed between
+        exports; the tables are not edited, and the pairing is recorded in the result's
+        `renamed_dimensions` and the provenance params.
         """
         try:
             return _as_format(_compare_datasets_impl(
@@ -657,7 +664,7 @@ def build_server():
                 proxy_hints, max_categorical_card, max_dimension_groups,
                 held_out_with_a, held_out_with_b, alpha, correction, encoding, max_age,
                 age_reference_year, key_normalize, exact, keywords,
-                exact_permutations, exact_max_rows),
+                exact_permutations, exact_max_rows, renames),
                 format, compare_to_csv)
         except (ValueError, FileNotFoundError, RuntimeError) as exc:
             raise _as_tool_error(exc) from exc

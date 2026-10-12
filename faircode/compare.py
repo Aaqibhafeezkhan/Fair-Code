@@ -333,8 +333,37 @@ def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
     return flags, drift_detected
 
 
-def compare(result_a: dict, result_b: dict, name_a="A", name_b="B") -> dict:
-    """Compare two profile() results for representation drift. See SPEC section 8."""
+def apply_renames(result_a: dict, result_b: dict, renames: dict) -> dict:
+    """A copy of `result_b` with each B dimension named `renames[a_name]` renamed to
+    `a_name`, so a renamed column is compared as one dimension (`--rename race=ethnicity`,
+    #913). The tables are not touched; raises ValueError for an unknown name, a
+    duplicate target, or an A name B already has."""
+    names_a = {d["name"] for d in result_a["dimensions"]}
+    names_b = {d["name"] for d in result_b["dimensions"]}
+    by_b = {}
+    for a_name, b_name in renames.items():
+        if a_name not in names_a:
+            raise ValueError(f"--rename: '{a_name}' is not a dimension of the first dataset")
+        if b_name not in names_b:
+            raise ValueError(f"--rename: '{b_name}' is not a dimension of the second dataset")
+        if a_name in names_b and a_name != b_name:
+            raise ValueError(f"--rename: the second dataset already has a dimension named '{a_name}'")
+        if b_name in by_b:
+            raise ValueError(f"--rename: '{b_name}' is renamed more than once")
+        by_b[b_name] = a_name
+    if len(set(by_b.values())) != len(by_b):
+        raise ValueError("--rename: two columns cannot be renamed to the same name")
+    dims = [dict(d, name=by_b[d["name"]]) if d["name"] in by_b else d for d in result_b["dimensions"]]
+    return dict(result_b, dimensions=dims)
+
+
+def compare(result_a: dict, result_b: dict, name_a="A", name_b="B", renames=None) -> dict:
+    """Compare two profile() results for representation drift. See SPEC section 8.
+
+    `renames` ({a_name: b_name}) compares the named B dimension as the A one (#913)."""
+    renamed_b = dict(renames or {})
+    if renamed_b:
+        result_b = apply_renames(result_a, result_b, renamed_b)
     dims_a = {d["name"]: d for d in result_a["dimensions"]}
     dims_b = {d["name"]: d for d in result_b["dimensions"]}
 
@@ -355,6 +384,8 @@ def compare(result_a: dict, result_b: dict, name_a="A", name_b="B") -> dict:
     score_delta = scores[1] - scores[0] if None not in scores else None
     flags, drift_detected = _build_flags(result_a, result_b, score_delta, dimensions,
                                         added, removed, name_a, name_b, renames)
+    for a_name, b_name in renamed_b.items():
+        flags.append(f"dimension '{b_name}' ({name_b}) was compared as '{a_name}' ({name_a}) because of --rename")
 
     result = {
         "a": {"name": name_a, "n_rows": result_a["n_rows"],
@@ -374,4 +405,6 @@ def compare(result_a: dict, result_b: dict, name_a="A", name_b="B") -> dict:
     }
     if renames:
         result["possible_renames"] = renames
+    if renamed_b:
+        result["renamed_dimensions"] = [{"a": a, "b": b} for a, b in renamed_b.items()]
     return result

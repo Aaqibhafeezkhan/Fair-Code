@@ -83,6 +83,7 @@
   var currentCmp = null; // last successful compare() result, for export
   var currentProfiles = null; // {A, B} profile() results behind currentCmp, for proxy hints
   var currentOverrides = {}; // column -> forced kind, applied to both A and B
+  var currentRenames = {}; // {a_name: b_name} dimensions compared as one (--rename, #913)
   var currentOpts = {}; // threshold overrides (issue #351), applied to both A and B
 
   function pct(x) { return (x * 100).toFixed(1) + '%'; }
@@ -225,6 +226,7 @@
     drop.classList.add('loaded');
     errorEl.hidden = true;
     currentOverrides = {}; // a changed input may have an entirely different schema
+    currentRenames = {};
     currentOpts = {};
     resetThresholdInputs();
     thresholdsBlock.hidden = false;
@@ -350,7 +352,7 @@
     try {
       var profA = E.profile(slot.A.table, currentOverrides, currentOpts);
       var profB = E.profile(slot.B.table, currentOverrides, currentOpts);
-      var cmp = E.compare(profA, profB, slot.A.name, slot.B.name);
+      var cmp = E.compare(profA, profB, slot.A.name, slot.B.name, currentRenames);
       currentProfiles = { A: profA, B: profB };
       errorEl.hidden = true;
       render(cmp, scroll !== false);
@@ -486,6 +488,16 @@
         '</ul></div>';
     }
 
+    // One click acts on a rename suggestion (or undoes it): compares the pair as one dimension (#913).
+    var pairing = (cmp.possible_renames || []).map(function (r) {
+      return '<button type="button" class="action-btn rename-pair-btn" data-rename-a="' + esc(r.a) + '" data-rename-b="' +
+        esc(r.b) + '">Compare \u2018' + esc(r.a) + '\u2019 and \u2018' + esc(r.b) + '\u2019 as one</button>';
+    }).concat((cmp.renamed_dimensions || []).map(function (r) {
+      return '<button type="button" class="action-btn rename-undo-btn" data-rename-a="' + esc(r.a) +
+        '">Stop comparing \u2018' + esc(r.a) + '\u2019 and \u2018' + esc(r.b) + '\u2019 as one</button>';
+    })).join(' ');
+    if (pairing) flags += '<div class="rename-actions" style="margin-top:12px">' + pairing + '</div>';
+
     var cards = cmp.dimensions.map(driftCard).join('');
     if (!cmp.dimensions.length) {
       cards = '<p class="section-note" style="margin-top:16px">No demographic dimension is ' +
@@ -503,6 +515,18 @@
     }
 
     resultsEl.innerHTML = summary + flags + cards + only;
+    Array.prototype.forEach.call(resultsEl.querySelectorAll('.rename-pair-btn'), function (btn) {
+      btn.addEventListener('click', function () {
+        currentRenames[btn.dataset.renameA] = btn.dataset.renameB;
+        maybeCompare(false);
+      });
+    });
+    Array.prototype.forEach.call(resultsEl.querySelectorAll('.rename-undo-btn'), function (btn) {
+      btn.addEventListener('click', function () {
+        delete currentRenames[btn.dataset.renameA];
+        maybeCompare(false);
+      });
+    });
     resultsEl.hidden = false;
     if (scroll) {
       resultsEl.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
@@ -942,6 +966,7 @@
     if (slot.B && slot.B.encoding) provenance.encoding_b = slot.B.encoding;
     if (slot.B && slot.B.sheet) { provenance.sheet_b = slot.B.sheet.sheet; provenance.sheets_ignored_b = slot.B.sheet.sheets_ignored; }
     provenance.params = E.publicParams(currentOpts, currentCmp && currentCmp.proxy_hints_a ? currentProxySettings : null);
+    if (Object.keys(currentRenames).length) provenance.params.renames = Object.assign({}, currentRenames);
     provenance.overrides = Object.assign({}, currentOverrides);
     if (currentCmp && currentCmp.proxy_hints_a) {
       if (heldSpecsA.length) provenance.proxy_hints_with_a = await heldOutEntries(heldSpecsA);

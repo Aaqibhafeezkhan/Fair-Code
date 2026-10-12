@@ -1371,3 +1371,20 @@ def test_near_unique_held_out_column_is_skipped_with_a_stderr_note(tmp_path, cap
     assert main(["profile", str(data), "--proxy-hints", "--proxy-alpha", "1", "--max-categorical-card", "100",
                  "--proxy-hints-with", f"{held}=ident", "--json"]) == 0
     assert "note:" not in capsys.readouterr().err
+
+
+def test_compare_rename_flag_aligns_a_renamed_column_and_validates(tmp_path, capsys):
+    # #913
+    a, b = tmp_path / "a.csv", tmp_path / "b.csv"
+    a.write_text("race\n" + "x\ny\n" * 30)
+    b.write_text("ethnicity\n" + "x\ny\n" * 30)
+    assert main(["compare", str(a), str(b), "--rename", "race=ethnicity", "--json"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert [d["name"] for d in out["dimensions"]] == ["race"]
+    assert out["renamed_dimensions"] == [{"a": "race", "b": "ethnicity"}]
+    assert out["provenance"]["params"]["renames"] == {"race": "ethnicity"}
+    assert main(["compare", str(a), str(b), "--rename", "race=nope"]) == 2
+    assert "not a dimension of the second dataset" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        main(["compare", str(a), str(b), "--rename", "race"])
+    assert "expected A_NAME=B_NAME" in capsys.readouterr().err

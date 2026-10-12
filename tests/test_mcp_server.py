@@ -813,3 +813,15 @@ def test_proxy_hints_skips_near_unique_held_out_columns_with_a_note(tmp_path):
     assert all("ident" not in (h["a"], h["b"]) for h in result["hints"])
     wide = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{held}=ident"], max_categorical_card=100)
     assert "notes" not in wide
+
+
+def test_compare_datasets_renames_parameter(tmp_path):
+    # #913
+    a, b = tmp_path / "a.csv", tmp_path / "b.csv"
+    a.write_text("race\n" + "x\ny\n" * 30)
+    b.write_text("ethnicity\n" + "x\ny\n" * 30)
+    result = _compare_datasets_impl(str(a), str(b), renames={"race": "ethnicity"})
+    assert [d["name"] for d in result["dimensions"]] == ["race"]
+    assert result["provenance"]["params"]["renames"] == {"race": "ethnicity"}
+    with pytest.raises(ValueError, match="second dataset"):
+        _compare_datasets_impl(str(a), str(b), renames={"race": "nope"})

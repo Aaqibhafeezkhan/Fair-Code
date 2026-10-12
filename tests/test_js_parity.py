@@ -2104,3 +2104,32 @@ def test_web_held_out_skips_near_unique_columns_like_python():
     assert out["w"]["cols"] == ["ident", "race"] and out["w"]["notes"] == []
     for name in ("profiler-ui.js", "profiler-compare.js"):
         assert "currentOpts.max_categorical_card)" in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+
+
+def test_python_js_compare_rename_option_parity(tmp_path):
+    """#913: --rename compares a renamed dimension as one in both engines, with the same flag,
+    renamed_dimensions and errors."""
+    path_a, path_b = tmp_path / "a.csv", tmp_path / "b.csv"
+    path_a.write_text("sex,race\n" + "\n".join(f"{'M' if i % 2 else 'F'},{['White', 'Black', 'Asian'][i % 3]}" for i in range(48)) + "\n")
+    path_b.write_text("sex,ethnicity\n" + "\n".join(f"{'M' if i % 2 else 'F'},{['White', 'Black', 'White'][i % 3]}" for i in range(48)) + "\n")
+    py = compare(profile(pd.read_csv(path_a)), profile(pd.read_csv(path_b)), "a.csv", "b.csv", renames={"race": "ethnicity"})
+    js = json.loads(subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_a), str(path_b), json.dumps({"race": "ethnicity"})],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert js == json.loads(json.dumps(py))
+    assert py["renamed_dimensions"] == [{"a": "race", "b": "ethnicity"}] and "possible_renames" not in py
+    bad = subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_a), str(path_b), json.dumps({"race": "nope"})],
+        capture_output=True, text=True, encoding="utf-8")
+    assert "--rename: 'nope' is not a dimension of the second dataset" in bad.stderr
+
+
+def test_compare_view_offers_compare_as_one_buttons_for_rename_suggestions():
+    """#913: each possible rename gets a button that sets currentRenames and re-compares; a
+    renamed pair gets an undo button; the pairing is recorded in the export's params."""
+    js = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
+    assert "E.compare(profA, profB, slot.A.name, slot.B.name, currentRenames)" in js
+    assert "currentRenames[btn.dataset.renameA] = btn.dataset.renameB;" in js
+    assert "delete currentRenames[btn.dataset.renameA];" in js
+    assert "provenance.params.renames = Object.assign({}, currentRenames)" in js
+    assert js.index("currentRenames = {};") < js.index("resetThresholdInputs();", js.index("currentRenames = {};"))

@@ -9,7 +9,7 @@
 //   node scripts/engine-js.js profile <dataset.csv> [opts.json]
 //   node scripts/engine-js.js profile-json <dataset.json>
 //   node scripts/engine-js.js profile-xlsx <dataset.xlsx>
-//   node scripts/engine-js.js compare <a.csv> <b.csv>
+//   node scripts/engine-js.js compare <a.csv> <b.csv> [renames-json]
 //
 // opts.json (profile only, optional) is a JSON file shaped
 // {"overrides": {...}, "opts": {...}}, threaded straight through to
@@ -29,7 +29,7 @@ function usageError() {
     "  node scripts/engine-js.js profile <dataset.csv> [opts.json]\n" +
     "  node scripts/engine-js.js profile-json <dataset.json>\n" +
     "  node scripts/engine-js.js profile-xlsx <dataset.xlsx>\n" +
-    "  node scripts/engine-js.js compare <a.csv> <b.csv>"
+    "  node scripts/engine-js.js compare <a.csv> <b.csv> [renames-json]"
   );
   process.exit(1);
 }
@@ -87,12 +87,13 @@ async function main() {
     return;
   }
 
-  if (command === "compare" && args.length === 2) {
+  if (command === "compare" && (args.length === 2 || args.length === 3)) {
     const E = loadEngine();
-    const [pathA, pathB] = args;
+    const [pathA, pathB, renamesJson] = args;   // optional {a_name: b_name} (--rename, #913)
     const resultA = await E.profile(await E.parseCSV(fs.readFileSync(pathA, "utf8")));
     const resultB = await E.profile(await E.parseCSV(fs.readFileSync(pathB, "utf8")));
-    const cmp = await E.compare(resultA, resultB, path.basename(pathA), path.basename(pathB));
+    const cmp = await E.compare(resultA, resultB, path.basename(pathA), path.basename(pathB),
+      renamesJson ? JSON.parse(renamesJson) : undefined);
     process.stdout.write(JSON.stringify(cmp));
     return;
   }

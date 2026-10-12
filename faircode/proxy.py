@@ -309,14 +309,25 @@ def near_unique_note(name, distinct, max_categorical_card):
             f"not a group, so it was not tested")
 
 
+_NUMBER = re.compile(r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?\Z")
+
+
+def _all_numeric(series):
+    return all(
+        (isinstance(v, (int, float)) and not isinstance(v, bool)) or bool(_NUMBER.fullmatch(str(v)))
+        for v in series.dropna().tolist()
+    )
+
+
 def _keep_held_out(held_out, column, series, notes, max_categorical_card):
     """Store a held-out column unless it is near-unique (more distinct values than
     `max_categorical_card` and at least half the non-null rows): testing an ID-like or
-    free-text column builds a huge contingency table and means nothing. Only screened when
+    free-text column builds a huge contingency table and means nothing. An all-numeric
+    column is exempt - a raw age is a legitimate held-out attribute (#937). Only screened when
     the caller passes a `notes` list to receive the skip message (#908)."""
     if notes is not None:
         distinct, present = int(series.nunique(dropna=True)), int(series.notna().sum())
-        if distinct > max_categorical_card and distinct * 2 >= present:
+        if distinct > max_categorical_card and distinct * 2 >= present and not _all_numeric(series):
             notes.append(near_unique_note(column, distinct, max_categorical_card))
             return
     held_out[column] = series

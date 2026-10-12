@@ -2124,6 +2124,20 @@ def test_web_held_out_skips_near_unique_columns_like_python():
                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert out["d"]["cols"] == ["race"] and out["d"]["notes"] == [near_unique_note("ident", 100, 20)]
     assert out["w"]["cols"] == ["ident", "race"] and out["w"]["notes"] == []
+
+    # #937: same rule as proxy.py: an all-numeric held-out column (a raw age on a small
+    # table) is tested; a text ID column is still skipped with the note.
+    script_n = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "var rows=[],held=[];for(var i=0;i<40;i++){rows.push({sex:i%2?'m':'f'});held.push({ident:'id'+i,age:20+(i%30)+Math.floor(i/30)});}"
+        "var t={columns:['sex'],rows:rows};"
+        "var notes=[];(async function(){var out=await E.buildHeldOut(["
+        "{name:'h.json',column:'age',data:JSON.stringify(held)},{name:'h.json',column:'ident',data:JSON.stringify(held)}],"
+        "t,notes,20);process.stdout.write(JSON.stringify({cols:Object.keys(out),notes:notes}));})();"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script_n, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out["cols"] == ["age"] and out["notes"] == [near_unique_note("ident", 40, 20)]
     for name in ("profiler-ui.js", "profiler-compare.js"):
         assert "currentOpts.max_categorical_card)" in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
 

@@ -1286,7 +1286,11 @@
           present++;
           if (!seen[v]) { seen[v] = 1; distinct++; }
         });
-        if (distinct > maxCategoricalCard && distinct * 2 >= present) {
+        var numeric = present > 0 && values.every(function (v) {
+          var s = typeof v === 'number' && isFinite(v) ? String(v) : (typeof v === 'string' ? v : '');
+          return /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(s);
+        });
+        if (distinct > maxCategoricalCard && distinct * 2 >= present && !numeric) {
           if (notes) {
             notes.push("held-out column '" + spec.column + "' has " + distinct + ' distinct values (more than ' +
               maxCategoricalCard + ' and nearly one per row) - it looks like an identifier, not a group, so it was not tested');

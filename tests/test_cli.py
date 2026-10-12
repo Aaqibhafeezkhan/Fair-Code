@@ -1120,6 +1120,7 @@ def test_cli_benchmark_malformed_manifest_returns_2_with_clean_error(monkeypatch
 
 
 @pytest.mark.skipif(not SMALL_AUDIT.is_file(), reason="German Credit Lending fixture not found")
+@pytest.mark.slow   # trains models end to end (about 15 s); `make test-fast` skips it (#910)
 def test_cli_benchmark_success_run(tmp_path, capsys):
     """Lines 274-283: Full benchmark execution against the German Credit Lending fixture."""
     pytest.importorskip("sklearn", reason="benchmark extra required")

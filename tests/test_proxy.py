@@ -619,3 +619,16 @@ def test_near_unique_held_out_columns_are_skipped_with_a_note():
     assert list(parse_held_out_specs(["h.csv=age"], df, read, notes=notes, max_categorical_card=20)) == ["age"] and not notes
     assert list(parse_held_out_specs(["h.csv=ident"], df, read, notes=notes, max_categorical_card=200)) == ["ident"]
     assert list(parse_held_out_specs(["h.csv=ident"], df, read)) == ["ident"]   # no notes list: not screened
+
+
+def test_a_small_numeric_age_is_kept_but_a_text_id_is_skipped():
+    # #937: the near-unique screen only applies to non-numeric text, so a raw age on a
+    # small table is tested; an ID-like string column is still skipped.
+    from faircode.proxy import near_unique_note, parse_held_out_specs
+    df = pd.DataFrame({"sex": ["m", "f"] * 20})
+    held = pd.DataFrame({"age": [20 + i % 30 + (i // 30) for i in range(40)],
+                         "ident": [f"id{i}" for i in range(40)]})
+    read = lambda path: held  # noqa: E731
+    notes = []
+    out = parse_held_out_specs(["h.csv=age", "h.csv=ident"], df, read, notes=notes, max_categorical_card=20)
+    assert list(out) == ["age"] and notes == [near_unique_note("ident", 40, 20)]

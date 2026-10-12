@@ -2030,3 +2030,13 @@ def test_web_reference_baseline_is_re_applied_when_the_encoding_picker_changes()
     assert "var reapply = pendingReferenceFile;" in run_table and "if (reapply) loadReferenceFile(reapply);" in run_table
     assert "function loadReferenceFile(f)" in ui and "referenceFile = null;" in ui.split("function resetReference")[1][:80]
     assert "pendingReferenceFile = null;" in ui.split("function showError")[1][:80]   # a failed load must not leak it
+
+
+def test_keywords_boxes_of_both_views_stay_in_sync():
+    """#901: an edit in one view announces itself and the other view refills its box from the
+    shared stored text and re-applies it; the editing box ignores its own event."""
+    for name, rerun in (("profiler-ui.js", "reprofile(false);"), ("profiler-compare.js", "maybeCompare(false);")):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "announceKeywords(area);" in js and "new CustomEvent(KEYWORDS_EVENT" in js
+        listener = js.split("document.addEventListener(KEYWORDS_EVENT")[1].split("// Page load")[0]
+        assert "ev.detail.source === area.id" in listener and "readStoredKeywords()" in listener and rerun in listener

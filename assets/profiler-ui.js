@@ -746,6 +746,27 @@
         return;
       }
       writeStoredKeywords(checked.empty ? '' : area.value);
+      announceKeywords(area);
+    });
+  });
+
+  // Tell the other view that the vocabulary changed, and pick up its changes (#901). Both
+  // views share one stored text, so the sibling box is refilled and re-applied at once.
+  var KEYWORDS_EVENT = 'faircode-keywords';
+  function announceKeywords(area) {
+    try { document.dispatchEvent(new CustomEvent(KEYWORDS_EVENT, { detail: { source: area.id } })); } catch (err) { /* no CustomEvent */ }
+  }
+  document.addEventListener(KEYWORDS_EVENT, function (ev) {
+    if (!thresholdControls) return;
+    Array.prototype.forEach.call(thresholdControls.querySelectorAll('[data-opt-json]'), function (area) {
+      if (ev.detail && ev.detail.source === area.id) return;
+      var text = readStoredKeywords(), checked = checkKeywordsText(text.trim());
+      if (checked.error) return;
+      area.value = checked.empty ? '' : text;
+      area.classList.toggle('overridden', !checked.empty);
+      setKeywordsError(area, '');
+      if (checked.empty) delete currentOpts[area.dataset.optJson]; else currentOpts[area.dataset.optJson] = checked.value;
+      reprofile(false);
     });
   });
 

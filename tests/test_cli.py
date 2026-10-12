@@ -1353,4 +1353,4 @@ def test_proxy_exact_tuning_flags_need_proxy_exact_and_reach_provenance(tmp_path
     assert out["proxy_hints"][0]["p_method"] == "chi2-capped"
     assert main(["profile", str(path), "--proxy-hints", "--proxy-alpha", "1", "--proxy-exact", "--json"]) == 0
     params = json.loads(capsys.readouterr().out)["provenance"]["params"]
-    assert (params["exact_permutations"], params["exact_max_rows"]) == (1000, 5000)
+    assert (params["exact_permutations"], params["exact_max_rows"]) == (1000, 20000)

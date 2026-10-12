@@ -39,7 +39,9 @@ PROXY_CORRECTIONS = ("bonferroni", "holm")
 # fast. Mirrored (including the PRNG) in assets/profiler-engine.js.
 PERMUTATIONS = 1000
 PERMUTATION_SEED = 42
-PERMUTATION_MAX_ROWS = 5000
+# Measured after #886: about 0.1 s per 1000 rows per pair in Python (0.07 s in JS), so 20000 rows keeps a
+# pair near two seconds (#909). Same value in profiler-engine.js.
+PERMUTATION_MAX_ROWS = 20000
 _MASK32 = 0xFFFFFFFF
 
 
@@ -398,7 +400,7 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
 
     `exact` (default False) opts in to an exact-test fallback for `low_expected`
     tables (#861): a 2x2 table's `p_value` becomes Fisher's exact p, a larger one's
-    a seeded permutation estimate (tables over 5000 observations keep the
+    a seeded permutation estimate (tables over `max_rows` (20000) observations keep the
     chi-squared p). Every hint then carries `p_method` ("chi2", "fisher" or
     "permutation"); a replaced p-value keeps the original as `p_chi2`.
     `permutations` (default 1000) is the number of shuffles and `max_rows` the

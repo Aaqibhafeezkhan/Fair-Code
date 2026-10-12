@@ -496,15 +496,21 @@ def test_normalize_key_text_composes_unicode_and_folds_case():
 
 def test_exact_marks_small_cell_tables_over_the_row_cap_as_chi2_capped():
     # #885: sparse and too big for the permutation fallback, so the chi-squared p stays
-    # but the hint says why.
-    from faircode.proxy import PERMUTATION_MAX_ROWS
+    # but the hint says why. The cap is lowered via max_rows so the table stays small (#906).
     from faircode.report import _hint_notes
-    n = PERMUTATION_MAX_ROWS + 100
+    n = 600
     df = pd.DataFrame({"sex": [f"s{i // 2}" for i in range(n)], "race": [f"r{i // 3}" for i in range(n)]})
     dims = [{"name": "sex", "kind": "sex"}, {"name": "race", "kind": "race"}]
-    (h,) = proxy_hints(df, dims, alpha=1.0, exact=True)
+    (h,) = proxy_hints(df, dims, alpha=1.0, exact=True, max_rows=n - 1)
     assert h["low_expected"] and h["p_method"] == "chi2-capped" and "p_chi2" not in h
     assert "too large for the exact fallback" in _hint_notes(h)
+    (ok,) = proxy_hints(df, dims, alpha=1.0, exact=True, max_rows=n)
+    assert ok["p_method"] == "permutation"
+
+
+def test_default_permutation_row_cap_is_twenty_thousand():
+    from faircode.proxy import PERMUTATION_MAX_ROWS
+    assert PERMUTATION_MAX_ROWS == 20000   # #909: re-measured after the #886 speed-up
 
 
 def test_permutation_p_value_matches_the_scalar_mulberry_reference():

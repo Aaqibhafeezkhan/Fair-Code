@@ -1294,7 +1294,7 @@
 
   // Exact-test fallback for small-cell tables (#861); mirrors faircode/proxy.py
   // (PERMUTATIONS, PERMUTATION_SEED, PERMUTATION_MAX_ROWS, _mulberry32).
-  var PERMUTATIONS = 1000, PERMUTATION_SEED = 42, PERMUTATION_MAX_ROWS = 5000;
+  var PERMUTATIONS = 1000, PERMUTATION_SEED = 42, PERMUTATION_MAX_ROWS = 20000;
 
   function mulberry32(seed) {
     var a = seed | 0;

@@ -487,6 +487,28 @@ def test_python_js_compare_parity_for_quality_flags_and_renames(tmp_path):
     assert py_ef["possible_renames"] == [{"a": "sex", "b": "sex_code", "overlap": 0.0, "reason": "names"}]
     assert [f for f in py_ef["flags"] if "similar names" in f] == [f for f in js_ef["flags"] if "similar names" in f] != []
 
+    # #917: tokenisation keeps unicode words whole, so accented and CJK names still
+    # pair (or stay quiet) identically in both engines.
+    path_g = tmp_path / "g.csv"
+    path_h = tmp_path / "h.csv"
+    path_g.write_text("género\n" + "\n".join(f"{['Blanco', 'Negro'][i % 2]}" for i in range(48)) + "\n")
+    path_h.write_text("genero\n" + "\n".join(f"{['Casa', 'Luna'][i % 2]}" for i in range(48)) + "\n")
+    py_gh = compare(profile(pd.read_csv(path_g)), profile(pd.read_csv(path_h)), "g.csv", "h.csv")
+    js_gh = json.loads(subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_g), str(path_h)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert js_gh["possible_renames"] == py_gh["possible_renames"]
+    assert py_gh["possible_renames"] == [{"a": "género", "b": "genero", "overlap": 0.0, "reason": "names"}]
+    path_i = tmp_path / "i.csv"
+    path_j = tmp_path / "j.csv"
+    path_i.write_text("性别\n" + "\n".join(f"{'M' if i % 2 else 'F'}" for i in range(48)) + "\n")
+    path_j.write_text("性别代码\n" + "\n".join(f"{['Male', 'Female'][i % 2]}" for i in range(48)) + "\n")
+    py_ij = compare(profile(pd.read_csv(path_i)), profile(pd.read_csv(path_j)), "i.csv", "j.csv")
+    js_ij = json.loads(subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_i), str(path_j)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert js_ij == dict(py_ij)
+
 
 def test_python_js_parity_for_extra_keywords_and_italian_dutch_terms(tmp_path):
     """#856: the user vocabulary (normalised, exact_only, validation errors) and the new

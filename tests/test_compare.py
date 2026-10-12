@@ -6,7 +6,7 @@ Run from the repo root:  pytest tests/ -q
 import pandas as pd
 
 from faircode import compare, profile
-from faircode.compare import _drift_level, _psi_term
+from faircode.compare import _drift_level, _name_tokens, _psi_term
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -203,6 +203,16 @@ def test_compare_does_not_suggest_unrelated_or_different_kind_dimensions():
     assert "possible_renames" not in _cmp(a, b)
     c = pd.DataFrame({"sex": ["M", "F"] * 4, "colX": ["White", "Black"] * 4})   # categorical, not race
     assert "possible_renames" not in _cmp(a, c)
+
+
+def test_name_tokens_keep_unicode_words_whole():
+    # #917
+    assert _name_tokens("género") == {"genero"}
+    assert _name_tokens("genero") == {"genero"}
+    assert _name_tokens("Geschlecht_código") == {"geschlecht", "codigo"}
+    assert _name_tokens("性别") == {"性别"}
+    assert _name_tokens("性别代码") == {"性别代码"}
+    assert _name_tokens("SexGender") == {"sex", "gender"}
 
 
 def test_rename_compares_a_renamed_dimension_as_one_without_touching_the_tables():

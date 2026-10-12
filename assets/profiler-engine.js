@@ -1896,14 +1896,17 @@
     return out;
   }
 
-  // Mirrors compare.py RENAME_GENERIC_TOKENS / _name_tokens (#902).
+  // Mirrors compare.py RENAME_GENERIC_TOKENS / _name_tokens (#902); unicode
+  // letters keep accent and non-Latin words whole (#917).
   var RENAME_GENERIC_TOKENS = { id: 1, code: 1, cd: 1, num: 1, no: 1, type: 1, group: 1, category: 1, cat: 1,
                                 class: 1, val: 1, value: 1, flag: 1, ind: 1 };
   function nameTokens(name) {
     var out = {};
-    (String(name).match(/[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+/g) || []).forEach(function (t) {
-      t = t.toLowerCase();
-      if (!RENAME_GENERIC_TOKENS[t]) out[t] = 1;
+    (String(name).match(/\p{L}+|\d+/gu) || []).forEach(function (run) {
+      run.split(/(?<=\p{Ll})(?=\p{Lu})/u).forEach(function (t) {
+        t = t.toLowerCase().normalize("NFD").replace(/\p{M}+/gu, "");
+        if (!RENAME_GENERIC_TOKENS[t]) out[t] = 1;
+      });
     });
     return out;
   }

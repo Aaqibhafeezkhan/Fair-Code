@@ -1935,3 +1935,25 @@ def test_web_held_out_provenance_records_the_encoding():
         js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
         body = js.split("async function heldOutEntries")[1].split("async function build")[0]
         assert body.index("sha256_note") < body.index("entry.encoding = specs[i].encoding")
+
+
+def test_js_key_normalisation_matches_python_for_every_code_point():
+    """#897/#911: normalizeKeyText agrees with normalize_key_text on `c + "a" + c` and on `c`
+    for every Unicode code point, so trim and full case folding cannot drift apart."""
+    from faircode.proxy import normalize_key_text
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var out=[];"
+        "for(var cp=0;cp<=0x10FFFF;cp++){if(cp>=0xD800&&cp<=0xDFFF)continue;var c=String.fromCodePoint(cp);"
+        "out.push(E.normalizeKeyText(c),E.normalizeKeyText(c+'a'+c));}"
+        "process.stdout.write(JSON.stringify(out));"
+    )
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    js = json.loads(done.stdout)
+    cps = [cp for cp in range(0x110000) if not 0xD800 <= cp <= 0xDFFF]
+    expected = []
+    for cp in cps:
+        c = chr(cp)
+        expected += [normalize_key_text(c), normalize_key_text(c + "a" + c)]
+    bad = [(hex(cps[i // 2]), js[i], expected[i]) for i in range(len(js)) if js[i] != expected[i]]
+    assert not bad, bad[:5]

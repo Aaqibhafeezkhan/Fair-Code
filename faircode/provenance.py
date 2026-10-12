@@ -78,6 +78,17 @@ def public_params(resolved: dict) -> dict:
     return {k: v for k, v in sorted(resolved.items()) if k not in _OPAQUE_PARAMS}
 
 
+def sheet_fields(path) -> dict:
+    """`{"sheet": name, "sheets_ignored": n}` for a readable .xlsx workbook, else {}:
+    which sheet was profiled (always the first) and how many others were skipped,
+    so a re-saved workbook with reordered sheets is not silently a "match" (#899)."""
+    if not path or path == "-":
+        return {}
+    from .loaders_extra import get_xlsx_sheet_info
+    info = get_xlsx_sheet_info(str(path))
+    return {} if info is None else {"sheet": info[0], "sheets_ignored": len(info[1])}
+
+
 def proxy_params(alpha, correction=None, exact=False) -> dict:
     """The proxy-hint settings recorded in `params` whenever hints were requested:
     the significance level, the multiple-comparison correction (null when none)
@@ -113,6 +124,7 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
             if normalize:
                 entry["key_normalize"] = True
         _add_digest(entry, "sha256", path)
+        entry.update(sheet_fields(path))
         if not str(path).lower().endswith(_BINARY_SUFFIXES):
             enc = sniff_effective_encoding(path, spec_encoding or encoding)
             if enc:
@@ -172,6 +184,9 @@ def build(digests=(), params=None, overrides=None, held_out=(), encodings=None,
         if encodings and field in encodings and encodings[field]:
             enc_key = "encoding" if field == "dataset_hash" else field.replace("dataset_hash_", "encoding_")
             block[enc_key] = encodings[field]
+        suffix = field[len("dataset_hash"):] if field.startswith("dataset_hash") else None
+        if suffix is not None:   # sheet / sheet_a / sheet_b beside the dataset digest
+            block.update({k + suffix: v for k, v in sheet_fields(path).items()})
     block["params"] = public_params(params or {})
     block["overrides"] = dict(overrides or {})
     for item in held_out:

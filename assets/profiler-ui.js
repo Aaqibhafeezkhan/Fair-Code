@@ -50,6 +50,8 @@
   var currentFile = null;
   var currentEncoding = null;  // encoding the current file was decoded with (provenance, #857)
   var pendingEncoding = null;
+  var currentSheet = null;     // {sheet, sheets_ignored} of the current .xlsx file (provenance, #899)
+  var pendingSheet = null;
   var encodingSelect = document.getElementById('encodingSelect');
   var currentProxySettings = null; // alpha/correction/exact behind the on-screen hints (#898)
   var currentHeldSpecs = []; // held-out specs behind the on-screen proxy hints (#811)
@@ -139,6 +141,7 @@
         try {
           var result = await E.parseXLSX(reader.result);
 
+          pendingSheet = { sheet: result.sheetName, sheets_ignored: result.ignoredSheets.length };
           runTable(result.table, file.name, file);
 
           if (result.ignoredSheets.length > 0) {
@@ -203,6 +206,8 @@
     currentFile = file || null;
     currentEncoding = file ? pendingEncoding : null;
     pendingEncoding = null;
+    currentSheet = file ? pendingSheet : null;
+    pendingSheet = null;
     if (!table.columns.length || !table.rows.length) {
       return showError('That file looks empty or has no data rows.');
     }
@@ -1054,6 +1059,7 @@
       }
       entry.sha256 = h.digest;
       if (h.note !== null) entry.sha256_note = h.note;
+      if (specs[i].sheet) { entry.sheet = specs[i].sheet; entry.sheets_ignored = specs[i].sheetsIgnored; }
       if (specs[i].encoding) entry.encoding = specs[i].encoding;
       out.push(entry);
     }
@@ -1066,6 +1072,7 @@
     var provenance = { faircode_version: FAIRCODE_VERSION, engine: 'js', dataset_hash: hash.digest };
     if (hash.note !== null) provenance.dataset_hash_note = hash.note;
     if (currentEncoding) provenance.encoding = currentEncoding;
+    if (currentSheet) Object.assign(provenance, currentSheet);
     provenance.params = E.publicParams(currentOpts, currentResult && currentResult.proxy_hints ? currentProxySettings : null);
     provenance.overrides = Object.assign({}, currentOverrides);
     if (currentResult && currentResult.proxy_hints && currentHeldSpecs.length) {

@@ -2005,3 +2005,16 @@ def test_web_provenance_params_carry_the_proxy_settings():
     for name in ("profiler-ui.js", "profiler-compare.js"):
         js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
         assert "E.publicParams(currentOpts, " in js and "currentProxySettings = {" in js
+
+
+def test_web_provenance_records_the_xlsx_sheet():
+    """#899: the sheet read and the number ignored reach provenance for the dataset, both
+    compare slots and held-out workbooks, after the digest like provenance.sheet_fields()."""
+    ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
+    cmp_js = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
+    eng = (REPO_ROOT / "assets" / "profiler-engine.js").read_text(encoding="utf-8")
+    assert "Object.assign(provenance, currentSheet)" in ui and "sheets_ignored: result.ignoredSheets.length" in ui
+    assert "provenance.sheet_a = " in cmp_js and "provenance.sheets_ignored_b = " in cmp_js
+    assert "spec.sheet = sheets.sheetName" in eng
+    for js in (ui, cmp_js):
+        assert "entry.sheet = specs[i].sheet" in js

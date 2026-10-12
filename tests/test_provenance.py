@@ -7,7 +7,7 @@ import pytest
 
 from faircode import __version__
 from faircode.cli import main
-from faircode.provenance import build, file_digest, public_params
+from faircode.provenance import build, file_digest, held_out_entries, public_params
 from faircode.report import to_json
 
 ROWS = "gender,region,age\nmale,north,34\nfemale,south,51\nfemale,north,22\n"
@@ -312,3 +312,32 @@ def test_proxy_settings_are_recorded_in_params_when_hints_run(dataset, tmp_path,
     assert main(["compare", str(dataset), str(other), "--proxy-hints", "--proxy-exact", "--json"]) == 0
     params = json.loads(capsys.readouterr().out)["provenance"]["params"]
     assert params["exact"] is True and params["alpha"] == 0.05
+
+
+def _two_sheet_workbook(path):
+    pd = pytest.importorskip("pandas")
+    pytest.importorskip("openpyxl")
+    with pd.ExcelWriter(path) as xw:
+        pd.read_csv(path.parent / "people.csv").to_excel(xw, sheet_name="Main", index=False)
+        pd.DataFrame({"note": ["x"]}).to_excel(xw, sheet_name="Other", index=False)
+
+
+def test_xlsx_provenance_records_the_sheet_read_and_the_ones_ignored(dataset, tmp_path, capsys):
+    # #899: dataset, compare sides and held-out files; other formats keep the old shape.
+    pytest.importorskip("scipy")
+    book = tmp_path / "book.xlsx"
+    _two_sheet_workbook(book)
+    assert main(["profile", str(book), "--json"]) == 0
+    prov = json.loads(capsys.readouterr().out)["provenance"]
+    assert (prov["sheet"], prov["sheets_ignored"]) == ("Main", 1)
+    assert list(prov)[:4] == ["faircode_version", "engine", "dataset_hash", "sheet"]
+
+    assert main(["profile", str(dataset), "--json"]) == 0
+    assert "sheet" not in json.loads(capsys.readouterr().out)["provenance"]
+
+    assert main(["compare", str(book), str(dataset), "--json"]) == 0
+    prov = json.loads(capsys.readouterr().out)["provenance"]
+    assert prov["sheet_a"] == "Main" and prov["sheets_ignored_a"] == 1 and "sheet_b" not in prov
+
+    entries = held_out_entries([f"{book}=sex"], ["x"])
+    assert (entries[0]["sheet"], entries[0]["sheets_ignored"]) == ("Main", 1)

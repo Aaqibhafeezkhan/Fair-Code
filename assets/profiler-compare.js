@@ -173,11 +173,11 @@
 
     var slotEncoding = null;   // encoding this file was decoded with (provenance, #857)
 
-    function applyTable(table) {
+    function applyTable(table, sheet) {
       if (!table.columns.length || !table.rows.length) {
         return showError('Dataset ' + key + ' looks empty or has no data rows.');
       }
-      setSlot(key, table, file.name, drop, nameEl, file, slotEncoding);
+      setSlot(key, table, file.name, drop, nameEl, file, slotEncoding, sheet);
     }
 
     if (/\.xlsx$/i.test(file.name) || isXlsxType) {
@@ -185,7 +185,7 @@
         try {
           var result = await E.parseXLSX(reader.result);
 
-          applyTable(result.table);
+          applyTable(result.table, { sheet: result.sheetName, sheets_ignored: result.ignoredSheets.length });
 
           if (result.ignoredSheets.length > 0) {
             statusEl.textContent =
@@ -219,8 +219,8 @@
     }
   }
 
-  function setSlot(key, table, name, drop, nameEl, file, encoding) {
-    slot[key] = { table: table, name: name, file: file || null, encoding: encoding || null };
+  function setSlot(key, table, name, drop, nameEl, file, encoding, sheet) {
+    slot[key] = { table: table, name: name, file: file || null, encoding: encoding || null, sheet: sheet || null };
     nameEl.textContent = name;
     drop.classList.add('loaded');
     errorEl.hidden = true;
@@ -901,6 +901,7 @@
       }
       entry.sha256 = h.digest;
       if (h.note !== null) entry.sha256_note = h.note;
+      if (specs[i].sheet) { entry.sheet = specs[i].sheet; entry.sheets_ignored = specs[i].sheetsIgnored; }
       if (specs[i].encoding) entry.encoding = specs[i].encoding;
       out.push(entry);
     }
@@ -914,9 +915,11 @@
     var provenance = { faircode_version: FAIRCODE_VERSION, engine: 'js', dataset_hash_a: hashA.digest };
     if (hashA.note !== null) provenance.dataset_hash_a_note = hashA.note;
     if (slot.A && slot.A.encoding) provenance.encoding_a = slot.A.encoding;
+    if (slot.A && slot.A.sheet) { provenance.sheet_a = slot.A.sheet.sheet; provenance.sheets_ignored_a = slot.A.sheet.sheets_ignored; }
     provenance.dataset_hash_b = hashB.digest;
     if (hashB.note !== null) provenance.dataset_hash_b_note = hashB.note;
     if (slot.B && slot.B.encoding) provenance.encoding_b = slot.B.encoding;
+    if (slot.B && slot.B.sheet) { provenance.sheet_b = slot.B.sheet.sheet; provenance.sheets_ignored_b = slot.B.sheet.sheets_ignored; }
     provenance.params = E.publicParams(currentOpts, currentCmp && currentCmp.proxy_hints_a ? currentProxySettings : null);
     provenance.overrides = Object.assign({}, currentOverrides);
     if (currentCmp && currentCmp.proxy_hints_a) {

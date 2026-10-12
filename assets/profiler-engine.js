@@ -1258,6 +1258,8 @@
       if (/\.xlsx$/i.test(spec.name)) {
         var sheets = await parseXLSX(spec.data);
         heldTable = sheets.table;
+        spec.sheet = sheets.sheetName;                       // recorded in provenance (#899)
+        spec.sheetsIgnored = sheets.ignoredSheets.length;
         if (sheets.ignoredSheets.length > 0) {
           sheetNote = spec.name + ": only the first sheet '" + sheets.sheetName + "' was read; " +
             sheets.ignoredSheets.map(function (n) { return "'" + n + "'"; }).join(', ') +

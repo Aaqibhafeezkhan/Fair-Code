@@ -84,7 +84,7 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
     One {path, column, sha256} per spec (plus `key` when a join key was given), in the order given; an unreadable path
     (or stdin) gets a null `sha256` and a `sha256_note`, like every other digest.
     `key_normalize` adds `key_normalize: true` to entries that have a join key (#859);
-    a spec ending in `~` does so for that entry alone (#892).
+    a spec ending in `~` does so for that entry alone (#892) and `!` switches it off for that entry (#907).
     `encoding` is the per-spec `@ENCODING` choice when present, otherwise the
     explicit --encoding choice; each text file's entry records it, or its own
     sniffed byte-order mark, and omits it for plain UTF-8 and for binary
@@ -92,17 +92,17 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
     `profiled_columns` is forwarded to split_held_out_spec so a colon in a
     column name is resolved the same way as the live parse (#869).
     """
-    from .proxy import split_held_out_encoding, split_held_out_spec, strip_key_normalize_marker
+    from .proxy import resolve_key_marker, split_held_out_encoding, split_held_out_spec
 
     entries = []
     for spec in specs or []:
         spec, spec_encoding = split_held_out_encoding(spec)
-        spec, marked = strip_key_normalize_marker(spec, profiled_columns)
+        spec, normalize = resolve_key_marker(spec, profiled_columns, key_normalize)
         path, column, key = split_held_out_spec(spec, profiled_columns)
         entry = {"path": path, "column": column}
         if key is not None:
             entry["key"] = key
-            if key_normalize or marked:
+            if normalize:
                 entry["key_normalize"] = True
         _add_digest(entry, "sha256", path)
         if not str(path).lower().endswith(_BINARY_SUFFIXES):

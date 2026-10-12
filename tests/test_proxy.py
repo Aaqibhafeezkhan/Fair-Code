@@ -559,3 +559,20 @@ def test_per_spec_tilde_marker_normalises_only_that_specs_key(tmp_path):
     entries = held_out_entries(["messy.csv=race:id~", "clean.csv=age:id"], ["id", "x"])
     assert [e.get("key_normalize") for e in entries] == [True, None]
     assert [e["key"] for e in entries] == ["id", "id"]
+
+
+def test_per_spec_bang_marker_keeps_one_key_exact_under_the_global_flag():
+    # #907: with normalisation on globally, PATH=COLUMN:KEY! stays exact.
+    from faircode.proxy import parse_held_out_specs, resolve_key_marker
+    from faircode.provenance import held_out_entries
+    df = pd.DataFrame({"id": ["A1", "B2"], "x": [1, 2]})
+    messy = pd.DataFrame({"id": ["a1", "b2"], "race": ["u", "v"]})
+    read = lambda path: messy  # noqa: E731
+    assert list(parse_held_out_specs(["m.csv=race:id"], df, read, normalize_keys=True)["race"]) == ["u", "v"]
+    with pytest.raises(ValueError, match="no row for"):
+        parse_held_out_specs(["m.csv=race:id!"], df, read, normalize_keys=True)
+    assert resolve_key_marker("m.csv=race:id!", ["id"], True) == ("m.csv=race:id", False)
+    assert resolve_key_marker("m.csv=race:id", ["id"], True) == ("m.csv=race:id", True)
+    assert resolve_key_marker("m.csv=race!", ["id"], True) == ("m.csv=race!", True)   # no key: not a marker
+    entries = held_out_entries(["a.csv=race:id!", "b.csv=age:id"], ["id"], key_normalize=True)
+    assert [e.get("key_normalize") for e in entries] == [None, True]

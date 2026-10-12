@@ -234,6 +234,20 @@ def strip_key_normalize_marker(spec, profiled_columns=None):
     return spec, False
 
 
+def resolve_key_marker(spec, profiled_columns=None, default=False):
+    """Return (spec_without_marker, normalise) for one held-out spec: a trailing `~`
+    forces key normalisation on, a trailing `!` forces exact matching (#907), and a
+    spec with neither follows `default` (the global --proxy-key-normalize)."""
+    stripped, marked = strip_key_normalize_marker(spec, profiled_columns)
+    if marked:
+        return stripped, True
+    if spec.endswith("!") and not spec.endswith("\\!"):
+        bare = spec[:-1]
+        if split_held_out_spec(bare, profiled_columns)[2]:
+            return bare, False
+    return spec, default
+
+
 def key_columns(key, columns):
     """The column names a join key refers to: `[key]` when it is itself a column,
     else the `+`-separated parts of a composite key (`id+visit`) when every part is
@@ -305,15 +319,15 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
     export still lines up. The key may be composite (`PATH=COLUMN:id+visit`), and
     `normalize_keys` makes the comparison tolerant of case, surrounding spaces and
     leading zeros (#859); both stay off by default so matching is exact. A spec
-    ending in `~` (`PATH=COLUMN:KEY~`) normalises just that spec's key (#892).
+    ending in `~` (`PATH=COLUMN:KEY~`) normalises just that spec's key (#892) and one
+    ending in `!` keeps just that spec exact even when `normalize_keys` is on (#907).
     An optional `@ENCODING` suffix overrides the caller's shared encoding for
     that file; it composes with the marker as `PATH=COLUMN:KEY~@ENCODING`.
     """
     held_out = {}
     for original_spec in specs or []:
         spec, spec_encoding = split_held_out_encoding(original_spec)
-        spec, marked = strip_key_normalize_marker(spec, df.columns)
-        normalize = normalize_keys or marked
+        spec, normalize = resolve_key_marker(spec, df.columns, normalize_keys)
         path, column, key = split_held_out_spec(spec, df.columns)
         if not path or not column or key == "" or "=" not in spec:
             raise ValueError(f"invalid {flag} '{spec}', expected PATH=COLUMN or PATH=COLUMN:KEY")

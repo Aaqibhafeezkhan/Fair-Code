@@ -247,6 +247,7 @@ def key_columns(key, columns):
 
 
 _DIGITS_ONLY = re.compile(r"[0-9]+")
+_WHOLE_FLOAT = re.compile(r"([0-9]+)\.0+")
 
 
 # The characters trimmed from both ends of a key: the Unicode White_Space set plus U+FEFF
@@ -257,10 +258,13 @@ KEY_TRIM_CHARS = "\t\n\v\f\r \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\
 
 def normalize_key_text(value):
     """Opt-in key normalisation (#859, #884): trim, compose Unicode (NFC),
-    case-fold (so `ß` equals `ss`), and drop leading zeros from an all-digit
+    case-fold (so `ß` equals `ss`), drop a whole-number fraction (`42.0`), and drop leading zeros from an all-digit
     value, so ` A1`/`a1`, `0042`/`42`, `e` + U+0301 / `é` and `Straße`/`STRASSE`
     match. Mirrored by `normalizeKeyText` in assets/profiler-engine.js."""
     text = unicodedata.normalize("NFC", unicodedata.normalize("NFC", str(value).strip(KEY_TRIM_CHARS)).casefold())
+    whole = _WHOLE_FLOAT.fullmatch(text)   # a spreadsheet's 42.0 is the key 42 (#903)
+    if whole:
+        text = whole.group(1)
     if _DIGITS_ONLY.fullmatch(text):
         text = text.lstrip("0") or "0"
     return text

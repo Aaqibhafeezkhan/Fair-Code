@@ -1153,6 +1153,8 @@
   }
   function normalizeKeyText(value) {
     var text = foldKeyCase(String(value).replace(KEY_TRIM, '').normalize('NFC')).normalize('NFC');
+    var whole = /^([0-9]+)\.0+$/.exec(text);   // 42.0 is the key 42 (#903)
+    if (whole) text = whole[1];
     if (/^[0-9]+$/.test(text)) text = text.replace(/^0+/, '') || '0';
     return text;
   }

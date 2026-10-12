@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 49 | 50 | 55 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
+| 50 | 51 | 56 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -136,7 +136,7 @@ Each audit follows the same pipeline: train a biased model → measure the fairn
 
 ## Phase 4 - Contributor Expansion 🔄 In Progress
 
-**Status: Goal exceeded - 50 external contributors, past the original 15+ target**
+**Status: Goal exceeded - 51 external contributors, past the original 15+ target**
 
 Goal: grow to 15+ contributors with quality-controlled contributions.
 
@@ -180,9 +180,12 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Proxy and MCP follow-ups: the MCP `proxy_hints` tool honouring `max_age`/`age_reference_year`/`keywords` (#883), Unicode-safe key normalisation (#884), a visible `chi2-capped` note when `--proxy-exact` is capped (#885), faster permutation p-values (#886), held-out encodings in provenance (#891) and per-spec key normalisation on the CLI (#892)
 - [x] Compare and web polish: rename suggestions for recoded labels (#887) and in the compare CSV (#896), keywords textarea persistence and error text (#888, #889), the reference baseline honouring the encoding picker (#890)
 - [x] Dashboard and tooling: Export colours in the deep link (#893), a key for the hatched bars (#894), and a `slow` marker with `make test-fast` so the benchmark tests do not dominate local runs (#895)
-- [ ] Reproducibility and parity follow-ups: Python/JS key-normalisation parity for trimmed characters and case folding (#897, #911), proxy alpha/correction/exact and the xlsx sheet recorded in provenance (#898, #899), `42.0` against `42` keys (#903), the `~` marker and an exact-match marker in the web and CLI (#912, #907), per-file held-out encodings (#914)
-- [ ] Compare and web follow-ups: rename suggestions from column-name similarity (#902) and a `--rename` option to act on them (#913), the reference baseline re-decoded when the picker changes (#900), the two keyword boxes staying in sync (#901), the Summary-tab chart key wording (#905), and a "Copy as CLI command" button (#915)
-- [ ] Exact-test and tooling follow-ups: configurable permutation count and row cap (#906), a re-measured `PERMUTATION_MAX_ROWS` (#909), a warning for near-unique held-out columns (#908), the pre-push hook skipping slow tests (#904) and batched node calls in the parity tests (#910)
+- [x] Reproducibility and parity: Python/JS key-normalisation parity for trimmed characters and case folding (#897, #911), proxy alpha/correction/exact and the xlsx sheet recorded in provenance (#898, #899), `42.0` against `42` keys (#903), the `~` and `!` markers in the CLI and web (#907, #912), per-file held-out encodings (#914), and a Copy as CLI command button (#915)
+- [x] Compare, web and exact-test: rename suggestions from column names (#902) and `--rename` to act on them (#913), the reference baseline re-applied when the picker changes (#900), synced keyword boxes (#901), the Summary-tab chart key (#905), exact-test shuffles and row cap as parameters (#906) with a re-measured cap (#909), near-unique held-out columns skipped with a note (#908), and a pre-push hook and `slow` marker that keep the fast suite near 30 s (#904, #910)
+- [ ] Rename and compare follow-ups: Unicode-aware column-name tokens (#917), group-count tolerance (#918), rejecting `--rename A=A` (#919), renamed pairs in the compare CSV (#920)
+- [ ] Held-out and provenance follow-ups: near-unique skips visible in JSON and provenance (#921), `@ENCODING` notices and web support (#923, #924), a numeric-age exemption from the identifier screen (#937), NFKC key folding (#935), a generator for the case-folding table (#939)
+- [ ] Web and exact-test follow-ups: inputs for the shuffle count and row cap (#925), an upper bound on shuffles (#926), `--sample`, export options and edge-case tests for Copy as CLI command (#928, #929, #934), a restored-keywords note (#930)
+- [ ] Docs and tooling follow-ups: README held-out syntax and the MCP parameter tables (#922, #931), single coverage run in CI (#932), a faster OG-image test (#933), a split `test_js_parity.py` (#938), removing the scalar PRNG (#927), and a licence audit for `brag-output/` (#936)
 
 ---
 

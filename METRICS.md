@@ -2,9 +2,9 @@
 
 # Fair Code - Metrics Tracker
 
-![Stars](https://img.shields.io/badge/Stars-49-brightgreen?style=flat-square&logo=github)
-![Contributors](https://img.shields.io/badge/Contributors-50-blue?style=flat-square)
-![Forks](https://img.shields.io/badge/Forks-55-orange?style=flat-square)
+![Stars](https://img.shields.io/badge/Stars-50-brightgreen?style=flat-square&logo=github)
+![Contributors](https://img.shields.io/badge/Contributors-51-blue?style=flat-square)
+![Forks](https://img.shields.io/badge/Forks-56-orange?style=flat-square)
 ![Watching](https://img.shields.io/badge/Watching-8-yellow?style=flat-square)
 ![Explainers](https://img.shields.io/badge/Explainers-62-blueviolet?style=flat-square)
 ![Countries](https://img.shields.io/badge/Countries-20-informational?style=flat-square)
@@ -46,6 +46,7 @@ Weekly snapshot of project health. Updated every Friday.
 | 2026-W39 | 48 | 45 | 8 | 40 | 30K+ total | 20 | 25 | 7 total |
 | 2026-W40 | 49 | 50 | 8 | 45 | 30K+ total | 20 | 41 | 7 total |
 | 2026-W41 | 49 | 55 | 8 | 50 | 30K+ total | 20 | 72 | 7 total |
+| 2026-W42 | 50 | 56 | 8 | 51 | 30K+ total | 20 | 19 | 7 total |
 
 > **2026-W27 - v1.2.0 shipped:** Open Dataset Profiler (CLI + client-side web tool) released; 23 explainers total.
 >
@@ -106,6 +107,8 @@ Weekly snapshot of project health. Updated every Friday.
 > **2026-W41 (weekend) - the second sweep: 9 more non-explainer issues closed, 14 fresh ones opened, one new contributor:** every unassigned non-explainer issue was fixed again (#856, #857, #859, #861, #862, #864, #865, #866, #868): `--keywords` and Italian/Dutch terms for column detection, a web text-encoding picker recorded in provenance, composite and normalised held-out join keys, `--proxy-exact` (Fisher/permutation p-values with a shared seeded PRNG so both engines agree), `--age-reference-year` for birth-year columns, compare data-quality flags and rename suggestions, and a per-tab significance toggle plus hatched, colour-blind-safe dashboard bars. #848 stayed untouched because it is assigned. Contributors fixed seven of the follow-ups opened the day before - [@Detoy](https://github.com/Detoy) (#855 via #876, #867 via #877, #869 via #878, #870 via #871) and [@Tiyatrotist](https://github.com/Tiyatrotist) (#858, #860, #863 via #882, #880, #881) - so the replenishment is 14 new issues (#883-#896): MCP, key-normalisation, exact-test and web follow-ups, a dashboard key and a slow-test marker, none of them explainers, three pinned (#883, #884, #885). **Contributors `49 -> 50`** (Detoy's first merged PR, counted from `CONTRIBUTORS.md`), forks `53 -> 55`; issues closed this week `42 -> 58` (a GitHub search count since 2026-10-05). Stars, watching, countries and social reach unchanged or not re-measured.
 >
 > **2026-W41 (Sunday) - the third sweep: the last 14 non-explainer issues closed, 19 fresh ones opened, no new contributors:** every unassigned non-explainer issue (#883-#896) was fixed and committed on its own, with a parity test wherever both engines are touched: the MCP `proxy_hints` tool now shares `profile_dataset`'s age and keyword options (#883), key normalisation composes Unicode and folds case (#884), capped small-cell tables are labelled `chi2-capped` (#885) and permutation p-values run about ten times faster for the same numbers (#886), rename suggestions understand recoded labels (#887) and land in the compare CSV (#896), the web keywords box persists and explains its errors (#888, #889), the reference file follows the encoding picker (#890), held-out encodings are recorded in provenance (#891) and `PATH=COLUMN:KEY~` normalises a single spec's key (#892), the dashboard link carries the Export colours choice (#893) and the hatched bars have a key (#894), and the benchmark tests are marked `slow` so `make test-fast` takes about 45 seconds instead of two minutes (#895). #848 stayed untouched because it is assigned. The backlog was replenished with 19 independently reproduced issues (#897-#915, none of them explainers) - 14 to replace the closed ones plus 5 extra - three pinned: Python/JS key-trim parity (#897), proxy parameters missing from CLI provenance (#898) and column-name similarity for rename suggestions (#902). No pull request was merged after #882, so `CONTRIBUTORS.md` keeps its list and only its snapshot date moves; **contributors stay `50`** (counted from `CONTRIBUTORS.md`; GitHub's contributors API reports 49), forks `55`, stars `49`, watching `8` (live GitHub numbers); issues closed this week `58 -> 72` (a GitHub search count since 2026-10-05). Countries and social reach not re-measured.
+>
+> **2026-W42 - the fourth sweep: 18 non-explainer issues closed, 23 fresh ones opened, one new contributor:** every unassigned non-explainer issue filed after the last sweep was fixed and committed on its own, with a parity test wherever both engines are touched: key normalisation now trims the same characters, folds case the same way (checked across every Unicode code point) and reads `42.0` as `42` (#897, #911, #903), a trailing `!` keeps one held-out spec exact and the web key box takes the CLI's `~`/`!` markers (#907, #912), provenance records the proxy settings and the `.xlsx` sheet read (#898, #899), rename suggestions use column names and `compare --rename` acts on them (#902, #913), the exact test's shuffles and row cap are parameters with a re-measured 20000-row cap (#906, #909), near-unique held-out columns are skipped with a note (#908), the web gained Copy as CLI command, synced keyword boxes and a reference file that follows the encoding picker (#915, #901, #900), the dashboard key matches the Summary tab (#905), and the fast suite fell from about 45 to 30 seconds (#904, #910, where node start-up proved not to be the cost). #848 stayed untouched because it is assigned. [@adity982](https://github.com/adity982) joined with PR #916 (per-file held-out encodings, closing #914). The backlog was replenished with 23 independently reproduced issues (#917-#939, none of them explainers) - 18 to replace the closed ones plus 5 extra - three pinned: Unicode-aware name tokens (#917), skipped held-out columns visible in JSON and provenance (#921) and an upper bound on exact-test shuffles (#926). **Contributors `50 -> 51`**, forks `55 -> 56`, stars `49 -> 50` (live GitHub numbers; the contributors API reports 50 where this file counts 51); issues closed this week `0 -> 19` (a GitHub search count since 2026-10-12, which includes #914). Countries and social reach not re-measured.
 
 ---
 
@@ -113,13 +116,13 @@ Weekly snapshot of project health. Updated every Friday.
 
 | Metric | Current | Target | Timeline |
 |--------|--------:|-------:|----------|
-| Stars | 49 | 50+ | End of 2026 |
-| Forks | 55 | 60+ | End of 2026 |
+| Stars | 50 | 50+ | End of 2026 |
+| Forks | 56 | 60+ | End of 2026 |
 | Watching | 8 | 12+ | End of 2026 |
-| Contributors | 50 | 20+ | End of 2026 |
+| Contributors | 51 | 20+ | End of 2026 |
 | Social reach | 30K+ | 40K+ | End of 2026 |
 | Countries reached | 20 | 20+ | End of 2026 |
-| Issues closed | 72 (this week, since 2026-10-05) | Track weekly | Ongoing |
+| Issues closed | 19 (this week, since 2026-10-12) | Track weekly | Ongoing |
 | Code audits | 7 | 8+ | End of 2026 |
 | Explainers | 62 | 65+ | End of 2026 |
 
@@ -139,4 +142,4 @@ Weekly snapshot of project health. Updated every Friday.
 
 *Resume-ready line (fill in at application time):*
 
-> Created and scaled Fair Code, an open-source responsible AI platform explaining algorithmic bias through code audits, healthcare-bias case studies, beginner explainers, and contributor-led GitHub documentation; grew the project to **49 stars**, **50 contributors**, **55 forks**, **30K+ social views**, and website visitors from **20 countries**.
+> Created and scaled Fair Code, an open-source responsible AI platform explaining algorithmic bias through code audits, healthcare-bias case studies, beginner explainers, and contributor-led GitHub documentation; grew the project to **50 stars**, **51 contributors**, **56 forks**, **30K+ social views**, and website visitors from **20 countries**.

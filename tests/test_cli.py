@@ -1389,3 +1389,5 @@ def test_compare_rename_flag_aligns_a_renamed_column_and_validates(tmp_path, cap
     with pytest.raises(SystemExit):
         main(["compare", str(a), str(b), "--rename", "race"])
     assert "expected A_NAME=B_NAME" in capsys.readouterr().err
+    assert main(["compare", str(a), str(a), "--rename", "race=race"]) == 2
+    assert "renames a dimension to itself" in capsys.readouterr().err

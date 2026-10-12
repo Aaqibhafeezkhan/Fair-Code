@@ -1953,7 +1953,8 @@
       var bName = renames[aName];
       if (!namesA[aName]) throw new Error("--rename: '" + aName + "' is not a dimension of the first dataset");
       if (!namesB[bName]) throw new Error("--rename: '" + bName + "' is not a dimension of the second dataset");
-      if (namesB[aName] && aName !== bName) throw new Error("--rename: the second dataset already has a dimension named '" + aName + "'");
+      if (aName === bName) throw new Error("--rename: '" + aName + "' renames a dimension to itself");
+      if (namesB[aName]) throw new Error("--rename: the second dataset already has a dimension named '" + aName + "'");
       if (byB[bName]) throw new Error("--rename: '" + bName + "' is renamed more than once");
       byB[bName] = aName;
       if (targets[aName]) throw new Error('--rename: two columns cannot be renamed to the same name');

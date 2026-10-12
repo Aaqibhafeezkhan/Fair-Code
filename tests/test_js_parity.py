@@ -474,6 +474,19 @@ def test_python_js_compare_parity_for_quality_flags_and_renames(tmp_path):
     assert js_cd["possible_renames"] == py_cd["possible_renames"]
     assert [(r["a"], r["b"]) for r in py_cd["possible_renames"]] == [("sex", "gender"), ("race", "ethnicity")]
 
+    # #902: recoded to codes AND renamed - paired on the shared name word and the group count.
+    path_e = tmp_path / "e.csv"
+    path_f = tmp_path / "f.csv"
+    path_e.write_text("sex,race\n" + "\n".join(f"{'M' if i % 2 else 'F'},{['White', 'Black'][i % 3 % 2]}" for i in range(48)) + "\n")
+    path_f.write_text("sex_code,region_code\n" + "\n".join(f"{1 + i % 2},{['n', 's'][i % 3 % 2]}" for i in range(48)) + "\n")
+    py_ef = compare(profile(pd.read_csv(path_e)), profile(pd.read_csv(path_f)), "e.csv", "f.csv")
+    js_ef = json.loads(subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_e), str(path_f)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert js_ef["possible_renames"] == py_ef["possible_renames"]
+    assert py_ef["possible_renames"] == [{"a": "sex", "b": "sex_code", "overlap": 0.0, "reason": "names"}]
+    assert [f for f in py_ef["flags"] if "similar names" in f] == [f for f in js_ef["flags"] if "similar names" in f] != []
+
 
 def test_python_js_parity_for_extra_keywords_and_italian_dutch_terms(tmp_path):
     """#856: the user vocabulary (normalised, exact_only, validation errors) and the new
@@ -1293,7 +1306,7 @@ def test_web_compare_csv_lists_rename_suggestions_like_python(tmp_path):
         ["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(path_a), str(path_b)],
         capture_output=True, text=True, encoding="utf-8", check=True).stdout
     py = compare_to_csv(compare(profile(pd.read_csv(path_a)), profile(pd.read_csv(path_b)), "a.csv", "b.csv"))
-    section = "\n\ndimension,present_in\nrace,a_only\nethnicity,b_only\n\ndimension_a,dimension_b,overlap\nrace,ethnicity,1\n\nflag\n"
+    section = "\n\ndimension,present_in\nrace,a_only\nethnicity,b_only\n\ndimension_a,dimension_b,overlap,reason\nrace,ethnicity,1,labels\n\nflag\n"
     assert section in web.replace("\r\n", "\n")
     assert section in py.replace("\r\n", "\n")
 

@@ -1867,6 +1867,18 @@
     return out;
   }
 
+  // Mirrors compare.py RENAME_GENERIC_TOKENS / _name_tokens (#902).
+  var RENAME_GENERIC_TOKENS = { id: 1, code: 1, cd: 1, num: 1, no: 1, type: 1, group: 1, category: 1, cat: 1,
+                                class: 1, val: 1, value: 1, flag: 1, ind: 1 };
+  function nameTokens(name) {
+    var out = {};
+    (String(name).match(/[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+/g) || []).forEach(function (t) {
+      t = t.toLowerCase();
+      if (!RENAME_GENERIC_TOKENS[t]) out[t] = 1;
+    });
+    return out;
+  }
+
   function possibleRenames(resultA, resultB, removed, added) {
     var byA = {}, byB = {}, taken = {}, pairs = [];
     resultA.dimensions.forEach(function (d) { byA[d.name] = d; });
@@ -1881,8 +1893,23 @@
       });
       if (best !== null && bestOverlap >= RENAME_MIN_OVERLAP) {
         taken[best] = 1;
-        pairs.push({ a: nameA, b: best, overlap: Math.round(bestOverlap * 10000) / 10000 });
+        pairs.push({ a: nameA, b: best, overlap: Math.round(bestOverlap * 10000) / 10000, reason: 'labels' });
       }
+    });
+    // Second signal: same kind and group count, names sharing a word (#902).
+    var paired = {};
+    pairs.forEach(function (p) { paired[p.a] = 1; });
+    removed.forEach(function (nameA) {
+      if (paired[nameA]) return;
+      var tokensA = nameTokens(nameA), best = null, bestShared = 0;
+      added.forEach(function (nameB) {
+        if (taken[nameB] || byB[nameB].kind !== byA[nameA].kind) return;
+        if (byB[nameB].groups.length !== byA[nameA].groups.length) return;
+        var shared = 0, tokensB = nameTokens(nameB);
+        Object.keys(tokensA).forEach(function (t) { if (tokensB[t]) shared++; });
+        if (shared > bestShared) { best = nameB; bestShared = shared; }
+      });
+      if (best !== null) { taken[best] = 1; pairs.push({ a: nameA, b: best, overlap: 0, reason: 'names' }); }
     });
     return pairs;
   }
@@ -1971,9 +1998,10 @@
     added.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameB); driftDetected = true; });
     removed.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameA); driftDetected = true; });
     renames.forEach(function (r) {
+      var evidence = r.reason === 'names' ? 'similar names and the same number of groups'
+        : (r.overlap * 100).toFixed(0) + '% of their group labels overlap';
       flags.push("'" + r.a + "' (" + nameA + ") and '" + r.b + "' (" + nameB + ') look like the same dimension (' +
-                 (r.overlap * 100).toFixed(0) + '% of their group labels overlap) - rename one column ' +
-                 'so the names match to compare them');
+                 evidence + ') - rename one column so the names match to compare them');
     });
     [[nameA, resultA], [nameB, resultB]].forEach(function (pair) {
       if ((pair[1].flags || []).indexOf(NO_KIND_DETECTED_FLAG) !== -1) {

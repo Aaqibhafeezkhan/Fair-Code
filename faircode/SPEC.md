@@ -438,10 +438,12 @@ compare looks for a B-only dimension of the *same kind* whose group labels overl
 `RENAME_MIN_OVERLAP` = 0.5 (labels are matched one-to-one: exactly, then ignoring case, then when an
 alphabetic label is a case-insensitive prefix of the other, so `M`/`Male` and `White`/`white` count, #887),
 greedily in A order, each B-only dimension used once, and reports
-`possible_renames: [{ "a": "race", "b": "ethnicity", "overlap": 1.0 }]` (key present only when
+`possible_renames: [{ "a": "race", "b": "ethnicity", "overlap": 1.0, "reason": "labels" }]` (key present only when
 non-empty, `overlap` to 4 dp) plus a flag "'race' (A) and 'ethnicity' (B) look like the same
 dimension ... rename one column so the names match to compare them". It is a suggestion only: nothing
 is compared across the pair, and `drift_detected` is already true from the one-sided dimensions.
+
+A second signal (#902) catches a column renamed *and* re-coded (`sex` M/F against `sex_code` 1/2): a leftover A-only/B-only pair of the same kind, with the same number of groups, whose names share a word (names are split on punctuation and camelCase, and generic words such as `id`, `code`, `type`, `group` do not count) is suggested with `"overlap": 0` and `"reason": "names"`, flagged "similar names and the same number of groups". The compare CSV's rename section gains a `reason` column.
 
 ---
 

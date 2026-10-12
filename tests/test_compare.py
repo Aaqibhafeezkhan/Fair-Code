@@ -189,7 +189,7 @@ def test_compare_suggests_a_renamed_dimension_without_pairing_it():
     a = pd.DataFrame({"sex": ["M", "F"] * 4, "race": ["White", "Black", "Asian", "White"] * 2})
     b = pd.DataFrame({"sex": ["M", "F"] * 4, "ethnicity": ["White", "Black", "Asian", "White"] * 2})
     result = _cmp(a, b)
-    assert result["possible_renames"] == [{"a": "race", "b": "ethnicity", "overlap": 1.0}]
+    assert result["possible_renames"] == [{"a": "race", "b": "ethnicity", "overlap": 1.0, "reason": "labels"}]
     assert any("'race' (a.csv) and 'ethnicity' (b.csv) look like the same dimension" in f
                for f in result["flags"])
     assert [d["name"] for d in result["dimensions"]] == ["sex"]   # never auto-paired

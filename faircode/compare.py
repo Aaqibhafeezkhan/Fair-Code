@@ -15,6 +15,7 @@ population-drift metric in ML monitoring, alongside Total Variation Distance
 from __future__ import annotations
 
 import math
+import re
 
 from .profiler import NO_KIND_DETECTED_FLAG, _is_age_band_label, _r
 
@@ -186,6 +187,18 @@ def _alpha_prefix(short: str, long: str) -> bool:
     return short.isalpha() and long.startswith(short)
 
 
+# Words too generic to show two columns are the same thing (`state_code` vs `region_code`).
+RENAME_GENERIC_TOKENS = frozenset(
+    ["id", "code", "cd", "num", "no", "type", "group", "category", "cat", "class", "val", "value", "flag", "ind"])
+_NAME_TOKEN = re.compile(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+")
+
+
+def _name_tokens(name: str) -> set:
+    """Lower-cased words of a column name (`sex_code`, `SexCode` -> sex, code) minus the
+    generic ones; the same regex runs in profiler-engine.js (#902)."""
+    return {t.lower() for t in _NAME_TOKEN.findall(name)} - RENAME_GENERIC_TOKENS
+
+
 def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list) -> list:
     """Pair each A-only dimension with the B-only dimension of the same kind whose
     group labels overlap most (Jaccard >= RENAME_MIN_OVERLAP, counting a label that
@@ -208,7 +221,26 @@ def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list
                 best, best_overlap = name_b, overlap
         if best is not None and best_overlap >= RENAME_MIN_OVERLAP:
             taken.add(best)
-            pairs.append({"a": name_a, "b": best, "overlap": _r(best_overlap, 4)})
+            pairs.append({"a": name_a, "b": best, "overlap": _r(best_overlap, 4), "reason": "labels"})
+    # Second signal: a column renamed *and* re-coded (`sex` M/F vs `sex_code` 1/2) shares no label
+    # shape, so pair leftovers of the same kind and group count whose names share a word (#902).
+    paired = {p["a"] for p in pairs}
+    for name_a in removed:
+        if name_a in paired:
+            continue
+        tokens_a = _name_tokens(name_a)
+        best, best_shared = None, 0
+        for name_b in added:
+            if name_b in taken or by_b[name_b]["kind"] != by_a[name_a]["kind"]:
+                continue
+            if len(by_b[name_b]["groups"]) != len(by_a[name_a]["groups"]):
+                continue
+            shared = len(tokens_a & _name_tokens(name_b))
+            if shared > best_shared:
+                best, best_shared = name_b, shared
+        if best is not None:
+            taken.add(best)
+            pairs.append({"a": name_a, "b": best, "overlap": 0.0, "reason": "names"})
     return pairs
 
 
@@ -286,10 +318,11 @@ def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
         flags.append(f"dimension '{n}' is present only in {name_a}")
         drift_detected = True
     for r in renames:
+        evidence = ("similar names and the same number of groups" if r.get("reason") == "names"
+                    else f"{r['overlap'] * 100:.0f}% of their group labels overlap")
         flags.append(
             f"'{r['a']}' ({name_a}) and '{r['b']}' ({name_b}) look like the same dimension "
-            f"({r['overlap'] * 100:.0f}% of their group labels overlap) - rename one column "
-            f"so the names match to compare them"
+            f"({evidence}) - rename one column so the names match to compare them"
         )
     for name, result in ((name_a, result_a), (name_b, result_b)):
         if NO_KIND_DETECTED_FLAG in result.get("flags", ()):

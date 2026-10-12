@@ -611,7 +611,7 @@ def build_server():
         a single call can get drift and both datasets' proxy hints together,
         matching `faircode compare --proxy-hints`. Needs the optional 'scipy'
         extra (`pip install faircode[proxy]`). `held_out_with_a`/`held_out_with_b`
-        (need `proxy_hints`) are lists of "PATH=COLUMN" strings testing a column
+        (need `proxy_hints`) are lists of "PATH=COLUMN[:KEY][@ENCODING]" strings testing a column
         already dropped from dataset A / B, mirroring the CLI's
         --proxy-hints-with-a/-b; `alpha` (default 0.05, in (0, 1]) is the
         proxy-hint significance level (--proxy-alpha); `correction` ("bonferroni" or
@@ -667,7 +667,8 @@ def build_server():
         strings (mirroring the CLI's --proxy-hints-with flag), each pointing
         at a file whose rows align 1:1 with `path` (or, with "PATH=COLUMN:KEY", are
         joined to it on a key column present in both files) and a column to pull the
-        dropped attribute's original values from. See faircode/SPEC.md
+        dropped attribute's original values from. An `@ENCODING` suffix overrides
+        `encoding` for that one file. See faircode/SPEC.md
         section 3 and issue #328.
 
         `max_categorical_card`, `max_dimension_groups`, `max_age`,

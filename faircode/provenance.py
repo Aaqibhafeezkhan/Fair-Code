@@ -85,16 +85,18 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
     (or stdin) gets a null `sha256` and a `sha256_note`, like every other digest.
     `key_normalize` adds `key_normalize: true` to entries that have a join key (#859);
     a spec ending in `~` does so for that entry alone (#892).
-    `encoding` is the explicit --encoding choice; each text file's entry records it, or
-    its own sniffed byte-order mark, and omits it for plain UTF-8 and for binary
-    workbooks/Parquet, the same rule as the dataset's `encoding` (#891).
+    `encoding` is the per-spec `@ENCODING` choice when present, otherwise the
+    explicit --encoding choice; each text file's entry records it, or its own
+    sniffed byte-order mark, and omits it for plain UTF-8 and for binary
+    workbooks/Parquet, the same rule as the dataset's `encoding` (#891, #914).
     `profiled_columns` is forwarded to split_held_out_spec so a colon in a
     column name is resolved the same way as the live parse (#869).
     """
-    from .proxy import split_held_out_spec, strip_key_normalize_marker
+    from .proxy import split_held_out_encoding, split_held_out_spec, strip_key_normalize_marker
 
     entries = []
     for spec in specs or []:
+        spec, spec_encoding = split_held_out_encoding(spec)
         spec, marked = strip_key_normalize_marker(spec, profiled_columns)
         path, column, key = split_held_out_spec(spec, profiled_columns)
         entry = {"path": path, "column": column}
@@ -104,7 +106,7 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
                 entry["key_normalize"] = True
         _add_digest(entry, "sha256", path)
         if not str(path).lower().endswith(_BINARY_SUFFIXES):
-            enc = sniff_effective_encoding(path, encoding)
+            enc = sniff_effective_encoding(path, spec_encoding or encoding)
             if enc:
                 entry["encoding"] = enc
         entries.append(entry)

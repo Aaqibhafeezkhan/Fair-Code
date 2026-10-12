@@ -52,6 +52,26 @@
       norm.type = 'checkbox';
       norm.setAttribute('aria-label', label + ' normalise join key (ignore case, spaces, leading zeros)');
       normLabel.appendChild(norm);
+      var encodingLabel = document.createElement('label');
+      encodingLabel.textContent = 'Encoding ';
+      var encodingSelect = document.createElement('select');
+      encodingSelect.className = 'threshold-input';
+      encodingSelect.setAttribute('aria-label', label + ' text encoding');
+      [
+        ['inherit', 'Dataset setting'],
+        ['auto', 'Auto (BOM, else UTF-8)'],
+        ['utf-8', 'UTF-8'],
+        ['utf-16', 'UTF-16'],
+        ['cp1252', 'Windows-1252 (cp1252)'],
+        ['latin-1', 'ISO-8859-1 (latin-1)']
+      ].forEach(function (choice) {
+        var option = document.createElement('option');
+        option.value = choice[0];
+        option.textContent = choice[1];
+        encodingSelect.appendChild(option);
+      });
+      encodingSelect.value = 'inherit';
+      encodingLabel.appendChild(encodingSelect);
       var remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'heldout-remove';
@@ -65,6 +85,7 @@
       row.appendChild(colLabel);
       row.appendChild(keyLabel);
       row.appendChild(normLabel);
+      row.appendChild(encodingLabel);
       row.appendChild(remove);
       container.appendChild(row);
     }
@@ -82,13 +103,16 @@
         var column = inputs[1].value.trim();
         var key = inputs[2].value.trim();
         var normalize = !!inputs[3].checked;
+        var rowEncoding = rows[i].querySelectorAll('select')[0];
+        var encodingChoice = rowEncoding && rowEncoding.value !== 'inherit' ?
+          rowEncoding.value : (getEncoding ? getEncoding() : 'auto');
         if (!file && !column) continue;
         if (!file || !column) throw new Error('each held-out row needs both a file and a column name');
         var data, encoding;
         if (/\.xlsx$/i.test(file.name)) data = await file.arrayBuffer();
         else if (getEncoding && window.FairCodeProfiler && window.FairCodeProfiler.decodeText) {
           // `encoding` is the explicit pick or the sniffed BOM (null for plain UTF-8), recorded in provenance (#891).
-          var decoded = window.FairCodeProfiler.decodeText(await file.arrayBuffer(), getEncoding());
+          var decoded = window.FairCodeProfiler.decodeText(await file.arrayBuffer(), encodingChoice);
           data = decoded.text;
           encoding = decoded.encoding || undefined;
         } else data = await file.text();

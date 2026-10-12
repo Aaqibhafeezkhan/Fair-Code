@@ -221,6 +221,14 @@ and `--proxy-hints-with-b PATH=COLUMN` (each repeatable), aligned to `csv_a`/`cs
 added in #737. The MCP `compare_datasets` tool exposes the same held-out parameters as
 `held_out_with_a` and `held_out_with_b` when `proxy_hints=true`.
 
+**Per-file text encoding (#914).** Append `@ENCODING` to a held-out spec when that file does not
+share the dataset's `--encoding`: `PATH=COLUMN@utf-8` or
+`PATH=COLUMN:KEY~@latin-1`. The suffix overrides the global encoding only for that file, composes
+with the per-spec `~` key-normalisation marker, and is recorded as the effective `encoding` on that
+file's provenance entry. The same syntax applies to `--proxy-hints-with-a/-b` and MCP
+`held_out_with*`. In the web views, every held-out row has its own encoding picker; "Dataset
+setting" preserves the previous shared choice while an explicit row choice overrides it.
+
 ---
 
 ## 4. Intersectional gaps (informational, not scored)

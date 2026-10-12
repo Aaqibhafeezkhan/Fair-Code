@@ -13,6 +13,7 @@ bit-for-bit identical. The result is attached to the profile under
 
 from __future__ import annotations
 
+import codecs
 import math
 import re
 import unicodedata
@@ -195,6 +196,29 @@ def split_held_out_spec(spec, profiled_columns=None):
     return path, column, key
 
 
+def split_held_out_encoding(spec):
+    """Split an optional ``@ENCODING`` suffix from a held-out file spec.
+
+    The suffix lives on the right-hand side of ``PATH=...``, so ``@`` remains
+    valid in the path itself. The encoding is validated through Python's codec
+    registry here, before any file is read, and the caller receives the spec
+    without the suffix plus the original encoding name.
+    """
+    path, sep, rest = spec.partition("=")
+    if not sep or "@" not in rest:
+        return spec, None
+    value, marker, encoding = rest.rpartition("@")
+    if not marker:
+        return spec, None
+    if not encoding:
+        raise ValueError(f"invalid held-out encoding in '{spec}': expected @ENCODING")
+    try:
+        codecs.lookup(encoding)
+    except LookupError:
+        raise ValueError(f"unknown held-out encoding '{encoding}' in '{spec}'") from None
+    return f"{path}={value}", encoding
+
+
 def strip_key_normalize_marker(spec, profiled_columns=None):
     """Split a trailing `~` off "PATH=COLUMN:KEY~" and return (spec, marked).
 
@@ -272,15 +296,18 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
     `normalize_keys` makes the comparison tolerant of case, surrounding spaces and
     leading zeros (#859); both stay off by default so matching is exact. A spec
     ending in `~` (`PATH=COLUMN:KEY~`) normalises just that spec's key (#892).
+    An optional `@ENCODING` suffix overrides the caller's shared encoding for
+    that file; it composes with the marker as `PATH=COLUMN:KEY~@ENCODING`.
     """
     held_out = {}
-    for spec in specs or []:
+    for original_spec in specs or []:
+        spec, spec_encoding = split_held_out_encoding(original_spec)
         spec, marked = strip_key_normalize_marker(spec, df.columns)
         normalize = normalize_keys or marked
         path, column, key = split_held_out_spec(spec, df.columns)
         if not path or not column or key == "" or "=" not in spec:
             raise ValueError(f"invalid {flag} '{spec}', expected PATH=COLUMN or PATH=COLUMN:KEY")
-        held_df = read_table(path)
+        held_df = read_table(path, encoding=spec_encoding) if spec_encoding else read_table(path)
         if column not in held_df.columns:
             raise ValueError(f"{flag} column '{column}' not found in {path}")
         if column in df.columns:

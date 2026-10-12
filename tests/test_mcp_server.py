@@ -36,6 +36,24 @@ requires_openpyxl = pytest.mark.skipif(
 )
 
 
+@requires_scipy
+def test_proxy_hints_held_out_file_can_override_the_dataset_encoding(tmp_path):
+    dataset = tmp_path / "dataset-latin1.csv"
+    held = tmp_path / "held-utf8.csv"
+    dataset.write_bytes(("sex\n" + "M\nF\n" * 20).encode("latin-1"))
+    held.write_bytes(("ráce\n" + "A\nB\n" * 20).encode("utf-8"))
+
+    result = _proxy_hints_impl(
+        str(dataset),
+        held_out_with=[f"{held}=ráce@utf-8"],
+        encoding="latin-1",
+    )
+
+    entry = result["provenance"]["proxy_hints_with"][0]
+    assert entry["column"] == "ráce"
+    assert entry["encoding"] == "utf-8"
+
+
 def _write_multi_sheet_xlsx(path, first_col, first_rows):
     import openpyxl
 

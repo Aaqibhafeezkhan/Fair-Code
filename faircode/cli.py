@@ -98,7 +98,7 @@ def _check_map_columns(overrides, known_columns):
         raise SystemExit(2)
 
 
-def _build_held_out(specs, df, encoding=None, normalize_keys=False):
+def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categorical_card=20):
     """Parse repeated --proxy-hints-with PATH=COLUMN flags via proxy.py's
     shared parse_held_out_specs, printing a plain error and raising
     SystemExit(2) on any parse failure, missing column, or row-count
@@ -120,8 +120,13 @@ def _build_held_out(specs, df, encoding=None, normalize_keys=False):
                     file=sys.stderr,
                 )
     try:
-        return parse_held_out_specs(specs, df, functools.partial(_read_or_exit, encoding=encoding),
-                                    normalize_keys=normalize_keys)
+        notes = []
+        held_out = parse_held_out_specs(specs, df, functools.partial(_read_or_exit, encoding=encoding),
+                                        normalize_keys=normalize_keys, notes=notes,
+                                        max_categorical_card=max_categorical_card)
+        for note in notes:
+            print(f"note: {note}", file=sys.stderr)
+        return held_out
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         raise SystemExit(2)
@@ -599,7 +604,8 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
         if args.proxy_hints or args.proxy_hints_with:
-            held_out = _build_held_out(args.proxy_hints_with, df, args.encoding, args.proxy_key_normalize)
+            held_out = _build_held_out(args.proxy_hints_with, df, args.encoding, args.proxy_key_normalize,
+                                       _resolve_opts(opts)["max_categorical_card"])
             try:
                 result["proxy_hints"] = proxy_hints(df, result["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out,
                                                 max_age=_resolve_opts(opts)["max_age"],
@@ -747,8 +753,10 @@ def main(argv: list[str] | None = None) -> int:
         result = compare(profile_a, profile_b, name_a=args.csv_a, name_b=args.csv_b)
 
         if args.proxy_hints or args.proxy_hints_with_a or args.proxy_hints_with_b:
-            held_out_a = _build_held_out(args.proxy_hints_with_a, df_a, args.encoding, args.proxy_key_normalize)
-            held_out_b = _build_held_out(args.proxy_hints_with_b, df_b, args.encoding, args.proxy_key_normalize)
+            held_out_a = _build_held_out(args.proxy_hints_with_a, df_a, args.encoding, args.proxy_key_normalize,
+                                         _resolve_opts(opts)["max_categorical_card"])
+            held_out_b = _build_held_out(args.proxy_hints_with_b, df_b, args.encoding, args.proxy_key_normalize,
+                                         _resolve_opts(opts)["max_categorical_card"])
             try:
                 result["proxy_hints_a"] = proxy_hints(df_a, profile_a["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out_a,
                                                         max_age=_resolve_opts(opts)["max_age"],

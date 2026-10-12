@@ -302,8 +302,28 @@ def _key_labels(frame, cols, what, flag, normalize=False):
     return labels
 
 
+def near_unique_note(name, distinct, max_categorical_card):
+    """The note for a held-out column skipped as an identifier (#908)."""
+    return (f"held-out column '{name}' has {distinct} distinct values (more than "
+            f"{max_categorical_card} and nearly one per row) - it looks like an identifier, "
+            f"not a group, so it was not tested")
+
+
+def _keep_held_out(held_out, column, series, notes, max_categorical_card):
+    """Store a held-out column unless it is near-unique (more distinct values than
+    `max_categorical_card` and at least half the non-null rows): testing an ID-like or
+    free-text column builds a huge contingency table and means nothing. Only screened when
+    the caller passes a `notes` list to receive the skip message (#908)."""
+    if notes is not None:
+        distinct, present = int(series.nunique(dropna=True)), int(series.notna().sum())
+        if distinct > max_categorical_card and distinct * 2 >= present:
+            notes.append(near_unique_note(column, distinct, max_categorical_card))
+            return
+    held_out[column] = series
+
+
 def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-hints-with",
-                         normalize_keys=False):
+                         normalize_keys=False, notes=None, max_categorical_card=20):
     """Parse repeated PATH=COLUMN[:KEY] specs into a {column: pandas.Series} map
     aligned to `df`'s index, for proxy_hints()'s `held_out` param. Shared by
     the CLI's `--proxy-hints-with` and the MCP `proxy_hints` tool's
@@ -325,6 +345,8 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
     ending in `!` keeps just that spec exact even when `normalize_keys` is on (#907).
     An optional `@ENCODING` suffix overrides the caller's shared encoding for
     that file; it composes with the marker as `PATH=COLUMN:KEY~@ENCODING`.
+    With a `notes` list, a near-unique held-out column (see `_keep_held_out`) is left out
+    and a message appended instead of being tested (#908).
     """
     held_out = {}
     for original_spec in specs or []:
@@ -358,14 +380,16 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
                 raise ValueError(
                     f"{flag} {path} has no row for {int(missing.sum())} key(s) of the "
                     f"profiled dataset (e.g. '{df_keys[missing].iloc[0]}')")
-            held_out[column] = pd.Series(lookup.loc[df_keys.to_numpy()].to_numpy(), index=df.index)
+            _keep_held_out(held_out, column, pd.Series(lookup.loc[df_keys.to_numpy()].to_numpy(), index=df.index),
+                           notes, max_categorical_card)
             continue
         if len(held_df) != len(df):
             raise ValueError(
                 f"{flag} {path} has {len(held_df)} row(s), but the profiled "
                 f"dataset has {len(df)} - rows must align 1:1 (or add a join key: "
                 f"PATH=COLUMN:KEY)")
-        held_out[column] = pd.Series(held_df[column].to_numpy(), index=df.index)
+        _keep_held_out(held_out, column, pd.Series(held_df[column].to_numpy(), index=df.index),
+                       notes, max_categorical_card)
     return held_out
 
 

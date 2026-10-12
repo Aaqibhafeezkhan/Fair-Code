@@ -600,3 +600,22 @@ def test_exact_permutations_and_row_cap_are_parameters():
     for bad in ({"permutations": 0}, {"max_rows": -1}, {"permutations": 2.5}, {"max_rows": True}):
         with pytest.raises(ValueError, match="positive integer"):
             proxy_hints(sparse, dims, alpha=1.0, exact=True, **bad)
+
+
+def test_near_unique_held_out_columns_are_skipped_with_a_note():
+    # #908: an ID-like column (more distinct values than the cap, nearly one per row) is not
+    # tested; a column with few values or a mid-cardinality one in a big table is kept.
+    from faircode.proxy import near_unique_note, parse_held_out_specs
+    n = 100
+    df = pd.DataFrame({"sex": ["m", "f"] * (n // 2)})
+    held = pd.DataFrame({"ident": [f"id{i}" for i in range(n)], "race": ["a", "b", "c", "d"] * (n // 4),
+                         "age": [20 + i % 30 for i in range(n)]})
+    read = lambda path: held  # noqa: E731
+    notes = []
+    out = parse_held_out_specs(["h.csv=ident", "h.csv=race"], df, read, notes=notes, max_categorical_card=20)
+    assert list(out) == ["race"] and notes == [near_unique_note("ident", n, 20)]
+    assert "identifier" in notes[0]
+    notes = []
+    assert list(parse_held_out_specs(["h.csv=age"], df, read, notes=notes, max_categorical_card=20)) == ["age"] and not notes
+    assert list(parse_held_out_specs(["h.csv=ident"], df, read, notes=notes, max_categorical_card=200)) == ["ident"]
+    assert list(parse_held_out_specs(["h.csv=ident"], df, read)) == ["ident"]   # no notes list: not screened

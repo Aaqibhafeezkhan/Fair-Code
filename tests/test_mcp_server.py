@@ -798,3 +798,18 @@ def test_proxy_hints_exact_tuning_parameters_reach_hints_and_provenance(tmp_path
     assert (params["exact_permutations"], params["exact_max_rows"]) == (99, 10)
     with pytest.raises(ValueError, match="positive integer"):
         _proxy_hints_impl(str(path), alpha=1.0, exact=True, exact_permutations=0)
+
+
+@requires_scipy
+def test_proxy_hints_skips_near_unique_held_out_columns_with_a_note(tmp_path):
+    # #908
+    path = tmp_path / "a.csv"
+    path.write_text("sex,occupation\n" + "\n".join(
+        f"{'m' if i % 2 else 'f'},{'x' if i % 2 else 'y'}" for i in range(60)) + "\n", encoding="utf-8")
+    held = tmp_path / "h.csv"
+    held.write_text("ident\n" + "\n".join(f"id{i}" for i in range(60)) + "\n", encoding="utf-8")
+    result = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{held}=ident"])
+    assert any("held-out column 'ident'" in n and "identifier" in n for n in result["notes"])
+    assert all("ident" not in (h["a"], h["b"]) for h in result["hints"])
+    wide = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{held}=ident"], max_categorical_card=100)
+    assert "notes" not in wide

@@ -1533,9 +1533,9 @@ def test_held_out_rows_control_is_wired_into_profile_and_compare_views():
     assert html.index("profiler-heldout.js") < html.index("profiler-compare.js")
     ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
     cmp_js = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
-    assert "E.buildHeldOut(specs, currentTable, heldNotes)" in ui
-    assert "E.buildHeldOut(specsA, slot.A.table, heldNotes)" in cmp_js
-    assert "E.buildHeldOut(specsB, slot.B.table, heldNotes)" in cmp_js
+    assert "E.buildHeldOut(specs, currentTable, heldNotes, currentOpts.max_categorical_card)" in ui
+    assert "E.buildHeldOut(specsA, slot.A.table, heldNotes, currentOpts.max_categorical_card)" in cmp_js
+    assert "E.buildHeldOut(specsB, slot.B.table, heldNotes, currentOpts.max_categorical_card)" in cmp_js
     control = (REPO_ROOT / "assets" / "profiler-heldout.js").read_text(encoding="utf-8")
     assert ".xlsx" in control and "file.arrayBuffer()" in control
 
@@ -2082,3 +2082,25 @@ def test_python_js_exact_permutations_and_row_cap_parameters_agree(tmp_path):
     (py_capped,) = proxy_hints(df, dims, alpha=1.0, exact=True, max_rows=10)
     assert out["capped"]["p_method"] == py_capped["p_method"] == "chi2-capped"
     assert "positive integer" in out["bad"] and "positive integer" in out["badrows"]
+
+
+def test_web_held_out_skips_near_unique_columns_like_python():
+    """#908: buildHeldOut() drops an ID-like column with the same note proxy.py gives, keeps
+    a low-cardinality one, and honours a wider max_categorical_card."""
+    from faircode.proxy import near_unique_note
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "var rows=[],held=[];for(var i=0;i<100;i++){rows.push({sex:i%2?'m':'f'});held.push({ident:'id'+i,race:'abcd'[i%4]});}"
+        "var t={columns:['sex'],rows:rows},h={columns:['ident','race'],rows:held};"
+        "var csv=function(){return 'x'};"
+        "async function run(card){var notes=[];var out=await E.buildHeldOut(["
+        "{name:'h.json',column:'ident',data:JSON.stringify(held)},{name:'h.json',column:'race',data:JSON.stringify(held)}],"
+        "t,notes,card);return {cols:Object.keys(out),notes:notes};}"
+        "(async function(){process.stdout.write(JSON.stringify({d:await run(),w:await run(200)}));})();"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out["d"]["cols"] == ["race"] and out["d"]["notes"] == [near_unique_note("ident", 100, 20)]
+    assert out["w"]["cols"] == ["ident", "race"] and out["w"]["notes"] == []
+    for name in ("profiler-ui.js", "profiler-compare.js"):
+        assert "currentOpts.max_categorical_card)" in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")

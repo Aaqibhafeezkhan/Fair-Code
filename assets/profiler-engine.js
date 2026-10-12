@@ -1257,7 +1257,8 @@
   // is passed, a note is pushed for every workbook with other sheets, like the
   // CLI's per-held-out-file "other sheet(s) ignored" line; and if the requested
   // column is missing from such a workbook, the error says which sheets were skipped.
-  async function buildHeldOut(specs, table, notes) {
+  async function buildHeldOut(specs, table, notes, maxCategoricalCard) {
+    if (maxCategoricalCard === undefined || maxCategoricalCard === null) maxCategoricalCard = DEFAULT_OPTS.max_categorical_card;
     var out = {};
     for (var i = 0; i < specs.length; i++) {
       var spec = specs[i], heldTable, sheetNote = null;
@@ -1276,7 +1277,23 @@
       else if (/\.json$/i.test(spec.name)) heldTable = parseJSON(spec.data);
       else heldTable = parseCSV(spec.data);
       try {
-        out[spec.column] = parseHeldOut(heldTable, spec.column, table, out, spec.key, spec.normalize);
+        var values = parseHeldOut(heldTable, spec.column, table, out, spec.key, spec.normalize);
+        // A near-unique column (an ID, free text) is skipped with a note, like proxy.py
+        // _keep_held_out (#908).
+        var seen = Object.create(null), distinct = 0, present = 0;
+        values.forEach(function (v) {
+          if (v === null || v === undefined || v === '') return;
+          present++;
+          if (!seen[v]) { seen[v] = 1; distinct++; }
+        });
+        if (distinct > maxCategoricalCard && distinct * 2 >= present) {
+          if (notes) {
+            notes.push("held-out column '" + spec.column + "' has " + distinct + ' distinct values (more than ' +
+              maxCategoricalCard + ' and nearly one per row) - it looks like an identifier, not a group, so it was not tested');
+          }
+        } else {
+          out[spec.column] = values;
+        }
       } catch (err) {
         if (sheetNote && heldTable.columns.indexOf(spec.column) === -1) {
           err.message += ' (' + sheetNote + ')';

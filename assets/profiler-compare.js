@@ -840,8 +840,8 @@
     var heldA = null, heldB = null, heldNotes = [];
     try {
       var specsA = await heldOutA.collect(), specsB = await heldOutB.collect();
-      if (specsA.length) heldA = await E.buildHeldOut(specsA, slot.A.table, heldNotes);
-      if (specsB.length) heldB = await E.buildHeldOut(specsB, slot.B.table, heldNotes);
+      if (specsA.length) heldA = await E.buildHeldOut(specsA, slot.A.table, heldNotes, currentOpts.max_categorical_card);
+      if (specsB.length) heldB = await E.buildHeldOut(specsB, slot.B.table, heldNotes, currentOpts.max_categorical_card);
       heldSpecsA = specsA;
       heldSpecsB = specsB;
     } catch (err) {

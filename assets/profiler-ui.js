@@ -486,7 +486,7 @@
     var heldOut = null, heldNotes = [];
     try {
       var specs = await heldOutControl.collect();
-      if (specs.length) heldOut = await E.buildHeldOut(specs, currentTable, heldNotes);
+      if (specs.length) heldOut = await E.buildHeldOut(specs, currentTable, heldNotes, currentOpts.max_categorical_card);
       currentHeldSpecs = specs;
     } catch (err) {
       currentHeldSpecs = [];

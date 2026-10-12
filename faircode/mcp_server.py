@@ -269,6 +269,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
     if enc_notes:
         result["notes"] = [enc_notes[0]]
     if proxy_hints:
+        held_notes = []   # near-unique held-out columns skipped (#908)
         kw = {} if alpha is None else {"alpha": alpha}
         kw["correction"] = correction
         kw["max_age"] = _resolve_opts(opts)["max_age"]
@@ -276,13 +277,17 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
         kw["exact"] = exact
         kw.update(_exact_kwargs(exact_permutations, exact_max_rows))
         held_a = parse_held_out_specs(held_out_with_a, df_a, read_held, flag="held_out_with_a",
-                                      normalize_keys=key_normalize) if held_out_with_a else None
+                                      normalize_keys=key_normalize, notes=held_notes,
+                                      max_categorical_card=_resolve_opts(opts)["max_categorical_card"]) if held_out_with_a else None
         held_b = parse_held_out_specs(held_out_with_b, df_b, read_held, flag="held_out_with_b",
-                                      normalize_keys=key_normalize) if held_out_with_b else None
+                                      normalize_keys=key_normalize, notes=held_notes,
+                                      max_categorical_card=_resolve_opts(opts)["max_categorical_card"]) if held_out_with_b else None
         result["proxy_hints_a"] = compute_proxy_hints(df_a, profile_a["dimensions"],
                                                       held_out=held_a, **kw)
         result["proxy_hints_b"] = compute_proxy_hints(df_b, profile_b["dimensions"],
                                                       held_out=held_b, **kw)
+        if held_notes:
+            result["notes"] = result.get("notes", []) + held_notes
     if include_provenance:
         from .provenance import sniff_effective_encoding
         enc_a = encoding or sniff_effective_encoding(path_a)
@@ -350,9 +355,11 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
                        age_reference_year=age_reference_year, keywords=keywords)
     resolved = _resolve_opts(opts)
     result = profile(df, overrides, opts)
+    held_notes = []   # near-unique held-out columns skipped (#908)
     held_out = parse_held_out_specs(held_out_with, df, functools.partial(_read_table_or_raise, encoding=encoding),
                                     flag="held_out_with",
-                                    normalize_keys=key_normalize) if held_out_with else None
+                                    normalize_keys=key_normalize, notes=held_notes,
+                                    max_categorical_card=resolved["max_categorical_card"]) if held_out_with else None
     kw = {} if alpha is None else {"alpha": alpha}
     kw["correction"] = correction
     kw["exact"] = exact
@@ -364,7 +371,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     notes += [n for spec in (held_out_with or []) for n in (_sheet_note(spec.partition("=")[0]),) if n]
     if notes:
         output["sheet_notes"] = notes
-    enc_notes = [n for n in (encoding_ignored_note(path, encoding),) if n]
+    enc_notes = [n for n in (encoding_ignored_note(path, encoding),) if n] + held_notes
     if enc_notes:
         output["notes"] = enc_notes
     if include_provenance:

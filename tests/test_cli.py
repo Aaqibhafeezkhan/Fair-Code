@@ -1354,3 +1354,20 @@ def test_proxy_exact_tuning_flags_need_proxy_exact_and_reach_provenance(tmp_path
     assert main(["profile", str(path), "--proxy-hints", "--proxy-alpha", "1", "--proxy-exact", "--json"]) == 0
     params = json.loads(capsys.readouterr().out)["provenance"]["params"]
     assert (params["exact_permutations"], params["exact_max_rows"]) == (1000, 20000)
+
+
+def test_near_unique_held_out_column_is_skipped_with_a_stderr_note(tmp_path, capsys):
+    # #908
+    n = 60
+    data = tmp_path / "d.csv"
+    data.write_text("sex,occupation\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 2 else 'y'}" for i in range(n)) + "\n")
+    held = tmp_path / "h.csv"
+    held.write_text("ident\n" + "\n".join(f"id{i}" for i in range(n)) + "\n")
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-alpha", "1",
+                 "--proxy-hints-with", f"{held}=ident", "--json"]) == 0
+    captured = capsys.readouterr()
+    assert "note: held-out column 'ident' has 60 distinct values" in captured.err
+    assert all("ident" not in (h["a"], h["b"]) for h in json.loads(captured.out)["proxy_hints"])
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-alpha", "1", "--max-categorical-card", "100",
+                 "--proxy-hints-with", f"{held}=ident", "--json"]) == 0
+    assert "note:" not in capsys.readouterr().err

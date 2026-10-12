@@ -192,6 +192,8 @@ original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by de
 from the export (Bonferroni: `min(1, p · n_tests)`). Adjusted hints print "(m=N pairs)" in the
 terminal/HTML/web output, and the CSV proxy section gains an `n_tests` column before `low_expected`.
 
+**Near-unique held-out columns (#908).** A held-out column with more distinct values than `--max-categorical-card` (default 20) that are also at least half of its non-null rows looks like an identifier or free text, so it is left out of the tests and a note says so (CLI stderr `note:`, MCP `notes`, the web proxy notes) instead of building a rows x N contingency table; raise `--max-categorical-card` to test it anyway.
+
 **Limitation - a dropped column is invisible by construction.** `proxy_hints()` only tests pairs
 drawn from `dimensions`, the columns actually present in the profiled data. If a protected attribute
 was already removed before profiling - "we dropped the column so it's fine" - it can never be one

@@ -78,6 +78,14 @@ def public_params(resolved: dict) -> dict:
     return {k: v for k, v in sorted(resolved.items()) if k not in _OPAQUE_PARAMS}
 
 
+def proxy_params(alpha, correction=None, exact=False) -> dict:
+    """The proxy-hint settings recorded in `params` whenever hints were requested:
+    the significance level, the multiple-comparison correction (null when none)
+    and whether the exact-test fallback was on, so the same p-values can be
+    reproduced (#898). Same keys from the CLI, MCP and the web."""
+    return {"alpha": alpha, "correction": correction, "exact": bool(exact)}
+
+
 def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding=None) -> list:
     """Provenance entries for repeated PATH=COLUMN held-out specs (#811).
 

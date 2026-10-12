@@ -290,3 +290,25 @@ def test_held_out_entry_records_its_per_file_encoding_over_the_global_one(datase
 
     (entry,) = held_out_entries([f"{dataset}=race@utf-8"], encoding="latin-1")
     assert entry["encoding"] == "utf-8"
+
+
+def test_proxy_settings_are_recorded_in_params_when_hints_run(dataset, tmp_path, capsys):
+    # #898: alpha, correction and exact make the p-values reproducible; absent without hints.
+    pytest.importorskip("scipy")
+    assert main(["profile", str(dataset), "--proxy-hints", "--proxy-alpha", "0.01",
+                 "--proxy-correction", "holm", "--proxy-exact", "--json"]) == 0
+    params = json.loads(capsys.readouterr().out)["provenance"]["params"]
+    assert (params["alpha"], params["correction"], params["exact"]) == (0.01, "holm", True)
+
+    assert main(["profile", str(dataset), "--proxy-hints", "--json"]) == 0
+    params = json.loads(capsys.readouterr().out)["provenance"]["params"]
+    assert (params["alpha"], params["correction"], params["exact"]) == (0.05, None, False)
+
+    assert main(["profile", str(dataset), "--json"]) == 0
+    assert "alpha" not in json.loads(capsys.readouterr().out)["provenance"]["params"]
+
+    other = tmp_path / "other.csv"
+    other.write_text(ROWS + "male,south,60\n", encoding="utf-8")
+    assert main(["compare", str(dataset), str(other), "--proxy-hints", "--proxy-exact", "--json"]) == 0
+    params = json.loads(capsys.readouterr().out)["provenance"]["params"]
+    assert params["exact"] is True and params["alpha"] == 0.05

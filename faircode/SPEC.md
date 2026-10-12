@@ -533,6 +533,7 @@ edit.
 - **`params`** - the knobs of section 7 **as resolved**, defaults included, since a defaulted
   threshold is as load-bearing as a typed one. The parsed `reference` table is not echoed here; it
   is identified by `reference_hash` instead.
+  When proxy hints were requested, `params` also carries `alpha`, `correction` (`null` when unadjusted) and `exact`, from the CLI, MCP and web alike (#898).
 - **`overrides`** - the section 1 `{column: kind}` map. It changes which columns are scored at all,
   and a forced column is exempt from the `MAX_DIMENSION_GROUPS` drop, so it can change how many
   dimensions exist.

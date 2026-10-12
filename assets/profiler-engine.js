@@ -101,8 +101,11 @@
   // faircode.provenance.public_params(faircode.profiler._resolve_opts(opts)),
   // so a web-profiler export's provenance.params matches the CLI/MCP path
   // even when the user never touched a threshold input (#490).
-  function publicParams(opts) {
+  function publicParams(opts, proxy) {
     var resolved = resolveOpts(opts);
+    // `proxy` ({alpha, correction, exact}) is added when proxy hints were run, like
+    // provenance.proxy_params() (#898).
+    if (proxy) resolved = Object.assign({}, resolved, { alpha: proxy.alpha, correction: proxy.correction || null, exact: !!proxy.exact });
     var out = {};
     Object.keys(resolved).sort().forEach(function (k) {
       if (!OPAQUE_PARAMS[k]) out[k] = resolved[k];

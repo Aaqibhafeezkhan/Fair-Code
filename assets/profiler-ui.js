@@ -51,6 +51,7 @@
   var currentEncoding = null;  // encoding the current file was decoded with (provenance, #857)
   var pendingEncoding = null;
   var encodingSelect = document.getElementById('encodingSelect');
+  var currentProxySettings = null; // alpha/correction/exact behind the on-screen hints (#898)
   var currentHeldSpecs = []; // held-out specs behind the on-screen proxy hints (#811)
   var currentName = '';
   var currentTable = null;   // parsed table, kept so overrides can re-profile
@@ -479,6 +480,8 @@
     // Attach to the result so Download report / Copy as JSON / Download CSV
     // include what's on screen (issue #758).
     currentResult.proxy_hints = hints;
+    currentProxySettings = { alpha: alpha, correction: document.getElementById('proxyCorrectionInput').value || null,
+                             exact: document.getElementById('proxyExactInput').checked };
     if (!hints.length) {
       host.innerHTML = '<p class="section-note">No column pairs are significantly associated (p &lt; ' + alpha + ').</p>';
       appendHeldNotes(host, heldNotes);
@@ -1063,7 +1066,7 @@
     var provenance = { faircode_version: FAIRCODE_VERSION, engine: 'js', dataset_hash: hash.digest };
     if (hash.note !== null) provenance.dataset_hash_note = hash.note;
     if (currentEncoding) provenance.encoding = currentEncoding;
-    provenance.params = E.publicParams(currentOpts);
+    provenance.params = E.publicParams(currentOpts, currentResult && currentResult.proxy_hints ? currentProxySettings : null);
     provenance.overrides = Object.assign({}, currentOverrides);
     if (currentResult && currentResult.proxy_hints && currentHeldSpecs.length) {
       provenance.proxy_hints_with = await heldOutEntries(currentHeldSpecs);

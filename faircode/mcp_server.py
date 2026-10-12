@@ -47,6 +47,7 @@ from .loaders_extra import (
 )
 from .profiler import _resolve_opts, parse_reference, profile
 from .provenance import build as build_provenance
+from .provenance import proxy_params
 from .proxy import PROXY_ALPHA, parse_held_out_specs
 from .proxy import proxy_hints as compute_proxy_hints
 from .report import compare_to_csv, to_csv
@@ -281,7 +282,9 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
             encs["dataset_hash_b"] = enc_b
         provenance = build_provenance(
             [("dataset_hash_a", path_a), ("dataset_hash_b", path_b)],
-            _resolve_opts(opts), overrides,
+            {**_resolve_opts(opts),
+             **(proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact) if proxy_hints else {})},
+            overrides,
             held_out=[("proxy_hints_with_a", held_out_with_a, list(df_a.columns)),
                       ("proxy_hints_with_b", held_out_with_b, list(df_b.columns))] if proxy_hints else (),
             encodings=encs if encs else None, held_out_encoding=encoding)
@@ -355,7 +358,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
         enc = encoding or sniff_effective_encoding(path)
         output["provenance"] = build_provenance(
             [("dataset_hash", path)],
-            params={"alpha": PROXY_ALPHA if alpha is None else alpha, "correction": correction,
+            params={**proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact),
                     **{k: resolved[k] for k in ("max_categorical_card", "max_dimension_groups",
                                                 "max_age", "age_reference_year", "keywords")}},
             overrides=overrides,

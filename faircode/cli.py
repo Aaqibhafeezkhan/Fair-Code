@@ -48,7 +48,7 @@ from .loaders_extra import (
 # private helper follows the existing precedent in compare.py (`from .profiler
 # import _r`) and keeps profiler.py - a parity-sensitive file - untouched.
 from .profiler import _resolve_opts, parse_reference, profile
-from .provenance import build as build_provenance
+from .provenance import proxy_params, build as build_provenance
 from .proxy import parse_held_out_specs, proxy_hints
 from .report import (
     compare_to_csv, compare_to_html, compare_to_terminal, to_csv, to_html, to_json, to_terminal,
@@ -161,7 +161,10 @@ def _profile_provenance(args, opts, overrides, df=None):
     enc = getattr(args, "encoding", None)
     if not enc and getattr(args, "csv", None) and not getattr(args, "sample", False):
         enc = sniff_effective_encoding(args.csv)
-    provenance = build_provenance(digests, _resolve_opts(opts), overrides,
+    params = dict(_resolve_opts(opts))
+    if args.proxy_hints:
+        params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact))
+    provenance = build_provenance(digests, params, overrides,
                                   held_out=[("proxy_hints_with", args.proxy_hints_with, columns)],
                                   encodings={"dataset_hash": enc} if enc else None,
                                   key_normalize=args.proxy_key_normalize,
@@ -184,9 +187,12 @@ def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
         encs["dataset_hash_a"] = enc_a
     if enc_b:
         encs["dataset_hash_b"] = enc_b
+    params = dict(_resolve_opts(opts))
+    if args.proxy_hints:
+        params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact))
     return build_provenance(
         [("dataset_hash_a", args.csv_a), ("dataset_hash_b", args.csv_b)],
-        _resolve_opts(opts), overrides,
+        params, overrides,
         held_out=[("proxy_hints_with_a", args.proxy_hints_with_a, cols_a),
                   ("proxy_hints_with_b", args.proxy_hints_with_b, cols_b)],
         encodings=encs if encs else None,

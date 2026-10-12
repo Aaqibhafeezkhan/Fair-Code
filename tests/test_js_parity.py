@@ -1985,3 +1985,23 @@ def test_web_held_out_key_accepts_the_cli_tilde_and_bang_markers():
     assert list(py["race"]) == out["tilde"]
     js = (REPO_ROOT / "assets" / "profiler-heldout.js").read_text(encoding="utf-8")
     assert "/[~!]$/.exec(key)" in js
+
+
+def test_web_provenance_params_carry_the_proxy_settings():
+    """#898: publicParams(opts, proxy) adds alpha/correction/exact like provenance.proxy_params,
+    and both views pass the settings behind the on-screen hints."""
+    from faircode.profiler import _resolve_opts
+    from faircode.provenance import proxy_params, public_params
+    script = ("require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+              "process.stdout.write(JSON.stringify({plain:E.publicParams({}),"
+              "withp:E.publicParams({},{alpha:0.01,correction:'holm',exact:true}),"
+              "dflt:E.publicParams({},{alpha:0.05,correction:'',exact:false})}));")
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    base = _resolve_opts({})
+    assert out["plain"] == public_params(base)
+    assert out["withp"] == public_params({**base, **proxy_params(0.01, "holm", True)})
+    assert out["dflt"] == public_params({**base, **proxy_params(0.05, None, False)})
+    for name in ("profiler-ui.js", "profiler-compare.js"):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "E.publicParams(currentOpts, " in js and "currentProxySettings = {" in js

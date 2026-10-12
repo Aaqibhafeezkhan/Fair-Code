@@ -79,6 +79,7 @@
   var slot = { A: null, B: null };
   var heldSpecsA = [], heldSpecsB = []; // held-out specs behind the on-screen proxy hints (#811)
   var encodingSelect = document.getElementById('compareEncodingSelect');
+  var currentProxySettings = null; // alpha/correction/exact behind the on-screen hints (#898)
   var currentCmp = null; // last successful compare() result, for export
   var currentProfiles = null; // {A, B} profile() results behind currentCmp, for proxy hints
   var currentOverrides = {}; // column -> forced kind, applied to both A and B
@@ -828,6 +829,7 @@
       proxyResultsEl.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
       return;
     }
+    currentProxySettings = { alpha: alpha, correction: correction, exact: exact };
     currentCmp.proxy_hints_a = E.proxyHints(slot.A.table, currentProfiles.A.dimensions, alpha, heldA, correction, currentOpts.max_age, currentOpts.age_reference_year, exact);
     currentCmp.proxy_hints_b = E.proxyHints(slot.B.table, currentProfiles.B.dimensions, alpha, heldB, correction, currentOpts.max_age, currentOpts.age_reference_year, exact);
     proxyResultsEl.innerHTML = [['proxy_hints_a', 'A'], ['proxy_hints_b', 'B']].map(function (k) {
@@ -915,7 +917,7 @@
     provenance.dataset_hash_b = hashB.digest;
     if (hashB.note !== null) provenance.dataset_hash_b_note = hashB.note;
     if (slot.B && slot.B.encoding) provenance.encoding_b = slot.B.encoding;
-    provenance.params = E.publicParams(currentOpts);
+    provenance.params = E.publicParams(currentOpts, currentCmp && currentCmp.proxy_hints_a ? currentProxySettings : null);
     provenance.overrides = Object.assign({}, currentOverrides);
     if (currentCmp && currentCmp.proxy_hints_a) {
       if (heldSpecsA.length) provenance.proxy_hints_with_a = await heldOutEntries(heldSpecsA);

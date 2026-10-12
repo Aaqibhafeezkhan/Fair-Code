@@ -336,17 +336,19 @@ def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
 def apply_renames(result_a: dict, result_b: dict, renames: dict) -> dict:
     """A copy of `result_b` with each B dimension named `renames[a_name]` renamed to
     `a_name`, so a renamed column is compared as one dimension (`--rename race=ethnicity`,
-    #913). The tables are not touched; raises ValueError for an unknown name, a
-    duplicate target, or an A name B already has."""
+    #913). The tables are not touched; raises ValueError for a self-rename, an unknown
+    name, a duplicate target, or an A name B already has."""
     names_a = {d["name"] for d in result_a["dimensions"]}
     names_b = {d["name"] for d in result_b["dimensions"]}
     by_b = {}
     for a_name, b_name in renames.items():
+        if a_name == b_name:
+            raise ValueError(f"--rename: '{a_name}' renames a dimension to itself")
         if a_name not in names_a:
             raise ValueError(f"--rename: '{a_name}' is not a dimension of the first dataset")
         if b_name not in names_b:
             raise ValueError(f"--rename: '{b_name}' is not a dimension of the second dataset")
-        if a_name in names_b and a_name != b_name:
+        if a_name in names_b:
             raise ValueError(f"--rename: the second dataset already has a dimension named '{a_name}'")
         if b_name in by_b:
             raise ValueError(f"--rename: '{b_name}' is renamed more than once")

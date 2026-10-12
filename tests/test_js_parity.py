@@ -2122,6 +2122,12 @@ def test_python_js_compare_rename_option_parity(tmp_path):
         ["node", "scripts/engine-js.js", "compare", str(path_a), str(path_b), json.dumps({"race": "nope"})],
         capture_output=True, text=True, encoding="utf-8")
     assert "--rename: 'nope' is not a dimension of the second dataset" in bad.stderr
+    with pytest.raises(ValueError):
+        compare(profile(pd.read_csv(path_b)), profile(pd.read_csv(path_b)), "b.csv", "b.csv", renames={"sex": "sex"})
+    js_identity = subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_b), str(path_b), json.dumps({"sex": "sex"})],
+        capture_output=True, text=True, encoding="utf-8")
+    assert js_identity.returncode != 0 and "renames a dimension to itself" in js_identity.stderr
 
 
 def test_compare_view_offers_compare_as_one_buttons_for_rename_suggestions():

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import math
 import re
+import unicodedata
 
 from .profiler import NO_KIND_DETECTED_FLAG, _is_age_band_label, _r
 
@@ -190,13 +191,38 @@ def _alpha_prefix(short: str, long: str) -> bool:
 # Words too generic to show two columns are the same thing (`state_code` vs `region_code`).
 RENAME_GENERIC_TOKENS = frozenset(
     ["id", "code", "cd", "num", "no", "type", "group", "category", "cat", "class", "val", "value", "flag", "ind"])
-_NAME_TOKEN = re.compile(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+")
+_NAME_TOKEN = re.compile(r"[^\W\d_]+|[0-9]+")
+_LETTER_RUN = re.compile(r"[^\W\d_]+\Z")
+
+
+def _split_humps(run: str) -> list[str]:
+    parts, piece, prev = [], "", ""
+    for ch in run:
+        if prev.islower() and ch.isupper():
+            if piece:
+                parts.append(piece)
+            piece = ch
+        else:
+            piece += ch
+        prev = ch
+    if piece:
+        parts.append(piece)
+    return parts
+
+
+def _fold(t: str) -> str:
+    return "".join(ch for ch in unicodedata.normalize("NFD", t) if not unicodedata.combining(ch))
 
 
 def _name_tokens(name: str) -> set:
-    """Lower-cased words of a column name (`sex_code`, `SexCode` -> sex, code) minus the
-    generic ones; the same regex runs in profiler-engine.js (#902)."""
-    return {t.lower() for t in _NAME_TOKEN.findall(name)} - RENAME_GENERIC_TOKENS
+    """Accent-folded, lower-cased words of a column name (`sex_code`, `SexCode` -> sex,
+    code, `género` -> genero) minus the generic ones; #917. The same split and fold run
+    in profiler-engine.js (#902)."""
+    tokens = []
+    for run in _NAME_TOKEN.findall(name):
+        match = _LETTER_RUN.match(run)
+        tokens.extend(_split_humps(run) if match else [run])
+    return {_fold(t.lower()) for t in tokens} - RENAME_GENERIC_TOKENS
 
 
 def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list) -> list:

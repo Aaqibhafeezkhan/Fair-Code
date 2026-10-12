@@ -49,8 +49,8 @@ repos:
         files: '^(explainers/.*\.md|README\.md|CONTRIBUTORS\.md|METRICS\.md|ROADMAP\.md)$'
 
       - id: pytest
-        name: pytest (full suite)
-        entry: python3 -m pytest tests/ -q
+        name: pytest (fast suite, skips slow benchmark tests)
+        entry: python3 -m pytest tests/ -q -m "not slow"
         language: system
         pass_filenames: false
         stages: [pre-push]

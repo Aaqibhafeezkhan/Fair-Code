@@ -20,6 +20,7 @@
   var results = document.getElementById('results');
   var downloadHtmlBtn = document.getElementById('downloadHtmlBtn');
   var copyJsonBtn = document.getElementById('copyJsonBtn');
+  var copyCliBtn = document.getElementById('copyCliBtn');
   var downloadCsvBtn = document.getElementById('downloadCsvBtn');
   var announcer = document.getElementById('resultsAnnouncer');
   var mappingBlock = document.getElementById('mappingBlock');
@@ -125,6 +126,7 @@
   });
   downloadHtmlBtn.addEventListener('click', downloadHtmlReport);
   copyJsonBtn.addEventListener('click', copyResultAsJSON);
+  if (copyCliBtn) copyCliBtn.addEventListener('click', copyCliCommand);
   downloadCsvBtn.addEventListener('click', downloadCsvReport);
   proxyHintsBtn.addEventListener('click', renderProxyHints);
 
@@ -1121,6 +1123,35 @@
       provenance.proxy_hints_with = await heldOutEntries(currentHeldSpecs);
     }
     return provenance;
+  }
+
+  // The faircode command that reproduces this run (#915); shell-quoted by E.buildCliCommand.
+  function currentCliCommand() {
+    var withHints = !!(currentResult && currentResult.proxy_hints && currentProxySettings);
+    return E.buildCliCommand({
+      kind: 'profile',
+      files: [currentFile ? currentFile.name : 'data.csv'],
+      opts: currentOpts,
+      overrides: currentOverrides,
+      encoding: encodingSelect ? encodingSelect.value : 'auto',
+      referenceName: referenceFile ? referenceFile.name : null,
+      proxy: withHints ? currentProxySettings : null,
+      held: { main: withHints ? currentHeldSpecs : [] }
+    });
+  }
+
+  function copyCliCommand() {
+    if (!currentResult) return;
+    var text = currentCliCommand();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        flashButton(copyCliBtn, '✓ Copied');
+      }, function () {
+        flashButton(copyCliBtn, fallbackCopy(text) ? '✓ Copied' : 'Copy failed');
+      });
+    } else {
+      flashButton(copyCliBtn, fallbackCopy(text) ? '✓ Copied' : 'Copy failed');
+    }
   }
 
   async function copyResultAsJSON() {

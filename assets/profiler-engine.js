@@ -2085,9 +2085,64 @@
     return out;
   }
 
+  // ── Equivalent CLI command (#915) ─────────────────────────────────────────
+  // Builds the `faircode profile|compare ...` line that reproduces a web run, from the options the
+  // page holds. A keywords vocabulary becomes a heredoc that writes words.json first. Held-out
+  // specs use the CLI's PATH=COLUMN[:KEY[~]][@ENCODING] syntax (#892, #914).
+  var CLI_THRESHOLD_FLAGS = [['min_share', '--min-share'], ['intersection_floor', '--intersection-floor'],
+    ['imbalance_flag', '--imbalance-flag'], ['missing_flag', '--missing-flag'], ['min_group_size', '--min-group-size'],
+    ['max_categorical_card', '--max-categorical-card'], ['max_dimension_groups', '--max-dimension-groups'],
+    ['max_age', '--max-age'], ['age_reference_year', '--age-reference-year']];
+
+  function shellQuote(text) {
+    text = String(text);
+    return /^[A-Za-z0-9_@%+=:,.\/-]+$/.test(text) ? text : "'" + text.replace(/'/g, "'\\''") + "'";
+  }
+
+  function heldOutSpecText(h) {
+    var out = h.name + '=' + h.column;
+    if (h.key) out += ':' + h.key + (h.normalize ? '~' : '');
+    if (h.encoding) out += '@' + h.encoding;
+    return out;
+  }
+
+  // spec: {kind: 'profile'|'compare', files, opts, overrides, encoding, referenceName,
+  //        proxy: {alpha, correction, exact, permutations, maxRows} | null, held: {main, a, b}, renames}
+  function buildCliCommand(spec) {
+    var opts = spec.opts || {}, args = ['faircode', spec.kind].concat((spec.files || []).map(shellQuote)), pre = '';
+    CLI_THRESHOLD_FLAGS.forEach(function (pair) {
+      if (opts[pair[0]] !== undefined && opts[pair[0]] !== null) args.push(pair[1], String(opts[pair[0]]));
+    });
+    if (opts.keywords && Object.keys(opts.keywords).length) {
+      pre = "cat > words.json <<'EOF'\n" + JSON.stringify(opts.keywords) + '\nEOF\n';
+      args.push('--keywords', 'words.json');
+    }
+    if (spec.kind === 'profile' && opts.cross && opts.cross.length === 2) args.push('--cross', shellQuote(opts.cross.join(',')));
+    Object.keys(spec.overrides || {}).forEach(function (col) { args.push('--map', shellQuote(col + '=' + spec.overrides[col])); });
+    if (spec.encoding && spec.encoding !== 'auto') args.push('--encoding', shellQuote(spec.encoding));
+    if (spec.kind === 'profile' && spec.referenceName) args.push('--reference', shellQuote(spec.referenceName));
+    Object.keys(spec.renames || {}).forEach(function (a) { args.push('--rename', shellQuote(a + '=' + spec.renames[a])); });
+    if (spec.proxy) {
+      var px = spec.proxy;
+      args.push('--proxy-hints');
+      if (px.alpha !== undefined && px.alpha !== PROXY_ALPHA) args.push('--proxy-alpha', String(px.alpha));
+      if (px.correction) args.push('--proxy-correction', px.correction);
+      if (px.exact) {
+        args.push('--proxy-exact');
+        if (px.permutations && px.permutations !== PERMUTATIONS) args.push('--proxy-exact-permutations', String(px.permutations));
+        if (px.maxRows && px.maxRows !== PERMUTATION_MAX_ROWS) args.push('--proxy-exact-max-rows', String(px.maxRows));
+      }
+      var held = spec.held || {};
+      [['main', '--proxy-hints-with'], ['a', '--proxy-hints-with-a'], ['b', '--proxy-hints-with-b']].forEach(function (pair) {
+        (held[pair[0]] || []).forEach(function (h) { args.push(pair[1], shellQuote(heldOutSpecText(h))); });
+      });
+    }
+    return pre + args.join(' ');
+  }
+
   global.FairCodeProfiler = { parseCSV: parseCSV, parseJSON: parseJSON, parseXLSX: parseXLSX,
                               sniffDelimiter: sniffDelimiter,
-                              profile: profile, compare: compare, applyRenames: applyRenames,
+                              profile: profile, compare: compare, applyRenames: applyRenames, buildCliCommand: buildCliCommand,
                               parseReference: parseReference,
                               // Opt-in, informational only (issue #738) - see
                               // proxyHints()'s own comment for why this is

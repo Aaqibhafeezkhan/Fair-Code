@@ -192,6 +192,8 @@ original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by de
 from the export (Bonferroni: `min(1, p · n_tests)`). Adjusted hints print "(m=N pairs)" in the
 terminal/HTML/web output, and the CSV proxy section gains an `n_tests` column before `low_expected`.
 
+**Copy as CLI command (#915).** The web profile and compare views have a "Copy as CLI command" button that builds the `faircode profile ...` / `faircode compare ...` line reproducing the run (`FairCodeProfiler.buildCliCommand`): the thresholds, `--max-age`, `--age-reference-year`, `--cross`, `--map`, `--encoding`, `--reference`, `--rename`, the proxy settings (`--proxy-hints`, `--proxy-alpha`, `--proxy-correction`, `--proxy-exact`, `--proxy-exact-permutations`, `--proxy-exact-max-rows`) and every held-out row in `PATH=COLUMN[:KEY[~]][@ENCODING]` syntax, shell-quoted. A keywords vocabulary becomes a leading `cat > words.json <<'EOF'` heredoc plus `--keywords words.json`. File names are the uploaded names, so the command is meant to run in the folder holding them.
+
 **Near-unique held-out columns (#908).** A held-out column with more distinct values than `--max-categorical-card` (default 20) that are also at least half of its non-null rows looks like an identifier or free text, so it is left out of the tests and a note says so (CLI stderr `note:`, MCP `notes`, the web proxy notes) instead of building a rows x N contingency table; raise `--max-categorical-card` to test it anyway.
 
 **Limitation - a dropped column is invisible by construction.** `proxy_hints()` only tests pairs

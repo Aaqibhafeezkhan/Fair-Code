@@ -28,6 +28,7 @@
   var reportActionsEl = document.getElementById('compareReportActions');
   var downloadHtmlBtn = document.getElementById('compareDownloadHtmlBtn');
   var copyJsonBtn = document.getElementById('compareCopyJsonBtn');
+  var copyCliBtn = document.getElementById('compareCopyCliBtn');
   var downloadCsvBtn = document.getElementById('compareDownloadCsvBtn');
   var proxyBlockEl = document.getElementById('compareProxyHintsBlock');
   var proxyBtn = document.getElementById('compareProxyHintsBtn');
@@ -975,6 +976,35 @@
     return provenance;
   }
 
+  // The faircode command that reproduces this comparison (#915).
+  function currentCompareCliCommand() {
+    var withHints = !!(currentCmp && currentCmp.proxy_hints_a && currentProxySettings);
+    return E.buildCliCommand({
+      kind: 'compare',
+      files: [slot.A && slot.A.file ? slot.A.file.name : 'a.csv', slot.B && slot.B.file ? slot.B.file.name : 'b.csv'],
+      opts: currentOpts,
+      overrides: currentOverrides,
+      encoding: encodingSelect ? encodingSelect.value : 'auto',
+      renames: currentRenames,
+      proxy: withHints ? currentProxySettings : null,
+      held: { a: withHints ? heldSpecsA : [], b: withHints ? heldSpecsB : [] }
+    });
+  }
+
+  function copyCompareCliCommand() {
+    if (!currentCmp) return;
+    var text = currentCompareCliCommand();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        flashButton(copyCliBtn, '✓ Copied');
+      }, function () {
+        flashButton(copyCliBtn, fallbackCopy(text) ? '✓ Copied' : 'Copy failed');
+      });
+    } else {
+      flashButton(copyCliBtn, fallbackCopy(text) ? '✓ Copied' : 'Copy failed');
+    }
+  }
+
   async function copyCompareResultAsJSON() {
     if (!currentCmp) return;
 
@@ -1046,4 +1076,5 @@
   proxyBtn.addEventListener('click', renderCompareProxyHints);
   downloadHtmlBtn.addEventListener('click', downloadCompareHtmlReport);
   copyJsonBtn.addEventListener('click', copyCompareResultAsJSON);
+  if (copyCliBtn) copyCliBtn.addEventListener('click', copyCompareCliCommand);
 })();

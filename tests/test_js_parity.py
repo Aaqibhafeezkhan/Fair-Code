@@ -2133,3 +2133,58 @@ def test_compare_view_offers_compare_as_one_buttons_for_rename_suggestions():
     assert "delete currentRenames[btn.dataset.renameA];" in js
     assert "provenance.params.renames = Object.assign({}, currentRenames)" in js
     assert js.index("currentRenames = {};") < js.index("resetThresholdInputs();", js.index("currentRenames = {};"))
+
+
+def test_web_cli_command_builder_emits_flags_the_cli_parses(tmp_path, monkeypatch, capsys):
+    """#915: E.buildCliCommand's output (heredoc, quoting, held-out syntax) is run through the real
+    CLI and the options come back in the provenance, for a profile and a compare run."""
+    import shlex
+    from faircode.cli import main
+    rows = ["id,sex,race,job"] + [f"{i},{'M' if i % 2 else 'F'},{'abc'[i % 3]},{'x' if i % 2 else 'y'}" for i in range(60)]
+    (tmp_path / "my data.csv").write_text("\n".join(rows) + "\n")
+    (tmp_path / "h.csv").write_text("id,eth\n" + "\n".join(f"{i},{'uv'[i % 2]}" for i in range(60)) + "\n")
+    (tmp_path / "ref.csv").write_text("column,group,share\nsex,M,0.5\nsex,F,0.5\n")
+    rows_a = ["id,sex,race"] + [f"{i},{'M' if i % 2 else 'F'},{'abc'[i % 3]}" for i in range(60)]
+    (tmp_path / "a.csv").write_text("\n".join(rows_a) + "\n")
+    (tmp_path / "b.csv").write_text("\n".join(r.replace("race", "ethnicity") for r in rows_a) + "\n")
+    specs = {
+        "profile": {"kind": "profile", "files": ["my data.csv"], "opts": {"max_age": 100, "min_group_size": 5, "keywords": {"sex": ["sesso"]}, "cross": ["sex", "race"]},
+                    "overrides": {"job": "categorical"}, "encoding": "latin-1", "referenceName": "ref.csv",
+                    "proxy": {"alpha": 0.2, "correction": "holm", "exact": True, "permutations": 99},
+                    "held": {"main": [{"name": "h.csv", "column": "eth", "key": "id", "normalize": True, "encoding": "latin-1"}]}},
+        "compare": {"kind": "compare", "files": ["a.csv", "b.csv"], "opts": {"max_age": 90}, "overrides": {}, "encoding": "auto",
+                    "renames": {"race": "ethnicity"}, "proxy": {"alpha": 0.05, "correction": None, "exact": False},
+                    "held": {"a": [{"name": "h.csv", "column": "eth", "key": "id"}], "b": []}},
+    }
+    script = ("require(process.argv[1]);var E=globalThis.FairCodeProfiler;var s=JSON.parse(process.argv[2]);"
+              "var o={};Object.keys(s).forEach(function(k){o[k]=E.buildCliCommand(s[k]);});process.stdout.write(JSON.stringify(o));")
+    cmds = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(specs)],
+                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    monkeypatch.chdir(tmp_path)
+
+    def run(command):
+        rest = command
+        if command.startswith("cat >"):   # the keywords heredoc writes words.json first
+            (tmp_path / "words.json").write_text(command.split("\n")[1])
+            rest = command.split("EOF\n", 1)[1]
+        tokens = shlex.split(rest)
+        assert tokens[:1] == ["faircode"]
+        assert main(tokens[1:] + ["--json"]) == 0
+        return json.loads(capsys.readouterr().out)
+
+    out = run(cmds["profile"])
+    params = out["provenance"]["params"]
+    assert (params["max_age"], params["min_group_size"], params["alpha"], params["correction"], params["exact"]) == (100, 5, 0.2, "holm", True)
+    assert params["keywords"] == {"sex": ["sesso"]} and params["exact_permutations"] == 99
+    held = out["provenance"]["proxy_hints_with"][0]
+    assert (held["column"], held["key"], held["key_normalize"], held["encoding"]) == ("eth", "id", True, "latin-1")
+    assert "'my data.csv'" in cmds["profile"] and "--proxy-hints-with 'h.csv=eth:id~@latin-1'" in cmds["profile"]
+    out = run(cmds["compare"])
+    assert out["renamed_dimensions"] == [{"a": "race", "b": "ethnicity"}]
+    assert out["provenance"]["proxy_hints_with_a"][0]["column"] == "eth" and out["provenance"]["params"]["max_age"] == 90
+    assert "--proxy-alpha" not in cmds["compare"] and "--keywords" not in cmds["compare"]
+    for name, btn in (("profiler-ui.js", "copyCliBtn"), ("profiler-compare.js", "copyCliBtn")):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "E.buildCliCommand({" in js and f"flashButton({btn}, " in js
+    html = (REPO_ROOT / "profiler.html").read_text(encoding="utf-8")
+    assert 'id="copyCliBtn"' in html and 'id="compareCopyCliBtn"' in html

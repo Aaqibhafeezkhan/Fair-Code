@@ -1171,6 +1171,13 @@
     if (already && Object.prototype.hasOwnProperty.call(already, column)) {
       throw new Error("held-out column '" + column + "' was already supplied");
     }
+    // A trailing ~ / ! on the key is the CLI's per-spec marker (normalise / keep exact), honoured
+    // only when what is left names a column, like proxy.py resolve_key_marker (#912, #907).
+    var marker = key ? /[~!]$/.exec(key) : null;
+    if (marker && keyColumns(key.slice(0, -1), table.columns) !== null) {
+      normalize = marker[0] === '~';
+      key = key.slice(0, -1);
+    }
     if (key) {
       var keyCols = keyColumns(key, table.columns);
       if (keyCols === null) {

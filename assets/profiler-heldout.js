@@ -103,6 +103,14 @@
         var column = inputs[1].value.trim();
         var key = inputs[2].value.trim();
         var normalize = !!inputs[3].checked;
+        // The CLI's per-spec marker pasted into the key box: ~ normalises, ! keeps exact (#912).
+        var marker = /[~!]$/.exec(key);
+        if (marker && key.length > 1) {
+          key = key.slice(0, -1).trim();
+          normalize = marker[0] === '~';
+          inputs[2].value = key;
+          inputs[3].checked = normalize;
+        }
         var rowEncoding = rows[i].querySelectorAll('select')[0];
         var encodingChoice = rowEncoding && rowEncoding.value !== 'inherit' ?
           rowEncoding.value : (getEncoding ? getEncoding() : 'auto');

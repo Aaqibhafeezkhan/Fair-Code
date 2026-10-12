@@ -1960,3 +1960,28 @@ def test_js_key_normalisation_matches_python_for_every_code_point():
         expected += [normalize_key_text(c), normalize_key_text(c + "a" + c)]
     bad = [(hex(cps[i // 2]), js[i], expected[i]) for i in range(len(js)) if js[i] != expected[i]]
     assert not bad, bad[:5]
+
+
+def test_web_held_out_key_accepts_the_cli_tilde_and_bang_markers():
+    """#912/#907: `id~` normalises, `id!` stays exact, in parseHeldOut() like
+    proxy.resolve_key_marker(); the key box strips them too."""
+    from faircode.proxy import parse_held_out_specs
+    df = pd.DataFrame({"id": ["A1", "B2"], "x": [1, 2]})
+    held = pd.DataFrame({"id": ["a1", "b2"], "race": ["u", "v"]})
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "var t={columns:['id','x'],rows:[{id:'A1',x:'1'},{id:'B2',x:'2'}]},"
+        "h={columns:['id','race'],rows:[{id:'a1',race:'u'},{id:'b2',race:'v'}]};"
+        "function run(key,norm){try{return E.parseHeldOut(h,'race',t,{},key,norm)}catch(e){return e.message}}"
+        "process.stdout.write(JSON.stringify({tilde:run('id~',false),bang:run('id!',true),plain:run('id',false),"
+        "global:run('id',true),nokey:run('nokey~',false)}));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out["tilde"] == out["global"] == ["u", "v"]
+    assert "no row for" in out["bang"] and "no row for" in out["plain"]
+    assert "not found" in out["nokey"]
+    py = parse_held_out_specs(["h.csv=race:id~"], df, lambda p: held)
+    assert list(py["race"]) == out["tilde"]
+    js = (REPO_ROOT / "assets" / "profiler-heldout.js").read_text(encoding="utf-8")
+    assert "/[~!]$/.exec(key)" in js

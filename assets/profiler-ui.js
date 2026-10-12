@@ -50,6 +50,8 @@
   var currentFile = null;
   var currentEncoding = null;  // encoding the current file was decoded with (provenance, #857)
   var pendingEncoding = null;
+  var referenceFile = null;    // the reference baseline File in use, re-read when the picker changes (#900)
+  var pendingReferenceFile = null;
   var currentSheet = null;     // {sheet, sheets_ignored} of the current .xlsx file (provenance, #899)
   var pendingSheet = null;
   var encodingSelect = document.getElementById('encodingSelect');
@@ -172,7 +174,14 @@
   // Re-read the current file when the encoding changes (#857).
   if (encodingSelect) {
     encodingSelect.addEventListener('change', function () {
-      if (currentFile && !/\.xlsx$/i.test(currentFile.name)) readFile(currentFile);
+      // Re-reading the dataset resets the reference (new schema), so hand the reference file
+      // over to be re-applied once the dataset is back (#900).
+      if (currentFile && !/\.xlsx$/i.test(currentFile.name)) {
+        pendingReferenceFile = referenceFile;
+        readFile(currentFile);
+      } else if (referenceFile) {
+        loadReferenceFile(referenceFile);
+      }
     });
   }
 
@@ -214,6 +223,8 @@
     currentTable = table;
     currentOverrides = {};
     currentOpts = {};
+    var reapply = pendingReferenceFile;   // set by the encoding picker only (#900)
+    pendingReferenceFile = null;
     resetReference();
     resetThresholdInputs();
     var result = E.profile(table);
@@ -222,6 +233,7 @@
     errorEl.hidden = true;
     render(result, name, true);
     renderMapping(table.columns);
+    if (reapply) loadReferenceFile(reapply);
   }
 
   // Re-run the engine with the current overrides + opts and re-render in
@@ -242,12 +254,14 @@
   }
 
   function resetReference() {
+    referenceFile = null;
     referenceStatus.textContent = '';
     referenceClearBtn.hidden = true;
     referenceInput.value = '';
   }
 
   function showError(msg) {
+    pendingReferenceFile = null;
     errorEl.textContent = msg;
     errorEl.hidden = false;
     results.hidden = true;
@@ -746,6 +760,13 @@
     referenceBtn.focus();
     var f = e.target.files && e.target.files[0];
     if (!f) return;
+    loadReferenceFile(f);
+  });
+
+  // Reads, decodes (picker) and applies a reference baseline file. Kept as a function so the
+  // encoding picker can re-apply the same file (#900).
+  function loadReferenceFile(f) {
+    referenceFile = f;
     var reader = new FileReader();
     reader.onerror = function () { showError('Could not read the reference file.'); };
     function applyReferenceTable(table, sheetInfo) {
@@ -806,7 +827,7 @@
       };
       reader.readAsArrayBuffer(f);
     }
-  });
+  }
   referenceClearBtn.addEventListener('click', function () {
     delete currentOpts.reference;
     resetReference();

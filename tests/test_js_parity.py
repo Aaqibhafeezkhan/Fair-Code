@@ -2018,3 +2018,15 @@ def test_web_provenance_records_the_xlsx_sheet():
     assert "spec.sheet = sheets.sheetName" in eng
     for js in (ui, cmp_js):
         assert "entry.sheet = specs[i].sheet" in js
+
+
+def test_web_reference_baseline_is_re_applied_when_the_encoding_picker_changes():
+    """#900: the picker hands the reference File over to be re-decoded after the dataset is
+    re-read (which resets it), or re-reads it directly when the dataset is not re-read."""
+    ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
+    picker = ui.split("encodingSelect.addEventListener('change'")[1].split("function runText")[0]
+    assert "pendingReferenceFile = referenceFile;" in picker and "loadReferenceFile(referenceFile)" in picker
+    run_table = ui.split("function runTable(")[1].split("function reprofile")[0]
+    assert "var reapply = pendingReferenceFile;" in run_table and "if (reapply) loadReferenceFile(reapply);" in run_table
+    assert "function loadReferenceFile(f)" in ui and "referenceFile = null;" in ui.split("function resetReference")[1][:80]
+    assert "pendingReferenceFile = null;" in ui.split("function showError")[1][:80]   # a failed load must not leak it

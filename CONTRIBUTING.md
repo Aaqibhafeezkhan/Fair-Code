@@ -68,6 +68,7 @@ make audits            # every audit's unfair.py/fair.py + the CLI smoke tests (
 make coverage          # test suite with pytest-cov line coverage (informational, not a CI gate)
 make build-explainers  # regenerate explainer pages, sitemap, and OG images (dark + light) after editing explainers/*.md
 make fix-explainer-count  # correct any stale "N explainers" mention in README/CONTRIBUTORS/METRICS/ROADMAP after adding/removing an explainer
+make key-fold         # regenerate the JS case-folding table (assets/profiler-engine.js KEY_FOLD) after a Unicode upgrade
 make favicons          # regenerate favicon.ico, apple-touch-icon.png, icon-{192,512}.png after editing logo.svg
 make lint              # em-dash-free check + broken internal doc link check + ruff (unused imports, undefined names)
 ```

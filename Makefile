@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 PY := python3
 
-.PHONY: help setup test test-fast coverage build-explainers favicons fix-explainer-count lint audits check
+.PHONY: help setup test test-fast coverage key-fold build-explainers favicons fix-explainer-count lint audits check
 
 help:  ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -22,6 +22,9 @@ test-fast:  ## Run the suite without the slow model-training benchmark tests (CI
 
 coverage:  ## Run the full test suite with a faircode/ coverage report (what CI's profiler job runs; the figure is informational, not a gate)
 	$(PY) -m pytest tests/ -q --cov=faircode --cov-report=term-missing
+
+key-fold:  ## Regenerate the JS case-folding table (KEY_FOLD) from this machine's Python and node, e.g. after a Unicode upgrade
+	$(PY) scripts/generate_key_fold.py
 
 build-explainers:  ## Regenerate explainer pages, data.js, sitemap, and OG images (dark + light)
 	$(PY) scripts/build_explainers.py

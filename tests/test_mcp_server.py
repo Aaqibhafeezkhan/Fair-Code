@@ -825,3 +825,17 @@ def test_compare_datasets_renames_parameter(tmp_path):
     assert result["provenance"]["params"]["renames"] == {"race": "ethnicity"}
     with pytest.raises(ValueError, match="second dataset"):
         _compare_datasets_impl(str(a), str(b), renames={"race": "nope"})
+
+
+@requires_scipy
+def test_proxy_hints_notes_an_encoding_ignored_for_a_held_out_workbook(tmp_path):
+    # #923
+    pytest.importorskip("openpyxl")
+    import pandas as pd
+    path = tmp_path / "a.csv"
+    path.write_text("id,occ\n" + "\n".join(f"{i},{i % 2}" for i in range(40)) + "\n", encoding="utf-8")
+    book = tmp_path / "h.xlsx"
+    pd.DataFrame({"race": ["a", "b"] * 20}).to_excel(book, index=False)
+    result = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{book}=race@latin-1"])
+    assert any("held-out file" in n and "no effect" in n for n in result["notes"])
+    assert "notes" not in _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{book}=race"])

@@ -42,6 +42,7 @@ from .compare import compare
 from .detect import VALID_KINDS
 from .loaders_extra import (
     encoding_ignored_note,
+    held_out_encoding_ignored_notes,
     get_xlsx_sheet_info,
     read_table,
 )
@@ -269,7 +270,8 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
     if enc_notes:
         result["notes"] = [enc_notes[0]]
     if proxy_hints:
-        held_notes = []   # near-unique held-out columns skipped (#908)
+        held_notes = (held_out_encoding_ignored_notes(held_out_with_a, encoding)
+                      + held_out_encoding_ignored_notes(held_out_with_b, encoding))   # + near-unique skips (#908, #923)
         kw = {} if alpha is None else {"alpha": alpha}
         kw["correction"] = correction
         kw["max_age"] = _resolve_opts(opts)["max_age"]
@@ -356,7 +358,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
                        age_reference_year=age_reference_year, keywords=keywords)
     resolved = _resolve_opts(opts)
     result = profile(df, overrides, opts)
-    held_notes = []   # near-unique held-out columns skipped (#908)
+    held_notes = held_out_encoding_ignored_notes(held_out_with, encoding)   # + near-unique skips (#908, #923)
     held_out = parse_held_out_specs(held_out_with, df, functools.partial(_read_table_or_raise, encoding=encoding),
                                     flag="held_out_with",
                                     normalize_keys=key_normalize, notes=held_notes,

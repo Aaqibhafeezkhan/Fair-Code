@@ -40,6 +40,7 @@ from .detect import VALID_KINDS
 from .loaders_extra import (
     ENCODING_IGNORED_CLI,
     encoding_ignored_for_path,
+    held_out_encoding_ignored_notes,
     get_xlsx_sheet_info,
     read_table,
 )
@@ -144,7 +145,7 @@ def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categori
                     file=sys.stderr,
                 )
     try:
-        notes = []
+        notes = held_out_encoding_ignored_notes(specs, encoding)
         held_out = parse_held_out_specs(specs, df, functools.partial(_read_or_exit, encoding=encoding),
                                         normalize_keys=normalize_keys, notes=notes,
                                         max_categorical_card=max_categorical_card)

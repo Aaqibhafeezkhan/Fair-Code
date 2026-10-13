@@ -1401,3 +1401,18 @@ def test_proxy_exact_permutations_rejects_more_than_a_million(tmp_path, capsys):
         main(["profile", str(path), "--proxy-hints", "--proxy-exact", "--proxy-exact-permutations", "999999999999"])
     assert "at most 1,000,000" in capsys.readouterr().err
     assert main(["profile", str(path), "--proxy-hints", "--proxy-exact", "--proxy-exact-permutations", "50"]) == 0
+
+
+def test_held_out_workbook_with_an_encoding_prints_the_ignored_notice(tmp_path, capsys):
+    # #923: like the dataset notice from #870, for a held-out .xlsx given @ENCODING or --encoding.
+    pytest.importorskip("openpyxl")
+    data = tmp_path / "d.csv"
+    data.write_text("id,occ\n" + "\n".join(f"{i},{i % 2}" for i in range(40)) + "\n")
+    book = tmp_path / "h.xlsx"
+    pd.DataFrame({"race": ["a", "b"] * 20}).to_excel(book, index=False)
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-hints-with", f"{book}=race@latin-1"]) == 0
+    assert f"encoding has no effect on .xlsx/.parquet files (held-out file {book})" in capsys.readouterr().err
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-hints-with", f"{book}=race", "--encoding", "latin-1"]) == 0
+    assert "held-out file" in capsys.readouterr().err
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-hints-with", f"{book}=race"]) == 0
+    assert "held-out file" not in capsys.readouterr().err

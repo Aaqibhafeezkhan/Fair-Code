@@ -1918,20 +1918,29 @@
         pairs.push({ a: nameA, b: best, overlap: Math.round(bestOverlap * 10000) / 10000, reason: 'labels' });
       }
     });
-    // Second signal: same kind and group count, names sharing a word (#902).
+    // Second signal: same kind, close group counts, names sharing a word; most shared words, then the
+    // closest count wins (#902, #918). Mirrors compare.py.
     var paired = {};
     pairs.forEach(function (p) { paired[p.a] = 1; });
     removed.forEach(function (nameA) {
       if (paired[nameA]) return;
-      var tokensA = nameTokens(nameA), best = null, bestShared = 0;
+      var tokensA = nameTokens(nameA), countA = byA[nameA].groups.length, best = null, bestShared = 0, bestGap = 0;
       added.forEach(function (nameB) {
         if (taken[nameB] || byB[nameB].kind !== byA[nameA].kind) return;
-        if (byB[nameB].groups.length !== byA[nameA].groups.length) return;
+        var countB = byB[nameB].groups.length, gap = Math.abs(countA - countB);
+        if (gap > Math.max(1, Math.floor(Math.max(countA, countB) / 4))) return;
         var shared = 0, tokensB = nameTokens(nameB);
         Object.keys(tokensA).forEach(function (t) { if (tokensB[t]) shared++; });
-        if (shared > bestShared) { best = nameB; bestShared = shared; }
+        if (shared && (best === null || shared > bestShared || (shared === bestShared && gap < bestGap))) {
+          best = nameB; bestShared = shared; bestGap = gap;
+        }
       });
-      if (best !== null) { taken[best] = 1; pairs.push({ a: nameA, b: best, overlap: 0, reason: 'names' }); }
+      if (best !== null) {
+        taken[best] = 1;
+        var pair = { a: nameA, b: best, overlap: 0, reason: 'names' };
+        if (countA !== byB[best].groups.length) pair.group_counts = [countA, byB[best].groups.length];
+        pairs.push(pair);
+      }
     });
     return pairs;
   }
@@ -2046,7 +2055,9 @@
     added.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameB); driftDetected = true; });
     removed.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameA); driftDetected = true; });
     renames.forEach(function (r) {
-      var evidence = r.reason === 'names' ? 'similar names and the same number of groups'
+      var evidence = r.reason === 'names'
+        ? (r.group_counts ? 'similar names and a similar number of groups (' + r.group_counts[0] + ' vs ' + r.group_counts[1] + ')'
+                          : 'similar names and the same number of groups')
         : (r.overlap * 100).toFixed(0) + '% of their group labels overlap';
       flags.push("'" + r.a + "' (" + nameA + ") and '" + r.b + "' (" + nameB + ') look like the same dimension (' +
                  evidence + ') - rename one column so the names match to compare them');

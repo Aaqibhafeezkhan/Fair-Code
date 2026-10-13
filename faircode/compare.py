@@ -249,24 +249,32 @@ def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list
             taken.add(best)
             pairs.append({"a": name_a, "b": best, "overlap": _r(best_overlap, 4), "reason": "labels"})
     # Second signal: a column renamed *and* re-coded (`sex` M/F vs `sex_code` 1/2) shares no label
-    # shape, so pair leftovers of the same kind and group count whose names share a word (#902).
+    # shape, so pair leftovers of the same kind whose names share a word and whose group counts are
+    # close (an `Unknown`/`9` or a stray code is common), preferring the most shared words and then
+    # the closest count (#902, #918).
     paired = {p["a"] for p in pairs}
     for name_a in removed:
         if name_a in paired:
             continue
         tokens_a = _name_tokens(name_a)
-        best, best_shared = None, 0
+        count_a = len(by_a[name_a]["groups"])
+        best, best_key = None, None
         for name_b in added:
             if name_b in taken or by_b[name_b]["kind"] != by_a[name_a]["kind"]:
                 continue
-            if len(by_b[name_b]["groups"]) != len(by_a[name_a]["groups"]):
+            count_b = len(by_b[name_b]["groups"])
+            if abs(count_a - count_b) > max(1, max(count_a, count_b) // 4):
                 continue
             shared = len(tokens_a & _name_tokens(name_b))
-            if shared > best_shared:
-                best, best_shared = name_b, shared
+            if shared and (best_key is None or (shared, -abs(count_a - count_b)) > best_key):
+                best, best_key = name_b, (shared, -abs(count_a - count_b))
         if best is not None:
             taken.add(best)
-            pairs.append({"a": name_a, "b": best, "overlap": 0.0, "reason": "names"})
+            pair = {"a": name_a, "b": best, "overlap": 0.0, "reason": "names"}
+            count_b = len(by_b[best]["groups"])
+            if count_a != count_b:
+                pair["group_counts"] = [count_a, count_b]
+            pairs.append(pair)
     return pairs
 
 
@@ -344,8 +352,12 @@ def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
         flags.append(f"dimension '{n}' is present only in {name_a}")
         drift_detected = True
     for r in renames:
-        evidence = ("similar names and the same number of groups" if r.get("reason") == "names"
-                    else f"{r['overlap'] * 100:.0f}% of their group labels overlap")
+        if r.get("reason") == "names":
+            counts = r.get("group_counts")
+            evidence = ("similar names and a similar number of groups (%d vs %d)" % tuple(counts)
+                        if counts else "similar names and the same number of groups")
+        else:
+            evidence = f"{r['overlap'] * 100:.0f}% of their group labels overlap"
         flags.append(
             f"'{r['a']}' ({name_a}) and '{r['b']}' ({name_b}) look like the same dimension "
             f"({evidence}) - rename one column so the names match to compare them"

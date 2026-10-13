@@ -2290,3 +2290,25 @@ def test_web_compare_csv_lists_renamed_dimensions_like_python(tmp_path):
     section = "\n\nrenamed_dimension_a,renamed_dimension_b\nrace,ethnicity\n\nflag\n"
     assert section in web.replace("\r\n", "\n") and section in py.replace("\r\n", "\n")
     assert "renamed_dimension_a" not in compare_to_csv(compare(pa, pb, "a.csv", "b.csv"))
+
+
+def test_name_based_rename_tolerates_a_slightly_different_group_count_in_both_engines(tmp_path):
+    """#918: sex (M/F/U) vs sex_code (1/2/9/x) is suggested with group_counts and a wording that
+    says so; a gap too large for the column (2 vs 4 groups) still is not."""
+    def run(name_a, rows_a, name_b, rows_b):
+        pa, pb = tmp_path / "a.csv", tmp_path / "b.csv"
+        pa.write_text(f"{name_a}\n" + "\n".join(rows_a) + "\n")
+        pb.write_text(f"{name_b}\n" + "\n".join(rows_b) + "\n")
+        py = compare(profile(pd.read_csv(pa)), profile(pd.read_csv(pb)), "a.csv", "b.csv")
+        js = json.loads(subprocess.run(["node", "scripts/engine-js.js", "compare", str(pa), str(pb)],
+                                       capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+        return py, js
+
+    py, js = run("sex", ["MFU"[i % 3] for i in range(60)], "sex_code", ["129x"[i % 4] for i in range(60)])
+    assert py["possible_renames"] == js["possible_renames"] == [
+        {"a": "sex", "b": "sex_code", "overlap": 0.0, "reason": "names", "group_counts": [3, 4]}]
+    flag = "similar names and a similar number of groups (3 vs 4)"
+    assert [f for f in py["flags"] if flag in f] == [f for f in js["flags"] if flag in f] != []
+
+    py, js = run("sex", ["MF"[i % 2] for i in range(60)], "sex_code", ["129x"[i % 4] for i in range(60)])
+    assert "possible_renames" not in py and "possible_renames" not in js

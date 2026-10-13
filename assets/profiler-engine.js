@@ -1375,6 +1375,21 @@
     return h.p_adjusted !== undefined && h.n_tests !== undefined ? ' (m=' + h.n_tests + ' pairs)' : '';
   }
 
+  // The web inputs for the exact test's shuffles and row cap: blank means the default, anything else must
+  // be a whole number (shuffles at most MAX_PERMUTATIONS), like the CLI flags (#925).
+  function parseExactSettings(permutationsText, maxRowsText) {
+    function whole(text, what, limit) {
+      text = String(text === undefined || text === null ? '' : text).trim();
+      if (text === '') return undefined;
+      var n = Number(text);
+      if (!/^[0-9]+$/.test(text) || n < 1 || (limit && n > limit)) {
+        throw new Error(what + ' must be a whole number from 1' + (limit ? ' to ' + limit.toLocaleString('en-US') : '') + '.');
+      }
+      return n;
+    }
+    return { permutations: whole(permutationsText, 'Shuffles', MAX_PERMUTATIONS), maxRows: whole(maxRowsText, 'Row cap') };
+  }
+
   function proxyHints(table, dimensions, alpha, heldOut, multiCorrection, maxAge, referenceYear, exact, permutations, maxRows) {
     if (alpha === undefined) alpha = PROXY_ALPHA;
     if (permutations === undefined || permutations === null) permutations = PERMUTATIONS;
@@ -2152,7 +2167,7 @@
                               // Opt-in, informational only (issue #738) - see
                               // proxyHints()'s own comment for why this is
                               // kept out of profile()/compare().
-                              proxyHints: proxyHints, proxyNotes: proxyNotes, normalizeKeyText: normalizeKeyText, normalizeKeywords: normalizeKeywords, decodeText: decodeText, proxyFamily: proxyFamily, permutationPValue: permutationPValue, parseHeldOut: parseHeldOut, buildHeldOut: buildHeldOut,
+                              proxyHints: proxyHints, parseExactSettings: parseExactSettings, proxyNotes: proxyNotes, normalizeKeyText: normalizeKeyText, normalizeKeywords: normalizeKeywords, decodeText: decodeText, proxyFamily: proxyFamily, permutationPValue: permutationPValue, parseHeldOut: parseHeldOut, buildHeldOut: buildHeldOut,
                               adjustPValues: adjustPValues,
                               csvField: csvField, csvRow: csvRow, provenanceCsv: provenanceCsv,
                               // publicParams: resolved knobs for an export's

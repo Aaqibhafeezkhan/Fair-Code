@@ -327,6 +327,14 @@
         <label class="proxy-exact-toggle">
           <input type="checkbox" id="proxyExactInput"> Exact test for small cells (<code>--proxy-exact</code>)
         </label>
+        <label class="proxy-exact-tuning">Shuffles (<code>--proxy-exact-permutations</code>)
+          <input type="number" class="threshold-input" id="proxyExactPermutationsInput" min="1" max="1000000" step="1"
+                 placeholder="1000" inputmode="numeric">
+        </label>
+        <label class="proxy-exact-tuning">Row cap (<code>--proxy-exact-max-rows</code>)
+          <input type="number" class="threshold-input" id="proxyExactMaxRowsInput" min="1" step="1"
+                 placeholder="20000" inputmode="numeric">
+        </label>
         <details class="proxy-heldout">
           <summary>Test columns you already dropped (<code>--proxy-hints-with</code>)</summary>
           <p class="section-note">
@@ -472,6 +480,14 @@
         </label>
         <label class="proxy-exact-toggle">
           <input type="checkbox" id="compareProxyExactInput"> Exact test for small cells (<code>--proxy-exact</code>)
+        </label>
+        <label class="proxy-exact-tuning">Shuffles (<code>--proxy-exact-permutations</code>)
+          <input type="number" class="threshold-input" id="compareProxyExactPermutationsInput" min="1" max="1000000" step="1"
+                 placeholder="1000" inputmode="numeric">
+        </label>
+        <label class="proxy-exact-tuning">Row cap (<code>--proxy-exact-max-rows</code>)
+          <input type="number" class="threshold-input" id="compareProxyExactMaxRowsInput" min="1" step="1"
+                 placeholder="20000" inputmode="numeric">
         </label>
         <details class="proxy-heldout">
           <summary>Test columns you already dropped (<code>--proxy-hints-with-a/-b</code>)</summary>

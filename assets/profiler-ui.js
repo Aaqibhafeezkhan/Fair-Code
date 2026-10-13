@@ -495,14 +495,23 @@
       host.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
       return;
     }
+    var exactSettings;
+    try {
+      exactSettings = E.parseExactSettings(document.getElementById('proxyExactPermutationsInput').value,
+                                           document.getElementById('proxyExactMaxRowsInput').value);
+    } catch (err) {
+      host.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
+      return;
+    }
     var hints = E.proxyHints(currentTable, currentResult.dimensions, alpha, heldOut,
       document.getElementById('proxyCorrectionInput').value || null, currentOpts.max_age, currentOpts.age_reference_year,
-      document.getElementById('proxyExactInput').checked);
+      document.getElementById('proxyExactInput').checked, exactSettings.permutations, exactSettings.maxRows);
     // Attach to the result so Download report / Copy as JSON / Download CSV
     // include what's on screen (issue #758).
     currentResult.proxy_hints = hints;
     currentProxySettings = { alpha: alpha, correction: document.getElementById('proxyCorrectionInput').value || null,
-                             exact: document.getElementById('proxyExactInput').checked };
+                             exact: document.getElementById('proxyExactInput').checked,
+                             permutations: exactSettings.permutations, maxRows: exactSettings.maxRows };
     if (!hints.length) {
       host.innerHTML = '<p class="section-note">No column pairs are significantly associated (p &lt; ' + alpha + ').</p>';
       appendHeldNotes(host, heldNotes);

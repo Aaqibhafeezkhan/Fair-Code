@@ -866,6 +866,14 @@
     if (alpha === null) return;
     var correction = document.getElementById('compareProxyCorrectionInput').value || null;
     var exact = document.getElementById('compareProxyExactInput').checked;
+    var exactSettings;
+    try {
+      exactSettings = E.parseExactSettings(document.getElementById('compareProxyExactPermutationsInput').value,
+                                           document.getElementById('compareProxyExactMaxRowsInput').value);
+    } catch (err) {
+      proxyResultsEl.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
+      return;
+    }
     var heldA = null, heldB = null, heldNotes = [];
     try {
       var specsA = await heldOutA.collect(), specsB = await heldOutB.collect();
@@ -879,9 +887,10 @@
       proxyResultsEl.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
       return;
     }
-    currentProxySettings = { alpha: alpha, correction: correction, exact: exact };
-    currentCmp.proxy_hints_a = E.proxyHints(slot.A.table, currentProfiles.A.dimensions, alpha, heldA, correction, currentOpts.max_age, currentOpts.age_reference_year, exact);
-    currentCmp.proxy_hints_b = E.proxyHints(slot.B.table, currentProfiles.B.dimensions, alpha, heldB, correction, currentOpts.max_age, currentOpts.age_reference_year, exact);
+    currentProxySettings = { alpha: alpha, correction: correction, exact: exact,
+                             permutations: exactSettings.permutations, maxRows: exactSettings.maxRows };
+    currentCmp.proxy_hints_a = E.proxyHints(slot.A.table, currentProfiles.A.dimensions, alpha, heldA, correction, currentOpts.max_age, currentOpts.age_reference_year, exact, exactSettings.permutations, exactSettings.maxRows);
+    currentCmp.proxy_hints_b = E.proxyHints(slot.B.table, currentProfiles.B.dimensions, alpha, heldB, correction, currentOpts.max_age, currentOpts.age_reference_year, exact, exactSettings.permutations, exactSettings.maxRows);
     proxyResultsEl.innerHTML = [['proxy_hints_a', 'A'], ['proxy_hints_b', 'B']].map(function (k) {
       var hints = currentCmp[k[0]];
       return '<h4 class="proxy-hint-side">Dataset ' + k[1] + '</h4>' + (hints.length

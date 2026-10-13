@@ -1348,7 +1348,7 @@ def test_compare_view_download_csv_and_proxy_controls_are_wired():
             assert f"getElementById('{element_id}')" in js, element_id
     assert "downloadCsvBtn.addEventListener('click', downloadCompareCsvReport)" in js
     assert "proxyBtn.addEventListener('click', renderCompareProxyHints)" in js
-    assert "E.proxyHints(slot.A.table, currentProfiles.A.dimensions, alpha, heldA, correction, currentOpts.max_age, currentOpts.age_reference_year, exact)" in js
+    assert "E.proxyHints(slot.A.table, currentProfiles.A.dimensions, alpha, heldA, correction, currentOpts.max_age, currentOpts.age_reference_year, exact, exactSettings.permutations, exactSettings.maxRows)" in js
     assert 'id="compareProxyCorrectionInput"' in html
 
 
@@ -2353,3 +2353,27 @@ def test_held_out_column_box_accepts_the_cli_encoding_suffix():
     assert res["out"]["a"] == {"column": "race", "box": "race", "select": "latin-1"}
     assert res["out"]["b"] == {"column": "email@home", "select": "inherit"}
     assert res["seen"] == ["latin-1", "auto"]
+
+
+def test_web_exact_test_inputs_are_parsed_and_wired_into_both_views():
+    """#925: blank means the default, otherwise a whole number (shuffles up to 1,000,000), and the
+    values reach proxyHints(), the provenance params and the copied CLI command."""
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "function t(a,b){try{return E.parseExactSettings(a,b)}catch(e){return e.message}}"
+        "process.stdout.write(JSON.stringify({blank:t('',' '),ok:t('250','30000'),zero:t('0',''),frac:t('1.5',''),"
+        "big:t('1000001',''),text:t('',  'abc'),pad:t(' 99 ',undefined)}));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out["blank"] == {} and out["ok"] == {"permutations": 250, "maxRows": 30000} and out["pad"] == {"permutations": 99}
+    for bad in ("zero", "frac", "big"):
+        assert "Shuffles must be a whole number from 1 to 1,000,000" in out[bad]
+    assert "Row cap must be a whole number" in out["text"]
+    html = (REPO_ROOT / "profiler.html").read_text(encoding="utf-8")
+    for element_id in ("proxyExactPermutationsInput", "proxyExactMaxRowsInput",
+                       "compareProxyExactPermutationsInput", "compareProxyExactMaxRowsInput"):
+        assert f'id="{element_id}"' in html
+    for name in ("profiler-ui.js", "profiler-compare.js"):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "E.parseExactSettings(" in js and "permutations: exactSettings.permutations, maxRows: exactSettings.maxRows" in js

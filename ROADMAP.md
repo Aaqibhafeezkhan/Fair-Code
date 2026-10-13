@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 50 | 51 | 56 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
+| 51 | 52 | 57 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -136,7 +136,7 @@ Each audit follows the same pipeline: train a biased model → measure the fairn
 
 ## Phase 4 - Contributor Expansion 🔄 In Progress
 
-**Status: Goal exceeded - 51 external contributors, past the original 15+ target**
+**Status: Goal exceeded - 52 external contributors, past the original 15+ target**
 
 Goal: grow to 15+ contributors with quality-controlled contributions.
 
@@ -147,7 +147,7 @@ Goal: grow to 15+ contributors with quality-controlled contributions.
 - [x] CI pipeline (all audit scripts run on push/PR)
 - [x] Good-first-issue and help-wanted labels
 - [x] First-interaction workflow (greets new contributors)
-- [ ] Target: 10–15 labelled issues open at all times (currently 18 - a moving snapshot, not a maintained invariant; no automated mechanism keeps it true over time)
+- [ ] Target: 10–15 labelled issues open at all times (currently 27 - a moving snapshot, not a maintained invariant; no automated mechanism keeps it true over time)
 - [x] Contributor list in README
 - [x] METRICS.md tracking contributor growth weekly
 
@@ -182,10 +182,11 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Dashboard and tooling: Export colours in the deep link (#893), a key for the hatched bars (#894), and a `slow` marker with `make test-fast` so the benchmark tests do not dominate local runs (#895)
 - [x] Reproducibility and parity: Python/JS key-normalisation parity for trimmed characters and case folding (#897, #911), proxy alpha/correction/exact and the xlsx sheet recorded in provenance (#898, #899), `42.0` against `42` keys (#903), the `~` and `!` markers in the CLI and web (#907, #912), per-file held-out encodings (#914), and a Copy as CLI command button (#915)
 - [x] Compare, web and exact-test: rename suggestions from column names (#902) and `--rename` to act on them (#913), the reference baseline re-applied when the picker changes (#900), synced keyword boxes (#901), the Summary-tab chart key (#905), exact-test shuffles and row cap as parameters (#906) with a re-measured cap (#909), near-unique held-out columns skipped with a note (#908), and a pre-push hook and `slow` marker that keep the fast suite near 30 s (#904, #910)
-- [ ] Rename and compare follow-ups: Unicode-aware column-name tokens (#917), group-count tolerance (#918), rejecting `--rename A=A` (#919), renamed pairs in the compare CSV (#920)
-- [ ] Held-out and provenance follow-ups: near-unique skips visible in JSON and provenance (#921), `@ENCODING` notices and web support (#923, #924), a numeric-age exemption from the identifier screen (#937), NFKC key folding (#935), a generator for the case-folding table (#939)
-- [ ] Web and exact-test follow-ups: inputs for the shuffle count and row cap (#925), an upper bound on shuffles (#926), `--sample`, export options and edge-case tests for Copy as CLI command (#928, #929, #934), a restored-keywords note (#930)
-- [ ] Docs and tooling follow-ups: README held-out syntax and the MCP parameter tables (#922, #931), single coverage run in CI (#932), a faster OG-image test (#933), a split `test_js_parity.py` (#938), removing the scalar PRNG (#927), and a licence audit for `brag-output/` (#936)
+- [x] Held-out, key and exact-test hardening: shuffles capped and configurable in the web (#925, #926), skipped near-unique columns in JSON and provenance (#921), encoding notices and `@ENCODING` in the web (#923, #924), NFKC key folding and a case-folding generator (#935, #939), group-count tolerance and `--rename` pairs in the compare CSV (#918, #920), plus contributor fixes for rename tokens, identity renames and numeric ages (#917, #919, #937)
+- [x] Copy as CLI command and docs: `--sample`, export options and quoting tests (#928, #929, #934), the restored-keywords note (#930), README held-out syntax and the MCP parameter tables (#922, #931), the asset-source record for `brag-output/` (#936), one coverage run in CI (#932), a faster OG-image test (#933), the PRNG oracle in the tests (#927) and a split parity test file (#938)
+- [ ] Parity and portability follow-ups: a lookbehind-free rename tokeniser for older Safari (#956), `tested: false` and notes in the web provenance (#951), a stale-table guard for the case-folding sweep (#946), NFKC-era edge cases such as `=` in held-out paths (#958), a named near-unique constant (#957), and the web xlsx encoding notice (#952)
+- [ ] Reporting and docs follow-ups: renamed pairs in the compare HTML report (#953), one `notes` key in the MCP tools (#950), a SPEC section for proxy hints (#955), the licence of the bundled music and sound effects (#954), a checker for issue numbers cited in the roadmap (#963), and README examples that are parsed by a test (#948)
+- [ ] Tooling and test follow-ups: `words.json` no longer overwritten (#944), `pythonpath` for the shared test helpers (#945), an explicit held-out report object (#947), tolerance boundary tests (#949), compare flag validation and proxy-hint rendering tests (#959, #960), `split_held_out_encoding` cleanup (#961), inline errors for the exact inputs (#962), loader sniffing and MCP read-error tests (#964, #965), and a `python -m faircode` smoke test (#966)
 
 ---
 

@@ -1432,3 +1432,11 @@ def test_skipped_near_unique_held_out_column_reaches_json_notes_and_provenance(t
     entries = {e["column"]: e for e in out["provenance"]["proxy_hints_with"]}
     assert entries["ident"]["tested"] is False and "identifier" in entries["ident"]["skip_reason"]
     assert "tested" not in entries["race"]
+
+
+def test_readme_documents_every_held_out_spec_marker():
+    # #922: ~, ! and @ENCODING (and the near-unique skip) are user-facing syntax, so the README says so.
+    text = " ".join((Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8").split())
+    for needle in ("PATH=COLUMN[:KEY][~|!][@ENCODING]", "full.csv=race:id~", "full.csv=race:id!", "full.csv=race@latin-1",
+                   "looks like an identifier", "tested: false"):
+        assert needle in text, needle

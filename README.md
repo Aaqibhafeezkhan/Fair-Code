@@ -1019,9 +1019,28 @@ faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race  # t
 faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race:id  # ...matching rows on an id column, not by position
 faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race:id+visit --proxy-key-normalize  # composite key, ignoring case/spaces/leading zeros
 faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race:id~    # a trailing ~ normalises just this spec's key
+faircode profile dropped.csv --proxy-hints --proxy-key-normalize --proxy-hints-with 'full.csv=race:id!'  # ! keeps this spec's key exact when normalising globally
+faircode profile dropped.csv --proxy-hints --proxy-hints-with full.csv=race@latin-1  # this file is latin-1, whatever --encoding says
 faircode profile data.csv --min-share 0.1          # tune the flagging thresholds
 faircode profile data.csv --json --no-provenance   # drop the run-metadata block
 ```
+
+**Held-out spec syntax.** Each `--proxy-hints-with` (and `-a`/`-b` on `compare`, MCP `held_out_with`) is
+`PATH=COLUMN[:KEY][~|!][@ENCODING]`:
+
+| Part | Meaning | Example |
+|------|---------|---------|
+| `PATH=COLUMN` | the file and the dropped column to test (rows matched by position) | `full.csv=race` |
+| `:KEY` | match rows on a key column present in both files; `id+visit` joins on two | `full.csv=race:id` |
+| `~` after the key | normalise this spec's key (trim, NFKC, case, `42.0` = `42`, leading zeros) | `full.csv=race:id~` |
+| `!` after the key | keep this spec's key exact even with `--proxy-key-normalize` | `full.csv=race:id!` |
+| `@ENCODING` | this file's text encoding, overriding `--encoding` (ignored, with a notice, for `.xlsx`/`.parquet`) | `full.csv=race:id~@latin-1` |
+
+Quote a spec containing `~`, `!`, `@` or spaces so the shell leaves it alone. A held-out column with
+more distinct values than `--max-categorical-card` that are also at least half its rows looks like an
+identifier, so it is skipped with a note (stderr, the `--json` `notes`, and `tested: false` in the
+provenance) instead of being tested; raise `--max-categorical-card` to test it anyway. Details:
+[SPEC section 3](faircode/SPEC.md#3-per-dimension-metrics).
 
 For CI, `--fail-under N` returns exit code `1` and explains the failing score
 on stderr when the overall representation score is below `N`; report output,

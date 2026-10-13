@@ -1416,3 +1416,19 @@ def test_held_out_workbook_with_an_encoding_prints_the_ignored_notice(tmp_path, 
     assert "held-out file" in capsys.readouterr().err
     assert main(["profile", str(data), "--proxy-hints", "--proxy-hints-with", f"{book}=race"]) == 0
     assert "held-out file" not in capsys.readouterr().err
+
+
+def test_skipped_near_unique_held_out_column_reaches_json_notes_and_provenance(tmp_path, capsys):
+    # #921
+    n = 60
+    data = tmp_path / "d.csv"
+    data.write_text("sex,occupation\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 2 else 'y'}" for i in range(n)) + "\n")
+    held = tmp_path / "h.csv"
+    held.write_text("ident,race\n" + "\n".join(f"id{i},{'ab'[i % 2]}" for i in range(n)) + "\n")
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-alpha", "1", "--proxy-hints-with", f"{held}=ident",
+                 "--proxy-hints-with", f"{held}=race", "--json"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert any("held-out column 'ident'" in note for note in out["notes"])
+    entries = {e["column"]: e for e in out["provenance"]["proxy_hints_with"]}
+    assert entries["ident"]["tested"] is False and "identifier" in entries["ident"]["skip_reason"]
+    assert "tested" not in entries["race"]

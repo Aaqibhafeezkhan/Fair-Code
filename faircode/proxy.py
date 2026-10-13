@@ -309,7 +309,7 @@ def _all_numeric(series):
     )
 
 
-def _keep_held_out(held_out, column, series, notes, max_categorical_card):
+def _keep_held_out(held_out, column, series, notes, max_categorical_card, skipped=None):
     """Store a held-out column unless it is near-unique (more distinct values than
     `max_categorical_card` and at least half the non-null rows): testing an ID-like or
     free-text column builds a huge contingency table and means nothing. An all-numeric
@@ -319,12 +319,14 @@ def _keep_held_out(held_out, column, series, notes, max_categorical_card):
         distinct, present = int(series.nunique(dropna=True)), int(series.notna().sum())
         if distinct > max_categorical_card and distinct * 2 >= present and not _all_numeric(series):
             notes.append(near_unique_note(column, distinct, max_categorical_card))
+            if skipped is not None:
+                skipped.append(column)
             return
     held_out[column] = series
 
 
 def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-hints-with",
-                         normalize_keys=False, notes=None, max_categorical_card=20):
+                         normalize_keys=False, notes=None, max_categorical_card=20, skipped=None):
     """Parse repeated PATH=COLUMN[:KEY] specs into a {column: pandas.Series} map
     aligned to `df`'s index, for proxy_hints()'s `held_out` param. Shared by
     the CLI's `--proxy-hints-with` and the MCP `proxy_hints` tool's
@@ -347,7 +349,8 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
     An optional `@ENCODING` suffix overrides the caller's shared encoding for
     that file; it composes with the marker as `PATH=COLUMN:KEY~@ENCODING`.
     With a `notes` list, a near-unique held-out column (see `_keep_held_out`) is left out
-    and a message appended instead of being tested (#908).
+    and a message appended instead of being tested (#908); its name is also appended to
+    `skipped` when that list is given, so provenance can say it was not tested (#921).
     """
     held_out = {}
     for original_spec in specs or []:
@@ -382,7 +385,7 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
                     f"{flag} {path} has no row for {int(missing.sum())} key(s) of the "
                     f"profiled dataset (e.g. '{df_keys[missing].iloc[0]}')")
             _keep_held_out(held_out, column, pd.Series(lookup.loc[df_keys.to_numpy()].to_numpy(), index=df.index),
-                           notes, max_categorical_card)
+                           notes, max_categorical_card, skipped)
             continue
         if len(held_df) != len(df):
             raise ValueError(
@@ -390,7 +393,7 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
                 f"dataset has {len(df)} - rows must align 1:1 (or add a join key: "
                 f"PATH=COLUMN:KEY)")
         _keep_held_out(held_out, column, pd.Series(held_df[column].to_numpy(), index=df.index),
-                       notes, max_categorical_card)
+                       notes, max_categorical_card, skipped)
     return held_out
 
 

@@ -102,7 +102,7 @@ def proxy_params(alpha, correction=None, exact=False, permutations=None, max_row
     return params
 
 
-def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding=None) -> list:
+def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding=None, skipped=()) -> list:
     """Provenance entries for repeated PATH=COLUMN held-out specs (#811).
 
     One {path, column, sha256} per spec (plus `key` when a join key was given), in the order given; an unreadable path
@@ -113,6 +113,8 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
     explicit --encoding choice; each text file's entry records it, or its own
     sniffed byte-order mark, and omits it for plain UTF-8 and for binary
     workbooks/Parquet, the same rule as the dataset's `encoding` (#891, #914).
+    `skipped` names the columns left out as near-unique; their entries say `tested: false`
+    with a `skip_reason` so the export does not claim the file was used (#921).
     `profiled_columns` is forwarded to split_held_out_spec so a colon in a
     column name is resolved the same way as the live parse (#869).
     """
@@ -130,6 +132,8 @@ def held_out_entries(specs, profiled_columns=None, key_normalize=False, encoding
                 entry["key_normalize"] = True
         _add_digest(entry, "sha256", path)
         entry.update(sheet_fields(path))
+        if column in skipped:
+            entry.update({"tested": False, "skip_reason": "near-unique values (looks like an identifier)"})
         if not str(path).lower().endswith(_BINARY_SUFFIXES):
             enc = sniff_effective_encoding(path, spec_encoding or encoding)
             if enc:
@@ -170,8 +174,8 @@ def build(digests=(), params=None, overrides=None, held_out=(), encodings=None,
     (e.g. {"dataset_hash": "latin-1"} or {"dataset_hash_a": "utf-16"}), placed
     immediately beside the corresponding digest field.
 
-    `held_out` is a sequence of (field_name, specs) or
-    (field_name, specs, profiled_columns) triples for the files given to
+    `held_out` is a sequence of (field_name, specs), (field_name, specs, profiled_columns) or
+    (field_name, specs, profiled_columns, skipped_columns) tuples for the files given to
     `--proxy-hints-with`: each non-empty one is recorded as a list of
     {path, column, sha256} after `overrides`, so the proxy results in the same
     export can be tied to the files that produced them. Omitted when empty, so
@@ -195,11 +199,14 @@ def build(digests=(), params=None, overrides=None, held_out=(), encodings=None,
     block["params"] = public_params(params or {})
     block["overrides"] = dict(overrides or {})
     for item in held_out:
-        if len(item) == 3:
+        skipped = ()
+        if len(item) == 4:
+            field, specs, columns, skipped = item
+        elif len(item) == 3:
             field, specs, columns = item
         else:
             field, specs = item
             columns = None
         if specs:
-            block[field] = held_out_entries(specs, columns, key_normalize, held_out_encoding)
+            block[field] = held_out_entries(specs, columns, key_normalize, held_out_encoding, skipped)
     return block

@@ -123,7 +123,8 @@ def _check_map_columns(overrides, known_columns):
         raise SystemExit(2)
 
 
-def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categorical_card=20):
+def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categorical_card=20,
+                    report=None, field="proxy_hints_with"):
     """Parse repeated --proxy-hints-with PATH=COLUMN flags via proxy.py's
     shared parse_held_out_specs, printing a plain error and raising
     SystemExit(2) on any parse failure, missing column, or row-count
@@ -146,11 +147,15 @@ def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categori
                 )
     try:
         notes = held_out_encoding_ignored_notes(specs, encoding)
+        skipped = []
         held_out = parse_held_out_specs(specs, df, functools.partial(_read_or_exit, encoding=encoding),
                                         normalize_keys=normalize_keys, notes=notes,
-                                        max_categorical_card=max_categorical_card)
+                                        max_categorical_card=max_categorical_card, skipped=skipped)
         for note in notes:
             print(f"note: {note}", file=sys.stderr)
+        if report is not None:   # also reach the --json result and the provenance (#921)
+            report["notes"].extend(notes)
+            report["skipped"].setdefault(field, []).extend(skipped)
         return held_out
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -192,6 +197,11 @@ def _alpha(args):
     return PROXY_ALPHA if args.proxy_alpha is None else args.proxy_alpha
 
 
+def _skipped(args, field):
+    """Held-out columns skipped as near-unique for `field` in this run (#921)."""
+    return tuple(getattr(args, "held_report", {"skipped": {}})["skipped"].get(field, ()))
+
+
 def _profile_provenance(args, opts, overrides, df=None):
     from .provenance import sniff_effective_encoding
     digests = [] if args.sample else [("dataset_hash", args.csv)]
@@ -206,7 +216,7 @@ def _profile_provenance(args, opts, overrides, df=None):
         params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact,
                                     args.proxy_exact_permutations, args.proxy_exact_max_rows))
     provenance = build_provenance(digests, params, overrides,
-                                  held_out=[("proxy_hints_with", args.proxy_hints_with, columns)],
+                                  held_out=[("proxy_hints_with", args.proxy_hints_with, columns, _skipped(args, "proxy_hints_with"))],
                                   encodings={"dataset_hash": enc} if enc else None,
                                   key_normalize=args.proxy_key_normalize,
                                   held_out_encoding=getattr(args, "encoding", None))
@@ -237,8 +247,8 @@ def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
     return build_provenance(
         [("dataset_hash_a", args.csv_a), ("dataset_hash_b", args.csv_b)],
         params, overrides,
-        held_out=[("proxy_hints_with_a", args.proxy_hints_with_a, cols_a),
-                  ("proxy_hints_with_b", args.proxy_hints_with_b, cols_b)],
+        held_out=[("proxy_hints_with_a", args.proxy_hints_with_a, cols_a, _skipped(args, "proxy_hints_with_a")),
+                  ("proxy_hints_with_b", args.proxy_hints_with_b, cols_b, _skipped(args, "proxy_hints_with_b"))],
         encodings=encs if encs else None,
         key_normalize=args.proxy_key_normalize,
         held_out_encoding=enc)
@@ -518,6 +528,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="skip rendering figures/*.png (no matplotlib needed)")
 
     args = parser.parse_args(argv)
+    args.held_report = {"notes": [], "skipped": {}}   # held-out notes and skipped columns (#921)
     if args.command in ("profile", "compare"):
         _check_encoding(args.encoding)
 
@@ -635,7 +646,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.proxy_hints or args.proxy_hints_with:
             held_out = _build_held_out(args.proxy_hints_with, df, args.encoding, args.proxy_key_normalize,
-                                       _resolve_opts(opts)["max_categorical_card"])
+                                       _resolve_opts(opts)["max_categorical_card"], args.held_report)
             try:
                 result["proxy_hints"] = proxy_hints(df, result["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out,
                                                 max_age=_resolve_opts(opts)["max_age"],
@@ -644,6 +655,8 @@ def main(argv: list[str] | None = None) -> int:
             except RuntimeError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2
+        if args.held_report["notes"]:   # visible to --json consumers, not only on stderr (#921)
+            result["notes"] = list(args.held_report["notes"])
 
         if args.html:
             html_content = to_html(result)
@@ -789,9 +802,11 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.proxy_hints or args.proxy_hints_with_a or args.proxy_hints_with_b:
             held_out_a = _build_held_out(args.proxy_hints_with_a, df_a, args.encoding, args.proxy_key_normalize,
-                                         _resolve_opts(opts)["max_categorical_card"])
+                                         _resolve_opts(opts)["max_categorical_card"], args.held_report,
+                                         "proxy_hints_with_a")
             held_out_b = _build_held_out(args.proxy_hints_with_b, df_b, args.encoding, args.proxy_key_normalize,
-                                         _resolve_opts(opts)["max_categorical_card"])
+                                         _resolve_opts(opts)["max_categorical_card"], args.held_report,
+                                         "proxy_hints_with_b")
             try:
                 result["proxy_hints_a"] = proxy_hints(df_a, profile_a["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out_a,
                                                         max_age=_resolve_opts(opts)["max_age"],
@@ -804,6 +819,8 @@ def main(argv: list[str] | None = None) -> int:
             except RuntimeError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2
+        if args.held_report["notes"]:   # visible to --json consumers, not only on stderr (#921)
+            result["notes"] = list(args.held_report["notes"])
 
         if args.html:
             html_content = compare_to_html(result)

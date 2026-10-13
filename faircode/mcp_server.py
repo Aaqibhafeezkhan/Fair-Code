@@ -269,6 +269,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
     # One note is enough when both paths are binary formats.
     if enc_notes:
         result["notes"] = [enc_notes[0]]
+    skipped_a, skipped_b = [], []   # near-unique held-out columns, for provenance (#921)
     if proxy_hints:
         held_notes = (held_out_encoding_ignored_notes(held_out_with_a, encoding)
                       + held_out_encoding_ignored_notes(held_out_with_b, encoding))   # + near-unique skips (#908, #923)
@@ -279,10 +280,10 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
         kw["exact"] = exact
         kw.update(_exact_kwargs(exact_permutations, exact_max_rows))
         held_a = parse_held_out_specs(held_out_with_a, df_a, read_held, flag="held_out_with_a",
-                                      normalize_keys=key_normalize, notes=held_notes,
+                                      normalize_keys=key_normalize, notes=held_notes, skipped=skipped_a,
                                       max_categorical_card=_resolve_opts(opts)["max_categorical_card"]) if held_out_with_a else None
         held_b = parse_held_out_specs(held_out_with_b, df_b, read_held, flag="held_out_with_b",
-                                      normalize_keys=key_normalize, notes=held_notes,
+                                      normalize_keys=key_normalize, notes=held_notes, skipped=skipped_b,
                                       max_categorical_card=_resolve_opts(opts)["max_categorical_card"]) if held_out_with_b else None
         result["proxy_hints_a"] = compute_proxy_hints(df_a, profile_a["dimensions"],
                                                       held_out=held_a, **kw)
@@ -306,8 +307,8 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
              **(proxy_params(PROXY_ALPHA if alpha is None else alpha, correction, exact,
                            exact_permutations, exact_max_rows) if proxy_hints else {})},
             overrides,
-            held_out=[("proxy_hints_with_a", held_out_with_a, list(df_a.columns)),
-                      ("proxy_hints_with_b", held_out_with_b, list(df_b.columns))] if proxy_hints else (),
+            held_out=[("proxy_hints_with_a", held_out_with_a, list(df_a.columns), skipped_a),
+                      ("proxy_hints_with_b", held_out_with_b, list(df_b.columns), skipped_b)] if proxy_hints else (),
             encodings=encs if encs else None, held_out_encoding=encoding)
         result = dict(result, provenance=provenance)
     return result
@@ -359,9 +360,10 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     resolved = _resolve_opts(opts)
     result = profile(df, overrides, opts)
     held_notes = held_out_encoding_ignored_notes(held_out_with, encoding)   # + near-unique skips (#908, #923)
+    held_skipped = []
     held_out = parse_held_out_specs(held_out_with, df, functools.partial(_read_table_or_raise, encoding=encoding),
                                     flag="held_out_with",
-                                    normalize_keys=key_normalize, notes=held_notes,
+                                    normalize_keys=key_normalize, notes=held_notes, skipped=held_skipped,
                                     max_categorical_card=resolved["max_categorical_card"]) if held_out_with else None
     kw = {} if alpha is None else {"alpha": alpha}
     kw["correction"] = correction
@@ -387,7 +389,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
                     **{k: resolved[k] for k in ("max_categorical_card", "max_dimension_groups",
                                                 "max_age", "age_reference_year", "keywords")}},
             overrides=overrides,
-            held_out=[("proxy_hints_with", held_out_with, list(df.columns))] if held_out_with else (),
+            held_out=[("proxy_hints_with", held_out_with, list(df.columns), held_skipped)] if held_out_with else (),
             key_normalize=key_normalize,
             held_out_encoding=encoding,
             encodings={"dataset_hash": enc} if enc else None,

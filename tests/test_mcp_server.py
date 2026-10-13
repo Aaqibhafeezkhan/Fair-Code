@@ -811,6 +811,8 @@ def test_proxy_hints_skips_near_unique_held_out_columns_with_a_note(tmp_path):
     result = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{held}=ident"])
     assert any("held-out column 'ident'" in n and "identifier" in n for n in result["notes"])
     assert all("ident" not in (h["a"], h["b"]) for h in result["hints"])
+    entry = result["provenance"]["proxy_hints_with"][0]
+    assert entry["tested"] is False and "identifier" in entry["skip_reason"]    # #921
     wide = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{held}=ident"], max_categorical_card=100)
     assert "notes" not in wide
 

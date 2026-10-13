@@ -1135,6 +1135,12 @@
   }
 
   // The faircode command that reproduces this run (#915); shell-quoted by E.buildCliCommand.
+  // "include provenance" only matters to a CSV, so ticking it copies a --csv ... --csv-provenance command (#929).
+  function cliOutputs(withProvenance, base, what) {
+    if (!withProvenance) return {};
+    return { csv: String(base).replace(/\.[^.\/]+$/, '') + '-' + what + '.csv', csvProvenance: true };
+  }
+
   function currentCliCommand() {
     var withHints = !!(currentResult && currentResult.proxy_hints && currentProxySettings);
     return E.buildCliCommand({
@@ -1145,6 +1151,7 @@
       overrides: currentOverrides,
       encoding: encodingSelect ? encodingSelect.value : 'auto',
       referenceName: referenceFile ? referenceFile.name : null,
+      outputs: cliOutputs(document.getElementById('csvProvenanceInput').checked, currentFile ? currentFile.name : 'sample', 'profile'),
       proxy: withHints ? currentProxySettings : null,
       held: { main: withHints ? currentHeldSpecs : [] }
     });

@@ -2399,3 +2399,25 @@ def test_cli_command_for_the_built_in_sample_uses_sample_flag(capsys):
     assert first.startswith("# the sample pair is built into the web page") and rest == "faircode compare a.csv b.csv"
     for name, marker in (("profiler-ui.js", "currentName === 'sample-health-data.csv'"), ("profiler-compare.js", "slot.A.name === 'sample-baseline.csv'")):
         assert marker in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+
+
+def test_cli_command_includes_the_export_options_the_checkboxes_mirror(tmp_path, monkeypatch, capsys):
+    """#929: outputs (csv / csvProvenance / csvBom / html / json) become flags the CLI accepts and
+    writes; the views pass the include-provenance checkbox as a csv + --csv-provenance pair."""
+    import shlex
+    from faircode.cli import main
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "process.stdout.write(JSON.stringify(E.buildCliCommand({kind:'profile',sample:true,files:[],opts:{},"
+        "outputs:{csv:'out file.csv',csvProvenance:true,csvBom:true,html:'r.html'}})));"
+    )
+    cmd = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert cmd == "faircode profile --sample --csv 'out file.csv' --csv-provenance --csv-bom --html r.html"
+    monkeypatch.chdir(tmp_path)
+    assert main(shlex.split(cmd)[1:]) == 0
+    assert (tmp_path / "out file.csv").read_bytes().startswith(b"\xef\xbb\xbf") and (tmp_path / "r.html").is_file()
+    assert "provenance" in (tmp_path / "out file.csv").read_text(encoding="utf-8-sig").lower()
+    for name, marker in (("profiler-ui.js", "cliOutputs(document.getElementById('csvProvenanceInput').checked"),
+                         ("profiler-compare.js", "document.getElementById('compareCsvProvenanceInput').checked")):
+        assert marker in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")

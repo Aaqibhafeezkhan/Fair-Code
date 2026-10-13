@@ -2149,6 +2149,13 @@
     if (spec.encoding && spec.encoding !== 'auto') args.push('--encoding', shellQuote(spec.encoding));
     if (spec.kind === 'profile' && spec.referenceName) args.push('--reference', shellQuote(spec.referenceName));
     Object.keys(spec.renames || {}).forEach(function (a) { args.push('--rename', shellQuote(a + '=' + spec.renames[a])); });
+    // Outputs the page's controls mirror: --csv FILE [--csv-provenance] [--csv-bom], --html FILE, --json (#929).
+    var out = spec.outputs || {};
+    if (out.csv) args.push('--csv', shellQuote(out.csv));
+    if (out.csv && out.csvProvenance) args.push('--csv-provenance');
+    if (out.csv && out.csvBom) args.push('--csv-bom');
+    if (out.html) args.push('--html', shellQuote(out.html));
+    if (out.json) args.push('--json');
     if (spec.proxy) {
       var px = spec.proxy;
       args.push('--proxy-hints');

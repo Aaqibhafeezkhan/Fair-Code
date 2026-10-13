@@ -1000,6 +1000,8 @@
       overrides: currentOverrides,
       encoding: encodingSelect ? encodingSelect.value : 'auto',
       renames: currentRenames,
+      outputs: document.getElementById('compareCsvProvenanceInput').checked
+        ? { csv: 'compare-drift.csv', csvProvenance: true } : {},
       proxy: withHints ? currentProxySettings : null,
       held: { a: withHints ? heldSpecsA : [], b: withHints ? heldSpecsB : [] }
     });

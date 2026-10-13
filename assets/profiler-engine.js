@@ -2129,7 +2129,14 @@
   // spec: {kind: 'profile'|'compare', files, opts, overrides, encoding, referenceName,
   //        proxy: {alpha, correction, exact, permutations, maxRows} | null, held: {main, a, b}, renames}
   function buildCliCommand(spec) {
-    var opts = spec.opts || {}, args = ['faircode', spec.kind].concat((spec.files || []).map(shellQuote)), pre = '';
+    var opts = spec.opts || {}, pre = '';
+    // The built-in sample has a CLI twin for profile (--sample); the compare sample pair is web-only,
+    // so its command says so and uses placeholder names (#928).
+    var args = ['faircode', spec.kind].concat(spec.sample && spec.kind === 'profile' ? ['--sample']
+      : (spec.files || []).map(shellQuote));
+    if (spec.sample && spec.kind === 'compare') {
+      pre = '# the sample pair is built into the web page: save both files from it, or use your own\n';
+    }
     CLI_THRESHOLD_FLAGS.forEach(function (pair) {
       if (opts[pair[0]] !== undefined && opts[pair[0]] !== null) args.push(pair[1], String(opts[pair[0]]));
     });

@@ -1139,6 +1139,7 @@
     var withHints = !!(currentResult && currentResult.proxy_hints && currentProxySettings);
     return E.buildCliCommand({
       kind: 'profile',
+      sample: !currentFile && currentName === 'sample-health-data.csv',   // the built-in sample = --sample (#928)
       files: [currentFile ? currentFile.name : 'data.csv'],
       opts: currentOpts,
       overrides: currentOverrides,

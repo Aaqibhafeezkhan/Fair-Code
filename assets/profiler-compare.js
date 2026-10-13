@@ -994,6 +994,7 @@
     var withHints = !!(currentCmp && currentCmp.proxy_hints_a && currentProxySettings);
     return E.buildCliCommand({
       kind: 'compare',
+      sample: !!(slot.A && !slot.A.file && slot.A.name === 'sample-baseline.csv'),
       files: [slot.A && slot.A.file ? slot.A.file.name : 'a.csv', slot.B && slot.B.file ? slot.B.file.name : 'b.csv'],
       opts: currentOpts,
       overrides: currentOverrides,

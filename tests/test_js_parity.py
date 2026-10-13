@@ -2377,3 +2377,25 @@ def test_web_exact_test_inputs_are_parsed_and_wired_into_both_views():
     for name in ("profiler-ui.js", "profiler-compare.js"):
         js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
         assert "E.parseExactSettings(" in js and "permutations: exactSettings.permutations, maxRows: exactSettings.maxRows" in js
+
+
+def test_cli_command_for_the_built_in_sample_uses_sample_flag(capsys):
+    """#928: the profile demo copies `faircode profile --sample ...` (which runs), and the web-only
+    compare sample pair says so in a comment instead of naming files that do not exist."""
+    import shlex
+    from faircode.cli import main
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "process.stdout.write(JSON.stringify({p:E.buildCliCommand({kind:'profile',sample:true,files:['data.csv'],opts:{max_age:100},encoding:'auto'}),"
+        "c:E.buildCliCommand({kind:'compare',sample:true,files:['a.csv','b.csv'],opts:{},encoding:'auto'}),"
+        "own:E.buildCliCommand({kind:'profile',files:['mine.csv'],opts:{}})}));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out["p"] == "faircode profile --sample --max-age 100" and out["own"] == "faircode profile mine.csv"
+    assert main(shlex.split(out["p"])[1:] + ["--json"]) == 0
+    assert json.loads(capsys.readouterr().out)["n_rows"] > 0
+    first, _, rest = out["c"].partition("\n")
+    assert first.startswith("# the sample pair is built into the web page") and rest == "faircode compare a.csv b.csv"
+    for name, marker in (("profiler-ui.js", "currentName === 'sample-health-data.csv'"), ("profiler-compare.js", "slot.A.name === 'sample-baseline.csv'")):
+        assert marker in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")

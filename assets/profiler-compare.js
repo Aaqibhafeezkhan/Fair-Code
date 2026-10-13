@@ -266,6 +266,12 @@
     return { value: parsed };
   }
 
+  // "Restored from your last session" + Forget next to the keywords box (#930).
+  function showRestoredNote(area, on) {
+    var note = document.getElementById(area.id.replace('Input', 'Restored'));
+    if (note) note.hidden = !on;
+  }
+
   function resetThresholdInputs() {
     thresholdInputs.forEach(function (input) {
       input.value = '';
@@ -280,6 +286,7 @@
         area.classList.toggle('overridden', checked.value !== undefined);
         setKeywordsError(area, '');
         if (checked.value !== undefined) currentOpts[area.dataset.optJson] = checked.value;
+        showRestoredNote(area, checked.value !== undefined);   // say where the filled box came from (#930)
       });
     }
   }
@@ -309,6 +316,7 @@
   ).forEach(function (area) {
     area.addEventListener('input', function () {
       var opt = area.dataset.optJson;
+      showRestoredNote(area, false);   // an edit makes it the person's own text
       var checked = checkKeywordsText(area.value.trim());
       if (checked.error) { setKeywordsError(area, checked.error); return; }
       setKeywordsError(area, '');
@@ -340,7 +348,24 @@
       area.value = checked.empty ? '' : text;
       area.classList.toggle('overridden', !checked.empty);
       setKeywordsError(area, '');
+      showRestoredNote(area, false);
       if (checked.empty) delete currentOpts[area.dataset.optJson]; else currentOpts[area.dataset.optJson] = checked.value;
+      maybeCompare(false);
+    });
+  });
+
+  // Forget: empty the box, the stored text and the applied vocabulary, and tell the other view.
+  Array.prototype.forEach.call(thresholdControls ? thresholdControls.querySelectorAll('[data-opt-json]') : [], function (area) {
+    var forget = document.getElementById(area.id.replace('Input', 'Forget'));
+    if (!forget) return;
+    forget.addEventListener('click', function () {
+      area.value = '';
+      area.classList.remove('overridden');
+      setKeywordsError(area, '');
+      delete currentOpts[area.dataset.optJson];
+      writeStoredKeywords('');
+      showRestoredNote(area, false);
+      announceKeywords(area);
       maybeCompare(false);
     });
   });

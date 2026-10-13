@@ -2421,3 +2421,37 @@ def test_cli_command_includes_the_export_options_the_checkboxes_mirror(tmp_path,
     for name, marker in (("profiler-ui.js", "cliOutputs(document.getElementById('csvProvenanceInput').checked"),
                          ("profiler-compare.js", "document.getElementById('compareCsvProvenanceInput').checked")):
         assert marker in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+
+
+def test_keywords_restored_note_and_forget_button_are_wired_in_both_views():
+    """#930: a restored vocabulary shows a note with a Forget button; editing, syncing or forgetting
+    hides it; Forget clears the box, the stored text and the applied options and re-runs."""
+    html = (REPO_ROOT / "profiler.html").read_text(encoding="utf-8")
+    for pre in ("keywords", "compareKeywords"):
+        assert f'id="{pre}Restored" hidden' in html and f'id="{pre}Forget"' in html
+    script = r"""
+    var fs=require('fs');
+    var out={};
+    process.argv.slice(1).forEach(function(file){
+      var src=fs.readFileSync(file,'utf-8');
+      var helper=src.slice(src.indexOf('function showRestoredNote'),src.indexOf('function resetThresholdInputs'));
+      var note={hidden:true};
+      var document={getElementById:function(id){return id==='keywordsRestored'?note:null;}};
+      var show=new Function('document',helper+';return showRestoredNote;')(document);
+      show({id:'keywordsInput'},true);var on=note.hidden;
+      show({id:'keywordsInput'},false);out[file.split('/').pop()]=[on,note.hidden];
+    });
+    process.stdout.write(JSON.stringify(out));
+    """
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-ui.js"),
+                           str(REPO_ROOT / "assets" / "profiler-compare.js")],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    assert json.loads(done.stdout) == {"profiler-ui.js": [False, True], "profiler-compare.js": [False, True]}
+    for name, rerun in (("profiler-ui.js", "reprofile(false);"), ("profiler-compare.js", "maybeCompare(false);")):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "showRestoredNote(area, checked.value !== undefined);" in js
+        assert "showRestoredNote(area, false);   // an edit makes it the person's own text" in js
+        forget = js.split("area.id.replace('Input', 'Forget')")[1].split("// Page load")[0]
+        for needle in ("area.value = '';", "delete currentOpts[area.dataset.optJson];", "writeStoredKeywords('');",
+                       "announceKeywords(area);", rerun):
+            assert needle in forget, (name, needle)

@@ -2230,3 +2230,25 @@ def test_web_cli_command_builder_emits_flags_the_cli_parses(tmp_path, monkeypatc
         assert "E.buildCliCommand({" in js and f"flashButton({btn}, " in js
     html = (REPO_ROOT / "profiler.html").read_text(encoding="utf-8")
     assert 'id="copyCliBtn"' in html and 'id="compareCopyCliBtn"' in html
+
+
+def test_cli_command_builder_quotes_awkward_names_so_they_round_trip():
+    """#934: file names, columns, keys and --map values with quotes, $, backticks, !, a leading ~,
+    newlines, backslashes, non-ASCII and the empty string each come back from shlex as one
+    argument, so a copied command never runs text from a name as shell code."""
+    import shlex
+    names = ["o'brien.csv", "a$b.csv", "`id`.csv", "wow!.csv", "~home.csv", "two\nlines.csv", "back\\slash.csv",
+             "名前.csv", 'say "hi".csv', "a b  c.csv", "semi;colon&amp|pipe.csv", "$(touch x).csv", ""]
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var names=JSON.parse(process.argv[2]);"
+        "var out=names.map(function(n){return E.buildCliCommand({kind:'profile',files:[n],opts:{},overrides:{},encoding:'auto',"
+        "proxy:{alpha:0.05,exact:false},held:{main:[{name:n,column:n,key:n,normalize:true}]}});});"
+        "process.stdout.write(JSON.stringify(out));"
+    )
+    cmds = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(names)],
+                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    for name, cmd in zip(names, cmds):
+        tokens = shlex.split(cmd)
+        assert tokens[:2] == ["faircode", "profile"] and tokens[2] == name, (name, tokens)
+        if name:   # an empty key means "no key", so the held-out spec of "" is just "="
+            assert tokens[-2] == "--proxy-hints-with" and tokens[-1] == f"{name}={name}:{name}~", (name, tokens)

@@ -374,7 +374,8 @@ def compare_to_csv(cmp: dict, provenance: dict | None = None) -> str:
     A dimension detected in only one dataset has no group or summary row; when
     there are any, a `dimension,present_in` section lists them (`a_only` /
     `b_only`) so a spreadsheet can filter and count them (#842). When rename
-    suggestions exist, a `dimension_a,dimension_b,overlap,reason` section follows (#896, #902).
+    suggestions exist, a `dimension_a,dimension_b,overlap,reason` section follows (#896, #902), then a
+    `renamed_dimension_a,renamed_dimension_b` section when `--rename` paired dimensions (#920).
     """
     buf = io.StringIO()
     writer = _SafeCsvWriter(buf)
@@ -410,6 +411,11 @@ def compare_to_csv(cmp: dict, provenance: dict | None = None) -> str:
         writer.writerow(["dimension_a", "dimension_b", "overlap", "reason"])
         for r in cmp["possible_renames"]:
             writer.writerow([r["a"], r["b"], format(r["overlap"], "g"), r.get("reason", "labels")])  # "1", like JS, not "1.0"
+    if cmp.get("renamed_dimensions"):
+        writer.writerow([])
+        writer.writerow(["renamed_dimension_a", "renamed_dimension_b"])
+        for r in cmp["renamed_dimensions"]:
+            writer.writerow([r["a"], r["b"]])
     writer.writerow([])
     writer.writerow(["flag"])
     for flag in cmp["flags"]:

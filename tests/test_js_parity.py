@@ -2263,3 +2263,30 @@ def test_cli_command_builder_quotes_awkward_names_so_they_round_trip():
         assert tokens[:2] == ["faircode", "profile"] and tokens[2] == name, (name, tokens)
         if name:   # an empty key means "no key", so the held-out spec of "" is just "="
             assert tokens[-2] == "--proxy-hints-with" and tokens[-1] == f"{name}={name}:{name}~", (name, tokens)
+
+
+def test_web_compare_csv_lists_renamed_dimensions_like_python(tmp_path):
+    """#920: dimensions paired by --rename get a renamed_dimension_a,renamed_dimension_b section
+    before the flags in both writers (and none when nothing was renamed)."""
+    from faircode.report import compare_to_csv
+
+    path_a = tmp_path / "a.csv"
+    path_a.write_text("sex,race\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
+    path_b = tmp_path / "b.csv"
+    path_b.write_text("sex,ethnicity\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
+    src = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
+    csvs = src[src.index("var csvRow = E.csvRow"):src.index("async function downloadCompareCsvReport")]
+    script = (
+        "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;" + csvs +
+        "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"
+        "var pa=E.profile(load(process.argv[2]),{},{}),pb=E.profile(load(process.argv[3]),{},{});"
+        "process.stdout.write(buildCompareCsvReport(E.compare(pa,pb,'a.csv','b.csv',{race:'ethnicity'})));"
+    )
+    web = subprocess.run(
+        ["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(path_a), str(path_b)],
+        capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    pa, pb = profile(pd.read_csv(path_a)), profile(pd.read_csv(path_b))
+    py = compare_to_csv(compare(pa, pb, "a.csv", "b.csv", renames={"race": "ethnicity"}))
+    section = "\n\nrenamed_dimension_a,renamed_dimension_b\nrace,ethnicity\n\nflag\n"
+    assert section in web.replace("\r\n", "\n") and section in py.replace("\r\n", "\n")
+    assert "renamed_dimension_a" not in compare_to_csv(compare(pa, pb, "a.csv", "b.csv"))

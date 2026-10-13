@@ -808,6 +808,10 @@
       out += csvRow([]) + csvRow(['dimension_a', 'dimension_b', 'overlap', 'reason']);
       cmp.possible_renames.forEach(function (r) { out += csvRow([r.a, r.b, r.overlap, r.reason || 'labels']); });
     }
+    if (cmp.renamed_dimensions && cmp.renamed_dimensions.length) {
+      out += csvRow([]) + csvRow(['renamed_dimension_a', 'renamed_dimension_b']);
+      cmp.renamed_dimensions.forEach(function (r) { out += csvRow([r.a, r.b]); });
+    }
     out += csvRow([]) + csvRow(['flag']);
     cmp.flags.forEach(function (f) { out += csvRow([f]); });
     [['proxy_hints_a', 'A'], ['proxy_hints_b', 'B']].forEach(function (k) {

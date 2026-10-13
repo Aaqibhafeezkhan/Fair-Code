@@ -2312,3 +2312,44 @@ def test_name_based_rename_tolerates_a_slightly_different_group_count_in_both_en
 
     py, js = run("sex", ["MF"[i % 2] for i in range(60)], "sex_code", ["129x"[i % 4] for i in range(60)])
     assert "possible_renames" not in py and "possible_renames" not in js
+
+
+def test_held_out_column_box_accepts_the_cli_encoding_suffix():
+    """#924: `race@latin-1` in the column box picks the row's encoding and is cleaned; an
+    unknown suffix (a real column containing @) is left alone."""
+    script = r"""
+    function El(tag){this.tag=tag;this.children=[];this.listeners={};this.value='';this.files=[];
+      this.attrs={};}
+    El.prototype.appendChild=function(c){this.children.push(c);c.parent=this;return c;};
+    El.prototype.removeChild=function(c){this.children.splice(this.children.indexOf(c),1);};
+    El.prototype.setAttribute=function(k,v){this.attrs[k]=v;};
+    El.prototype.addEventListener=function(t,f){(this.listeners[t]=this.listeners[t]||[]).push(f);};
+    El.prototype.querySelectorAll=function(sel){var out=[];(function walk(n){n.children.forEach(function(c){
+      if(c.tag===sel)out.push(c);walk(c);});})(this);return out;};
+    global.document={createElement:function(t){return new El(t);}};
+    global.window=global;
+    var seen=[];
+    global.FairCodeProfiler={decodeText:function(_d,encoding){seen.push(encoding);return {text:'x',encoding:encoding};}};
+    require(process.argv[1]);
+    var container=new El('div'),addBtn=new El('button');
+    var ctl=FairCodeHeldOut.init(container,addBtn,'held-out',function(){return 'auto';});
+    var inputs=container.children[0].querySelectorAll('input');
+    var select=container.children[0].querySelectorAll('select')[0];
+    (async function(){
+      var out={};
+      inputs[0].files=[{name:'h.csv',arrayBuffer:async function(){return 'b';}}];
+      inputs[1].value='race@ISO-8859-1';
+      var a=await ctl.collect();
+      out.a={column:a[0].column,box:inputs[1].value,select:select.value};
+      inputs[1].value='email@home';select.value='inherit';
+      var b=await ctl.collect();
+      out.b={column:b[0].column,select:select.value};
+      process.stdout.write(JSON.stringify({out:out,seen:seen}));
+    })();
+    """
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-heldout.js")],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    res = json.loads(done.stdout)
+    assert res["out"]["a"] == {"column": "race", "box": "race", "select": "latin-1"}
+    assert res["out"]["b"] == {"column": "email@home", "select": "inherit"}
+    assert res["seen"] == ["latin-1", "auto"]

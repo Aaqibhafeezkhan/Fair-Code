@@ -11,6 +11,10 @@
    PATH=COLUMN:KEY string form.
    ════════════════════════════════════════════════════════════════════════ */
 (function () {
+  // Spellings of the picker's encodings the CLI accepts after "@" (#924).
+  var ENCODING_ALIASES = { 'auto': 'auto', 'utf-8': 'utf-8', 'utf8': 'utf-8', 'utf-16': 'utf-16', 'utf16': 'utf-16',
+    'cp1252': 'cp1252', 'windows-1252': 'cp1252', 'latin-1': 'latin-1', 'latin1': 'latin-1', 'iso-8859-1': 'latin-1' };
+
   'use strict';
 
   var ACCEPT = '.csv,.tsv,.json,.xlsx,text/csv,application/json,' +
@@ -112,6 +116,14 @@
           inputs[3].checked = normalize;
         }
         var rowEncoding = rows[i].querySelectorAll('select')[0];
+        // The CLI's @ENCODING suffix pasted into the column box (race@latin-1) picks the row's
+        // encoding; a trailing @word that is not a known encoding stays part of the column (#924).
+        var suffix = /@([A-Za-z0-9_.-]+)$/.exec(column);
+        if (suffix && rowEncoding && ENCODING_ALIASES[suffix[1].toLowerCase()]) {
+          rowEncoding.value = ENCODING_ALIASES[suffix[1].toLowerCase()];
+          column = column.slice(0, suffix.index).trim();
+          inputs[1].value = column;
+        }
         var encodingChoice = rowEncoding && rowEncoding.value !== 'inherit' ?
           rowEncoding.value : (getEncoding ? getEncoding() : 'auto');
         if (!file && !column) continue;

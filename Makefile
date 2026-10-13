@@ -20,7 +20,7 @@ test:  ## Run the full test suite (mirrors CI)
 test-fast:  ## Run the suite without the slow model-training benchmark tests (CI still runs everything)
 	$(PY) -m pytest tests/ -q -m "not slow"
 
-coverage:  ## Run the full test suite with a faircode/ coverage report (informational only)
+coverage:  ## Run the full test suite with a faircode/ coverage report (what CI's profiler job runs; the figure is informational, not a gate)
 	$(PY) -m pytest tests/ -q --cov=faircode --cov-report=term-missing
 
 build-explainers:  ## Regenerate explainer pages, data.js, sitemap, and OG images (dark + light)

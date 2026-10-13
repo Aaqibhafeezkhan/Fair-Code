@@ -121,12 +121,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[excel,parquet,proxy,mcp]" pytest pytest-cov
 
-      - name: Run profiler tests
-        run: make test
-
-      - name: Report test coverage
+      # One run: the whole suite with line coverage printed at the end. A test failure fails the
+      # job; the coverage figure itself is informational, not a gate (#932).
+      - name: Run profiler tests (with coverage report)
         run: make coverage
-        continue-on-error: true
 
       - name: Smoke-test the CLI
         run: |

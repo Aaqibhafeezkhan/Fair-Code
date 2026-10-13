@@ -261,11 +261,11 @@ KEY_TRIM_CHARS = "\t\n\v\f\r \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\
 
 
 def normalize_key_text(value):
-    """Opt-in key normalisation (#859, #884): trim, compose Unicode (NFC),
+    """Opt-in key normalisation (#859, #884): trim, apply Unicode compatibility composition (NFKC, so full-width `４２`/`Ａ１` equal `42`/`a1`, #935),
     case-fold (so `ß` equals `ss`), drop a whole-number fraction (`42.0`), and drop leading zeros from an all-digit
     value, so ` A1`/`a1`, `0042`/`42`, `e` + U+0301 / `é` and `Straße`/`STRASSE`
     match. Mirrored by `normalizeKeyText` in assets/profiler-engine.js."""
-    text = unicodedata.normalize("NFC", unicodedata.normalize("NFC", str(value).strip(KEY_TRIM_CHARS)).casefold())
+    text = unicodedata.normalize("NFKC", unicodedata.normalize("NFKC", str(value).strip(KEY_TRIM_CHARS)).casefold())
     whole = _WHOLE_FLOAT.fullmatch(text)   # a spreadsheet's 42.0 is the key 42 (#903)
     if whole:
         text = whole.group(1)

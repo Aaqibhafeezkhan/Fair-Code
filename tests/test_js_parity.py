@@ -1747,7 +1747,7 @@ def test_build_held_out_composite_and_normalised_keys_match_python(tmp_path):
         "try{await E.buildHeldOut([{name:'h.csv',column:'race',key:'id+visit',data:held}],t)}catch(e){out.exact=e.message}"
         "out.norm=['  A01 ','a01','0042','000','x'].map(E.normalizeKeyText);"
         "out.ws=['\\u001fa\\u001f','\\ufeffa\\ufeff','\\u0085a\\u0085','\\u00a0a\\u3000','\\u180ea'].map(E.normalizeKeyText);"
-        "out.num=['42.0','007.00','4.5','42.','0.0','1.05'].map(E.normalizeKeyText);"
+        "out.num=['42.0','007.00','4.5','42.','0.0','1.05','\\uff14\\uff12','\\uff10\\uff10\\uff17','\\uff21\\uff11','\\u2461','\\u00b2','\\uff14\\uff12\\uff0e\\uff10'].map(E.normalizeKeyText);"
         "out.uni=['e\\u0301','\\u00e9','Stra\\u00dfe','STRASSE','\\u03a3\\u03a3','\\u03c3\\u03c2'].map(E.normalizeKeyText);"
         "process.stdout.write(JSON.stringify(out));})();"
     )
@@ -1759,8 +1759,10 @@ def test_build_held_out_composite_and_normalised_keys_match_python(tmp_path):
     assert "no row for" in out["exact"]
     from faircode.proxy import normalize_key_text
     assert out["norm"] == [normalize_key_text(v) for v in ["  A01 ", "a01", "0042", "000", "x"]] == ["a01", "a01", "42", "0", "x"]
-    numbers = ["42.0", "007.00", "4.5", "42.", "0.0", "1.05"]   # #903
-    assert out["num"] == [normalize_key_text(v) for v in numbers] == ["42", "7", "4.5", "42.", "0", "1.05"]
+    numbers = ["42.0", "007.00", "4.5", "42.", "0.0", "1.05",
+               "\uff14\uff12", "\uff10\uff10\uff17", "\uff21\uff11", "\u2461", "\u00b2", "\uff14\uff12\uff0e\uff10"]   # #903, #935
+    assert out["num"] == [normalize_key_text(v) for v in numbers] == [
+        "42", "7", "4.5", "42.", "0", "1.05", "42", "7", "a1", "2", "2", "42"]
     spaced = ["\x1fa\x1f", "\ufeffa\ufeff", "\x85a\x85", "\xa0a\u3000", "\u180ea"]   # #897
     assert out["ws"] == [normalize_key_text(v) for v in spaced] == ["\x1fa\x1f", "a", "a", "a", "\u180ea"]
     accented = ["e\u0301", "\u00e9", "Stra\u00dfe", "STRASSE", "\u03a3\u03a3", "\u03c3\u03c2"]
@@ -1978,11 +1980,15 @@ def test_web_held_out_provenance_records_the_encoding():
 
 def test_js_key_normalisation_matches_python_for_every_code_point():
     """#897/#911: normalizeKeyText agrees with normalize_key_text on `c + "a" + c` and on `c`
-    for every Unicode code point, so trim and full case folding cannot drift apart."""
+    for every Unicode code point, so trim and full case folding cannot drift apart. A code point
+    that either runtime has not assigned yet (the two ship different Unicode versions) is
+    skipped, since only the newer one would fold it (#935, #939)."""
+    import unicodedata
     from faircode.proxy import normalize_key_text
     script = (
-        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var out=[];"
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var out=[];var un=/^\\p{Cn}$/u;"
         "for(var cp=0;cp<=0x10FFFF;cp++){if(cp>=0xD800&&cp<=0xDFFF)continue;var c=String.fromCodePoint(cp);"
+        "if(un.test(c)){out.push(null,null);continue;}"
         "out.push(E.normalizeKeyText(c),E.normalizeKeyText(c+'a'+c));}"
         "process.stdout.write(JSON.stringify(out));"
     )
@@ -1990,12 +1996,16 @@ def test_js_key_normalisation_matches_python_for_every_code_point():
                           capture_output=True, text=True, encoding="utf-8", check=True)
     js = json.loads(done.stdout)
     cps = [cp for cp in range(0x110000) if not 0xD800 <= cp <= 0xDFFF]
-    expected = []
-    for cp in cps:
+    bad = []
+    for i, cp in enumerate(cps):
         c = chr(cp)
-        expected += [normalize_key_text(c), normalize_key_text(c + "a" + c)]
-    bad = [(hex(cps[i // 2]), js[i], expected[i]) for i in range(len(js)) if js[i] != expected[i]]
+        if js[2 * i] is None or unicodedata.category(c) == "Cn":
+            continue
+        for got, want in ((js[2 * i], normalize_key_text(c)), (js[2 * i + 1], normalize_key_text(c + "a" + c))):
+            if got != want:
+                bad.append((hex(cp), got, want))
     assert not bad, bad[:5]
+
 
 
 def test_web_held_out_key_accepts_the_cli_tilde_and_bang_markers():

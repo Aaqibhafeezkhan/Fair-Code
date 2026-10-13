@@ -841,3 +841,26 @@ def test_proxy_hints_notes_an_encoding_ignored_for_a_held_out_workbook(tmp_path)
     result = _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{book}=race@latin-1"])
     assert any("held-out file" in n and "no effect" in n for n in result["notes"])
     assert "notes" not in _proxy_hints_impl(str(path), alpha=1.0, held_out_with=[f"{book}=race"])
+
+
+def test_every_optional_mcp_parameter_is_in_the_spec_and_readme_tables():
+    # #931: the tool docstrings were right but the two reference tables had gone stale.
+    import inspect
+    import re
+    from pathlib import Path
+    from faircode.mcp_server import _compare_datasets_impl, _profile_dataset_impl
+    core = {"path", "path_a", "path_b", "overrides", "cross", "reference_path", "include_provenance",
+            "min_share", "intersection_floor", "imbalance_flag", "missing_flag", "min_group_size"}
+    root = Path(__file__).resolve().parent.parent
+    spec = (root / "faircode" / "SPEC.md").read_text(encoding="utf-8")
+    spec = spec[spec.index("## 11. MCP tools"):spec.index("\n## 12.")]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    readme = readme[readme.index("Optional parameters (defaults and errors"):readme.index("The engine is domain-agnostic")]
+    rows = lambda text: [line for line in text.splitlines() if line.startswith("|")]  # noqa: E731
+    for impl in (_profile_dataset_impl, _compare_datasets_impl, _proxy_hints_impl):
+        for name in inspect.signature(impl).parameters:
+            if name in core or name in ("held_out_with_a", "held_out_with_b", "alpha", "correction", "format"):
+                continue
+            pattern = re.compile(r"^\| [^|]*`%s`" % re.escape(name))
+            assert any(pattern.match(r) for r in rows(spec)), f"SPEC section 11 table lacks `{name}` ({impl.__name__})"
+            assert any(pattern.match(r) for r in rows(readme)), f"README parameter table lacks `{name}` ({impl.__name__})"

@@ -1066,6 +1066,13 @@ CSV layout in [section 12](faircode/SPEC.md#12-csv-export)):
 | `encoding` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Text encoding of delimited and JSON files (e.g. `"latin-1"`, `"utf-16"`); default is a UTF-8/16/32 BOM if present, else UTF-8 (CLI `--encoding`) |
 | `max_age` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Age above which a numeric age is flagged as implausible instead of banded into `75+`, default 120 (CLI `--max-age`) |
 | `age_reference_year`, `keywords` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Birth-year conversion and extra column-name vocabulary, same meaning as the CLI's `--age-reference-year` and `--keywords`; pass the values you profiled with to `proxy_hints` so it tests the same dimensions |
+| `proxy_hints` | `compare_datasets` | `true` attaches `proxy_hints_a` / `proxy_hints_b` to the comparison (CLI `compare --proxy-hints`) |
+| `held_out_with` | `proxy_hints` | `"PATH=COLUMN"` specs (optionally `:KEY`, a `~`/`!` key marker and `@ENCODING`) for columns already dropped; near-unique ones are skipped with a note (CLI `--proxy-hints-with`) |
+| `key_normalize` | `compare_datasets`, `proxy_hints` | Match join keys ignoring case, spaces, leading zeros, full-width characters and `42.0` (CLI `--proxy-key-normalize`) |
+| `exact` | `compare_datasets`, `proxy_hints` | Fisher/permutation p-values for small-cell hints, adds `p_method` (CLI `--proxy-exact`) |
+| `exact_permutations` / `exact_max_rows` | `compare_datasets`, `proxy_hints` | Shuffle count (at most 1,000,000, default 1000) and row cap (default 20000) for `exact` (CLI `--proxy-exact-permutations` / `--proxy-exact-max-rows`) |
+| `max_categorical_card` / `max_dimension_groups` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Caps on categorical cardinality (default 20) and groups per dimension (default 50) (CLI `--max-categorical-card` / `--max-dimension-groups`) |
+| `renames` | `compare_datasets` | `{"race": "ethnicity"}` compares a renamed dimension as one (CLI `--rename`) |
 
 The engine is domain-agnostic - it works on any tabular CSV (health, hiring, lending, justice),
 auto-detecting demographic columns (sex, race, age, geography) by name. Beyond the single-dataset

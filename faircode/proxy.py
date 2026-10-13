@@ -45,25 +45,13 @@ PERMUTATION_MAX_ROWS = 20000
 _MASK32 = 0xFFFFFFFF
 
 
-def _mulberry32(seed):
-    """Deterministic 32-bit PRNG, ported verbatim to JS (so both engines agree)."""
-    state = seed & _MASK32
-
-    def next_float():
-        nonlocal state
-        state = (state + 0x6D2B79F5) & _MASK32
-        t = ((state ^ (state >> 15)) * (1 | state)) & _MASK32
-        t = ((t + (((t ^ (t >> 7)) * (61 | t)) & _MASK32)) ^ t) & _MASK32
-        return ((t ^ (t >> 14)) & _MASK32) / 4294967296
-
-    return next_float
-
-
 def _mulberry32_block(seed, start, count):
     """`count` consecutive mulberry32 floats starting after `start` draws, as a
     numpy array. The state is just `seed + k * 0x6D2B79F5`, so a whole block is
     computed at once (uint32 arithmetic wraps exactly like the masked scalar
-    version), giving the identical stream to `_mulberry32` (#886)."""
+    version), giving the identical stream to the scalar reference implementation kept in
+    tests/test_proxy.py (`scalar_mulberry32`), which is the oracle this block
+    version is checked against (#886, #927)."""
     import numpy as np
     k = np.arange(start + 1, start + count + 1, dtype=np.uint64)
     state = ((np.uint64(seed & _MASK32) + k * np.uint64(0x6D2B79F5)) & np.uint64(_MASK32)).astype(np.uint32)

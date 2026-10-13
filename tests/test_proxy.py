@@ -513,11 +513,29 @@ def test_default_permutation_row_cap_is_twenty_thousand():
     assert PERMUTATION_MAX_ROWS == 20000   # #909: re-measured after the #886 speed-up
 
 
+_MASK32 = 0xFFFFFFFF
+
+
+def scalar_mulberry32(seed):
+    """The plain-Python reference mulberry32 (ported verbatim to JS): the oracle that the
+    vectorised `_mulberry32_block` used in production is checked against (#927)."""
+    state = seed & _MASK32
+
+    def next_float():
+        nonlocal state
+        state = (state + 0x6D2B79F5) & _MASK32
+        t = ((state ^ (state >> 15)) * (1 | state)) & _MASK32
+        t = ((t + (((t ^ (t >> 7)) * (61 | t)) & _MASK32)) ^ t) & _MASK32
+        return ((t ^ (t >> 14)) & _MASK32) / 4294967296
+
+    return next_float
+
+
 def test_permutation_p_value_matches_the_scalar_mulberry_reference():
     # #886: the vectorised PRNG block and sparse statistic must equal a plain-loop reference.
     import random
-    from faircode.proxy import PERMUTATION_SEED, _mulberry32, _mulberry32_block, permutation_p_value
-    rand = _mulberry32(PERMUTATION_SEED)
+    from faircode.proxy import PERMUTATION_SEED, _mulberry32_block, permutation_p_value
+    rand = scalar_mulberry32(PERMUTATION_SEED)
     assert list(_mulberry32_block(PERMUTATION_SEED, 0, 40)) == [rand() for _ in range(40)]
     rng = random.Random(3)
     rows = [rng.randrange(5) for _ in range(120)]
@@ -533,7 +551,7 @@ def test_permutation_p_value_matches_the_scalar_mulberry_reference():
         return sum((counts[r * n_c + c] - rt[r] * ct[c] / 120) ** 2 / (rt[r] * ct[c] / 120)
                    for r in range(n_r) for c in range(n_c))
 
-    rand = _mulberry32(PERMUTATION_SEED)
+    rand = scalar_mulberry32(PERMUTATION_SEED)
     shuffled, hits, observed = list(cols), 0, stat(cols)
     for _ in range(100):
         for i in range(119, 0, -1):

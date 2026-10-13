@@ -650,3 +650,15 @@ def test_a_small_numeric_age_is_kept_but_a_text_id_is_skipped():
     notes = []
     out = parse_held_out_specs(["h.csv=age", "h.csv=ident"], df, read, notes=notes, max_categorical_card=20)
     assert list(out) == ["age"] and notes == [near_unique_note("ident", 40, 20)]
+
+
+def test_permutations_have_an_upper_bound():
+    # #926: 10**12 shuffles would never finish; the limit is documented and enforced.
+    from faircode.proxy import MAX_PERMUTATIONS
+    sparse = pd.DataFrame({"sex": ["M", "F"] * 12, "race": list("abcdef") * 4})
+    dims = [{"name": "sex", "kind": "sex"}, {"name": "race", "kind": "race"}]
+    with pytest.raises(ValueError, match="at most 1,000,000"):
+        proxy_hints(sparse, dims, alpha=1.0, exact=True, permutations=MAX_PERMUTATIONS + 1)
+    with pytest.raises(ValueError, match="at most"):
+        proxy_hints(sparse, dims, alpha=1.0, exact=True, permutations=10**12)
+    assert MAX_PERMUTATIONS == 1_000_000

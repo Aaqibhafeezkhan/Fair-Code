@@ -1300,7 +1300,7 @@
 
   // Exact-test fallback for small-cell tables (#861); mirrors faircode/proxy.py
   // (PERMUTATIONS, PERMUTATION_SEED, PERMUTATION_MAX_ROWS, _mulberry32).
-  var PERMUTATIONS = 1000, PERMUTATION_SEED = 42, PERMUTATION_MAX_ROWS = 20000;
+  var PERMUTATIONS = 1000, PERMUTATION_SEED = 42, PERMUTATION_MAX_ROWS = 20000, MAX_PERMUTATIONS = 1000000;
 
   function mulberry32(seed) {
     var a = seed | 0;
@@ -1382,6 +1382,7 @@
     [['permutations', permutations], ['max_rows', maxRows]].forEach(function (kv) {
       if (!(Number.isInteger(kv[1]) && kv[1] >= 1)) throw new Error(kv[0] + ' must be a positive integer, got ' + kv[1]);
     });
+    if (permutations > MAX_PERMUTATIONS) throw new Error('permutations must be at most ' + MAX_PERMUTATIONS.toLocaleString('en-US') + ', got ' + permutations.toLocaleString('en-US'));
     if (!(alpha > 0 && alpha <= 1)) throw new Error('alpha must be in (0, 1], got ' + alpha);
     if (multiCorrection) adjustPValues([], multiCorrection); // validates the method name
     var labelized = {}, i, j, k;

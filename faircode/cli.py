@@ -69,6 +69,15 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _permutations(value: str) -> int:
+    """--proxy-exact-permutations: a positive integer, at most proxy.MAX_PERMUTATIONS (#926)."""
+    from .proxy import MAX_PERMUTATIONS
+    parsed = _positive_int(value)
+    if parsed > MAX_PERMUTATIONS:
+        raise argparse.ArgumentTypeError(f"expected at most {MAX_PERMUTATIONS:,} shuffles, got {parsed:,}")
+    return parsed
+
+
 def _parse_map(pairs):
     """Parse repeated --map COL=KIND flags into an {column: kind} override dict."""
     overrides = {}
@@ -349,9 +358,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="for proxy hints whose chi-squared table has small expected cells, "
                         "use Fisher's exact test (2x2) or a seeded permutation p-value "
                         "instead (adds p_method to each hint; needs --proxy-hints)")
-    p.add_argument("--proxy-exact-permutations", type=_positive_int, default=None, metavar="N",
+    p.add_argument("--proxy-exact-permutations", type=_permutations, default=None, metavar="N",
                    help="number of shuffles for the --proxy-exact permutation p-value "
-                        "(positive integer, default: 1000; needs --proxy-exact)")
+                        "(positive integer up to 1,000,000, default: 1000; needs --proxy-exact)")
     p.add_argument("--proxy-exact-max-rows", type=_positive_int, default=None, metavar="N",
                    help="row count above which --proxy-exact keeps the chi-squared p-value "
                         "and labels it chi2-capped (positive integer, default: 20000; needs --proxy-exact)")
@@ -441,9 +450,9 @@ def main(argv: list[str] | None = None) -> int:
                    help="for proxy hints whose chi-squared table has small expected cells, "
                         "use Fisher's exact test (2x2) or a seeded permutation p-value "
                         "instead (adds p_method to each hint; needs --proxy-hints)")
-    c.add_argument("--proxy-exact-permutations", type=_positive_int, default=None, metavar="N",
+    c.add_argument("--proxy-exact-permutations", type=_permutations, default=None, metavar="N",
                    help="number of shuffles for the --proxy-exact permutation p-value "
-                        "(positive integer, default: 1000; needs --proxy-exact)")
+                        "(positive integer up to 1,000,000, default: 1000; needs --proxy-exact)")
     c.add_argument("--proxy-exact-max-rows", type=_positive_int, default=None, metavar="N",
                    help="row count above which --proxy-exact keeps the chi-squared p-value "
                         "and labels it chi2-capped (positive integer, default: 20000; needs --proxy-exact)")

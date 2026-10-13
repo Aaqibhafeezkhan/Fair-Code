@@ -2103,7 +2103,7 @@ def test_python_js_exact_permutations_and_row_cap_parameters_agree(tmp_path):
         "var d=[{name:'sex',kind:'sex'},{name:'race',kind:'race'}];"
         "function run(p,m){try{return E.proxyHints(t,d,1,null,null,undefined,undefined,true,p,m)[0]}catch(e){return e.message}}"
         "process.stdout.write(JSON.stringify({p99:run(99,undefined),p3000:run(3000,undefined),capped:run(undefined,10),"
-        "bad:run(0,undefined),badrows:run(undefined,1.5)}));"
+        "bad:run(0,undefined),badrows:run(undefined,1.5),toomany:run(1000001,undefined)}));"
     )
     out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(csv)],
                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
@@ -2114,6 +2114,7 @@ def test_python_js_exact_permutations_and_row_cap_parameters_agree(tmp_path):
     (py_capped,) = proxy_hints(df, dims, alpha=1.0, exact=True, max_rows=10)
     assert out["capped"]["p_method"] == py_capped["p_method"] == "chi2-capped"
     assert "positive integer" in out["bad"] and "positive integer" in out["badrows"]
+    assert "at most 1,000,000" in out["toomany"]                                   # #926
 
 
 def test_web_held_out_skips_near_unique_columns_like_python():

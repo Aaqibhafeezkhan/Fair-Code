@@ -1391,3 +1391,13 @@ def test_compare_rename_flag_aligns_a_renamed_column_and_validates(tmp_path, cap
     assert "expected A_NAME=B_NAME" in capsys.readouterr().err
     assert main(["compare", str(a), str(a), "--rename", "race=race"]) == 2
     assert "renames a dimension to itself" in capsys.readouterr().err
+
+
+def test_proxy_exact_permutations_rejects_more_than_a_million(tmp_path, capsys):
+    # #926
+    path = tmp_path / "d.csv"
+    path.write_text("sex,race\n" + "\n".join(f"{'M' if i % 2 else 'F'},{'abcdef'[i % 6]}" for i in range(24)) + "\n")
+    with pytest.raises(SystemExit):
+        main(["profile", str(path), "--proxy-hints", "--proxy-exact", "--proxy-exact-permutations", "999999999999"])
+    assert "at most 1,000,000" in capsys.readouterr().err
+    assert main(["profile", str(path), "--proxy-hints", "--proxy-exact", "--proxy-exact-permutations", "50"]) == 0

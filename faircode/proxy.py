@@ -39,6 +39,8 @@ PROXY_CORRECTIONS = ("bonferroni", "holm")
 # fast. Mirrored (including the PRNG) in assets/profiler-engine.js.
 PERMUTATIONS = 1000
 PERMUTATION_SEED = 42
+# A typo such as 10**12 shuffles would run for days, so more than this is refused (#926).
+MAX_PERMUTATIONS = 1_000_000
 # Measured after #886: about 0.1 s per 1000 rows per pair in Python (0.07 s in JS), so 20000 rows keeps a
 # pair near two seconds (#909). Same value in profiler-engine.js.
 PERMUTATION_MAX_ROWS = 20000
@@ -428,7 +430,7 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
     "permutation"); a replaced p-value keeps the original as `p_chi2`.
     `permutations` (default 1000) is the number of shuffles and `max_rows` the
     observation count above which a small-cell table keeps the chi-squared p
-    (labelled "chi2-capped"); both are positive integers (#906).
+    (labelled "chi2-capped"); both are positive integers and `permutations` is at most 1,000,000 (#906, #926).
 
     `correction` (None, "bonferroni" or "holm") opts in to a multiple-comparison
     adjustment across every testable pair (#806): a pair is reported only if its
@@ -442,6 +444,8 @@ def proxy_hints(df: pd.DataFrame, dimensions: list, alpha=PROXY_ALPHA,
     for name, value in (("permutations", permutations), ("max_rows", max_rows)):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{name} must be a positive integer, got {value!r}")
+    if permutations > MAX_PERMUTATIONS:
+        raise ValueError(f"permutations must be at most {MAX_PERMUTATIONS:,}, got {permutations:,}")
     try:
         from scipy.stats import chi2_contingency, fisher_exact
     except ImportError as exc:  # pragma: no cover - depends on optional extra

@@ -31,7 +31,9 @@ IMPORT_TO_DIST = {
 # Imports that are intentionally not a faircode dependency: "faircode" is the
 # package importing itself, and pytest is a dev-only test-runner tool
 # installed separately (see Makefile's `make setup`), not a runtime dependency.
-NOT_A_PYPROJECT_DEPENDENCY = {"faircode", "pytest"}
+# "js_helpers" is tests/js_helpers.py, the helper module shared by the
+# tests/test_js_parity_*.py files (importable because pytest puts tests/ on sys.path, #938).
+NOT_A_PYPROJECT_DEPENDENCY = {"faircode", "pytest", "js_helpers"}
 
 
 def _normalize(name):

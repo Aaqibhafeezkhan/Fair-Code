@@ -159,7 +159,7 @@ engines - but as of #738, the web profiler has its own opt-in JS port of the sam
 (`FairCodeProfiler.proxyHints()` in `assets/profiler-engine.js`, wired to a "Check for proxy columns"
 button below a profile's results), so this is no longer a CLI-only capability - it's just a
 separate, non-parity-tested module in each engine, exercised by cross-checking known-correlated and
-known-unrelated fixtures against `scipy.stats.chi2_contingency` (`tests/test_js_parity.py`) rather
+known-unrelated fixtures against `scipy.stats.chi2_contingency` (`tests/test_js_parity_proxy.py`) rather
 than by the bit-for-bit parity assertion the rest of this file describes.
 
 **Tunables.** The significance level defaults to `p < 0.05` and is `--proxy-alpha ALPHA` on the CLI,
@@ -169,7 +169,7 @@ correction (`--proxy-correction bonferroni|holm`, MCP `correction`, a web dropdo
 across every testable pair - Bonferroni is `min(1, p·m)`, Holm is the step-down procedure with a
 running maximum - reports a pair only when its *adjusted* p is below alpha, and adds `p_adjusted` to
 each hint. The default (no correction) is unchanged. `faircode.proxy.adjust_p_values` and the JS
-`adjustPValues` are cross-checked in `tests/test_js_parity.py`.
+`adjustPValues` are cross-checked in `tests/test_js_parity_proxy.py`.
 
 **Small expected cells (#810).** The chi-squared approximation is unreliable when many contingency
 cells expect fewer than 5 rows (high-cardinality categoricals, rare groups). Every hint therefore
@@ -355,7 +355,7 @@ in Python, `profile(table, overrides, opts)` in JS, and `--min-share` / `--inter
 `compare(A, B)` takes two **profile results** - a baseline `A` (e.g. training data) and a
 current `B` (e.g. production data) - and reports how each demographic dimension's representation
 shifted. It is pure post-processing over two `profile()` outputs, so both engines agree bit-for-bit
-(checked by `tests/test_js_parity.py::test_python_js_compare_parity`, via `scripts/engine-js.js compare`).
+(checked by `tests/test_js_parity_profile.py::test_python_js_compare_parity`, via `scripts/engine-js.js compare`).
 It reads the already-computed group **shares**; it never re-parses the raw rows.
 
 Dimensions are matched by **name**. A dimension present in both is compared; one present only in `B`
@@ -500,7 +500,7 @@ CSV scores differently under a different `--map`, a different `--min-share`, or 
 reference baseline, and none of that is visible in the result shape of section 6.
 
 **The block is attached at the export boundary, not inside `profile()`/`compare()`.** The two
-engines are compared with `==` in `tests/test_js_parity.py`, so a local file name cannot live in the
+engines are compared with `==` in `tests/test_js_parity_*.py`, so a local file name cannot live in the
 result. `report.to_json(result, provenance=...)` adds it in Python; the web export adds the same
 field names in `copyResultAsJSON()`. Section 6's shape is unchanged, and the parity test needs no
 edit.
@@ -652,7 +652,7 @@ issue #388, verified by building an actual wheel and installing it in a clean ve
 spreadsheet or BI tool; the web profiler's and compare view's **Download CSV** buttons, and the MCP
 tools' `format="csv"`, emit the same text. The Python writers are `faircode.report.to_csv` /
 `compare_to_csv` and the browser writers are `buildCsvReport` / `buildCompareCsvReport`; a
-cross-engine test (`tests/test_js_parity.py`) asserts they produce the same file. Rows end in CRLF
+cross-engine test (`tests/test_js_parity_exports.py`) asserts they produce the same file. Rows end in CRLF
 and cells are quoted only when they contain a comma, quote or newline (Python `csv` defaults).
 
 **Profile.** Header `dimension,kind,label,count,share,ci_low,ci_high,under_represented,small_group`,

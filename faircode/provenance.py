@@ -6,7 +6,7 @@ scores differently under a different `--map`, a different `--min-share`, or a
 different reference baseline, and none of that was visible in the export.
 
 The block is attached at the export boundary rather than inside the engines,
-so the result shape in SPEC section 6 is unchanged and tests/test_js_parity.py
+so the result shape in SPEC section 6 is unchanged and tests/test_js_parity_*.py
 - which compares the two engine dicts with `==` - needs no edit.
 
 Design notes worth keeping:

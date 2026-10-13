@@ -210,7 +210,7 @@ Fair-Code/
 │   ├── test_freeze_paper_results.py     #   results/ -> paper/results-frozen/ snapshot script
 │   ├── test_generate_images.py          #   favicon / OG-image generation
 │   ├── test_js_category_keys.py         #   JS/Python dimension-category key parity
-│   ├── test_js_parity.py                #   JS profiler engine mirrors the Python one
+│   ├── test_js_parity_*.py              #   JS profiler engine mirrors the Python one (profile, proxy, held-out, provenance, exports, compare, keywords, CLI command); js_helpers.py is shared
 │   ├── test_json_edge_cases.py
 │   ├── test_loaders.py
 │   ├── test_manifest.py                 #   audit.yaml validation

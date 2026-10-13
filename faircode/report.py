@@ -24,7 +24,7 @@ def to_json(result: dict, indent: int = 2, provenance: dict | None = None) -> st
     (SPEC section 10) so an exported report says which file, which faircode
     version, and which resolved thresholds produced it. It is attached here
     rather than inside profile() on purpose: the Python engine and the JS port
-    are compared with `==` in tests/test_js_parity.py, so a local file name
+    are compared with `==` in tests/test_js_parity_*.py, so a local file name
     cannot live in the engine result. The web export mirrors the same field
     names at the same boundary.
 

@@ -2,7 +2,6 @@
 
 import importlib
 import shutil
-import subprocess
 
 import pytest
 

@@ -109,6 +109,26 @@ def test_generate_favicons(tmp_path, monkeypatch):
             assert image.size == expected[filename]
 
 
+def test_render_card_writes_a_1200x630_png_for_both_themes(tmp_path, monkeypatch):
+    # The fast-suite check (#933): one card through the same render path as main(), into a
+    # temp dir; the full set of cards is rendered by the slow test below.
+    script = importlib.import_module("scripts.generate_og_images")
+    monkeypatch.setitem(script.THEMES["dark"], "out_dir", tmp_path / "og")
+    monkeypatch.setitem(script.THEMES["light"], "out_dir", tmp_path / "og-light")
+    for colors in script.THEMES.values():
+        colors["out_dir"].mkdir(parents=True, exist_ok=True)
+
+    script.render_card_both_themes("home", kicker="Kicker", title="A title that is long enough to wrap "
+                                   "onto a second line of the card", subtitle="A subtitle.")
+
+    for directory in (tmp_path / "og", tmp_path / "og-light"):
+        output = directory / "home.png"
+        assert output.is_file() and output.stat().st_size > 0
+        with Image.open(output) as image:
+            assert image.size == (1200, 630)
+
+
+@pytest.mark.slow   # renders every explainer card in both themes (about 6 s); CI runs it (#933)
 def test_generate_og_images(tmp_path, monkeypatch):
     script = importlib.import_module("scripts.generate_og_images")
 

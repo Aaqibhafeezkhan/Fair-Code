@@ -1506,3 +1506,26 @@ def test_cli_accepts_an_escaped_equals_sign_in_a_held_out_path(tmp_path, capsys)
     with pytest.raises(SystemExit):
         main(["profile", str(data), "--proxy-hints", "--proxy-hints-with", f"{held}=race:id"])
     assert "write the = inside the file name as" in capsys.readouterr().err
+
+
+def test_held_out_report_is_explicit_and_compare_carries_per_side_skips(tmp_path, capsys):
+    # #947: no hidden state on the argparse namespace; the report object feeds notes and provenance.
+    from faircode.cli import HeldOutReport
+    report = HeldOutReport()
+    assert report.notes == [] and report.skipped_for("proxy_hints_with") == ()
+    report.skipped.setdefault("proxy_hints_with_a", []).append("ident")
+    assert report.skipped_for("proxy_hints_with_a") == ("ident",) and report.skipped_for("proxy_hints_with_b") == ()
+    assert HeldOutReport().notes is not HeldOutReport().notes          # no shared mutable default
+
+    n = 60
+    a, b = tmp_path / "a.csv", tmp_path / "b.csv"
+    for path in (a, b):
+        path.write_text("id,sex,occ\n" + "\n".join(f"{i},{'m' if i % 2 else 'f'},{'x' if i % 2 else 'y'}" for i in range(n)) + "\n")
+    held = tmp_path / "h.csv"
+    held.write_text("ident,race\n" + "\n".join(f"id{i},{'ab'[i % 2]}" for i in range(n)) + "\n")
+    assert main(["compare", str(a), str(b), "--proxy-hints", "--proxy-alpha", "1", "--json",
+                 f"--proxy-hints-with-a={held}=ident", f"--proxy-hints-with-b={held}=race"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert any("held-out column 'ident'" in note for note in out["notes"])
+    prov = out["provenance"]
+    assert prov["proxy_hints_with_a"][0]["tested"] is False and "tested" not in prov["proxy_hints_with_b"][0]

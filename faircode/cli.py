@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import codecs
+import dataclasses
 import functools
 import hashlib
 import io
@@ -123,8 +124,22 @@ def _check_map_columns(overrides, known_columns):
         raise SystemExit(2)
 
 
+@dataclasses.dataclass
+class HeldOutReport:
+    """What the held-out specs of one run had to say besides their data: the notes (shown on
+    stderr, in the --json result) and, per provenance field, the columns skipped as near-unique
+    (`tested: false` in provenance). Built by _build_held_out and read by the result and
+    provenance builders, which take it explicitly (#921, #947)."""
+
+    notes: list = dataclasses.field(default_factory=list)
+    skipped: dict = dataclasses.field(default_factory=dict)
+
+    def skipped_for(self, field: str) -> tuple:
+        return tuple(self.skipped.get(field, ()))
+
+
 def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categorical_card=20,
-                    report=None, field="proxy_hints_with"):
+                    report: HeldOutReport | None = None, field="proxy_hints_with"):
     """Parse repeated --proxy-hints-with PATH=COLUMN flags via proxy.py's
     shared parse_held_out_specs, printing a plain error and raising
     SystemExit(2) on any parse failure, missing column, or row-count
@@ -154,8 +169,8 @@ def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categori
         for note in notes:
             print(f"note: {note}", file=sys.stderr)
         if report is not None:   # also reach the --json result and the provenance (#921)
-            report["notes"].extend(notes)
-            report["skipped"].setdefault(field, []).extend(skipped)
+            report.notes.extend(notes)
+            report.skipped.setdefault(field, []).extend(skipped)
         return held_out
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -197,12 +212,7 @@ def _alpha(args):
     return PROXY_ALPHA if args.proxy_alpha is None else args.proxy_alpha
 
 
-def _skipped(args, field):
-    """Held-out columns skipped as near-unique for `field` in this run (#921)."""
-    return tuple(getattr(args, "held_report", {"skipped": {}})["skipped"].get(field, ()))
-
-
-def _profile_provenance(args, opts, overrides, df=None):
+def _profile_provenance(args, opts, overrides, held_report, df=None):
     from .provenance import sniff_effective_encoding
     digests = [] if args.sample else [("dataset_hash", args.csv)]
     if args.reference:
@@ -216,7 +226,7 @@ def _profile_provenance(args, opts, overrides, df=None):
         params.update(proxy_params(_alpha(args), args.proxy_correction, args.proxy_exact,
                                     args.proxy_exact_permutations, args.proxy_exact_max_rows))
     provenance = build_provenance(digests, params, overrides,
-                                  held_out=[("proxy_hints_with", args.proxy_hints_with, columns, _skipped(args, "proxy_hints_with"))],
+                                  held_out=[("proxy_hints_with", args.proxy_hints_with, columns, held_report.skipped_for("proxy_hints_with"))],
                                   encodings={"dataset_hash": enc} if enc else None,
                                   key_normalize=args.proxy_key_normalize,
                                   held_out_encoding=getattr(args, "encoding", None))
@@ -226,7 +236,7 @@ def _profile_provenance(args, opts, overrides, df=None):
     return provenance
 
 
-def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
+def _compare_provenance(args, opts, overrides, held_report, df_a=None, df_b=None):
     from .provenance import sniff_effective_encoding
     cols_a = None if df_a is None else list(df_a.columns)
     cols_b = None if df_b is None else list(df_b.columns)
@@ -247,8 +257,8 @@ def _compare_provenance(args, opts, overrides, df_a=None, df_b=None):
     return build_provenance(
         [("dataset_hash_a", args.csv_a), ("dataset_hash_b", args.csv_b)],
         params, overrides,
-        held_out=[("proxy_hints_with_a", args.proxy_hints_with_a, cols_a, _skipped(args, "proxy_hints_with_a")),
-                  ("proxy_hints_with_b", args.proxy_hints_with_b, cols_b, _skipped(args, "proxy_hints_with_b"))],
+        held_out=[("proxy_hints_with_a", args.proxy_hints_with_a, cols_a, held_report.skipped_for("proxy_hints_with_a")),
+                  ("proxy_hints_with_b", args.proxy_hints_with_b, cols_b, held_report.skipped_for("proxy_hints_with_b"))],
         encodings=encs if encs else None,
         key_normalize=args.proxy_key_normalize,
         held_out_encoding=enc)
@@ -528,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
                    help="skip rendering figures/*.png (no matplotlib needed)")
 
     args = parser.parse_args(argv)
-    args.held_report = {"notes": [], "skipped": {}}   # held-out notes and skipped columns (#921)
+    held_report = HeldOutReport()   # held-out notes and skipped columns (#921, #947)
     if args.command in ("profile", "compare"):
         _check_encoding(args.encoding)
 
@@ -646,7 +656,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.proxy_hints or args.proxy_hints_with:
             held_out = _build_held_out(args.proxy_hints_with, df, args.encoding, args.proxy_key_normalize,
-                                       _resolve_opts(opts)["max_categorical_card"], args.held_report)
+                                       _resolve_opts(opts)["max_categorical_card"], held_report)
             try:
                 result["proxy_hints"] = proxy_hints(df, result["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out,
                                                 max_age=_resolve_opts(opts)["max_age"],
@@ -655,8 +665,8 @@ def main(argv: list[str] | None = None) -> int:
             except RuntimeError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2
-        if args.held_report["notes"]:   # visible to --json consumers, not only on stderr (#921)
-            result["notes"] = list(args.held_report["notes"])
+        if held_report.notes:   # visible to --json consumers, not only on stderr (#921)
+            result["notes"] = list(held_report.notes)
 
         if args.html:
             html_content = to_html(result)
@@ -674,7 +684,7 @@ def main(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return 2
         if args.csv_out:
-            prov = _profile_provenance(args, opts, overrides, df) if args.csv_provenance else None
+            prov = _profile_provenance(args, opts, overrides, held_report, df) if args.csv_provenance else None
             if _write_csv_export(args.csv_out, to_csv(result, provenance=prov),
                                     bom=args.csv_bom):
                 return 2
@@ -682,7 +692,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.json:
             provenance = None
             if not args.no_provenance:
-                provenance = _profile_provenance(args, opts, overrides, df)
+                provenance = _profile_provenance(args, opts, overrides, held_report, df)
             print(to_json(result, provenance=provenance))
         elif args.csv_out != "-":  # stdout already carries the CSV
             print(to_terminal(result))
@@ -802,10 +812,10 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.proxy_hints or args.proxy_hints_with_a or args.proxy_hints_with_b:
             held_out_a = _build_held_out(args.proxy_hints_with_a, df_a, args.encoding, args.proxy_key_normalize,
-                                         _resolve_opts(opts)["max_categorical_card"], args.held_report,
+                                         _resolve_opts(opts)["max_categorical_card"], held_report,
                                          "proxy_hints_with_a")
             held_out_b = _build_held_out(args.proxy_hints_with_b, df_b, args.encoding, args.proxy_key_normalize,
-                                         _resolve_opts(opts)["max_categorical_card"], args.held_report,
+                                         _resolve_opts(opts)["max_categorical_card"], held_report,
                                          "proxy_hints_with_b")
             try:
                 result["proxy_hints_a"] = proxy_hints(df_a, profile_a["dimensions"], alpha=_alpha(args), correction=args.proxy_correction, held_out=held_out_a,
@@ -819,8 +829,8 @@ def main(argv: list[str] | None = None) -> int:
             except RuntimeError as exc:
                 print(f"error: {exc}", file=sys.stderr)
                 return 2
-        if args.held_report["notes"]:   # visible to --json consumers, not only on stderr (#921)
-            result["notes"] = list(args.held_report["notes"])
+        if held_report.notes:   # visible to --json consumers, not only on stderr (#921)
+            result["notes"] = list(held_report.notes)
 
         if args.html:
             html_content = compare_to_html(result)
@@ -838,14 +848,14 @@ def main(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return 2
         if args.csv_out:
-            prov = _compare_provenance(args, opts, overrides, df_a, df_b) if args.csv_provenance else None
+            prov = _compare_provenance(args, opts, overrides, held_report, df_a, df_b) if args.csv_provenance else None
             if _write_csv_export(args.csv_out, compare_to_csv(result, provenance=prov),
                                     bom=args.csv_bom):
                 return 2
         if args.json:
             provenance = None
             if not args.no_provenance:
-                provenance = _compare_provenance(args, opts, overrides, df_a, df_b)
+                provenance = _compare_provenance(args, opts, overrides, held_report, df_a, df_b)
             print(to_json(result, provenance=provenance))
         elif args.csv_out != "-":
             print(compare_to_terminal(result))

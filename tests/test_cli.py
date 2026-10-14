@@ -1529,3 +1529,53 @@ def test_held_out_report_is_explicit_and_compare_carries_per_side_skips(tmp_path
     assert any("held-out column 'ident'" in note for note in out["notes"])
     prov = out["provenance"]
     assert prov["proxy_hints_with_a"][0]["tested"] is False and "tested" not in prov["proxy_hints_with_b"][0]
+
+
+def _documented_faircode_commands():
+    """Every `faircode ...` line in the README, CONTRIBUTING and SPEC code blocks (backslash
+    continuations joined), as (file, line number, text)."""
+    root = Path(__file__).resolve().parent.parent
+    found = []
+    for name in ("README.md", "CONTRIBUTING.md", "faircode/SPEC.md"):
+        lines = (root / name).read_text(encoding="utf-8").split("\n")
+        i = 0
+        while i < len(lines):
+            text = lines[i].removeprefix("$ ")
+            if text.startswith("faircode "):
+                start = i
+                while text.rstrip().endswith("\\") and i + 1 < len(lines):
+                    i += 1
+                    text = text.rstrip()[:-1] + " " + lines[i]
+                found.append((name, start + 1, text))
+            i += 1
+    return found
+
+
+def test_every_documented_faircode_command_parses_with_the_real_parser(capsys):
+    # #948: README/CONTRIBUTING/SPEC examples are checked against the argument parser, so a renamed or
+    # removed flag, or a mistyped example, fails here instead of rotting. Parsing only; nothing is run.
+    import shlex
+    from faircode.cli import build_parser
+    commands = _documented_faircode_commands()
+    assert len(commands) >= 30                     # the cheat sheet is found, not silently empty
+    failures = []
+    for name, number, text in commands:
+        try:
+            tokens = shlex.split(text, comments=True)
+        except ValueError as exc:
+            failures.append(f"{name}:{number}: {exc}")
+            continue
+        try:
+            build_parser().parse_args(tokens[1:])
+        except SystemExit:
+            failures.append(f"{name}:{number}: {capsys.readouterr().err.strip().splitlines()[-1]}  [{text[:70]}]")
+    assert not failures, "\n".join(failures)
+
+
+def test_the_documented_command_check_catches_a_bad_flag(capsys):
+    import shlex
+    from faircode.cli import build_parser
+    for bad in ("faircode profile data.csv --no-such-flag", "faircode compare a.csv", "faircode profile --proxy-alpha"):
+        with pytest.raises(SystemExit):
+            build_parser().parse_args(shlex.split(bad)[1:])
+        capsys.readouterr()

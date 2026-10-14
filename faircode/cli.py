@@ -323,7 +323,9 @@ def _read_or_exit(path: str, encoding: str | None = None):
         raise SystemExit(2)
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """The `faircode` argument parser (profile, compare, benchmark). Separate from main() so tests,
+    including the one that parses every README example, can use it without running a command (#948)."""
     parser = argparse.ArgumentParser(
         prog="faircode",
         description="Audit a tabular dataset for demographic representation.",
@@ -537,6 +539,11 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--no-plots", action="store_true",
                    help="skip rendering figures/*.png (no matplotlib needed)")
 
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
     args = parser.parse_args(argv)
     held_report = HeldOutReport()   # held-out notes and skipped columns (#921, #947)
     if args.command in ("profile", "compare"):

@@ -129,14 +129,19 @@
         if (!file && !column) continue;
         if (!file || !column) throw new Error('each held-out row needs both a file and a column name');
         var data, encoding;
-        if (/\.xlsx$/i.test(file.name)) data = await file.arrayBuffer();
+        var encodingIgnored = false;
+        if (/\.xlsx$/i.test(file.name)) {
+          data = await file.arrayBuffer();
+          // A text encoding cannot apply to a workbook; buildHeldOut() says so (#952).
+          encodingIgnored = !!encodingChoice && encodingChoice !== 'auto';
+        }
         else if (getEncoding && window.FairCodeProfiler && window.FairCodeProfiler.decodeText) {
           // `encoding` is the explicit pick or the sniffed BOM (null for plain UTF-8), recorded in provenance (#891).
           var decoded = window.FairCodeProfiler.decodeText(await file.arrayBuffer(), encodingChoice);
           data = decoded.text;
           encoding = decoded.encoding || undefined;
         } else data = await file.text();
-        specs.push({ name: file.name, column: column, key: key || undefined, normalize: (key && normalize) || undefined, encoding: encoding, data: data, file: file });
+        specs.push({ name: file.name, column: column, key: key || undefined, normalize: (key && normalize) || undefined, encoding: encoding, encodingIgnored: encodingIgnored || undefined, data: data, file: file });
       }
       return specs;
     }

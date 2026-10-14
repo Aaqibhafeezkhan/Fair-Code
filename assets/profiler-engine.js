@@ -1250,6 +1250,9 @@
       if (/\.xlsx$/i.test(spec.name)) {
         var sheets = await parseXLSX(spec.data);
         heldTable = sheets.table;
+        if (spec.encodingIgnored && notes) {   // same wording as loaders_extra.ENCODING_IGNORED_NOTE (#952)
+          notes.push('encoding has no effect on .xlsx/.parquet files (held-out file ' + spec.name + ')');
+        }
         spec.sheet = sheets.sheetName;                       // recorded in provenance (#899)
         spec.sheetsIgnored = sheets.ignoredSheets.length;
         if (sheets.ignoredSheets.length > 0) {

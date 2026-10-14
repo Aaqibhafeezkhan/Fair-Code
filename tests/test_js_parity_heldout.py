@@ -468,3 +468,49 @@ def test_near_unique_share_boundary_and_constant_agree_between_engines():
     out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert {int(k): tuple(v) for k, v in out.items()} == py
+
+
+def test_web_held_out_workbook_row_with_an_encoding_gets_the_ignored_notice():
+    """#952: an explicit encoding on an .xlsx row (or a non-Auto dataset picker) is flagged by the
+    control and buildHeldOut() adds the same note the CLI prints; Auto and inherit-Auto stay quiet."""
+    from faircode.loaders_extra import ENCODING_IGNORED_NOTE
+    script = r"""
+    function El(tag){this.tag=tag;this.children=[];this.listeners={};this.value='';this.files=[];this.attrs={};}
+    El.prototype.appendChild=function(c){this.children.push(c);c.parent=this;return c;};
+    El.prototype.removeChild=function(c){this.children.splice(this.children.indexOf(c),1);};
+    El.prototype.setAttribute=function(k,v){this.attrs[k]=v;};
+    El.prototype.addEventListener=function(t,f){(this.listeners[t]=this.listeners[t]||[]).push(f);};
+    El.prototype.querySelectorAll=function(sel){var out=[];(function walk(n){n.children.forEach(function(c){
+      if(c.tag===sel)out.push(c);walk(c);});})(this);return out;};
+    global.document={createElement:function(t){return new El(t);}};
+    global.window=global;
+    global.XLSX={read:function(){return {SheetNames:['S'],Sheets:{S:{}}}},
+      utils:{sheet_to_json:function(){return [{race:'a'},{race:'b'}]}}};
+    require(process.argv[1]);require(process.argv[2]);
+    var E=globalThis.FairCodeProfiler;
+    var t={columns:['id'],rows:[{id:'1'},{id:'2'}]};
+    var dataset='auto';
+    var container=new El('div'),addBtn=new El('button');
+    var ctl=FairCodeHeldOut.init(container,addBtn,'held-out',function(){return dataset;});
+    var inputs=container.children[0].querySelectorAll('input');
+    var select=container.children[0].querySelectorAll('select')[0];
+    async function run(rowValue,datasetValue){
+      inputs[0].files=[{name:'h.xlsx',arrayBuffer:async function(){return new ArrayBuffer(1);}}];
+      inputs[1].value='race';select.value=rowValue;dataset=datasetValue;
+      var specs=await ctl.collect(),notes=[];await E.buildHeldOut(specs,t,notes);
+      return {ignored:specs[0].encodingIgnored,notes:notes};
+    }
+    (async function(){
+      var out={explicit:await run('latin-1','auto'),inherit_picker:await run('inherit','cp1252'),
+               quiet:await run('inherit','auto'),row_auto:await run('auto','cp1252')};
+      process.stdout.write(JSON.stringify(out));
+    })();
+    """
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"),
+                           str(REPO_ROOT / "assets" / "profiler-heldout.js")],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    out = json.loads(done.stdout)
+    note = f"{ENCODING_IGNORED_NOTE} (held-out file h.xlsx)"
+    assert out["explicit"] == {"ignored": True, "notes": [note]}
+    assert out["inherit_picker"] == {"ignored": True, "notes": [note]}
+    assert out["quiet"] == {"notes": []} and out["row_auto"] == {"notes": []}      # the flag is absent unless true

@@ -244,6 +244,8 @@ Fair-Code/
 │   ├── build_explainers.py              # regenerates explainer HTML/JS/sitemap from the JSON source
 │   ├── check_broken_links.py            #   flags dead in-repo markdown links/anchors (make lint)
 │   ├── check_em_dash.py                 #   flags em dashes in tracked source/prose (make lint)
+│   ├── check_issue_refs.py              #   ROADMAP/CHANGELOG issue numbers vs GitHub (make lint, needs gh)
+│   ├── generate_key_fold.py             #   regenerates / verifies the JS case-folding table (make key-fold, key-fold-check)
 │   ├── check_explainer_count.py         #   verifies every "N explainers" mention matches explainers/*.md
 │   ├── check_generated_files_current.py #   verifies build_explainers.py output is up to date
 │   ├── engine-js.js                     #   Node harness for the JS profiler parity tests

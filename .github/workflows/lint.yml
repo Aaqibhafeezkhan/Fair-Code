@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
 
 jobs:
   lint:
@@ -22,3 +23,11 @@ jobs:
 
       - name: Enforce em-dash-free rule + check for broken doc links + ruff
         run: make lint
+
+      # Roadmap / changelog issue numbers against GitHub (#963). Informational for now: it can go red
+      # between a contributor closing an issue and the roadmap being updated, which should not block a merge.
+      - name: Check issue numbers cited in ROADMAP.md and CHANGELOG.md
+        run: python scripts/check_issue_refs.py --require
+        env:
+          GH_TOKEN: ${{ github.token }}
+        continue-on-error: true

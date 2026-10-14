@@ -29,6 +29,9 @@ def test_every_bundled_asset_has_a_row_in_assets_md():
     assert not missing, f"add these to brag-output/ASSETS.md: {missing}"
 
 
-def test_assets_md_states_what_is_unverified():
+def test_assets_md_records_credits_licences_and_open_points():
     text = ASSETS_MD.read_text(encoding="utf-8")
-    assert "unverified" in text and "SIL OFL 1.1" in text and "## To resolve" in text
+    for needle in ("## Credits", "ende.app", "CC BY 4.0", "Kenney", "CC0", "SIL OFL 1.1", "## Open points"):
+        assert needle in text, needle
+    rows = [line for line in text.splitlines() if line.startswith("| `")]
+    assert rows and all(line.rstrip().endswith(("| known |", "| check (see open points) |")) for line in rows)

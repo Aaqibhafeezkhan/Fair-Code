@@ -715,7 +715,7 @@ def build_server():
         joined to it on a key column present in both files) and a column to pull the
         dropped attribute's original values from. An `@ENCODING` suffix overrides
         `encoding` for that one file. See faircode/SPEC.md
-        section 3 and issue #328.
+        section 13 and issue #328.
 
         `max_categorical_card`, `max_dimension_groups`, `max_age`,
         `age_reference_year` and `keywords` mean what they do on `profile_dataset`

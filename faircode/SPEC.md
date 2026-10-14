@@ -15,7 +15,7 @@ before any model is trained. It does not train models, drop columns, or measure 
 that is what the `unfair.py` / `fair.py` audits do. The Profiler answers a different question:
 **"who is, and is not, adequately represented in this data?"**
 
-[1. Detection](#1-column-auto-detection) · [2. Age](#2-age-normalization) · [3. Metrics](#3-per-dimension-metrics) · [4. Intersections](#4-intersectional-gaps-informational-not-scored) · [5. Score](#5-headline-score--grade) · [6. Shape](#6-result-shape) · [7. Defaults](#7-defaults-single-place-to-tune) · [8. Comparison](#8-dataset-comparison-representation-drift) · [9. Reference](#9-reference-baseline) · [10. Provenance](#10-export-provenance) · [11. MCP](#11-mcp-tools)
+[1. Detection](#1-column-auto-detection) · [2. Age](#2-age-normalization) · [3. Metrics](#3-per-dimension-metrics) · [4. Intersections](#4-intersectional-gaps-informational-not-scored) · [5. Score](#5-headline-score--grade) · [6. Shape](#6-result-shape) · [7. Defaults](#7-defaults-single-place-to-tune) · [8. Comparison](#8-dataset-comparison-representation-drift) · [9. Reference](#9-reference-baseline) · [10. Provenance](#10-export-provenance) · [11. MCP](#11-mcp-tools) · [12. CSV](#12-csv-export) · [13. Proxy hints](#13-proxy-hints-opt-in-informational-not-scored)
 
 </div>
 
@@ -149,93 +149,9 @@ reference baselines, and drift comparisons, with no inherited-property lookups.
   `g1 = (1/N · Σ (x−x̄)³) / (1/N · Σ (x−x̄)²)^1.5`. `null`/`0` if variance is 0 or `N < 3`.
 
 ### Proxy hints (opt-in, informational, not scored)
-An optional pass (`faircode profile/compare … --proxy-hints`) runs a chi-squared test of independence
-(`scipy.stats.chi2_contingency`) over every pair of detected dimensions and reports pairs with
-`p < 0.05`, each with its p-value and Cramér's V effect size, most-significant first. It surfaces
-"this column may be a proxy for that protected attribute" - the same pattern the bias audits use.
-The Python/CLI path needs the optional `scipy` extra. It never affects the score, so it is
-intentionally **not** part of `profile()`/`compare()`'s bit-for-bit parity contract between the two
-engines - but as of #738, the web profiler has its own opt-in JS port of the same chi-squared test
-(`FairCodeProfiler.proxyHints()` in `assets/profiler-engine.js`, wired to a "Check for proxy columns"
-button below a profile's results), so this is no longer a CLI-only capability - it's just a
-separate, non-parity-tested module in each engine, exercised by cross-checking known-correlated and
-known-unrelated fixtures against `scipy.stats.chi2_contingency` (`tests/test_js_parity_proxy.py`) rather
-than by the bit-for-bit parity assertion the rest of this file describes.
 
-**Tunables.** The significance level defaults to `p < 0.05` and is `--proxy-alpha ALPHA` on the CLI,
-`alpha` on the MCP tools and a "Significance level" input in the web views; it must be in `(0, 1]`
-and, like `--proxy-hints-with`, errors if given without `--proxy-hints`. An opt-in multiple-comparison
-correction (`--proxy-correction bonferroni|holm`, MCP `correction`, a web dropdown) adjusts p-values
-across every testable pair - Bonferroni is `min(1, p·m)`, Holm is the step-down procedure with a
-running maximum - reports a pair only when its *adjusted* p is below alpha, and adds `p_adjusted` to
-each hint. The default (no correction) is unchanged. `faircode.proxy.adjust_p_values` and the JS
-`adjustPValues` are cross-checked in `tests/test_js_parity_proxy.py`.
-
-**Small expected cells (#810).** The chi-squared approximation is unreliable when many contingency
-cells expect fewer than 5 rows (high-cardinality categoricals, rare groups). Every hint therefore
-carries `low_expected_share` (share of cells with expected count < 5, 4 dp) and `low_expected`
-(`true` when that share exceeds 0.2). The terminal/HTML/web output marks such a hint "small cells",
-and the CSV proxy section gains a `low_expected` column. The p-value is still computed and reported.
-
-**Exact fallback (#861).** `--proxy-exact` (MCP `exact`, a web checkbox) replaces the chi-squared
-p-value of a `low_expected` hint: a 2x2 table gets Fisher's exact test (two-sided, as
-`scipy.stats.fisher_exact`), a larger table a seeded Monte-Carlo permutation p-value - 1000 shuffles
-of the column labels with the `mulberry32` PRNG (seed 42, Fisher-Yates), `(1 + hits) / 1001`, so both
-engines return the identical number (the statistic is `sum(o^2/e) - n` over occupied cells, so it is
-cheap on sparse tables, #886); a small-cell table over 20000 observations (about two seconds per pair, #909) keeps the chi-squared p and
-is marked `chi2-capped` (#885), noted "too large for the exact fallback". Every
-hint then carries `p_method` (`chi2`, `chi2-capped`, `fisher` or `permutation`) and a replaced p-value keeps the
-original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by default. `--proxy-exact-permutations N` (default 1000, at most 1,000,000, #926) and `--proxy-exact-max-rows N` (default 20000; both positive integers, need `--proxy-exact`; MCP `exact_permutations` / `exact_max_rows`; `proxy_hints(permutations=, max_rows=)`; the JS `proxyHints()` takes the same two trailing arguments, and both web views have a "Shuffles" and a "Row cap" input beside the exact checkbox, blank for the default, #925) set the shuffle count and the row cap, and are recorded as `exact_permutations` / `exact_max_rows` in provenance `params` when `--proxy-exact` is on (#906).
-
-**Family size (#821).** Every hint also carries `n_tests`, the number of pairs actually tested
-(a pair with a constant column is skipped and does not count), so `p_adjusted` can be re-derived
-from the export (Bonferroni: `min(1, p · n_tests)`). Adjusted hints print "(m=N pairs)" in the
-terminal/HTML/web output, and the CSV proxy section gains an `n_tests` column before `low_expected`.
-
-**Copy as CLI command (#915).** The web profile and compare views have a "Copy as CLI command" button that builds the `faircode profile ...` / `faircode compare ...` line reproducing the run (`FairCodeProfiler.buildCliCommand`): the thresholds, `--max-age`, `--age-reference-year`, `--cross`, `--map`, `--encoding`, `--reference`, `--rename`, the proxy settings (`--proxy-hints`, `--proxy-alpha`, `--proxy-correction`, `--proxy-exact`, `--proxy-exact-permutations`, `--proxy-exact-max-rows`) and every held-out row in `PATH=COLUMN[:KEY[~]][@ENCODING]` syntax, shell-quoted. A keywords vocabulary becomes a leading `cat > words.json <<'EOF'` heredoc plus `--keywords words.json`. File names are the uploaded names, so the command is meant to run in the folder holding them.
-
-**Literal `=` in a path (#958).** A spec is split at its first unescaped `=`; write `\\=` for a literal one in the file name (`data\\=v2.csv=race:id` reads `data=v2.csv`), the same way `\\:` escapes a colon in the column (#869). An unescaped spec whose first-split path does not exist but whose longer prefix does gets an error that says so.
-
-**Near-unique held-out columns (#908).** A held-out column with more distinct values than `--max-categorical-card` (default 20) that are also at least `NEAR_UNIQUE_SHARE` (0.5, half) of its non-null rows, a constant named the same in `proxy.py` and `profiler-engine.js` (#957), looks like an identifier or free text, so it is left out of the tests and a note says so (CLI stderr `note:`, MCP `notes`, the web proxy notes) instead of building a rows x N contingency table - an all-numeric column is exempt (a raw age is the expected held-out case, #937); raise `--max-categorical-card` to test it anyway. The skip is not only on stderr (#921): the CLI `--json` result carries the notes in a `notes` list (as the MCP tools do), and the provenance `proxy_hints_with` entry of a skipped column says `"tested": false` with a `skip_reason`, so the export does not claim the file was used. The web exports do the same (#951): the exported result carries the skip notes in `notes` and the provenance entry says `tested: false` with the same `skip_reason`.
-
-**Limitation - a dropped column is invisible by construction.** `proxy_hints()` only tests pairs
-drawn from `dimensions`, the columns actually present in the profiled data. If a protected attribute
-was already removed before profiling - "we dropped the column so it's fine" - it can never be one
-half of a tested pair, since it was never detected in the first place. This is silent: the pass
-reports no association involving that attribute, which reads as "no proxy risk" rather than "this
-column was never checked."
-
-`faircode profile --proxy-hints --proxy-hints-with PATH=COLUMN` (repeatable) closes this specific
-gap: `COLUMN` from `PATH` is treated as an additional column, tested against every detected dimension
-and against every other held-out column, without needing it back in the profiled dataset itself.
-By default `PATH`'s rows must align 1:1 (same order) with the profiled dataset, so a mismatched row
-count is a hard error rather than a silently wrong result - but a same-length file in a different
-order would still be accepted, so a spec may instead be `PATH=COLUMN:KEY` (#822): rows are then
-matched on the `KEY` column, which must exist in both files and be unique and non-empty in both,
-and every key in the profiled dataset must appear in the held-out file (extra held-out rows are
-ignored). Keys are compared as text; the key may be **composite** (`PATH=COLUMN:id+visit`, every part a column of both files, joined on the combined value), and the opt-in `--proxy-key-normalize` (MCP `key_normalize`, a per-row "Normalise key" checkbox on the web) trims, applies Unicode compatibility composition (NFKC: full-width `４２` = `42`, `Ａ１` = `a1`, #935), case-folds (full Unicode folding, `ß` = `ss`), reads a whole-number fraction as the integer (`42.0` = `42`, #903) and drops leading zeros of all-digit values on both sides before matching (#859). The provenance entry then also carries `key_normalize: true`. A spec ending in `~` (`PATH=COLUMN:KEY~`) turns this on for that spec alone, matching the web's per-row "Normalise key" checkbox (#892); a trailing `!` keeps one spec exact when the global flag is on (#907); the global flag stays the default for specs with neither. When `COLUMN` itself contains a colon (common in survey
-exports like `race:self_reported`), either backslash-escape the literal colon (`PATH=a\:b`) or
-rely on the fallback (#869): a trailing `:KEY` is only treated as a join key when `KEY` names a
-real column of the profiled dataset - otherwise the whole right-hand side is the held-out column
-name. The web views avoid the ambiguity entirely: column and join key are separate inputs, so a
-column name may contain a colon without escaping. The same form works for `--proxy-hints-with-a/-b`,
-the MCP `held_out_with*` parameters, and a "Join key (optional)" input per row in the web views; the
-recorded provenance entry (section 10) gains a `key` field. Programmatically,
-`proxy_hints(df, dimensions, held_out={"race": pd.Series(...)})` does the same thing directly.
-`compare`'s `--proxy-hints` accepts the same idea per side - `--proxy-hints-with-a PATH=COLUMN`
-and `--proxy-hints-with-b PATH=COLUMN` (each repeatable), aligned to `csv_a`/`csv_b` respectively -
-added in #737. The MCP `compare_datasets` tool exposes the same held-out parameters as
-`held_out_with_a` and `held_out_with_b` when `proxy_hints=true`.
-
-**Per-file text encoding (#914).** Append `@ENCODING` to a held-out spec when that file does not
-share the dataset's `--encoding`: `PATH=COLUMN@utf-8` or
-`PATH=COLUMN:KEY~@latin-1`. The suffix overrides the global encoding only for that file, composes
-with the per-spec `~` key-normalisation marker, and is recorded as the effective `encoding` on that
-file's provenance entry. The same syntax applies to `--proxy-hints-with-a/-b` and MCP
-`held_out_with*`. In the web views, every held-out row has its own encoding picker; "Dataset
-setting" preserves the previous shared choice while an explicit row choice overrides it.
-
----
+Proxy hints (the chi-squared check between detected dimensions, columns dropped from the dataset, the exact
+test and its settings) are specified in [section 13](#13-proxy-hints-opt-in-informational-not-scored).
 
 ## 4. Intersectional gaps (informational, not scored)
 
@@ -531,7 +447,7 @@ edit.
 - **`sheet`** and **`sheets_ignored`** (`sheet_a`/`sheets_ignored_a` and `_b` for `compare`; also on each `proxy_hints_with` entry) - present only for an `.xlsx` input: the first sheet name that was profiled and how many other sheets were skipped, after the digest (#899). Other formats keep their shape.
 - **`reference_hash`** - present only when a section 9 baseline was supplied.
 - **`proxy_hints_with`** (`proxy_hints_with_a` / `_b` for `compare`) - present only when held-out
-  files were given to `--proxy-hints-with` (section 3; the web proxy results; MCP
+  files were given to `--proxy-hints-with` (section 13; the web proxy results; MCP
   `compare_datasets`'s `held_out_with_a`/`_b`): a list of `{ "path", "column", "sha256" }` (plus `"key"` when a join key was given), one per
   file in the order given, with `sha256` hashed like `dataset_hash` and a `sha256_note` when it is
   `null`. A text file's entry also carries `"encoding"` after its digest - the explicit `--encoding` /
@@ -561,7 +477,7 @@ over stdio (`faircode-mcp`, needs the optional `mcp` extra), so an agent can cal
 instead of shelling out to the CLI and parsing text. This is a thin adapter, not a third engine: it
 calls the same `profile()`/`compare()`/`proxy_hints()` functions `cli.py` wraps, so it carries no
 parity obligation of its own - there is no equivalent MCP surface for the JS engine, the same way
-`--proxy-hints` (section 3) has none.
+`--proxy-hints` (section 13) has none.
 
 | Tool | Wraps | Notes |
 |------|-------|-------|
@@ -611,7 +527,7 @@ remaining column as a proxy for a protected attribute that has already been drop
 dataset entirely - unless `held_out_with` is given: a list of `"PATH=COLUMN"` strings mirroring the
 CLI's `--proxy-hints-with`, each naming a file whose rows align 1:1 with the profiled dataset and a
 column to pull the dropped attribute's original values from. Parsed via `proxy.py`'s shared
-`parse_held_out_specs`, so the validation is identical to the CLI's. See section 3 and issue #328.
+`parse_held_out_specs`, so the validation is identical to the CLI's. See section 13 and issue #328.
 
 Every message a tool has for the caller - an ignored sheet, an encoding that cannot apply to a workbook, a near-unique held-out column that was skipped - is in one `notes` list on `profile_dataset`, `compare_datasets` and `proxy_hints` (#950). `sheet_note`, `sheet_note_a`/`sheet_note_b` and `sheet_notes` are kept for now as deprecated aliases of the sheet entries.
 
@@ -620,12 +536,12 @@ The proxy-test and output parameters below are all optional. An invalid value is
 
 | Parameter | Tools | Default | Behaviour and errors |
 |-----------|-------|---------|----------------------|
-| `alpha` | `proxy_hints`, `compare_datasets` | `null` (0.05) | Proxy-hint significance level, mirroring `--proxy-alpha` (section 3). A value outside `(0, 1]` raises `alpha must be in (0, 1], got ...`. On `compare_datasets` it is only read when `proxy_hints=true` |
-| `correction` | `proxy_hints`, `compare_datasets` | `null` (no correction) | `"bonferroni"` or `"holm"`, mirroring `--proxy-correction` (section 3): a pair is reported only when its adjusted p is below `alpha`, and each hint gains `p_adjusted`. Any other value raises `correction must be one of ('bonferroni', 'holm'), got ...`. On `compare_datasets` it is only read when `proxy_hints=true` |
+| `alpha` | `proxy_hints`, `compare_datasets` | `null` (0.05) | Proxy-hint significance level, mirroring `--proxy-alpha` (section 13). A value outside `(0, 1]` raises `alpha must be in (0, 1], got ...`. On `compare_datasets` it is only read when `proxy_hints=true` |
+| `correction` | `proxy_hints`, `compare_datasets` | `null` (no correction) | `"bonferroni"` or `"holm"`, mirroring `--proxy-correction` (section 13): a pair is reported only when its adjusted p is below `alpha`, and each hint gains `p_adjusted`. Any other value raises `correction must be one of ('bonferroni', 'holm'), got ...`. On `compare_datasets` it is only read when `proxy_hints=true` |
 | `held_out_with_a` / `held_out_with_b` | `compare_datasets` | `null` | Lists of `"PATH=COLUMN"` strings testing a column already dropped from dataset A / B, mirroring `--proxy-hints-with-a`/`-b`. Parsed by `parse_held_out_specs` with the same validation as `held_out_with`, error messages naming the parameter. Given without `proxy_hints=true`, raises `held_out_with_a/held_out_with_b need proxy_hints=true` |
 | `format` | `profile_dataset`, `compare_datasets` | `"json"` | `"json"` returns the result unchanged; `"csv"` returns `{"csv": "<text>"}`, the same text `profile --csv` / `compare --csv` writes (section 12), with its provenance section unless `include_provenance=false`. Any other value raises `format must be 'json' or 'csv', got ...` |
 | `proxy_hints` | `compare_datasets` | `false` | `true` attaches `proxy_hints_a` / `proxy_hints_b`, mirroring `compare --proxy-hints`; `held_out_with_a`/`_b` need it (`held_out_with_a/held_out_with_b need proxy_hints=true`) |
-| `held_out_with` | `proxy_hints` | `null` | List of `"PATH=COLUMN[:KEY[~\|!]][@ENCODING]"` specs, the single-dataset counterpart of `held_out_with_a`/`_b` (section 3); a malformed spec, a missing column or a row-count mismatch raises. Near-unique columns are skipped with a note (#908) |
+| `held_out_with` | `proxy_hints` | `null` | List of `"PATH=COLUMN[:KEY[~\|!]][@ENCODING]"` specs, the single-dataset counterpart of `held_out_with_a`/`_b` (section 13); a malformed spec, a missing column or a row-count mismatch raises. Near-unique columns are skipped with a note (#908) |
 | `encoding` | `profile_dataset`, `compare_datasets`, `proxy_hints` | `null` (BOM, else UTF-8) | Text encoding of delimited and JSON files (`"latin-1"`, `"utf-16"`...), mirroring `--encoding`; an unknown codec raises. Ignored, with a note, for `.xlsx`/`.parquet` (#870) |
 | `key_normalize` | `compare_datasets`, `proxy_hints` | `false` | Normalise `PATH=COLUMN:KEY` join keys (trim, NFKC, case-fold, `42.0` = `42`, leading zeros), mirroring `--proxy-key-normalize`; per-spec `~`/`!` markers override it |
 | `exact` | `compare_datasets`, `proxy_hints` | `false` | Fisher/permutation p-values for small-cell hints (`p_method` on every hint), mirroring `--proxy-exact` |
@@ -693,3 +609,94 @@ pure CSV, and is rejected together with `--json` (both would write to stdout).
 Without the flag the file stays plain UTF-8, matching the pre-#846 behaviour. On `--csv -` the BOM
 is written as the character U+FEFF before the CSV text.
 
+---
+
+## 13. Proxy hints (opt-in, informational, not scored)
+
+An optional pass (`faircode profile/compare … --proxy-hints`) runs a chi-squared test of independence
+(`scipy.stats.chi2_contingency`) over every pair of detected dimensions and reports pairs with
+`p < 0.05`, each with its p-value and Cramér's V effect size, most-significant first. It surfaces
+"this column may be a proxy for that protected attribute" - the same pattern the bias audits use.
+The Python/CLI path needs the optional `scipy` extra. It never affects the score, so it is
+intentionally **not** part of `profile()`/`compare()`'s bit-for-bit parity contract between the two
+engines - but as of #738, the web profiler has its own opt-in JS port of the same chi-squared test
+(`FairCodeProfiler.proxyHints()` in `assets/profiler-engine.js`, wired to a "Check for proxy columns"
+button below a profile's results), so this is no longer a CLI-only capability - it's just a
+separate, non-parity-tested module in each engine, exercised by cross-checking known-correlated and
+known-unrelated fixtures against `scipy.stats.chi2_contingency` (`tests/test_js_parity_proxy.py`) rather
+than by the bit-for-bit parity assertion the rest of this file describes.
+
+**Tunables.** The significance level defaults to `p < 0.05` and is `--proxy-alpha ALPHA` on the CLI,
+`alpha` on the MCP tools and a "Significance level" input in the web views; it must be in `(0, 1]`
+and, like `--proxy-hints-with`, errors if given without `--proxy-hints`. An opt-in multiple-comparison
+correction (`--proxy-correction bonferroni|holm`, MCP `correction`, a web dropdown) adjusts p-values
+across every testable pair - Bonferroni is `min(1, p·m)`, Holm is the step-down procedure with a
+running maximum - reports a pair only when its *adjusted* p is below alpha, and adds `p_adjusted` to
+each hint. The default (no correction) is unchanged. `faircode.proxy.adjust_p_values` and the JS
+`adjustPValues` are cross-checked in `tests/test_js_parity_proxy.py`.
+
+**Small expected cells (#810).** The chi-squared approximation is unreliable when many contingency
+cells expect fewer than 5 rows (high-cardinality categoricals, rare groups). Every hint therefore
+carries `low_expected_share` (share of cells with expected count < 5, 4 dp) and `low_expected`
+(`true` when that share exceeds 0.2). The terminal/HTML/web output marks such a hint "small cells",
+and the CSV proxy section gains a `low_expected` column. The p-value is still computed and reported.
+
+**Exact fallback (#861).** `--proxy-exact` (MCP `exact`, a web checkbox) replaces the chi-squared
+p-value of a `low_expected` hint: a 2x2 table gets Fisher's exact test (two-sided, as
+`scipy.stats.fisher_exact`), a larger table a seeded Monte-Carlo permutation p-value - 1000 shuffles
+of the column labels with the `mulberry32` PRNG (seed 42, Fisher-Yates), `(1 + hits) / 1001`, so both
+engines return the identical number (the statistic is `sum(o^2/e) - n` over occupied cells, so it is
+cheap on sparse tables, #886); a small-cell table over 20000 observations (about two seconds per pair, #909) keeps the chi-squared p and
+is marked `chi2-capped` (#885), noted "too large for the exact fallback". Every
+hint then carries `p_method` (`chi2`, `chi2-capped`, `fisher` or `permutation`) and a replaced p-value keeps the
+original as `p_chi2`; the CSV proxy section gains a `p_method` column. Off by default. `--proxy-exact-permutations N` (default 1000, at most 1,000,000, #926) and `--proxy-exact-max-rows N` (default 20000; both positive integers, need `--proxy-exact`; MCP `exact_permutations` / `exact_max_rows`; `proxy_hints(permutations=, max_rows=)`; the JS `proxyHints()` takes the same two trailing arguments, and both web views have a "Shuffles" and a "Row cap" input beside the exact checkbox, blank for the default, #925) set the shuffle count and the row cap, and are recorded as `exact_permutations` / `exact_max_rows` in provenance `params` when `--proxy-exact` is on (#906).
+
+**Family size (#821).** Every hint also carries `n_tests`, the number of pairs actually tested
+(a pair with a constant column is skipped and does not count), so `p_adjusted` can be re-derived
+from the export (Bonferroni: `min(1, p · n_tests)`). Adjusted hints print "(m=N pairs)" in the
+terminal/HTML/web output, and the CSV proxy section gains an `n_tests` column before `low_expected`.
+
+**Copy as CLI command (#915).** The web profile and compare views have a "Copy as CLI command" button that builds the `faircode profile ...` / `faircode compare ...` line reproducing the run (`FairCodeProfiler.buildCliCommand`): the thresholds, `--max-age`, `--age-reference-year`, `--cross`, `--map`, `--encoding`, `--reference`, `--rename`, the proxy settings (`--proxy-hints`, `--proxy-alpha`, `--proxy-correction`, `--proxy-exact`, `--proxy-exact-permutations`, `--proxy-exact-max-rows`) and every held-out row in `PATH=COLUMN[:KEY[~]][@ENCODING]` syntax, shell-quoted. A keywords vocabulary becomes a leading `cat > words.json <<'EOF'` heredoc plus `--keywords words.json`. File names are the uploaded names, so the command is meant to run in the folder holding them.
+
+**Literal `=` in a path (#958).** A spec is split at its first unescaped `=`; write `\\=` for a literal one in the file name (`data\\=v2.csv=race:id` reads `data=v2.csv`), the same way `\\:` escapes a colon in the column (#869). An unescaped spec whose first-split path does not exist but whose longer prefix does gets an error that says so.
+
+**Near-unique held-out columns (#908).** A held-out column with more distinct values than `--max-categorical-card` (default 20) that are also at least `NEAR_UNIQUE_SHARE` (0.5, half) of its non-null rows, a constant named the same in `proxy.py` and `profiler-engine.js` (#957), looks like an identifier or free text, so it is left out of the tests and a note says so (CLI stderr `note:`, MCP `notes`, the web proxy notes) instead of building a rows x N contingency table - an all-numeric column is exempt (a raw age is the expected held-out case, #937); raise `--max-categorical-card` to test it anyway. The skip is not only on stderr (#921): the CLI `--json` result carries the notes in a `notes` list (as the MCP tools do), and the provenance `proxy_hints_with` entry of a skipped column says `"tested": false` with a `skip_reason`, so the export does not claim the file was used. The web exports do the same (#951): the exported result carries the skip notes in `notes` and the provenance entry says `tested: false` with the same `skip_reason`.
+
+**Limitation - a dropped column is invisible by construction.** `proxy_hints()` only tests pairs
+drawn from `dimensions`, the columns actually present in the profiled data. If a protected attribute
+was already removed before profiling - "we dropped the column so it's fine" - it can never be one
+half of a tested pair, since it was never detected in the first place. This is silent: the pass
+reports no association involving that attribute, which reads as "no proxy risk" rather than "this
+column was never checked."
+
+`faircode profile --proxy-hints --proxy-hints-with PATH=COLUMN` (repeatable) closes this specific
+gap: `COLUMN` from `PATH` is treated as an additional column, tested against every detected dimension
+and against every other held-out column, without needing it back in the profiled dataset itself.
+By default `PATH`'s rows must align 1:1 (same order) with the profiled dataset, so a mismatched row
+count is a hard error rather than a silently wrong result - but a same-length file in a different
+order would still be accepted, so a spec may instead be `PATH=COLUMN:KEY` (#822): rows are then
+matched on the `KEY` column, which must exist in both files and be unique and non-empty in both,
+and every key in the profiled dataset must appear in the held-out file (extra held-out rows are
+ignored). Keys are compared as text; the key may be **composite** (`PATH=COLUMN:id+visit`, every part a column of both files, joined on the combined value), and the opt-in `--proxy-key-normalize` (MCP `key_normalize`, a per-row "Normalise key" checkbox on the web) trims, applies Unicode compatibility composition (NFKC: full-width `４２` = `42`, `Ａ１` = `a1`, #935), case-folds (full Unicode folding, `ß` = `ss`), reads a whole-number fraction as the integer (`42.0` = `42`, #903) and drops leading zeros of all-digit values on both sides before matching (#859). The provenance entry then also carries `key_normalize: true`. A spec ending in `~` (`PATH=COLUMN:KEY~`) turns this on for that spec alone, matching the web's per-row "Normalise key" checkbox (#892); a trailing `!` keeps one spec exact when the global flag is on (#907); the global flag stays the default for specs with neither. When `COLUMN` itself contains a colon (common in survey
+exports like `race:self_reported`), either backslash-escape the literal colon (`PATH=a\:b`) or
+rely on the fallback (#869): a trailing `:KEY` is only treated as a join key when `KEY` names a
+real column of the profiled dataset - otherwise the whole right-hand side is the held-out column
+name. The web views avoid the ambiguity entirely: column and join key are separate inputs, so a
+column name may contain a colon without escaping. The same form works for `--proxy-hints-with-a/-b`,
+the MCP `held_out_with*` parameters, and a "Join key (optional)" input per row in the web views; the
+recorded provenance entry (section 10) gains a `key` field. Programmatically,
+`proxy_hints(df, dimensions, held_out={"race": pd.Series(...)})` does the same thing directly.
+`compare`'s `--proxy-hints` accepts the same idea per side - `--proxy-hints-with-a PATH=COLUMN`
+and `--proxy-hints-with-b PATH=COLUMN` (each repeatable), aligned to `csv_a`/`csv_b` respectively -
+added in #737. The MCP `compare_datasets` tool exposes the same held-out parameters as
+`held_out_with_a` and `held_out_with_b` when `proxy_hints=true`.
+
+**Per-file text encoding (#914).** Append `@ENCODING` to a held-out spec when that file does not
+share the dataset's `--encoding`: `PATH=COLUMN@utf-8` or
+`PATH=COLUMN:KEY~@latin-1`. The suffix overrides the global encoding only for that file, composes
+with the per-spec `~` key-normalisation marker, and is recorded as the effective `encoding` on that
+file's provenance entry. The same syntax applies to `--proxy-hints-with-a/-b` and MCP
+`held_out_with*`. In the web views, every held-out row has its own encoding picker; "Dataset
+setting" preserves the previous shared choice while an explicit row choice overrides it.
+
+---

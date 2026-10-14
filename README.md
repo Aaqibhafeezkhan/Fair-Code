@@ -1042,7 +1042,7 @@ Quote a spec containing `~`, `!`, `@` or spaces so the shell leaves it alone. A 
 more distinct values than `--max-categorical-card` that are also at least half its rows looks like an
 identifier, so it is skipped with a note (stderr, the `--json` `notes`, and `tested: false` in the
 provenance) instead of being tested; raise `--max-categorical-card` to test it anyway. Details:
-[SPEC section 3](faircode/SPEC.md#3-per-dimension-metrics).
+[SPEC section 13](faircode/SPEC.md#13-proxy-hints-opt-in-informational-not-scored).
 
 For CI, `--fail-under N` returns exit code `1` and explains the failing score
 on stderr when the overall representation score is below `N`; report output,

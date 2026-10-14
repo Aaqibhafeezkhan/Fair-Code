@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 PY := python3
 
-.PHONY: help setup test test-fast coverage key-fold build-explainers favicons fix-explainer-count lint audits check
+.PHONY: help setup test test-fast coverage key-fold key-fold-check build-explainers favicons fix-explainer-count lint audits check
 
 help:  ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -25,6 +25,9 @@ coverage:  ## Run the full test suite with a faircode/ coverage report (what CI'
 
 key-fold:  ## Regenerate the JS case-folding table (KEY_FOLD) from this machine's Python and node, e.g. after a Unicode upgrade
 	$(PY) scripts/generate_key_fold.py
+
+key-fold-check:  ## Verify KEY_FOLD against Python for every code point both runtimes assign (reports what it could not compare)
+	$(PY) scripts/generate_key_fold.py --check
 
 build-explainers:  ## Regenerate explainer pages, data.js, sitemap, and OG images (dark + light)
 	$(PY) scripts/build_explainers.py
@@ -63,5 +66,5 @@ audits:  ## Run every audit's unfair.py/fair.py + the CLI smoke tests (mirrors a
 	echo "Benchmark harness smoke test passed: $$(wc -l < "$$tmp/results_fairness.csv") fairness rows written"; \
 	rm -rf "$$tmp"
 
-check: lint test audits  ## Run everything CI runs (lint + full test suite + audits/CLI smoke tests)
+check: lint key-fold-check test audits  ## Run everything CI runs (lint + full test suite + audits/CLI smoke tests)
 	@echo "All checks passed."

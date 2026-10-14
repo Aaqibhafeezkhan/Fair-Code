@@ -1,6 +1,7 @@
 """scripts/generate_key_fold.py rebuilds the JS KEY_FOLD table (#939)."""
 
 import importlib
+import re
 import shutil
 
 import pytest
@@ -27,20 +28,36 @@ def test_generated_block_carries_the_known_folds_and_the_unicode_versions(script
     assert block.isascii()
 
 
-def test_rewrite_then_check_is_a_fixed_point_and_the_check_detects_drift(script):
-    assert script.main.__module__ == script.__name__
+def test_check_agrees_after_a_rewrite_reports_what_it_skipped_and_detects_a_stale_table(script, capsys, monkeypatch):
     import sys
-    old = sys.argv
-    try:
-        sys.argv = ["generate_key_fold.py"]
-        assert script.main() == 0                          # rewrite in place
-        sys.argv = ["generate_key_fold.py", "--check"]
-        assert script.main() == 0                          # immediately up to date
-        text = script.ENGINE.read_text(encoding="utf-8")
-        script.ENGINE.write_text(text.replace("'\\u00df':'\\u0073\\u0073',", ""), encoding="utf-8")
-        assert script.main() == 1                          # a missing entry is reported
-    finally:
-        sys.argv = old
+    monkeypatch.setattr(sys, "argv", ["generate_key_fold.py"])
+    assert script.main() == 0                                   # rewrite in place
+    monkeypatch.setattr(sys, "argv", ["generate_key_fold.py", "--check"])
+    assert script.main() == 0
+    out = capsys.readouterr().out
+    assert "agrees with Python on every code point both runtimes assign" in out
+    assert "table built with Python" in out and "(Unicode" in out
+    # the skip is reported, not hidden (#946)
+    import re
+    counts = re.search(r"compared ([\d,]+) code points; not compared: ([\d,]+) assigned only in node, ([\d,]+) only in Python", out)
+    assert counts and int(counts.group(1).replace(",", "")) > 100_000
+
+    text = script.ENGINE.read_text(encoding="utf-8")
+    script.ENGINE.write_text(text.replace("'\\u00df':'\\u0073\\u0073',", ""), encoding="utf-8")
+    assert script.main() == 1                                   # a missing entry is a real disagreement
+    stale = capsys.readouterr().out
+    assert "STALE" in stale and "U+00DF" in stale and "make key-fold" in stale
+
+
+def test_check_notes_when_the_runtimes_know_a_newer_unicode_than_the_table(script, capsys, monkeypatch):
+    import sys
+    text = script.ENGINE.read_text(encoding="utf-8")
+    old = re.sub(r"Built with: Python \S+ \(Unicode \S+\) and node \S+ \(Unicode \S+\)",
+                 "Built with: Python 3.8.0 (Unicode 12.1.0) and node v14.0.0 (Unicode 13.0)", text)
+    script.ENGINE.write_text(old, encoding="utf-8")
+    monkeypatch.setattr(sys, "argv", ["generate_key_fold.py", "--check"])
+    script.main()
+    assert "knows a newer Unicode than the table was built with" in capsys.readouterr().out
 
 
 def test_the_repo_copy_still_has_its_markers():

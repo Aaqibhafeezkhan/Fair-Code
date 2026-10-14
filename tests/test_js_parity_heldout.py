@@ -434,3 +434,37 @@ def test_held_out_column_box_accepts_the_cli_encoding_suffix():
     assert res["out"]["a"] == {"column": "race", "box": "race", "select": "latin-1"}
     assert res["out"]["b"] == {"column": "email@home", "select": "inherit"}
     assert res["seen"] == ["latin-1", "auto"]
+
+
+def test_near_unique_share_boundary_and_constant_agree_between_engines():
+    """#957: exactly half the rows distinct is skipped, one fewer is kept, in Python and in JS,
+    and both engines name the same NEAR_UNIQUE_SHARE."""
+    from faircode.proxy import NEAR_UNIQUE_SHARE, parse_held_out_specs
+    assert NEAR_UNIQUE_SHARE == 0.5
+    js_src = (REPO_ROOT / "assets" / "profiler-engine.js").read_text(encoding="utf-8")
+    assert f"var NEAR_UNIQUE_SHARE = {NEAR_UNIQUE_SHARE};" in js_src
+
+    n = 100
+    df = pd.DataFrame({"sex": ["m", "f"] * (n // 2)})
+
+    def held(distinct):
+        return pd.DataFrame({"tag": [f"t{i % distinct}" for i in range(n)]})
+
+    py = {}
+    for distinct in (49, 50, 51):
+        notes = []
+        kept = parse_held_out_specs(["h.csv=tag"], df, lambda p, d=distinct: held(d), notes=notes, max_categorical_card=20)
+        py[distinct] = ("tag" in kept, bool(notes))
+    assert py == {49: (True, False), 50: (False, True), 51: (False, True)}
+
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var rows=[];"
+        "for(var i=0;i<100;i++)rows.push({sex:i%2?'m':'f'});var t={columns:['sex'],rows:rows};"
+        "async function run(d){var held=[];for(var i=0;i<100;i++)held.push({tag:'t'+(i%d)});"
+        "var notes=[];var out=await E.buildHeldOut([{name:'h.json',column:'tag',data:JSON.stringify(held)}],t,notes,20);"
+        "return [Object.keys(out).indexOf('tag')!==-1,notes.length>0];}"
+        "(async function(){var r={};for(var d of [49,50,51])r[d]=await run(d);process.stdout.write(JSON.stringify(r));})();"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert {int(k): tuple(v) for k, v in out.items()} == py

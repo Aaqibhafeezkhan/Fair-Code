@@ -1275,7 +1275,7 @@
           var s = typeof v === 'number' && isFinite(v) ? String(v) : (typeof v === 'string' ? v : '');
           return /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(s);
         });
-        if (distinct > maxCategoricalCard && distinct * 2 >= present && !numeric) {
+        if (distinct > maxCategoricalCard && distinct >= NEAR_UNIQUE_SHARE * present && !numeric) {
           if (notes) {
             notes.push("held-out column '" + spec.column + "' has " + distinct + ' distinct values (more than ' +
               maxCategoricalCard + ' and nearly one per row) - it looks like an identifier, not a group, so it was not tested');
@@ -1301,6 +1301,9 @@
   // Exact-test fallback for small-cell tables (#861); mirrors faircode/proxy.py
   // (PERMUTATIONS, PERMUTATION_SEED, PERMUTATION_MAX_ROWS, _mulberry32).
   var PERMUTATIONS = 1000, PERMUTATION_SEED = 42, PERMUTATION_MAX_ROWS = 20000, MAX_PERMUTATIONS = 1000000;
+  // Share of non-null rows that distinct values must reach (beyond max_categorical_card) for a held-out
+  // column to count as near-unique; mirrors proxy.py NEAR_UNIQUE_SHARE (#957).
+  var NEAR_UNIQUE_SHARE = 0.5;
 
   function mulberry32(seed) {
     var a = seed | 0;

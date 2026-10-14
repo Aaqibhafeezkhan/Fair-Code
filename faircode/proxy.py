@@ -41,6 +41,10 @@ PERMUTATIONS = 1000
 PERMUTATION_SEED = 42
 # A typo such as 10**12 shuffles would run for days, so more than this is refused (#926).
 MAX_PERMUTATIONS = 1_000_000
+# A held-out column is "near-unique" (looks like an identifier) when its distinct values exceed
+# --max-categorical-card and are at least this share of its non-null rows. Same value in
+# profiler-engine.js (#957).
+NEAR_UNIQUE_SHARE = 0.5
 # Measured after #886: about 0.1 s per 1000 rows per pair in Python (0.07 s in JS), so 20000 rows keeps a
 # pair near two seconds (#909). Same value in profiler-engine.js.
 PERMUTATION_MAX_ROWS = 20000
@@ -309,13 +313,13 @@ def _all_numeric(series):
 
 def _keep_held_out(held_out, column, series, notes, max_categorical_card, skipped=None):
     """Store a held-out column unless it is near-unique (more distinct values than
-    `max_categorical_card` and at least half the non-null rows): testing an ID-like or
+    `max_categorical_card` and at least NEAR_UNIQUE_SHARE (half) of the non-null rows): testing an ID-like or
     free-text column builds a huge contingency table and means nothing. An all-numeric
     column is exempt - a raw age is a legitimate held-out attribute (#937). Only screened when
     the caller passes a `notes` list to receive the skip message (#908)."""
     if notes is not None:
         distinct, present = int(series.nunique(dropna=True)), int(series.notna().sum())
-        if distinct > max_categorical_card and distinct * 2 >= present and not _all_numeric(series):
+        if distinct > max_categorical_card and distinct >= NEAR_UNIQUE_SHARE * present and not _all_numeric(series):
             notes.append(near_unique_note(column, distinct, max_categorical_card))
             if skipped is not None:
                 skipped.append(column)

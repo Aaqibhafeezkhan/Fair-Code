@@ -135,3 +135,48 @@ def test_name_based_rename_tolerates_a_slightly_different_group_count_in_both_en
 
     py, js = run("sex", ["MF"[i % 2] for i in range(60)], "sex_code", ["129x"[i % 4] for i in range(60)])
     assert "possible_renames" not in py and "possible_renames" not in js
+
+
+def _name_rename_results(tmp_path, cols_a, cols_b):
+    """compare() of two frames of `{column: group_count}` columns (all typed sex) in both engines."""
+    def frame(cols, prefix):   # disjoint labels per side, so only the name signal can pair them
+        return pd.DataFrame({name: [f"{prefix}{i % k}" for i in range(60)] for name, k in cols.items()})
+    overrides = {name: "sex" for name in list(cols_a) + list(cols_b)}
+    opts = {"max_categorical_card": 100}
+    df_a, df_b = frame(cols_a, "a"), frame(cols_b, "b")
+    path_a, path_b, cfg = tmp_path / "a.csv", tmp_path / "b.csv", tmp_path / "opts.json"
+    df_a.to_csv(path_a, index=False)
+    df_b.to_csv(path_b, index=False)
+    cfg.write_text(json.dumps({"overrides": overrides, "opts": opts}))
+    script = (
+        "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;"
+        "var o=JSON.parse(fs.readFileSync(process.argv[4],'utf-8'));"
+        "var pa=E.profile(E.parseCSV(fs.readFileSync(process.argv[2],'utf-8')),o.overrides,o.opts);"
+        "var pb=E.profile(E.parseCSV(fs.readFileSync(process.argv[3],'utf-8')),o.overrides,o.opts);"
+        "process.stdout.write(JSON.stringify(E.compare(pa,pb,'a.csv','b.csv')));"
+    )
+    js = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"),
+                                    str(path_a), str(path_b), str(cfg)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    py = compare(profile(pd.read_csv(path_a), overrides, opts), profile(pd.read_csv(path_b), overrides, opts), "a.csv", "b.csv")
+    assert js.get("possible_renames") == py.get("possible_renames")
+    return py.get("possible_renames", [])
+
+
+@pytest.mark.parametrize("count_a,count_b,suggested", [
+    (1, 2, True), (2, 3, True), (3, 4, True), (2, 4, False),        # small columns: a gap of one
+    (7, 9, True), (7, 10, False), (8, 10, True), (8, 11, False),     # larger: up to a quarter of the bigger
+    (12, 16, True), (12, 17, False), (20, 26, True), (20, 27, False),
+])
+def test_name_rename_group_count_tolerance_boundaries_match_in_both_engines(tmp_path, count_a, count_b, suggested):
+    """#949: the tolerance is max(1, larger // 4); each side of every boundary, in Python and JS."""
+    renames = _name_rename_results(tmp_path, {"sex": count_a}, {"sex_code": count_b})
+    assert bool(renames) is suggested, renames
+
+
+def test_name_rename_prefers_most_shared_words_then_the_closest_group_count(tmp_path):
+    """#949: with two B candidates the one sharing more words wins; with equal words, the closer count."""
+    renames = _name_rename_results(tmp_path, {"patient_sex": 4}, {"sex_code": 4, "patient_sex_code": 5})
+    assert [(r["a"], r["b"]) for r in renames] == [("patient_sex", "patient_sex_code")]      # 2 shared words beat 1
+    renames = _name_rename_results(tmp_path, {"patient_sex": 4}, {"sex_x": 5, "sex_y": 4})
+    assert [(r["a"], r["b"]) for r in renames] == [("patient_sex", "sex_y")]                  # equal words: closer count

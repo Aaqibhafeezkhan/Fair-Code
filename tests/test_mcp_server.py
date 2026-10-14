@@ -9,6 +9,7 @@ Run from the repo root:  pytest tests/ -q
 """
 
 import importlib.util
+import re
 
 import pytest
 
@@ -879,7 +880,9 @@ def test_read_error_paths_give_agents_actionable_messages(tmp_path, monkeypatch)
     text = str(info.value)
     assert f"could not read dataset {latin}" in text and "not valid utf-8" in text and "pass encoding (e.g. 'latin-1'" in text
     assert list(_read_table_or_raise(str(latin), "latin-1")["race"]) == ["Café", "Señor"]
-    with pytest.raises(RuntimeError, match="not valid utf-16"):
+    # Which exception a wrong UTF-16 read raises depends on the Python version (a UnicodeDecodeError, or a
+    # plain UnicodeError about the missing BOM); either way the agent gets a "could not read dataset" error.
+    with pytest.raises(RuntimeError, match=rf"could not read dataset {re.escape(str(latin))}: .*(not valid utf-16|BOM)"):
         _read_table_or_raise(str(latin), "utf-16")
 
     bad_book = tmp_path / "bad.xlsx"

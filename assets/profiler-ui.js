@@ -478,6 +478,12 @@
     return a;
   }
 
+  // Skipped near-unique held-out columns reach the exported result as `notes`, like the CLI (#951).
+  function setSkipNotes(target, specs) {
+    var notes = (specs || []).filter(function (h) { return h.skipped; }).map(function (h) { return h.skipNote; });
+    if (notes.length) target.notes = notes; else delete target.notes;
+  }
+
   async function renderProxyHints() {
     if (!currentTable || !currentResult) return;
     var host = document.getElementById('proxyHintsResults');
@@ -509,6 +515,7 @@
     // Attach to the result so Download report / Copy as JSON / Download CSV
     // include what's on screen (issue #758).
     currentResult.proxy_hints = hints;
+    setSkipNotes(currentResult, specs);
     currentProxySettings = { alpha: alpha, correction: document.getElementById('proxyCorrectionInput').value || null,
                              exact: document.getElementById('proxyExactInput').checked,
                              permutations: exactSettings.permutations, maxRows: exactSettings.maxRows };
@@ -1138,6 +1145,7 @@
       entry.sha256 = h.digest;
       if (h.note !== null) entry.sha256_note = h.note;
       if (specs[i].sheet) { entry.sheet = specs[i].sheet; entry.sheets_ignored = specs[i].sheetsIgnored; }
+      if (specs[i].skipped) { entry.tested = false; entry.skip_reason = 'near-unique values (looks like an identifier)'; }
       if (specs[i].encoding) entry.encoding = specs[i].encoding;
       out.push(entry);
     }

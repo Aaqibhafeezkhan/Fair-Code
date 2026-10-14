@@ -1275,11 +1275,13 @@
           var s = typeof v === 'number' && isFinite(v) ? String(v) : (typeof v === 'string' ? v : '');
           return /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(s);
         });
+        spec.skipped = false; spec.skipNote = undefined;
         if (distinct > maxCategoricalCard && distinct >= NEAR_UNIQUE_SHARE * present && !numeric) {
-          if (notes) {
-            notes.push("held-out column '" + spec.column + "' has " + distinct + ' distinct values (more than ' +
-              maxCategoricalCard + ' and nearly one per row) - it looks like an identifier, not a group, so it was not tested');
-          }
+          // Recorded on the spec so the exports can say tested: false and carry the note (#951).
+          spec.skipped = true;
+          spec.skipNote = "held-out column '" + spec.column + "' has " + distinct + ' distinct values (more than ' +
+            maxCategoricalCard + ' and nearly one per row) - it looks like an identifier, not a group, so it was not tested';
+          if (notes) notes.push(spec.skipNote);
         } else {
           out[spec.column] = values;
         }

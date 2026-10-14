@@ -899,6 +899,12 @@
     return a;
   }
 
+  // Skipped near-unique held-out columns reach the exported result as `notes`, like the CLI (#951).
+  function setSkipNotes(target, specs) {
+    var notes = specs.filter(function (h) { return h.skipped; }).map(function (h) { return h.skipNote; });
+    if (notes.length) target.notes = notes; else delete target.notes;
+  }
+
   async function renderCompareProxyHints() {
     if (!currentCmp || !currentProfiles) return;
     var alpha = readProxyAlpha(document.getElementById('compareProxyAlphaInput'), proxyResultsEl);
@@ -928,6 +934,7 @@
     }
     currentProxySettings = { alpha: alpha, correction: correction, exact: exact,
                              permutations: exactSettings.permutations, maxRows: exactSettings.maxRows };
+    setSkipNotes(currentCmp, specsA.concat(specsB));
     currentCmp.proxy_hints_a = E.proxyHints(slot.A.table, currentProfiles.A.dimensions, alpha, heldA, correction, currentOpts.max_age, currentOpts.age_reference_year, exact, exactSettings.permutations, exactSettings.maxRows);
     currentCmp.proxy_hints_b = E.proxyHints(slot.B.table, currentProfiles.B.dimensions, alpha, heldB, correction, currentOpts.max_age, currentOpts.age_reference_year, exact, exactSettings.permutations, exactSettings.maxRows);
     proxyResultsEl.innerHTML = [['proxy_hints_a', 'A'], ['proxy_hints_b', 'B']].map(function (k) {
@@ -1000,6 +1007,7 @@
       entry.sha256 = h.digest;
       if (h.note !== null) entry.sha256_note = h.note;
       if (specs[i].sheet) { entry.sheet = specs[i].sheet; entry.sheets_ignored = specs[i].sheetsIgnored; }
+      if (specs[i].skipped) { entry.tested = false; entry.skip_reason = 'near-unique values (looks like an identifier)'; }
       if (specs[i].encoding) entry.encoding = specs[i].encoding;
       out.push(entry);
     }

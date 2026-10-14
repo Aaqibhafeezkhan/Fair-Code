@@ -173,3 +173,39 @@ def test_web_reference_baseline_is_re_applied_when_the_encoding_picker_changes()
     assert "var reapply = pendingReferenceFile;" in run_table and "if (reapply) loadReferenceFile(reapply);" in run_table
     assert "function loadReferenceFile(f)" in ui and "referenceFile = null;" in ui.split("function resetReference")[1][:80]
     assert "pendingReferenceFile = null;" in ui.split("function showError")[1][:80]   # a failed load must not leak it
+
+
+def test_web_held_out_provenance_marks_skipped_near_unique_columns_like_python():
+    """#951: buildHeldOut() flags the skipped spec, heldOutEntries() writes tested: false + skip_reason
+    in the same position and wording as provenance.held_out_entries, and the views export the notes."""
+    from faircode.provenance import held_out_entries
+    script = r"""
+    require(process.argv[1]);var E=globalThis.FairCodeProfiler;var fs=require('fs');var out={};
+    var rows=[],held=[];for(var i=0;i<100;i++){rows.push({sex:i%2?'m':'f'});held.push({ident:'id'+i,race:'ab'[i%2]});}
+    var t={columns:['sex'],rows:rows};
+    async function fileDigest(f){return {digest:'sha256:abc',note:null};}
+    ['profiler-ui.js','profiler-compare.js'].forEach(function(name){
+      var src=fs.readFileSync(process.argv[2]+'/'+name,'utf-8');
+      var fn=src.slice(src.indexOf('async function heldOutEntries'),src.indexOf('async function build',src.indexOf('async function heldOutEntries')));
+      out[name]=new Function('fileDigest',fn+';return heldOutEntries;')(fileDigest);
+    });
+    (async function(){
+      var specs=[{name:'h.json',column:'ident',data:JSON.stringify(held)},{name:'h.json',column:'race',data:JSON.stringify(held)}];
+      var notes=[];await E.buildHeldOut(specs,t,notes,20);
+      var res={flags:specs.map(function(s){return [s.skipped,s.skipNote||null];}),notes:notes};
+      res.ui=await out['profiler-ui.js'](specs);res.cmp=await out['profiler-compare.js'](specs);
+      process.stdout.write(JSON.stringify(res));
+    })();
+    """
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(REPO_ROOT / "assets")],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    res = json.loads(done.stdout)
+    assert res["flags"][0][0] is True and "identifier" in res["flags"][0][1] and res["flags"][1] == [False, None]
+    assert res["notes"] == [res["flags"][0][1]]
+    py = held_out_entries(["h.json=ident", "h.json=race"], None, skipped=["ident"])
+    for entries in (res["ui"], res["cmp"]):
+        assert entries[0]["tested"] is False and entries[0]["skip_reason"] == py[0]["skip_reason"]
+        assert list(entries[0])[-2:] == ["tested", "skip_reason"] and "tested" not in entries[1]
+    ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
+    cmp_js = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
+    assert "setSkipNotes(currentResult, specs);" in ui and "setSkipNotes(currentCmp, specsA.concat(specsB));" in cmp_js

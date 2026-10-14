@@ -1459,3 +1459,34 @@ def test_python_dash_m_faircode_runs_the_cli():
     script = shutil.which("faircode")
     if script:   # the installed console script behaves the same
         assert subprocess.run([script, "--version"], capture_output=True, text=True).returncode == 0
+
+
+@pytest.mark.parametrize("flags,message", [
+    (["--proxy-alpha", "1.5", "--proxy-hints"], "--proxy-alpha must be in (0, 1]"),
+    (["--proxy-alpha", "0.1"], "--proxy-alpha needs --proxy-hints"),
+    (["--proxy-correction", "holm"], "--proxy-correction needs --proxy-hints"),
+    (["--proxy-key-normalize"], "--proxy-key-normalize needs --proxy-hints"),
+    (["--proxy-exact"], "--proxy-exact needs --proxy-hints"),
+    (["--proxy-hints", "--proxy-exact-permutations", "50"], "--proxy-exact-permutations needs --proxy-exact"),
+    (["--proxy-hints", "--proxy-exact-max-rows", "50"], "--proxy-exact-max-rows needs --proxy-exact"),
+    (["--csv-provenance"], "--csv-provenance needs --csv"),
+    (["--csv-bom"], "--csv-bom needs --csv"),
+    (["--proxy-hints-with-a", "h.csv=race"], "--proxy-hints-with-a/-b needs --proxy-hints"),
+])
+def test_compare_proxy_flag_misuse_returns_2_with_the_message(flags, message, tmp_path, capsys):
+    # #959: the compare branch repeats the profile branch's checks; each one is pinned here.
+    a, b = tmp_path / "a.csv", tmp_path / "b.csv"
+    a.write_text("sex\n" + "m\nf\n" * 10)
+    b.write_text("sex\n" + "m\nf\n" * 10)
+    assert main(["compare", str(a), str(b)] + flags) == 2
+    assert message in capsys.readouterr().err
+
+
+def test_compare_refuses_two_inputs_that_both_read_stdin(tmp_path, capsys):
+    # #959: a stream can only be read once, so csv_a / csv_b and a held-out spec cannot share "-".
+    other = tmp_path / "b.csv"
+    other.write_text("sex\n" + "m\nf\n" * 10)
+    assert main(["compare", "-", str(other), "--proxy-hints", "--proxy-hints-with-a=-=race"]) == 2
+    assert "csv_a and --proxy-hints-with-a can't both read from stdin" in capsys.readouterr().err
+    assert main(["compare", str(other), "-", "--proxy-hints", "--proxy-hints-with-b=-=race"]) == 2
+    assert "csv_b and --proxy-hints-with-b can't both read from stdin" in capsys.readouterr().err

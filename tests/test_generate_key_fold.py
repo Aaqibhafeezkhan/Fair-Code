@@ -3,11 +3,12 @@
 import importlib
 import re
 import shutil
+import subprocess
 
 import pytest
 
-if shutil.which("node") is None:  # pragma: no cover - CI has node
-    pytest.skip("node is needed to compare with toLowerCase()", allow_module_level=True)
+HAS_NODE = shutil.which("node") is not None
+needs_node = pytest.mark.skipif(not HAS_NODE, reason="node is needed to compare with toLowerCase()")
 
 
 @pytest.fixture
@@ -19,6 +20,7 @@ def script(tmp_path, monkeypatch):
     return mod
 
 
+@needs_node
 def test_generated_block_carries_the_known_folds_and_the_unicode_versions(script):
     block = script.build_block()
     assert block.startswith(script.BEGIN) and block.endswith(script.END)
@@ -28,6 +30,7 @@ def test_generated_block_carries_the_known_folds_and_the_unicode_versions(script
     assert block.isascii()
 
 
+@needs_node
 def test_check_agrees_after_a_rewrite_reports_what_it_skipped_and_detects_a_stale_table(script, capsys, monkeypatch):
     import sys
     monkeypatch.setattr(sys, "argv", ["generate_key_fold.py"])
@@ -49,6 +52,7 @@ def test_check_agrees_after_a_rewrite_reports_what_it_skipped_and_detects_a_stal
     assert "STALE" in stale and "U+00DF" in stale and "make key-fold" in stale
 
 
+@needs_node
 def test_check_notes_when_the_runtimes_know_a_newer_unicode_than_the_table(script, capsys, monkeypatch):
     import sys
     text = script.ENGINE.read_text(encoding="utf-8")
@@ -60,7 +64,34 @@ def test_check_notes_when_the_runtimes_know_a_newer_unicode_than_the_table(scrip
     assert "knows a newer Unicode than the table was built with" in capsys.readouterr().out
 
 
+def test_check_skips_when_node_is_missing(script, capsys, monkeypatch):
+    import sys
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setattr(sys, "argv", ["generate_key_fold.py", "--check"])
+    assert script.main() == 0
+    out = capsys.readouterr().out
+    assert "node is needed for this check (install Node 18+); skipping" in out
+
+
+def test_check_fails_when_node_is_missing_and_require_is_passed(script, capsys, monkeypatch):
+    import sys
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setattr(sys, "argv", ["generate_key_fold.py", "--check", "--require"])
+    assert script.main() == 2
+    out = capsys.readouterr().out
+    assert "node is needed for this check (install Node 18+); skipping" in out
+
+
+def test_rewrite_fails_when_node_is_missing(script, monkeypatch):
+    import sys
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setattr(sys, "argv", ["generate_key_fold.py"])
+    with pytest.raises((FileNotFoundError, subprocess.CalledProcessError)):
+        script.main()
+
+
 def test_the_repo_copy_still_has_its_markers():
     mod = importlib.import_module("scripts.generate_key_fold")
     text = mod.ENGINE.read_text(encoding="utf-8")
     assert mod.BEGIN in text and mod.END in text and "var KEY_FOLD = {" in text
+

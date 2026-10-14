@@ -218,3 +218,18 @@ def test_compare_html_reports_list_renamed_and_possibly_renamed_dimensions_alike
     assert "100% of their group labels overlap" in section(py["suggested"], "Possible renames")
     assert section(py["paired"], "Possible renames") is None and section(py["suggested"], "Compared as one") is None
     assert section(js["paired"], "Possible renames") is None and section(js["suggested"], "Compared as one") is None
+
+
+@pytest.mark.parametrize("name_a,name_b,suggested", [
+    ("SexCode", "sex_x", True),            # camel-case hump: Sex + Code -> sex (code is generic)
+    ("patientSex", "PatientGender", True),  # patient shared
+    ("HTTPServer", "http_host", False),     # an acronym run stays one word (no lower-to-upper cut): httpserver
+    ("g\u00e9nero", "GENERO", True),       # accent folded
+    ("\u00c9tatCivil", "etat_x", True),    # a capital first letter after a lower one: Etat + Civil
+    ("sexCode", "raceCode", False),         # only the generic word is shared
+    ("a1B2", "c3", False),
+])
+def test_rename_name_tokens_split_without_lookbehind_identically(tmp_path, name_a, name_b, suggested):
+    """#956: the scan-based hump splitter in JS equals Python's, on camel case, acronyms and accents."""
+    renames = _name_rename_results(tmp_path, {name_a: 3}, {name_b: 3})
+    assert bool(renames) is suggested, renames

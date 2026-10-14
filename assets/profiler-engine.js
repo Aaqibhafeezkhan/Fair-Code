@@ -1913,10 +1913,29 @@
   // letters keep accent and non-Latin words whole (#917).
   var RENAME_GENERIC_TOKENS = { id: 1, code: 1, cd: 1, num: 1, no: 1, type: 1, group: 1, category: 1, cat: 1,
                                 class: 1, val: 1, value: 1, flag: 1, ind: 1 };
+  // Cut a letter run where a lower-case letter meets an upper-case one (SexCode -> Sex, Code), like
+  // compare.py _split_humps. No regex lookbehind: a lookbehind literal is a syntax error that stops the
+  // whole script on Safari before 16.4 (#956).
+  var LOWER_LETTER = /^\p{Ll}$/u, UPPER_LETTER = /^\p{Lu}$/u;
+  function splitHumps(run) {
+    var parts = [], piece = '', prev = '';
+    Array.from(run).forEach(function (ch) {
+      if (prev && LOWER_LETTER.test(prev) && UPPER_LETTER.test(ch)) {
+        if (piece) parts.push(piece);
+        piece = ch;
+      } else {
+        piece += ch;
+      }
+      prev = ch;
+    });
+    if (piece) parts.push(piece);
+    return parts;
+  }
+
   function nameTokens(name) {
     var out = {};
     (String(name).match(/\p{L}+|\d+/gu) || []).forEach(function (run) {
-      run.split(/(?<=\p{Ll})(?=\p{Lu})/u).forEach(function (t) {
+      splitHumps(run).forEach(function (t) {
         t = t.toLowerCase().normalize("NFD").replace(/\p{M}+/gu, "");
         if (!RENAME_GENERIC_TOKENS[t]) out[t] = 1;
       });

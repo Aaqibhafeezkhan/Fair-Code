@@ -112,7 +112,20 @@
     // Split on unescaped "|" only, then unescape "\|" -> "|" in each cell, so
     // a literal pipe inside a cell (GFM's "\|") no longer starts a spurious
     // column. Mirrors scripts/build_explainers.py's split_row().
-    const splitRow = row => row.trim().split(/(?<!\\)\|/).slice(1, -1)
+    // Scans for unescaped pipes instead of a regex with lookbehind: such a literal is a syntax error that
+    // stops this whole script on Safari before 16.4 (#956).
+    const splitUnescaped = text => {
+      const cells = [];
+      let cell = '';
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === '\\' && text[i + 1] === '|') { cell += '\\|'; i++; }
+        else if (text[i] === '|') { cells.push(cell); cell = ''; }
+        else cell += text[i];
+      }
+      cells.push(cell);
+      return cells;
+    };
+    const splitRow = row => splitUnescaped(row.trim()).slice(1, -1)
       .map(cell => cell.trim().replace(/\\\|/g, '|'));
 
     const headers = splitRow(rows[0]);

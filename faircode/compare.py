@@ -196,9 +196,11 @@ _LETTER_RUN = re.compile(r"[^\W\d_]+\Z")
 
 
 def _split_humps(run: str) -> list[str]:
+    """Cut a letter run where a lower-case letter (Unicode Ll) meets an upper-case one (Lu); the same
+    scan runs in profiler-engine.js splitHumps(), which cannot use a regex lookbehind (#956)."""
     parts, piece, prev = [], "", ""
     for ch in run:
-        if prev.islower() and ch.isupper():
+        if prev and unicodedata.category(prev) == "Ll" and unicodedata.category(ch) == "Lu":
             if piece:
                 parts.append(piece)
             piece = ch

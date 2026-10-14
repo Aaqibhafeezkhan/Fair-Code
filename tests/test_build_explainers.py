@@ -16,8 +16,9 @@ def test_explainers_ui_js_stays_in_render_parity_with_build_explainers():
 
     # #553: +1 heading offset, capped at h6
     assert "Math.min(headingMatch[1].length + 1, 6)" in js
-    # #552: split table rows on unescaped "|" and unescape "\|" -> "|"
-    assert r"/(?<!\\)\|/" in js
+    # #552: split table rows on unescaped "|" and unescape "\|" -> "|". The split is a scan, not a
+    # lookbehind regex (#956); tests/test_js_no_lookbehind.py checks it against Python's re.split.
+    assert "const splitUnescaped" in js and "text[i] === '|'" in js
     assert r"replace(/\\\|/g, '|')" in js
 
 

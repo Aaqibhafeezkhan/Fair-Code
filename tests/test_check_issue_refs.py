@@ -1,11 +1,11 @@
-"""scripts/check_issue_refs.py compares roadmap/changelog issue numbers with GitHub (#963)."""
+"""scripts/check_issue_refs.py compares roadmap/changelog issue numbers with GitHub (#963, #981)."""
 
 import importlib
 import json
 
 script = importlib.import_module("scripts.check_issue_refs")
 
-STATES = {1: "closed", 2: "closed", 3: "open", 4: "open"}
+STATES = {1: "closed", 2: "closed", 3: "open", 4: "open", 5: "merged"}
 
 
 def test_checked_roadmap_items_may_cite_only_closed_issues():
@@ -32,6 +32,33 @@ def test_changelog_closes_must_name_closed_issues():
     ]
 
 
+def test_contributors_closing_must_name_closed_issues():
+    text = (
+        "- Alice ([#10](...), closing issue #1)\n"
+        "- Bob ([#11](...), closing issue #3)\n"
+        "- Carol ([#12](...), closing #4 and #2)\n"
+        "- Dave ([#13](...), closing issues #1, #3)\n"
+        "- mentions #3 without closing\n"
+    )
+    assert script.check_contributors(text, STATES) == [
+        "CONTRIBUTORS.md:2: 'closing #3' but #3 is still open",
+        "CONTRIBUTORS.md:3: 'closing #4' but #4 is still open",
+        "CONTRIBUTORS.md:4: 'closing #3' but #3 is still open",
+    ]
+
+
+def test_metrics_sweep_notes_must_cite_existing_issues_or_prs():
+    text = (
+        "# Metrics\n\n"
+        "> **2026-W42 - sweep:** closed issues (#1, #2, #5)\n"
+        "> **2026-W43 - next sweep:** closed issues (#1, #999)\n"
+        "Regular prose citing #8888 is not a sweep note\n"
+    )
+    assert script.check_metrics(text, STATES) == [
+        "METRICS.md:4: '#999' is not an existing issue or pull request",
+    ]
+
+
 def test_main_reads_an_issues_file_and_reports(tmp_path, capsys, monkeypatch):
     issues = tmp_path / "issues.json"
     issues.write_text(json.dumps([{"number": n, "state": s.upper()} for n, s in STATES.items()]))
@@ -45,7 +72,7 @@ def test_main_reads_an_issues_file_and_reports(tmp_path, capsys, monkeypatch):
     assert "checked item cites open issue(s) #3" in out and "1 issue reference(s) disagree" in out
     roadmap.write_text("- [x] a (#1)\n")
     assert script.main(["--issues", str(issues)]) == 0
-    assert "agree with GitHub (4 issues checked)" in capsys.readouterr().out
+    assert "agree with GitHub (5 issues checked)" in capsys.readouterr().out
 
 
 def test_without_gh_the_check_is_skipped_unless_required(capsys, monkeypatch):

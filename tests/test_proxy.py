@@ -662,3 +662,23 @@ def test_permutations_have_an_upper_bound():
     with pytest.raises(ValueError, match="at most"):
         proxy_hints(sparse, dims, alpha=1.0, exact=True, permutations=10**12)
     assert MAX_PERMUTATIONS == 1_000_000
+
+
+def test_split_held_out_encoding_edge_cases_and_missing_key_errors():
+    # #961: the empty suffix, an unknown codec, an @ in the path, and the two join-key raises.
+    from faircode.proxy import parse_held_out_specs, split_held_out_encoding
+    assert split_held_out_encoding("h.csv=race") == ("h.csv=race", None)
+    assert split_held_out_encoding("h.csv=race@latin-1") == ("h.csv=race", "latin-1")
+    assert split_held_out_encoding("me@home/h.csv=race") == ("me@home/h.csv=race", None)   # @ before = is the path
+    assert split_held_out_encoding("me@home/h.csv=race:id~@utf-16") == ("me@home/h.csv=race:id~", "utf-16")
+    assert split_held_out_encoding("noequals@x") == ("noequals@x", None)
+    with pytest.raises(ValueError, match="expected @ENCODING"):
+        split_held_out_encoding("h.csv=race@")
+    with pytest.raises(ValueError, match="unknown held-out encoding 'nope'"):
+        split_held_out_encoding("h.csv=race@nope")
+    df = pd.DataFrame({"id": [1, 2], "x": [1, 2]})
+    held = pd.DataFrame({"id": [1, 2], "race": ["a", "b"]})
+    with pytest.raises(ValueError, match="column 'race:nokey' not found in h.csv"):   # unknown key: the whole RHS is the column (#869)
+        parse_held_out_specs(["h.csv=race:nokey"], df, lambda p: held)
+    with pytest.raises(ValueError, match="join key 'x' not found in h.csv"):
+        parse_held_out_specs(["h.csv=race:x"], df, lambda p: held)

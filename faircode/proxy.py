@@ -199,9 +199,7 @@ def split_held_out_encoding(spec):
     path, sep, rest = spec.partition("=")
     if not sep or "@" not in rest:
         return spec, None
-    value, marker, encoding = rest.rpartition("@")
-    if not marker:
-        return spec, None
+    value, _at, encoding = rest.rpartition("@")   # "@" is in `rest`, so _at is always "@"
     if not encoding:
         raise ValueError(f"invalid held-out encoding in '{spec}': expected @ENCODING")
     try:
@@ -371,9 +369,9 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
                 f"{flag} column '{column}' was already supplied by an earlier "
                 f"{flag} spec - held-out columns must not collide with each other")
         if key is not None:
+            # split_held_out_spec only returns a key that names profiled column(s), so this
+            # resolves; an unknown key makes the whole right-hand side the column name (#869).
             cols = key_columns(key, df.columns)
-            if cols is None:
-                raise ValueError(f"{flag} join key '{key}' not found in the profiled dataset")
             if not all(c in held_df.columns for c in cols):
                 raise ValueError(f"{flag} join key '{key}' not found in {path}")
             df_keys = _key_labels(df, cols, f"'{key}' in the profiled dataset", flag, normalize)

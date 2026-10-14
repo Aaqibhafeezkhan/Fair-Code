@@ -129,7 +129,7 @@ jobs:
       # The JS case-folding table against Python for every code point both runtimes assign; the output
       # says how many it could not compare (the runtimes ship different Unicode versions) (#946).
       - name: Check the key-normalisation case-folding table
-        run: python scripts/generate_key_fold.py --check
+        run: python scripts/generate_key_fold.py --check --require
 
       - name: Smoke-test the CLI
         run: |

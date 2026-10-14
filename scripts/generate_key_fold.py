@@ -13,6 +13,7 @@ between the `KEY_FOLD:begin` / `KEY_FOLD:end` markers, stamping the versions use
 
     python3 scripts/generate_key_fold.py            # rewrite the table in place
     python3 scripts/generate_key_fold.py --check    # exit 1 if the table folds a character differently from Python
+    python3 scripts/generate_key_fold.py --check --require  # fail when node is missing rather than skipping (CI)
 
 `make key-fold` rewrites the table and `make key-fold-check` (also part of `make check` and CI) verifies it:
 it compares the engine's normalizeKeyText() with Python's normalize_key_text() for every code point both
@@ -26,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 import unicodedata
@@ -141,10 +143,11 @@ def check_table() -> dict:
             "node": node, "built_with": stamp.groups() if stamp else None}
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--check", action="store_true", help="exit 1 if the table is out of date; write nothing")
-    args = parser.parse_args()
+    parser.add_argument("--require", action="store_true", help="fail when node is missing rather than skipping the check")
+    args = parser.parse_args(argv)
     source = ENGINE.read_text(encoding="utf-8")
     start, stop = source.find(BEGIN), source.find(END)
     if start == -1 or stop == -1:
@@ -152,6 +155,9 @@ def main() -> int:
         return 2
     stop += len(END)
     if args.check:
+        if shutil.which("node") is None:
+            print("node is needed for this check (install Node 18+); skipping")
+            return 2 if args.require else 0
         r = check_table()
         print(f"Python {sys.version.split()[0]} (Unicode {unicodedata.unidata_version}), node {r['node']['node']} "
               f"(Unicode {r['node']['unicode']})")

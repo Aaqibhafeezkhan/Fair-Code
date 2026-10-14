@@ -17,6 +17,7 @@ import codecs
 import math
 import re
 import unicodedata
+from pathlib import Path
 
 import pandas as pd
 
@@ -167,6 +168,25 @@ def _unescape_colons(text):
     return text.replace(r"\:", ":")
 
 
+def partition_held_out_path(spec):
+    """Split a held-out spec at its first *unescaped* `=` into (path, sep, rest).
+
+    A backslash before an equals sign makes it a literal part of the path, so
+    `data\\=v2.csv=race` is the file `data=v2.csv` and column `race` (#958); the
+    returned path has those escapes removed. `sep` is "" when there is no
+    unescaped `=`, and then `rest` is "".
+    """
+    i = 0
+    while i < len(spec):
+        if spec[i] == "\\" and spec.startswith("=", i + 1):
+            i += 2
+            continue
+        if spec[i] == "=":
+            return spec[:i].replace("\\=", "="), "=", spec[i + 1:]
+        i += 1
+    return spec.replace("\\=", "="), "", ""
+
+
 def split_held_out_spec(spec, profiled_columns=None):
     """Split "PATH=COLUMN" or "PATH=COLUMN:KEY" into (path, column, key).
 
@@ -179,7 +199,7 @@ def split_held_out_spec(spec, profiled_columns=None):
     `PATH=a:b` works when `b` is not a profiled column). Missing pieces come
     back as empty strings for the caller to reject.
     """
-    path, _sep, rest = spec.partition("=")
+    path, _sep, rest = partition_held_out_path(spec)
     before, after = _rpartition_unescaped_colon(rest)
     if after is None:
         return path, _unescape_colons(rest), None
@@ -200,7 +220,7 @@ def split_held_out_encoding(spec):
     registry here, before any file is read, and the caller receives the spec
     without the suffix plus the original encoding name.
     """
-    path, sep, rest = spec.partition("=")
+    path, sep, rest = partition_held_out_path(spec)
     if not sep or "@" not in rest:
         return spec, None
     value, _at, encoding = rest.rpartition("@")   # "@" is in `rest`, so _at is always "@"
@@ -210,7 +230,8 @@ def split_held_out_encoding(spec):
         codecs.lookup(encoding)
     except LookupError:
         raise ValueError(f"unknown held-out encoding '{encoding}' in '{spec}'") from None
-    return f"{path}={value}", encoding
+    raw_path = spec[:len(spec) - len(rest) - 1]   # keep any \\= escapes for the next split
+    return f"{raw_path}={value}", encoding
 
 
 def strip_key_normalize_marker(spec, profiled_columns=None):
@@ -359,8 +380,15 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
         spec, spec_encoding = split_held_out_encoding(original_spec)
         spec, normalize = resolve_key_marker(spec, df.columns, normalize_keys)
         path, column, key = split_held_out_spec(spec, df.columns)
-        if not path or not column or key == "" or "=" not in spec:
+        if not path or not column or key == "" or not partition_held_out_path(spec)[1]:
             raise ValueError(f"invalid {flag} '{spec}', expected PATH=COLUMN or PATH=COLUMN:KEY")
+        _, _sep, after_path = partition_held_out_path(spec)
+        if "=" in after_path and not Path(path).exists():
+            guess = path + "=" + after_path.partition("=")[0]
+            if Path(guess).exists():   # a file name containing "=" split at its first one (#958)
+                raise ValueError(
+                    f"{flag} file '{path}' does not exist but '{guess}' does - write the = inside the "
+                    f"file name as \\= (for example {guess.replace('=', chr(92) + '=')}=COLUMN)")
         held_df = read_table(path, encoding=spec_encoding) if spec_encoding else read_table(path)
         if column not in held_df.columns:
             raise ValueError(f"{flag} column '{column}' not found in {path}")

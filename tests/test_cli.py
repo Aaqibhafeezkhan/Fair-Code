@@ -1490,3 +1490,19 @@ def test_compare_refuses_two_inputs_that_both_read_stdin(tmp_path, capsys):
     assert "csv_a and --proxy-hints-with-a can't both read from stdin" in capsys.readouterr().err
     assert main(["compare", str(other), "-", "--proxy-hints", "--proxy-hints-with-b=-=race"]) == 2
     assert "csv_b and --proxy-hints-with-b can't both read from stdin" in capsys.readouterr().err
+
+
+def test_cli_accepts_an_escaped_equals_sign_in_a_held_out_path(tmp_path, capsys):
+    # #958
+    data = tmp_path / "d.csv"
+    data.write_text("id,occ\n" + "\n".join(f"{i},{i % 2}" for i in range(40)) + "\n")
+    held = tmp_path / "a=b.csv"
+    held.write_text("id,race\n" + "\n".join(f"{i},{'ab'[i % 2]}" for i in range(40)) + "\n")
+    assert main(["profile", str(data), "--proxy-hints", "--proxy-alpha", "1", "--json",
+                 "--proxy-hints-with", f"{tmp_path}/a\\=b.csv=race:id"]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["provenance"]["proxy_hints_with"][0]["path"] == str(held)
+    assert any({h["a"], h["b"]} == {"race", "occ"} for h in out["proxy_hints"])
+    with pytest.raises(SystemExit):
+        main(["profile", str(data), "--proxy-hints", "--proxy-hints-with", f"{held}=race:id"])
+    assert "write the = inside the file name as" in capsys.readouterr().err

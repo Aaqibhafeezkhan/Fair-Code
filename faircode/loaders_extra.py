@@ -161,14 +161,14 @@ def encoding_ignored_for_path(path: str) -> bool:
 def held_out_encoding_ignored_notes(specs, encoding=None) -> list:
     """One note per held-out spec whose file is a binary workbook/Parquet that an explicit
     encoding (the spec's `@ENCODING` or the shared `encoding`) cannot apply to (#923)."""
-    from .proxy import split_held_out_encoding
+    from .proxy import partition_held_out_path, split_held_out_encoding
     notes = []
     for spec in specs or []:
         try:
             bare, spec_encoding = split_held_out_encoding(spec)
         except ValueError:
             continue   # the real parse reports a malformed suffix
-        path = bare.partition("=")[0]
+        path = partition_held_out_path(bare)[0]
         if (spec_encoding or encoding) and path and encoding_ignored_for_path(path):
             notes.append(f"{ENCODING_IGNORED_NOTE} (held-out file {path})")
     return notes

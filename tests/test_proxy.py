@@ -682,3 +682,28 @@ def test_split_held_out_encoding_edge_cases_and_missing_key_errors():
         parse_held_out_specs(["h.csv=race:nokey"], df, lambda p: held)
     with pytest.raises(ValueError, match="join key 'x' not found in h.csv"):
         parse_held_out_specs(["h.csv=race:x"], df, lambda p: held)
+
+
+def test_held_out_path_may_contain_an_escaped_equals_sign(tmp_path):
+    # #958: `\=` is a literal equals sign in the PATH part; without it the error says what to do.
+    from faircode.loaders import read_table
+    from faircode.provenance import held_out_entries
+    from faircode.proxy import parse_held_out_specs, partition_held_out_path, split_held_out_encoding, split_held_out_spec
+    held = tmp_path / "data=v2.csv"
+    held.write_text("id,race\n" + "\n".join(f"{i},{'ab'[i % 2]}" for i in range(6)) + "\n")
+    df = pd.DataFrame({"id": range(6), "x": range(6)})
+    spec = f"{tmp_path}/data\\=v2.csv=race:id"
+    assert partition_held_out_path(spec) == (f"{tmp_path}/data=v2.csv", "=", "race:id")
+    assert partition_held_out_path("plain.csv=race") == ("plain.csv", "=", "race")
+    assert partition_held_out_path("noequals") == ("noequals", "", "")
+    assert partition_held_out_path("a\\=b") == ("a=b", "", "")
+    assert split_held_out_spec(spec, ["id", "x"]) == (f"{tmp_path}/data=v2.csv", "race", "id")
+    assert list(parse_held_out_specs([spec], df, read_table)["race"]) == list("ababab")
+    # composes with the key marker and the encoding suffix
+    full = spec + "~@utf-8"
+    assert split_held_out_encoding(full)[1] == "utf-8"
+    assert list(parse_held_out_specs([full], df, read_table)["race"]) == list("ababab")
+    entry = held_out_entries([full], ["id", "x"])[0]
+    assert entry["path"] == f"{tmp_path}/data=v2.csv" and entry["key_normalize"] is True and entry["encoding"] == "utf-8"
+    with pytest.raises(ValueError, match=r"does not exist but .*data=v2.csv' does - write the = inside the file name as \\="):
+        parse_held_out_specs([f"{tmp_path}/data=v2.csv=race:id"], df, read_table)

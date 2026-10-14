@@ -1036,7 +1036,7 @@ faircode profile data.csv --json --no-provenance   # drop the run-metadata block
 | `!` after the key | keep this spec's key exact even with `--proxy-key-normalize` | `full.csv=race:id!` |
 | `@ENCODING` | this file's text encoding, overriding `--encoding` (ignored, with a notice, for `.xlsx`/`.parquet`) | `full.csv=race:id~@latin-1` |
 
-Quote a spec containing `~`, `!`, `@` or spaces so the shell leaves it alone. A held-out column with
+Quote a spec containing `~`, `!`, `@` or spaces so the shell leaves it alone. A file name containing `=` is written `\=` (`data\=v2.csv=race`). A held-out column with
 more distinct values than `--max-categorical-card` that are also at least half its rows looks like an
 identifier, so it is skipped with a note (stderr, the `--json` `notes`, and `tested: false` in the
 provenance) instead of being tested; raise `--max-categorical-card` to test it anyway. Details:

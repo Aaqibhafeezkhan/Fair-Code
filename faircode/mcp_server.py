@@ -49,7 +49,7 @@ from .loaders_extra import (
 from .profiler import _resolve_opts, parse_reference, profile
 from .provenance import build as build_provenance
 from .provenance import proxy_params
-from .proxy import PROXY_ALPHA, parse_held_out_specs
+from .proxy import PROXY_ALPHA, parse_held_out_specs, partition_held_out_path
 from .proxy import proxy_hints as compute_proxy_hints
 from .report import compare_to_csv, to_csv
 
@@ -373,7 +373,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     kw["age_reference_year"] = resolved["age_reference_year"]
     output = {"hints": compute_proxy_hints(df, result["dimensions"], held_out=held_out, **kw)}
     notes = [n for n in (_sheet_note(path),) if n]
-    notes += [n for spec in (held_out_with or []) for n in (_sheet_note(spec.partition("=")[0]),) if n]
+    notes += [n for spec in (held_out_with or []) for n in (_sheet_note(partition_held_out_path(spec)[0]),) if n]
     if notes:
         output["sheet_notes"] = notes
     enc_notes = [n for n in (encoding_ignored_note(path, encoding),) if n] + held_notes

@@ -50,7 +50,7 @@ from .loaders_extra import (
 # import _r`) and keeps profiler.py - a parity-sensitive file - untouched.
 from .profiler import _resolve_opts, parse_reference, profile
 from .provenance import proxy_params, build as build_provenance
-from .proxy import parse_held_out_specs, proxy_hints
+from .proxy import parse_held_out_specs, partition_held_out_path, proxy_hints
 from .report import (
     compare_to_csv, compare_to_html, compare_to_terminal, to_csv, to_html, to_json, to_terminal,
 )
@@ -135,7 +135,7 @@ def _build_held_out(specs, df, encoding=None, normalize_keys=False, max_categori
     input, and only reading sheet 0 without saying so would otherwise be
     silently inconsistent with every other input path."""
     for spec in specs or []:
-        path = spec.partition("=")[0]
+        path = partition_held_out_path(spec)[0]
         sheet_info = get_xlsx_sheet_info(path)
         if sheet_info is not None:
             sheet_name, ignored_sheets = sheet_info
@@ -578,7 +578,7 @@ def main(argv: list[str] | None = None) -> int:
         held_out_uses_stdin = any(
             path == "-" and sep and column
             for path, sep, column in (
-                spec.partition("=") for spec in args.proxy_hints_with or []
+                partition_held_out_path(spec) for spec in args.proxy_hints_with or []
             )
         )
         if args.csv == "-" and held_out_uses_stdin:
@@ -740,7 +740,7 @@ def main(argv: list[str] | None = None) -> int:
         def _held_out_uses_stdin(specs):
             return any(
                 path == "-" and sep and column
-                for path, sep, column in (spec.partition("=") for spec in specs or [])
+                for path, sep, column in (partition_held_out_path(spec) for spec in specs or [])
             )
 
         if args.csv_a == "-" and _held_out_uses_stdin(args.proxy_hints_with_a):

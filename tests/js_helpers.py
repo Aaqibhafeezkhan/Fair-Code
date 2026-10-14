@@ -78,3 +78,22 @@ def _sex_race_csv(tmp_path):
     path = tmp_path / "sr.csv"
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
     return path
+
+
+# Delimiter-sniffing samples and the delimiter both engines must pick (#964); used by test_loaders.py and
+# test_js_parity_profile.py.
+SNIFF_CASES = [
+    ("", ","),                                             # empty sample: the default
+    ("a\tb\tc\n1\t2\t3\n", "\t"),
+    ("a;b\n1;2\n", ";"),
+    ("a|b|c\n1|2|3\n", "|"),
+    ("a,b;c\n1,2;3\n", ","),                               # a tie: the earlier candidate wins
+    ('a,b\n"x,y,z",2\n', ","),                             # delimiters inside quotes are not counted
+    ("a\n1\n2\n", ","),                                    # one column: nothing to find, the default
+    ("a,b\n1,2,3\n", ","),                                 # inconsistent rows: no delimiter qualifies
+    ('a;b\n"1;2"', ","),                                   # quote closing at the end of the sample
+    ('a;b\n5" disk;2\n', ";"),                             # a quote that is not at a field start is literal
+    ("a;b\r\n\r\n1;2\r\n", ";"),                           # CRLF and a blank line
+    ('a;b\n"1;2\n3', ";"),                                 # unterminated quote at the end: that row is dropped
+    ("a;b\n1;2\n1;2\n1;2\n1;2\n1;2;3\n", ";"),             # only the first five logical rows are checked
+]

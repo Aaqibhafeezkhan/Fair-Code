@@ -904,3 +904,17 @@ def test_python_js_parity_on_parser_edge_cases(tmp_path, name, text):
     js.pop("flags", None)
     py.pop("flags", None)
     assert js == py
+
+
+def test_python_js_sniff_delimiter_agree_on_the_edge_cases():
+    """#964: both engines pick the same delimiter for every awkward sample."""
+    from js_helpers import SNIFF_CASES
+    from faircode.loaders import _sniff_delimiter
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "process.stdout.write(JSON.stringify(JSON.parse(process.argv[2]).map(function(t){return E.sniffDelimiter(t);})));"
+    )
+    texts = [text for text, _ in SNIFF_CASES]
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(texts)],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out == [_sniff_delimiter(t) for t in texts] == [expected for _, expected in SNIFF_CASES]

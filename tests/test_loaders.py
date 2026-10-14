@@ -328,3 +328,24 @@ def test_read_table_json_honours_encoding_and_bom(tmp_path):
     split.write_bytes(json.dumps({"columns": ["race"], "data": [["Café"], ["Señor"]]},
                                  ensure_ascii=False).encode("latin-1"))
     assert list(read_table(str(split), encoding="latin-1")["race"]) == ["Café", "Señor"]
+
+
+# #964: edge cases of the quote-aware delimiter sniffing (the JS engine mirrors it).
+from js_helpers import SNIFF_CASES  # shared with the Python/JS parity test
+
+
+@pytest.mark.parametrize("text,expected", SNIFF_CASES)
+def test_sniff_delimiter_edge_cases(text, expected):
+    assert _sniff_delimiter(text) == expected
+
+
+def test_sniff_delimiter_uses_the_given_default_when_nothing_qualifies():
+    assert _sniff_delimiter("a\n1\n", default="\t") == "\t"
+    assert _sniff_delimiter("", default=";") == ";"
+
+
+def test_logical_row_counts_skip_quoted_newlines_and_respect_max_rows():
+    from faircode.loaders import _logical_row_delimiter_counts as counts
+    assert counts('a;b\n"x;\ny";2\n', ";") == [1, 1]          # a quoted newline does not end the row
+    assert counts("a;b\n" * 9, ";", max_rows=3) == [1, 1, 1]
+    assert counts("", ";") == [] and counts("\n\n", ";") == []

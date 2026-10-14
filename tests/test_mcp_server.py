@@ -173,7 +173,9 @@ def test_profile_dataset_xlsx_encoding_adds_notes(tmp_path):
 
     result = _profile_dataset_impl(str(path), encoding="latin-1")
 
-    assert result["notes"] == ["encoding has no effect on .xlsx/.parquet files"]
+    assert result["notes"] == ["read sheet 'Data' - 1 other sheet(s) ignored",     # #950: one key for everything
+                               "encoding has no effect on .xlsx/.parquet files"]
+    assert result["sheet_note"] == result["notes"][0]                                  # the alias is kept
 
 
 def test_profile_dataset_csv_encoding_has_no_notes(tmp_path):
@@ -904,3 +906,21 @@ def test_read_error_paths_give_agents_actionable_messages(tmp_path, monkeypatch)
         _read_table_or_raise("nope.csv")
     with pytest.raises(ValueError, match="stdin input"):
         _read_table_or_raise("-")
+
+
+@requires_openpyxl
+def test_every_mcp_tool_reports_all_notes_under_one_notes_key(tmp_path):
+    # #950: sheet notes, encoding notices and held-out skips share `notes`; the old keys stay as aliases.
+    book = tmp_path / "data.xlsx"
+    _write_multi_sheet_xlsx(book, "sex", ["M", "F"] * 20)
+    sheet = "read sheet 'Data' - 1 other sheet(s) ignored"
+    compared = _compare_datasets_impl(str(book), str(book), encoding="latin-1")
+    assert compared["notes"] == [sheet, sheet, "encoding has no effect on .xlsx/.parquet files"]
+    assert compared["sheet_note_a"] == compared["sheet_note_b"] == sheet
+
+    csv = tmp_path / "d.csv"
+    csv.write_text("id,occ\n" + "\n".join(f"{i},{i % 2}" for i in range(40)) + "\n")
+    pytest.importorskip("scipy")
+    hinted = _proxy_hints_impl(str(csv), alpha=1.0, held_out_with=[f"{book}=sex@latin-1"])
+    assert hinted["notes"][0] == sheet and any("held-out file" in n for n in hinted["notes"])
+    assert hinted["sheet_notes"] == [sheet]

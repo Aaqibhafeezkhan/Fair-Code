@@ -215,10 +215,10 @@ def _profile_dataset_impl(path, overrides=None, cross=None, reference_path=None,
     result = profile(df, overrides, opts)
     note = _sheet_note(path)
     if note:
-        result["sheet_note"] = note
-    enc_notes = [n for n in (encoding_ignored_note(path, encoding),) if n]
-    if enc_notes:
-        result["notes"] = enc_notes
+        result["sheet_note"] = note   # kept as an alias of the entry in `notes` (#950)
+    notes = [n for n in (note, encoding_ignored_note(path, encoding)) if n]
+    if notes:
+        result["notes"] = notes
     if include_provenance:
         from .provenance import sniff_effective_encoding
         digests = [("dataset_hash", path)]
@@ -266,9 +266,11 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
             encoding_ignored_note(path_b, encoding),
         ) if n
     ]
-    # One note is enough when both paths are binary formats.
-    if enc_notes:
-        result["notes"] = [enc_notes[0]]
+    # One encoding note is enough when both paths are binary formats; every message goes in `notes`,
+    # and sheet_note_a/_b stay as aliases (#950).
+    notes = [n for n in (note_a, note_b) if n] + enc_notes[:1]
+    if notes:
+        result["notes"] = notes
     skipped_a, skipped_b = [], []   # near-unique held-out columns, for provenance (#921)
     if proxy_hints:
         held_notes = (held_out_encoding_ignored_notes(held_out_with_a, encoding)
@@ -372,13 +374,13 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     kw["max_age"] = resolved["max_age"]
     kw["age_reference_year"] = resolved["age_reference_year"]
     output = {"hints": compute_proxy_hints(df, result["dimensions"], held_out=held_out, **kw)}
-    notes = [n for n in (_sheet_note(path),) if n]
-    notes += [n for spec in (held_out_with or []) for n in (_sheet_note(partition_held_out_path(spec)[0]),) if n]
+    sheet_notes = [n for n in (_sheet_note(path),) if n]
+    sheet_notes += [n for spec in (held_out_with or []) for n in (_sheet_note(partition_held_out_path(spec)[0]),) if n]
+    if sheet_notes:
+        output["sheet_notes"] = sheet_notes   # deprecated alias of the sheet entries in `notes` (#950)
+    notes = sheet_notes + [n for n in (encoding_ignored_note(path, encoding),) if n] + held_notes
     if notes:
-        output["sheet_notes"] = notes
-    enc_notes = [n for n in (encoding_ignored_note(path, encoding),) if n] + held_notes
-    if enc_notes:
-        output["notes"] = enc_notes
+        output["notes"] = notes
     if include_provenance:
         from .provenance import sniff_effective_encoding
         enc = encoding or sniff_effective_encoding(path)

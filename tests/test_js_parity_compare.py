@@ -180,3 +180,41 @@ def test_name_rename_prefers_most_shared_words_then_the_closest_group_count(tmp_
     assert [(r["a"], r["b"]) for r in renames] == [("patient_sex", "patient_sex_code")]      # 2 shared words beat 1
     renames = _name_rename_results(tmp_path, {"patient_sex": 4}, {"sex_x": 5, "sex_y": 4})
     assert [(r["a"], r["b"]) for r in renames] == [("patient_sex", "sex_y")]                  # equal words: closer count
+
+
+def test_compare_html_reports_list_renamed_and_possibly_renamed_dimensions_alike(tmp_path):
+    """#953: both HTML writers show a 'Compared as one' list after --rename and a 'Possible renames'
+    list for suggestions, with identical text (the evidence wording is shared)."""
+    import re
+    from faircode.report import compare_to_html
+    path_a, path_b = tmp_path / "a.csv", tmp_path / "b.csv"
+    path_a.write_text("sex,race\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
+    path_b.write_text("sex,ethnicity\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
+    src = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
+    helpers = (src[src.index("function pct("):src.index("function wireSlot")]
+               + src[src.index("function kindMismatchReason"):src.index("function driftCard")])
+    builders = src[src.index("function proxyHintItems"):src.index("function compareReportBaseName")]
+    script = (
+        "var DISPLAY_GROUPS=12;" + helpers +
+        "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;" + builders +
+        "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"
+        "var pa=E.profile(load(process.argv[2]),{},{}),pb=E.profile(load(process.argv[3]),{},{});"
+        "process.stdout.write(JSON.stringify({suggested:buildCompareHtmlReport(E.compare(pa,pb,'a.csv','b.csv')),"
+        "paired:buildCompareHtmlReport(E.compare(pa,pb,'a.csv','b.csv',{race:'ethnicity'}))}));"
+    )
+    js = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(path_a), str(path_b)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    pa, pb = profile(pd.read_csv(path_a)), profile(pd.read_csv(path_b))
+    py = {"suggested": compare_to_html(compare(pa, pb, "a.csv", "b.csv")),
+          "paired": compare_to_html(compare(pa, pb, "a.csv", "b.csv", renames={"race": "ethnicity"}))}
+
+    def section(html, title):
+        match = re.search(r'<section class="flags"><h2>%s</h2><ul>.*?</ul></section>' % title, html)
+        return match.group(0) if match else None
+
+    for kind, title in (("suggested", "Possible renames"), ("paired", "Compared as one")):
+        assert section(py[kind], title) is not None and section(py[kind], title) == section(js[kind], title)
+    assert "--rename race=ethnicity" in section(py["suggested"], "Possible renames")
+    assert "100% of their group labels overlap" in section(py["suggested"], "Possible renames")
+    assert section(py["paired"], "Possible renames") is None and section(py["suggested"], "Compared as one") is None
+    assert section(js["paired"], "Possible renames") is None and section(js["suggested"], "Compared as one") is None

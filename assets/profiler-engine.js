@@ -1987,6 +1987,15 @@
     return out;
   }
 
+  // Why a possible rename was suggested, as flag/report text; mirrors compare.py rename_evidence (#953).
+  function renameEvidence(r) {
+    if (r.reason === 'names') {
+      return r.group_counts ? 'similar names and a similar number of groups (' + r.group_counts[0] + ' vs ' + r.group_counts[1] + ')'
+                            : 'similar names and the same number of groups';
+    }
+    return (r.overlap * 100).toFixed(0) + '% of their group labels overlap';
+  }
+
   function compare(resultA, resultB, nameA, nameB, renameMap) {
     nameA = nameA || 'A'; nameB = nameB || 'B';
     var renamedB = renameMap || {};
@@ -2073,10 +2082,7 @@
     added.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameB); driftDetected = true; });
     removed.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameA); driftDetected = true; });
     renames.forEach(function (r) {
-      var evidence = r.reason === 'names'
-        ? (r.group_counts ? 'similar names and a similar number of groups (' + r.group_counts[0] + ' vs ' + r.group_counts[1] + ')'
-                          : 'similar names and the same number of groups')
-        : (r.overlap * 100).toFixed(0) + '% of their group labels overlap';
+      var evidence = renameEvidence(r);
       flags.push("'" + r.a + "' (" + nameA + ") and '" + r.b + "' (" + nameB + ') look like the same dimension (' +
                  evidence + ') - rename one column so the names match to compare them');
     });
@@ -2192,7 +2198,7 @@
 
   global.FairCodeProfiler = { parseCSV: parseCSV, parseJSON: parseJSON, parseXLSX: parseXLSX,
                               sniffDelimiter: sniffDelimiter,
-                              profile: profile, compare: compare, applyRenames: applyRenames, buildCliCommand: buildCliCommand,
+                              profile: profile, compare: compare, applyRenames: applyRenames, renameEvidence: renameEvidence, buildCliCommand: buildCliCommand,
                               parseReference: parseReference,
                               // Opt-in, informational only (issue #738) - see
                               // proxyHints()'s own comment for why this is

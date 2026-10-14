@@ -278,6 +278,15 @@ def _possible_renames(result_a: dict, result_b: dict, removed: list, added: list
     return pairs
 
 
+def rename_evidence(r: dict) -> str:
+    """Why a possible rename was suggested, as flag/report text (#953)."""
+    if r.get("reason") == "names":
+        counts = r.get("group_counts")
+        return ("similar names and a similar number of groups (%d vs %d)" % tuple(counts)
+                if counts else "similar names and the same number of groups")
+    return f"{r['overlap'] * 100:.0f}% of their group labels overlap"
+
+
 def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
                  dimensions: list, added: list, removed: list,
                  name_a: str, name_b: str, renames=()) -> tuple[list, bool]:
@@ -352,12 +361,7 @@ def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
         flags.append(f"dimension '{n}' is present only in {name_a}")
         drift_detected = True
     for r in renames:
-        if r.get("reason") == "names":
-            counts = r.get("group_counts")
-            evidence = ("similar names and a similar number of groups (%d vs %d)" % tuple(counts)
-                        if counts else "similar names and the same number of groups")
-        else:
-            evidence = f"{r['overlap'] * 100:.0f}% of their group labels overlap"
+        evidence = rename_evidence(r)
         flags.append(
             f"'{r['a']}' ({name_a}) and '{r['b']}' ({name_b}) look like the same dimension "
             f"({evidence}) - rename one column so the names match to compare them"

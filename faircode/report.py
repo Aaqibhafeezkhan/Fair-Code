@@ -709,6 +709,24 @@ def compare_to_html(cmp: dict) -> str:
         items = "".join(f"<li>{esc(f)}</li>" for f in cmp["flags"])
         flags_html = f'<section class="flags"><h2>Drift Flags</h2><ul>{items}</ul></section>'
 
+    # Renamed / possibly renamed dimensions (#953): the structured version of the rename flags.
+    from .compare import rename_evidence
+    rename_html = ""
+    name_a, name_b = esc(cmp["a"]["name"]), esc(cmp["b"]["name"])
+    paired = "".join(
+        f'<li><strong>{esc(r["a"])}</strong> ({name_a}) was compared as one with '
+        f'<strong>{esc(r["b"])}</strong> ({name_b}) because of --rename</li>'
+        for r in cmp.get("renamed_dimensions", []))
+    if paired:
+        rename_html += f'<section class="flags"><h2>Compared as one</h2><ul>{paired}</ul></section>'
+    suggested = "".join(
+        f'<li><strong>{esc(r["a"])}</strong> ({name_a}) and <strong>{esc(r["b"])}</strong> ({name_b}) '
+        f'look like the same dimension ({esc(rename_evidence(r))}); compare them as one with '
+        f'<code>--rename {esc(r["a"])}={esc(r["b"])}</code></li>'
+        for r in cmp.get("possible_renames", []))
+    if suggested:
+        rename_html += f'<section class="flags"><h2>Possible renames</h2><ul>{suggested}</ul></section>'
+
     # Proxy Hints (A/B)
     proxy_html = ""
     for key, label in (("proxy_hints_a", "A"), ("proxy_hints_b", "B")):
@@ -791,6 +809,7 @@ def compare_to_html(cmp: dict) -> str:
         f'{summary_html}'
         f'{"".join(cards_html)}'
         f'{flags_html}'
+        f'{rename_html}'
         f'{proxy_html}'
         f'{only_html}'
         '<p style="color:var(--muted);font-size:12px;margin-top:32px">'

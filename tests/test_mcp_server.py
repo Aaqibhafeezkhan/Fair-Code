@@ -864,3 +864,43 @@ def test_every_optional_mcp_parameter_is_in_the_spec_and_readme_tables():
             pattern = re.compile(r"^\| [^|]*`%s`" % re.escape(name))
             assert any(pattern.match(r) for r in rows(spec)), f"SPEC section 11 table lacks `{name}` ({impl.__name__})"
             assert any(pattern.match(r) for r in rows(readme)), f"README parameter table lacks `{name}` ({impl.__name__})"
+
+
+def test_read_error_paths_give_agents_actionable_messages(tmp_path, monkeypatch):
+    # #965: bad encoding, an unreadable workbook and a generic parse failure.
+    from faircode import mcp_server
+    from faircode.mcp_server import _read_table_or_raise
+    latin = tmp_path / "l.csv"
+    latin.write_bytes("sex,race\nM,Café\nF,Señor\n".encode("latin-1"))
+    with pytest.raises(RuntimeError) as info:
+        _read_table_or_raise(str(latin))
+    text = str(info.value)
+    assert f"could not read dataset {latin}" in text and "not valid utf-8" in text and "pass encoding (e.g. 'latin-1'" in text
+    assert list(_read_table_or_raise(str(latin), "latin-1")["race"]) == ["Café", "Señor"]
+    with pytest.raises(RuntimeError, match="not valid utf-16"):
+        _read_table_or_raise(str(latin), "utf-16")
+
+    bad_book = tmp_path / "bad.xlsx"
+    bad_book.write_bytes(b"this is not a zip file")
+    with pytest.raises(RuntimeError, match=f"could not read dataset {bad_book}"):
+        _read_table_or_raise(str(bad_book))
+
+    def boom(path, encoding=None):
+        raise ZeroDivisionError("kaput")
+    monkeypatch.setattr(mcp_server, "read_table", boom)
+    with pytest.raises(RuntimeError, match="could not read dataset x.csv: kaput"):
+        _read_table_or_raise("x.csv")
+
+    def runtime(path, encoding=None):
+        raise RuntimeError("pyarrow is missing")
+    monkeypatch.setattr(mcp_server, "read_table", runtime)
+    with pytest.raises(RuntimeError, match="^pyarrow is missing$"):      # re-raised untouched
+        _read_table_or_raise("x.parquet")
+
+    def missing(path, encoding=None):
+        raise FileNotFoundError(2, "No such file")
+    monkeypatch.setattr(mcp_server, "read_table", missing)
+    with pytest.raises(FileNotFoundError, match="file not found: nope.csv"):
+        _read_table_or_raise("nope.csv")
+    with pytest.raises(ValueError, match="stdin input"):
+        _read_table_or_raise("-")

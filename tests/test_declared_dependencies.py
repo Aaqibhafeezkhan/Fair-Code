@@ -31,9 +31,10 @@ IMPORT_TO_DIST = {
 # Imports that are intentionally not a faircode dependency: "faircode" is the
 # package importing itself, and pytest is a dev-only test-runner tool
 # installed separately (see Makefile's `make setup`), not a runtime dependency.
-# "js_helpers" is tests/js_helpers.py, the helper module shared by the
-# tests/test_js_parity_*.py files (importable because pytest puts tests/ on sys.path, #938).
-NOT_A_PYPROJECT_DEPENDENCY = {"faircode", "pytest", "js_helpers"}
+NOT_A_PYPROJECT_DEPENDENCY = {"faircode", "pytest"}
+# Helper modules that live in tests/ itself (e.g. js_helpers.py) are local, not dependencies; they
+# are importable because pyproject.toml puts tests/ on pytest's pythonpath (#938, #945).
+TESTS_LOCAL_MODULES = {path.stem for path in (ROOT / "tests").glob("*.py")}
 
 
 def _normalize(name):
@@ -74,7 +75,7 @@ def _imported_third_party_modules():
                     if node.level == 0 and node.module:
                         roots.add(node.module.split(".")[0])
             for root in roots:
-                if root in stdlib or root in NOT_A_PYPROJECT_DEPENDENCY:
+                if root in stdlib or root in NOT_A_PYPROJECT_DEPENDENCY or root in TESTS_LOCAL_MODULES:
                     continue
                 dist = IMPORT_TO_DIST.get(root, root)
                 found.setdefault(dist, (root, path.relative_to(ROOT)))
@@ -96,3 +97,12 @@ def test_every_imported_third_party_package_is_declared_in_pyproject():
         "core `dependencies` or any `[project.optional-dependencies]` extra:\n  "
         + "\n  ".join(missing)
     )
+
+
+def test_pytest_pythonpath_makes_the_shared_test_helpers_importable_in_every_import_mode():
+    # #945: js_helpers is imported by bare name, which needs tests/ (and the repo root, for
+    # `scripts.*`) on pytest's pythonpath rather than relying on the default prepend mode.
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert re.search(r'pythonpath\s*=\s*\[[^\]]*"tests"[^\]]*\]', text)
+    assert re.search(r'pythonpath\s*=\s*\[[^\]]*"\."[^\]]*\]', text)
+    assert (ROOT / "tests" / "js_helpers.py").is_file()

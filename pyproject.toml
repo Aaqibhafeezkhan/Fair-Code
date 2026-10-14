@@ -44,6 +44,9 @@ faircode = [
 ]
 
 [tool.pytest.ini_options]
+# The repo root (for `import scripts.*`) and tests/ (for the shared js_helpers module) work in every
+# import mode, including --import-mode=importlib (#945).
+pythonpath = [".", "tests"]
 markers = [
     "slow: trains models (tests/test_benchmark.py); skip locally with -m \"not slow\", CI runs everything",
 ]

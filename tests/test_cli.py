@@ -1440,3 +1440,22 @@ def test_readme_documents_every_held_out_spec_marker():
     for needle in ("PATH=COLUMN[:KEY][~|!][@ENCODING]", "full.csv=race:id~", "full.csv=race:id!", "full.csv=race@latin-1",
                    "looks like an identifier", "tested: false"):
         assert needle in text, needle
+
+
+def test_python_dash_m_faircode_runs_the_cli():
+    # #966: `python -m faircode` is the invocation the docs use; run it for real.
+    import subprocess
+    from faircode import __version__
+    root = Path(__file__).resolve().parent.parent
+    version = subprocess.run([sys.executable, "-m", "faircode", "--version"], capture_output=True, text=True, cwd=root)
+    assert version.returncode == 0 and __version__ in (version.stdout + version.stderr)
+    done = subprocess.run([sys.executable, "-m", "faircode", "profile", "--sample", "--json"],
+                          capture_output=True, text=True, cwd=root)
+    assert done.returncode == 0
+    assert json.loads(done.stdout)["n_rows"] > 0
+    bad = subprocess.run([sys.executable, "-m", "faircode", "profile", "--no-such-flag"], capture_output=True, text=True, cwd=root)
+    assert bad.returncode == 2
+    import shutil
+    script = shutil.which("faircode")
+    if script:   # the installed console script behaves the same
+        assert subprocess.run([script, "--version"], capture_output=True, text=True).returncode == 0

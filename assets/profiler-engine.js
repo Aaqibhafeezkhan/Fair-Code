@@ -2107,12 +2107,22 @@
 
   // ── Equivalent CLI command (#915) ─────────────────────────────────────────
   // Builds the `faircode profile|compare ...` line that reproduces a web run, from the options the
-  // page holds. A keywords vocabulary becomes a heredoc that writes words.json first. Held-out
+  // page holds. A keywords vocabulary becomes a heredoc that writes keywords-<hash>.json first. Held-out
   // specs use the CLI's PATH=COLUMN[:KEY[~]][@ENCODING] syntax (#892, #914).
   var CLI_THRESHOLD_FLAGS = [['min_share', '--min-share'], ['intersection_floor', '--intersection-floor'],
     ['imbalance_flag', '--imbalance-flag'], ['missing_flag', '--missing-flag'], ['min_group_size', '--min-group-size'],
     ['max_categorical_card', '--max-categorical-card'], ['max_dimension_groups', '--max-dimension-groups'],
     ['max_age', '--max-age'], ['age_reference_year', '--age-reference-year']];
+
+  // 32-bit FNV-1a as 8 hex digits: a short, deterministic file-name suffix, not a security hash.
+  function fnv1aHex(text) {
+    var h = 0x811c9dc5, bytes = unescape(encodeURIComponent(String(text)));
+    for (var i = 0; i < bytes.length; i++) {
+      h ^= bytes.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return ('00000000' + h.toString(16)).slice(-8);
+  }
 
   function shellQuote(text) {
     text = String(text);
@@ -2141,8 +2151,11 @@
       if (opts[pair[0]] !== undefined && opts[pair[0]] !== null) args.push(pair[1], String(opts[pair[0]]));
     });
     if (opts.keywords && Object.keys(opts.keywords).length) {
-      pre = "cat > words.json <<'EOF'\n" + JSON.stringify(opts.keywords) + '\nEOF\n';
-      args.push('--keywords', 'words.json');
+      // Named from the content (an FNV-1a hash), so pasting never overwrites an existing words.json or a
+      // different vocabulary's file (#944).
+      var wordsJson = JSON.stringify(opts.keywords), file = 'keywords-' + fnv1aHex(wordsJson) + '.json';
+      pre = 'cat > ' + file + " <<'EOF'\n" + wordsJson + '\nEOF\n';
+      args.push('--keywords', file);
     }
     if (spec.kind === 'profile' && opts.cross && opts.cross.length === 2) args.push('--cross', shellQuote(opts.cross.join(',')));
     Object.keys(spec.overrides || {}).forEach(function (col) { args.push('--map', shellQuote(col + '=' + spec.overrides[col])); });

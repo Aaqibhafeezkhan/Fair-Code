@@ -1,6 +1,7 @@
 """The web 'Copy as CLI command' builder: its lines are run through the real CLI. (split out of test_js_parity.py, #938)."""
 
 import json
+import re
 import subprocess
 
 from js_helpers import REPO_ROOT
@@ -35,8 +36,8 @@ def test_web_cli_command_builder_emits_flags_the_cli_parses(tmp_path, monkeypatc
 
     def run(command):
         rest = command
-        if command.startswith("cat >"):   # the keywords heredoc writes words.json first
-            (tmp_path / "words.json").write_text(command.split("\n")[1])
+        if command.startswith("cat >"):   # the keywords heredoc writes keywords-<hash>.json first
+            (tmp_path / command.split()[2]).write_text(command.split("\n")[1])
             rest = command.split("EOF\n", 1)[1]
         tokens = shlex.split(rest)
         assert tokens[:1] == ["faircode"]
@@ -125,3 +126,20 @@ def test_cli_command_includes_the_export_options_the_checkboxes_mirror(tmp_path,
     for name, marker in (("profiler-ui.js", "cliOutputs(document.getElementById('csvProvenanceInput').checked"),
                          ("profiler-compare.js", "document.getElementById('compareCsvProvenanceInput').checked")):
         assert marker in (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+
+
+def test_keywords_heredoc_file_is_named_from_its_content():
+    """#944: the same vocabulary always gives the same file name, a different one a different name,
+    and the name never collides with an existing words.json."""
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;"
+        "function c(k){return E.buildCliCommand({kind:'profile',files:['d.csv'],opts:{keywords:k}});}"
+        "process.stdout.write(JSON.stringify([c({sex:['sesso']}),c({sex:['sesso']}),c({sex:['genero']}),c({age:['eta'],sex:['sesso']})]));"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    names = [c.split()[2] for c in out]
+    assert names[0] == names[1] and len({names[0], names[2], names[3]}) == 3
+    for name, cmd in zip(names, out):
+        assert re.fullmatch(r"keywords-[0-9a-f]{8}\.json", name) and name != "words.json"
+        assert f"--keywords {name}" in cmd

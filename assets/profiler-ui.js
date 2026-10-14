@@ -484,6 +484,39 @@
     if (notes.length) target.notes = notes; else delete target.notes;
   }
 
+  // The exact test's Shuffles / Row cap inputs are only live while the exact box is ticked (#962).
+  function exactControls() {
+    return { box: document.getElementById('proxyExactInput'),
+             perm: document.getElementById('proxyExactPermutationsInput'),
+             rows: document.getElementById('proxyExactMaxRowsInput'),
+             error: document.getElementById('proxyExactError') };
+  }
+  function clearExactError() {
+    var c = exactControls();
+    [c.perm, c.rows].forEach(function (input) { input.removeAttribute('aria-invalid'); });
+    c.error.textContent = '';
+    c.error.hidden = true;
+  }
+  function showExactError(message) {
+    var c = exactControls();
+    clearExactError();
+    (/^Shuffles/.test(message) ? c.perm : c.rows).setAttribute('aria-invalid', 'true');
+    c.error.textContent = message;
+    c.error.hidden = false;
+  }
+  function syncExactInputs() {
+    var c = exactControls();
+    c.perm.disabled = c.rows.disabled = !c.box.checked;
+    if (!c.box.checked) clearExactError();
+  }
+  function wireExactInputs() {
+    var c = exactControls();
+    if (!c.box) return;
+    c.box.addEventListener('change', syncExactInputs);
+    [c.perm, c.rows].forEach(function (input) { input.addEventListener('input', clearExactError); });
+    syncExactInputs();
+  }
+
   async function renderProxyHints() {
     if (!currentTable || !currentResult) return;
     var host = document.getElementById('proxyHintsResults');
@@ -501,12 +534,16 @@
       host.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
       return;
     }
-    var exactSettings;
+    var exactSettings = {};
     try {
-      exactSettings = E.parseExactSettings(document.getElementById('proxyExactPermutationsInput').value,
-                                           document.getElementById('proxyExactMaxRowsInput').value);
+      // Only read when the exact box is ticked (the inputs are disabled otherwise); a bad value is reported on the
+      // input itself, not in the results area (#962).
+      if (exactControls().box.checked) {
+        exactSettings = E.parseExactSettings(exactControls().perm.value, exactControls().rows.value);
+      }
+      clearExactError();
     } catch (err) {
-      host.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
+      showExactError(err.message);
       return;
     }
     var hints = E.proxyHints(currentTable, currentResult.dimensions, alpha, heldOut,
@@ -1233,4 +1270,5 @@
   if (demoMode !== null && demoMode !== 'compare') {
     runText(buildSampleCSV(), 'sample-health-data.csv');
   }
+  wireExactInputs();
 })();

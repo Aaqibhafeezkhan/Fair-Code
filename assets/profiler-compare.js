@@ -905,18 +905,55 @@
     if (notes.length) target.notes = notes; else delete target.notes;
   }
 
+  // The exact test's Shuffles / Row cap inputs are only live while the exact box is ticked (#962).
+  function exactControls() {
+    return { box: document.getElementById('compareProxyExactInput'),
+             perm: document.getElementById('compareProxyExactPermutationsInput'),
+             rows: document.getElementById('compareProxyExactMaxRowsInput'),
+             error: document.getElementById('compareProxyExactError') };
+  }
+  function clearExactError() {
+    var c = exactControls();
+    [c.perm, c.rows].forEach(function (input) { input.removeAttribute('aria-invalid'); });
+    c.error.textContent = '';
+    c.error.hidden = true;
+  }
+  function showExactError(message) {
+    var c = exactControls();
+    clearExactError();
+    (/^Shuffles/.test(message) ? c.perm : c.rows).setAttribute('aria-invalid', 'true');
+    c.error.textContent = message;
+    c.error.hidden = false;
+  }
+  function syncExactInputs() {
+    var c = exactControls();
+    c.perm.disabled = c.rows.disabled = !c.box.checked;
+    if (!c.box.checked) clearExactError();
+  }
+  function wireExactInputs() {
+    var c = exactControls();
+    if (!c.box) return;
+    c.box.addEventListener('change', syncExactInputs);
+    [c.perm, c.rows].forEach(function (input) { input.addEventListener('input', clearExactError); });
+    syncExactInputs();
+  }
+
   async function renderCompareProxyHints() {
     if (!currentCmp || !currentProfiles) return;
     var alpha = readProxyAlpha(document.getElementById('compareProxyAlphaInput'), proxyResultsEl);
     if (alpha === null) return;
     var correction = document.getElementById('compareProxyCorrectionInput').value || null;
     var exact = document.getElementById('compareProxyExactInput').checked;
-    var exactSettings;
+    var exactSettings = {};
     try {
-      exactSettings = E.parseExactSettings(document.getElementById('compareProxyExactPermutationsInput').value,
-                                           document.getElementById('compareProxyExactMaxRowsInput').value);
+      // Only read when the exact box is ticked (the inputs are disabled otherwise); a bad value is reported on the
+      // input itself, not in the results area (#962).
+      if (exactControls().box.checked) {
+        exactSettings = E.parseExactSettings(exactControls().perm.value, exactControls().rows.value);
+      }
+      clearExactError();
     } catch (err) {
-      proxyResultsEl.innerHTML = '<p class="profiler-error">' + esc(err.message) + '</p>';
+      showExactError(err.message);
       return;
     }
     var heldA = null, heldB = null, heldNotes = [];
@@ -1140,4 +1177,5 @@
   downloadHtmlBtn.addEventListener('click', downloadCompareHtmlReport);
   copyJsonBtn.addEventListener('click', copyCompareResultAsJSON);
   if (copyCliBtn) copyCliBtn.addEventListener('click', copyCompareCliCommand);
+  wireExactInputs();
 })();

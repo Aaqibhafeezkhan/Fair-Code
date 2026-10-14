@@ -3,6 +3,7 @@
 import csv
 import io
 import json
+import re
 import subprocess
 
 import pandas as pd
@@ -398,3 +399,48 @@ def test_web_exact_test_inputs_are_parsed_and_wired_into_both_views():
     for name in ("profiler-ui.js", "profiler-compare.js"):
         js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
         assert "E.parseExactSettings(" in js and "permutations: exactSettings.permutations, maxRows: exactSettings.maxRows" in js
+
+
+def test_web_exact_inputs_follow_the_checkbox_and_report_errors_inline():
+    """#962: the Shuffles / Row cap inputs are disabled until the exact box is ticked, and a bad value
+    marks its own input aria-invalid with a role=alert message instead of a paragraph in the results."""
+    html = (REPO_ROOT / "profiler.html").read_text(encoding="utf-8")
+    for pre in ("proxy", "compareProxy"):
+        for field in ("Permutations", "MaxRows"):
+            tag = re.search(r'<input[^>]*id="%sExact%sInput"[^>]*>' % (pre, field), html).group(0)
+            assert " disabled" in tag and f'aria-describedby="{pre}ExactError"' in tag
+        assert f'id="{pre}ExactError" role="alert" hidden' in html
+    script = r"""
+    var fs=require('fs');var out={};
+    [['profiler-ui.js','proxy'],['profiler-compare.js','compareProxy']].forEach(function(pair){
+      var src=fs.readFileSync(process.argv[1]+'/'+pair[0],'utf-8');
+      var helpers=src.slice(src.indexOf('function exactControls'),src.indexOf('function wireExactInputs'));
+      function el(){var e={attrs:{},hidden:true,disabled:true,checked:false,textContent:'',value:'',
+        setAttribute:function(k,v){e.attrs[k]=v;},removeAttribute:function(k){delete e.attrs[k];}};return e;}
+      var els={};['ExactInput','ExactPermutationsInput','ExactMaxRowsInput','ExactError'].forEach(function(s){els[pair[1]+s]=el();});
+      var document={getElementById:function(id){return els[id];}};
+      var api=new Function('document',helpers+';return {sync:syncExactInputs,show:showExactError,clear:clearExactError};')(document);
+      var r={},box=els[pair[1]+'ExactInput'],perm=els[pair[1]+'ExactPermutationsInput'],rows=els[pair[1]+'ExactMaxRowsInput'],err=els[pair[1]+'ExactError'];
+      api.sync();r.off=[perm.disabled,rows.disabled];
+      box.checked=true;api.sync();r.on=[perm.disabled,rows.disabled];
+      api.show('Shuffles must be a whole number from 1 to 1,000,000.');
+      r.shuffles=[perm.attrs['aria-invalid'],rows.attrs['aria-invalid']||null,err.hidden,err.textContent];
+      api.show('Row cap must be a whole number from 1.');
+      r.rows=[perm.attrs['aria-invalid']||null,rows.attrs['aria-invalid'],err.hidden];
+      box.checked=false;api.sync();
+      r.cleared=[perm.disabled,rows.attrs['aria-invalid']||null,err.hidden,err.textContent];
+      out[pair[0]]=r;
+    });
+    process.stdout.write(JSON.stringify(out));
+    """
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets")], capture_output=True, text=True,
+                          encoding="utf-8", check=True)
+    for name, r in json.loads(done.stdout).items():
+        assert r["off"] == [True, True] and r["on"] == [False, False], name
+        assert r["shuffles"] == ["true", None, False, "Shuffles must be a whole number from 1 to 1,000,000."], name
+        assert r["rows"] == [None, "true", False], name
+        assert r["cleared"] == [True, None, True, ""], name
+    for name in ("profiler-ui.js", "profiler-compare.js"):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "showExactError(err.message);" in js and "if (exactControls().box.checked) {" in js
+        assert js.rstrip().endswith("wireExactInputs();\n})();")      # wired after the DOM is ready

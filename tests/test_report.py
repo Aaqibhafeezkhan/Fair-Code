@@ -702,3 +702,40 @@ def test_compare_csv_lists_dimensions_present_in_only_one_dataset():
     plain = compare_to_csv({"dimensions": [], "flags": [], "removed_dimensions": [],
                             "added_dimensions": []})
     assert "present_in" not in plain
+
+
+def _compare_with_hints():
+    import pandas as pd
+    from faircode import compare, profile
+    a = profile(pd.DataFrame({"sex": ["m", "f"] * 30}))
+    cmp = compare(a, a, "a.csv", "b.csv")
+    hint = {"a": "sex", "b": "<occupation>", "p_value": 0.00123, "cramers_v": 0.42, "chi2": 10.0,
+            "low_expected_share": 0.5, "low_expected": True, "p_method": "permutation", "n_tests": 1}
+    capped = dict(hint, a="age", b="job & title", p_method="chi2-capped")
+    cmp["proxy_hints_a"] = [hint, capped]
+    cmp["proxy_hints_b"] = [dict(hint, b="region", low_expected=False, p_method="chi2")]
+    return cmp
+
+
+def test_compare_terminal_report_renders_proxy_hint_sections_for_both_sides():
+    # #960
+    from faircode.report import compare_to_terminal
+    text = compare_to_terminal(_compare_with_hints())
+    assert "PROXY HINTS - A" in text and "PROXY HINTS - B" in text
+    assert "sex ↔ <occupation>" in text and "χ² p=0.00123" in text and "Cramér's V=0.42" in text
+    assert "small cells (permutation exact p)" in text
+    assert "too large for the exact fallback" in text            # chi2-capped note (#885)
+    assert text.index("PROXY HINTS - A") < text.index("PROXY HINTS - B")
+    plain = _compare_with_hints()
+    del plain["proxy_hints_a"], plain["proxy_hints_b"]
+    assert "PROXY HINTS" not in compare_to_terminal(plain)
+
+
+def test_compare_html_report_renders_and_escapes_proxy_hint_sections():
+    # #960: column names are user data, so the HTML must escape them.
+    from faircode.report import compare_to_html
+    html = compare_to_html(_compare_with_hints())
+    assert "Proxy Hints - A" in html and "Proxy Hints - B" in html
+    assert "sex ↔ &lt;occupation&gt;" in html and "job &amp; title" in html
+    assert "<occupation>" not in html and "small cells (permutation exact p)" in html
+    assert "too large for the exact fallback" in html

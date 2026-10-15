@@ -1665,3 +1665,17 @@ def test_stdin_that_is_not_utf8_names_the_encoding_flag(monkeypatch, capsys):
     with pytest.raises(SystemExit) as exc:
         main(["profile", "-", "--encoding", "no-such-codec"])
     assert exc.value.code == 2 and "no-such-codec" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("flag, value, message", [
+    ("--max-categorical-card", "1", "max_categorical_card must be >= 2, got 1"),
+    ("--max-dimension-groups", "0", "max_dimension_groups must be >= 1, got 0"),
+])
+@pytest.mark.parametrize("command", ["profile", "compare"])
+def test_out_of_range_group_limits_exit_2(tmp_path, capsys, command, flag, value, message):
+    # #974
+    a = tmp_path / "a.csv"
+    a.write_text("sex\nM\nF\nM\nF\n", encoding="utf-8")
+    inputs = [str(a)] if command == "profile" else [str(a), str(a)]
+    assert main([command, *inputs, flag, value]) == 2
+    assert f"error: {message}" in capsys.readouterr().err

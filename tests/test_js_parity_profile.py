@@ -918,3 +918,18 @@ def test_python_js_sniff_delimiter_agree_on_the_edge_cases():
     out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(texts)],
                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert out == [_sniff_delimiter(t) for t in texts] == [expected for _, expected in SNIFF_CASES]
+
+
+@pytest.mark.parametrize("opts", [{"max_categorical_card": 0}, {"max_categorical_card": 1},
+                                  {"max_dimension_groups": 0}, {"max_dimension_groups": -1}])
+def test_python_js_reject_out_of_range_group_limits_with_the_same_message(tmp_path, opts):
+    """#974: both engines refuse the same values with the same text."""
+    path = tmp_path / "d.csv"
+    path.write_text("sex\n" + "M\nF\n" * 10)
+    opts_file = tmp_path / "opts.json"
+    opts_file.write_text(json.dumps({"overrides": {}, "opts": opts}))
+    with pytest.raises(ValueError) as py_err:
+        profile(pd.read_csv(path), None, opts)
+    done = subprocess.run(["node", "scripts/engine-js.js", "profile", str(path), str(opts_file)],
+                          capture_output=True, text=True, encoding="utf-8")
+    assert done.returncode != 0 and str(py_err.value) in done.stderr

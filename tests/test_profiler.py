@@ -341,6 +341,10 @@ def test_imbalance_flag_tunable():
     ({"missing_flag": 5.0}, "missing_flag must be between 0 and 1"),
     ({"imbalance_flag": 0.5}, "imbalance_flag must be >= 1"),
     ({"min_group_size": 0}, "min_group_size must be >= 1"),
+    ({"max_categorical_card": 0}, "max_categorical_card must be >= 2, got 0"),
+    ({"max_categorical_card": 1}, "max_categorical_card must be >= 2, got 1"),
+    ({"max_dimension_groups": 0}, "max_dimension_groups must be >= 1, got 0"),
+    ({"max_dimension_groups": -1}, "max_dimension_groups must be >= 1, got -1"),
 ])
 def test_out_of_range_tunables_raise_instead_of_contradicting_themselves(opts, message):
     # min_share=1.5 used to be accepted silently: every group flagged

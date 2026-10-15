@@ -33,6 +33,17 @@ CSV_PATHS = {
     "AI_Fair_Recruitment_Dataset.csv": REPO_ROOT / "AI Fair Recruitment" / "AI_Fair_Recruitment_Dataset.csv",
 }
 
+# Node prologue that evaluates assets/profiler-shared.js against stub `window`/`document` objects the
+# caller defines and leaves the API in `shared` (#983). Pass the path of profiler-shared.js as the
+# argument named SHARED_PATH_ARG (an index into process.argv).
+def shared_prologue(path_arg=1):
+    return ("var shared=new Function('window','document',"
+            f"require('fs').readFileSync(process.argv[{path_arg}],'utf-8')+';return window.FairCodeShared;')(window,document);")
+
+
+SHARED_JS = REPO_ROOT / "assets" / "profiler-shared.js"
+
+
 def _run_js_proxy_hints(csv_path, alpha=0.05, exact=False):
     script = (
         "require(process.argv[1]);"

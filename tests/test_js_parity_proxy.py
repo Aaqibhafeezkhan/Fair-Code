@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from faircode import compare, profile
-from js_helpers import REPO_ROOT, _run_js_proxy_hints, _run_ui_exports, _sex_race_csv
+from js_helpers import REPO_ROOT, SHARED_JS, _run_js_proxy_hints, _run_ui_exports, _sex_race_csv, shared_prologue
 
 
 def test_proxy_hint_results_are_live_regions():
@@ -411,29 +411,28 @@ def test_web_exact_inputs_follow_the_checkbox_and_report_errors_inline():
             assert " disabled" in tag and f'aria-describedby="{pre}ExactError"' in tag
         assert f'id="{pre}ExactError" role="alert" hidden' in html
     script = r"""
-    var fs=require('fs');var out={};
-    [['profiler-ui.js','proxy'],['profiler-compare.js','compareProxy']].forEach(function(pair){
-      var src=fs.readFileSync(process.argv[1]+'/'+pair[0],'utf-8');
-      var helpers=src.slice(src.indexOf('function exactControls'),src.indexOf('function wireExactInputs'));
+    var out={};
+    ['proxy','compareProxy'].forEach(function(prefix){
       function el(){var e={attrs:{},hidden:true,disabled:true,checked:false,textContent:'',value:'',
         setAttribute:function(k,v){e.attrs[k]=v;},removeAttribute:function(k){delete e.attrs[k];}};return e;}
-      var els={};['ExactInput','ExactPermutationsInput','ExactMaxRowsInput','ExactError'].forEach(function(s){els[pair[1]+s]=el();});
-      var document={getElementById:function(id){return els[id];}};
-      var api=new Function('document',helpers+';return {sync:syncExactInputs,show:showExactError,clear:clearExactError};')(document);
-      var r={},box=els[pair[1]+'ExactInput'],perm=els[pair[1]+'ExactPermutationsInput'],rows=els[pair[1]+'ExactMaxRowsInput'],err=els[pair[1]+'ExactError'];
+      var els={};['ExactInput','ExactPermutationsInput','ExactMaxRowsInput','ExactError'].forEach(function(s){els[prefix+s]=el();});
+      var window={};var document={getElementById:function(id){return els[id];}};
+      """ + shared_prologue(1) + r"""
+      var api=shared.createExactInputs(prefix);
+      var r={},box=els[prefix+'ExactInput'],perm=els[prefix+'ExactPermutationsInput'],rows=els[prefix+'ExactMaxRowsInput'],err=els[prefix+'ExactError'];
       api.sync();r.off=[perm.disabled,rows.disabled];
       box.checked=true;api.sync();r.on=[perm.disabled,rows.disabled];
-      api.show('Shuffles must be a whole number from 1 to 1,000,000.');
+      api.showError('Shuffles must be a whole number from 1 to 1,000,000.');
       r.shuffles=[perm.attrs['aria-invalid'],rows.attrs['aria-invalid']||null,err.hidden,err.textContent];
-      api.show('Row cap must be a whole number from 1.');
+      api.showError('Row cap must be a whole number from 1.');
       r.rows=[perm.attrs['aria-invalid']||null,rows.attrs['aria-invalid'],err.hidden];
       box.checked=false;api.sync();
       r.cleared=[perm.disabled,rows.attrs['aria-invalid']||null,err.hidden,err.textContent];
-      out[pair[0]]=r;
+      out[prefix]=r;
     });
     process.stdout.write(JSON.stringify(out));
     """
-    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets")], capture_output=True, text=True,
+    done = subprocess.run(["node", "-e", script, str(SHARED_JS)], capture_output=True, text=True,
                           encoding="utf-8", check=True)
     for name, r in json.loads(done.stdout).items():
         assert r["off"] == [True, True] and r["on"] == [False, False], name

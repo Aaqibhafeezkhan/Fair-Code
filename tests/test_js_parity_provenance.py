@@ -124,10 +124,9 @@ def test_web_held_out_provenance_records_the_encoding():
     the entry after the digest, like provenance.held_out_entries()."""
     held = (REPO_ROOT / "assets" / "profiler-heldout.js").read_text(encoding="utf-8")
     assert "encoding = decoded.encoding || undefined" in held and "encoding: encoding" in held
-    for name in ("profiler-ui.js", "profiler-compare.js"):
-        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
-        body = js.split("async function heldOutEntries")[1].split("async function build")[0]
-        assert body.index("sha256_note") < body.index("entry.encoding = specs[i].encoding")
+    shared = (REPO_ROOT / "assets" / "profiler-shared.js").read_text(encoding="utf-8")   # one copy for both views (#983)
+    body = shared.split("async function heldOutEntries")[1].split("// Skipped")[0]
+    assert body.index("sha256_note") < body.index("entry.encoding = specs[i].encoding")
 
 
 def test_web_provenance_params_carry_the_proxy_settings():
@@ -159,8 +158,7 @@ def test_web_provenance_records_the_xlsx_sheet():
     assert "Object.assign(provenance, currentSheet)" in ui and "sheets_ignored: result.ignoredSheets.length" in ui
     assert "provenance.sheet_a = " in cmp_js and "provenance.sheets_ignored_b = " in cmp_js
     assert "spec.sheet = sheets.sheetName" in eng
-    for js in (ui, cmp_js):
-        assert "entry.sheet = specs[i].sheet" in js
+    assert "entry.sheet = specs[i].sheet" in (REPO_ROOT / "assets" / "profiler-shared.js").read_text(encoding="utf-8")
 
 
 def test_web_reference_baseline_is_re_applied_when_the_encoding_picker_changes():
@@ -183,27 +181,24 @@ def test_web_held_out_provenance_marks_skipped_near_unique_columns_like_python()
     require(process.argv[1]);var E=globalThis.FairCodeProfiler;var fs=require('fs');var out={};
     var rows=[],held=[];for(var i=0;i<100;i++){rows.push({sex:i%2?'m':'f'});held.push({ident:'id'+i,race:'ab'[i%2]});}
     var t={columns:['sex'],rows:rows};
-    async function fileDigest(f){return {digest:'sha256:abc',note:null};}
-    ['profiler-ui.js','profiler-compare.js'].forEach(function(name){
-      var src=fs.readFileSync(process.argv[2]+'/'+name,'utf-8');
-      var fn=src.slice(src.indexOf('async function heldOutEntries'),src.indexOf('async function build',src.indexOf('async function heldOutEntries')));
-      out[name]=new Function('fileDigest',fn+';return heldOutEntries;')(fileDigest);
-    });
+    var window={};var document={};
+    var shared=new Function('window','document',fs.readFileSync(process.argv[2],'utf-8')+';return window.FairCodeShared;')(window,document);
     (async function(){
       var specs=[{name:'h.json',column:'ident',data:JSON.stringify(held)},{name:'h.json',column:'race',data:JSON.stringify(held)}];
       var notes=[];await E.buildHeldOut(specs,t,notes,20);
       var res={flags:specs.map(function(s){return [s.skipped,s.skipNote||null];}),notes:notes};
-      res.ui=await out['profiler-ui.js'](specs);res.cmp=await out['profiler-compare.js'](specs);
+      res.entries=await shared.heldOutEntries(specs);
       process.stdout.write(JSON.stringify(res));
     })();
     """
-    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), str(REPO_ROOT / "assets")],
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"),
+                           str(REPO_ROOT / "assets" / "profiler-shared.js")],
                           capture_output=True, text=True, encoding="utf-8", check=True)
     res = json.loads(done.stdout)
     assert res["flags"][0][0] is True and "identifier" in res["flags"][0][1] and res["flags"][1] == [False, None]
     assert res["notes"] == [res["flags"][0][1]]
     py = held_out_entries(["h.json=ident", "h.json=race"], None, skipped=["ident"])
-    for entries in (res["ui"], res["cmp"]):
+    for entries in (res["entries"],):
         assert entries[0]["tested"] is False and entries[0]["skip_reason"] == py[0]["skip_reason"]
         assert list(entries[0])[-2:] == ["tested", "skip_reason"] and "tested" not in entries[1]
     ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")

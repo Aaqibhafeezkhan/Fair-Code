@@ -11,6 +11,16 @@
   var DISPLAY_GROUPS = 12; // mirror faircode/report.py
   var FAIRCODE_VERSION = '2.3.0'; // mirrors profiler-ui.js's own copy
   var E = window.FairCodeProfiler;
+  var S = window.FairCodeShared;   // helpers shared with the other view (#983)
+  var KEYWORDS_EVENT = S.KEYWORDS_EVENT;
+  var readStoredKeywords = S.readStoredKeywords, writeStoredKeywords = S.writeStoredKeywords;
+  var setKeywordsError = S.setKeywordsError, checkKeywordsText = S.checkKeywordsText;
+  var showRestoredNote = S.showRestoredNote, announceKeywords = S.announceKeywords;
+  var fileDigest = S.fileDigest, heldOutEntries = S.heldOutEntries, setSkipNotes = S.setSkipNotes;
+  var flashButton = S.flashButton, fallbackCopy = S.fallbackCopy;
+  var exact = S.createExactInputs('compareProxy');
+  var exactControls = exact.controls, clearExactError = exact.clearError, showExactError = exact.showError;
+  var syncExactInputs = exact.sync, wireExactInputs = exact.wire;
   if (!E || !E.compare) return;
 
   var dropA = document.getElementById('dropA');
@@ -108,31 +118,6 @@
   }
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  // Ported from profiler-ui.js's fileDigest (issue #375) - hashes the raw
-  // File object's bytes, or reports why it can't (in-memory sample data,
-  // a read failure) so a Compare export can be tied back to what produced
-  // it the same way the Profile view's export and the CLI/MCP provenance
-  // block already can.
-  async function fileDigest(file) {
-    if (!file) {
-      return {
-        digest: null,
-        note: 'dataset was generated in memory; raw bytes were not retained'
-      };
-    }
-    try {
-      var buffer = await file.arrayBuffer();
-      var hash = await crypto.subtle.digest('SHA-256', buffer);
-      var bytes = new Uint8Array(hash);
-      var hex = Array.prototype.map.call(bytes, function (b) {
-        return b.toString(16).padStart(2, '0');
-      }).join('');
-      return { digest: 'sha256:' + hex, note: null };
-    } catch (err) {
-      return { digest: null, note: 'could not read file for hashing: ' + err.message };
-    }
   }
 
   // ── File wiring for one slot ('A' or 'B') ──────────────────────────────
@@ -238,39 +223,6 @@
   }
 
 
-  // Extra keywords describe the user's data conventions, not one file, so the text
-  // survives file loads and page reloads (#888); localStorage can throw or be absent.
-  var KEYWORDS_KEY = 'faircode.keywords.v1';
-  function readStoredKeywords() {
-    try { return window.localStorage.getItem(KEYWORDS_KEY) || ''; } catch (err) { return ''; }
-  }
-  function writeStoredKeywords(text) {
-    try {
-      if (text) window.localStorage.setItem(KEYWORDS_KEY, text); else window.localStorage.removeItem(KEYWORDS_KEY);
-    } catch (err) { /* private window or blocked storage: the box just forgets */ }
-  }
-  // Names the problem under the textarea (role=alert, linked by aria-describedby) as well as
-  // marking it invalid; an empty message clears both (#889).
-  function setKeywordsError(area, message) {
-    var note = document.getElementById(area.getAttribute('aria-describedby') || '');
-    if (message) area.setAttribute('aria-invalid', 'true'); else area.removeAttribute('aria-invalid');
-    if (note) { note.textContent = message || ''; note.hidden = !message; }
-  }
-  // Parses and validates the textarea text. Returns {empty:true}, {value:parsed} or
-  // {error:message}; the engine's own vocabulary check supplies the rejection text.
-  function checkKeywordsText(raw) {
-    if (raw === '') return { empty: true };
-    var parsed;
-    try { parsed = JSON.parse(raw); } catch (err) { return { error: 'Not valid JSON: ' + err.message }; }
-    try { E.normalizeKeywords(parsed); } catch (err) { return { error: err.message }; }
-    return { value: parsed };
-  }
-
-  // "Restored from your last session" + Forget next to the keywords box (#930).
-  function showRestoredNote(area, on) {
-    var note = document.getElementById(area.id.replace('Input', 'Restored'));
-    if (note) note.hidden = !on;
-  }
 
   function resetThresholdInputs() {
     thresholdInputs.forEach(function (input) {
@@ -333,12 +285,6 @@
     });
   });
 
-  // Tell the other view that the vocabulary changed, and pick up its changes (#901). Both
-  // views share one stored text, so the sibling box is refilled and re-applied at once.
-  var KEYWORDS_EVENT = 'faircode-keywords';
-  function announceKeywords(area) {
-    try { document.dispatchEvent(new CustomEvent(KEYWORDS_EVENT, { detail: { source: area.id } })); } catch (err) { /* no CustomEvent */ }
-  }
   document.addEventListener(KEYWORDS_EVENT, function (ev) {
     if (!thresholdControls) return;
     Array.prototype.forEach.call(thresholdControls.querySelectorAll('[data-opt-json]'), function (area) {
@@ -899,44 +845,6 @@
     return a;
   }
 
-  // Skipped near-unique held-out columns reach the exported result as `notes`, like the CLI (#951).
-  function setSkipNotes(target, specs) {
-    var notes = specs.filter(function (h) { return h.skipped; }).map(function (h) { return h.skipNote; });
-    if (notes.length) target.notes = notes; else delete target.notes;
-  }
-
-  // The exact test's Shuffles / Row cap inputs are only live while the exact box is ticked (#962).
-  function exactControls() {
-    return { box: document.getElementById('compareProxyExactInput'),
-             perm: document.getElementById('compareProxyExactPermutationsInput'),
-             rows: document.getElementById('compareProxyExactMaxRowsInput'),
-             error: document.getElementById('compareProxyExactError') };
-  }
-  function clearExactError() {
-    var c = exactControls();
-    [c.perm, c.rows].forEach(function (input) { input.removeAttribute('aria-invalid'); });
-    c.error.textContent = '';
-    c.error.hidden = true;
-  }
-  function showExactError(message) {
-    var c = exactControls();
-    clearExactError();
-    (/^Shuffles/.test(message) ? c.perm : c.rows).setAttribute('aria-invalid', 'true');
-    c.error.textContent = message;
-    c.error.hidden = false;
-  }
-  function syncExactInputs() {
-    var c = exactControls();
-    c.perm.disabled = c.rows.disabled = !c.box.checked;
-    if (!c.box.checked) clearExactError();
-  }
-  function wireExactInputs() {
-    var c = exactControls();
-    if (!c.box) return;
-    c.box.addEventListener('change', syncExactInputs);
-    [c.perm, c.rows].forEach(function (input) { input.addEventListener('input', clearExactError); });
-    syncExactInputs();
-  }
 
   async function renderCompareProxyHints() {
     if (!currentCmp || !currentProfiles) return;
@@ -1007,49 +915,7 @@
     URL.revokeObjectURL(url);
   }
 
-  function flashButton(btn, msg) {
-    var original = btn.textContent;
-    btn.textContent = msg;
-    btn.disabled = true;
-    setTimeout(function () {
-      btn.textContent = original;
-      btn.disabled = false;
-    }, 1500);
-  }
 
-  function fallbackCopy(text) {
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
-    document.body.removeChild(ta);
-    return ok;
-  }
-
-  // Held-out files behind the proxy results, mirroring faircode/provenance.py's
-  // held_out_entries() (#811).
-  async function heldOutEntries(specs) {
-    var out = [];
-    for (var i = 0; i < specs.length; i++) {
-      var h = await fileDigest(specs[i].file);
-      var entry = { path: specs[i].name, column: specs[i].column };
-      if (specs[i].key) {
-        entry.key = specs[i].key;
-        if (specs[i].normalize) entry.key_normalize = true;
-      }
-      entry.sha256 = h.digest;
-      if (h.note !== null) entry.sha256_note = h.note;
-      if (specs[i].sheet) { entry.sheet = specs[i].sheet; entry.sheets_ignored = specs[i].sheetsIgnored; }
-      if (specs[i].skipped) { entry.tested = false; entry.skip_reason = 'near-unique values (looks like an identifier)'; }
-      if (specs[i].encoding) entry.encoding = specs[i].encoding;
-      out.push(entry);
-    }
-    return out;
-  }
 
   async function buildCompareProvenance() {
     var hashA = await fileDigest(slot.A && slot.A.file);

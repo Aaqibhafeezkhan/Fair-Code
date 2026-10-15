@@ -162,6 +162,7 @@ def test_profiler_scripts_are_co_owned():
         "/assets/profiler-engine.js",
         "/assets/profiler-compare.js",
         "/assets/profiler-heldout.js",
+        "/assets/profiler-shared.js",
         "/assets/profiler-ui.js",
         "/assets/profiler.css",
         "/profiler.html",

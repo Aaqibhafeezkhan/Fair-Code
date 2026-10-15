@@ -1633,3 +1633,35 @@ def test_unreadable_keywords_file_exits_2(tmp_path, capsys, command):
             main([command, *inputs, "--keywords", str(bad)])
         assert exc.value.code == 2
         assert f"error: could not read --keywords file {bad}:" in capsys.readouterr().err
+
+
+
+def _stdin_bytes(monkeypatch, raw):
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(raw), encoding="utf-8", errors="replace"))
+
+
+def test_stdin_is_decoded_with_encoding_or_a_sniffed_bom(monkeypatch, capsys):
+    # #972
+    _stdin_bytes(monkeypatch, "sex,race\nM,Café\nF,Thé\nM,Café\nF,Thé\n".encode("latin-1"))
+    assert main(["profile", "-", "--encoding", "latin-1", "--json"]) == 0
+    race = next(d for d in json.loads(capsys.readouterr().out)["dimensions"] if d["name"] == "race")
+    assert {g["label"] for g in race["groups"]} == {"Café", "Thé"}
+
+    _stdin_bytes(monkeypatch, "sex,race\nM,Café\nF,Thé\nM,Café\nF,Thé\n".encode("utf-16"))   # BOM, no flag
+    assert main(["profile", "-", "--json"]) == 0
+    race = next(d for d in json.loads(capsys.readouterr().out)["dimensions"] if d["name"] == "race")
+    assert {g["label"] for g in race["groups"]} == {"Café", "Thé"}
+
+
+def test_stdin_that_is_not_utf8_names_the_encoding_flag(monkeypatch, capsys):
+    # #972
+    _stdin_bytes(monkeypatch, b"sex,race\nM,Caf\xe9\nF,Caf\xe9\n")
+    with pytest.raises(SystemExit) as exc:
+        main(["profile", "-"])
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "not valid utf-8" in err and "--encoding" in err
+    _stdin_bytes(monkeypatch, b"sex\nM\nF\n")
+    with pytest.raises(SystemExit) as exc:
+        main(["profile", "-", "--encoding", "no-such-codec"])
+    assert exc.value.code == 2 and "no-such-codec" in capsys.readouterr().err

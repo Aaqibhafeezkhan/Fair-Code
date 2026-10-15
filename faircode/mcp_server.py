@@ -114,6 +114,22 @@ def _read_table_or_raise(path: str, encoding: str | None = None):
         raise RuntimeError(f"could not read dataset {path}: {exc}") from exc
 
 
+# The pre-#950 sheet-note keys, kept as aliases of the sheet entries in `notes`. Removed in the next
+# major release; tests/test_mcp_server.py fails when __version__ reaches it with them still present (#984).
+SHEET_NOTE_ALIASES = ("sheet_note", "sheet_note_a", "sheet_note_b", "sheet_notes")
+SHEET_NOTE_ALIASES_REMOVED_IN = "3.0.0"
+
+
+def _flag_deprecated_aliases(result):
+    """Add a `deprecated` list naming each sheet-note alias present in `result`, so a caller that
+    still reads one is told, once per call, what replaces it and when it goes (#984)."""
+    present = [k for k in SHEET_NOTE_ALIASES if k in result]
+    if present:
+        result["deprecated"] = [{"field": k, "use": "notes", "removed_in": SHEET_NOTE_ALIASES_REMOVED_IN}
+                                for k in present]
+    return result
+
+
 def _sheet_note(path):
     """The same "read sheet 'X' - N other sheet(s) ignored" notice cli.py
     prints to stderr for a multi-sheet .xlsx path, or None if `path` isn't a
@@ -219,6 +235,7 @@ def _profile_dataset_impl(path, overrides=None, cross=None, reference_path=None,
     notes = [n for n in (note, encoding_ignored_note(path, encoding)) if n]
     if notes:
         result["notes"] = notes
+    _flag_deprecated_aliases(result)
     if include_provenance:
         from .provenance import sniff_effective_encoding
         digests = [("dataset_hash", path)]
@@ -271,6 +288,7 @@ def _compare_datasets_impl(path_a, path_b, overrides=None,
     notes = [n for n in (note_a, note_b) if n] + enc_notes[:1]
     if notes:
         result["notes"] = notes
+    _flag_deprecated_aliases(result)
     skipped_a, skipped_b = [], []   # near-unique held-out columns, for provenance (#921)
     if proxy_hints:
         held_notes = (held_out_encoding_ignored_notes(held_out_with_a, encoding)
@@ -381,6 +399,7 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     notes = sheet_notes + [n for n in (encoding_ignored_note(path, encoding),) if n] + held_notes
     if notes:
         output["notes"] = notes
+    _flag_deprecated_aliases(output)
     if include_provenance:
         from .provenance import sniff_effective_encoding
         enc = encoding or sniff_effective_encoding(path)

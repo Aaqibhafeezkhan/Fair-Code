@@ -1043,3 +1043,29 @@ def test_the_console_script_points_at_main():
     pyproject = tomllib.loads((Path(__file__).resolve().parent.parent / "pyproject.toml").read_text(encoding="utf-8"))
     assert pyproject["project"]["scripts"]["faircode-mcp"] == "faircode.mcp_server:main"
     assert callable(mcp_server.main)
+
+
+@requires_openpyxl
+def test_sheet_note_aliases_are_flagged_as_deprecated_with_their_removal_version(tmp_path):
+    # #984
+    from faircode.mcp_server import SHEET_NOTE_ALIASES_REMOVED_IN
+    xlsx, csv_path = tmp_path / "a.xlsx", tmp_path / "b.csv"
+    _write_multi_sheet_xlsx(xlsx, "sex", ["M"] * 5 + ["F"] * 5)
+    csv_path.write_text("sex\nM\nF\n", encoding="utf-8")
+    entry = lambda field: {"field": field, "use": "notes", "removed_in": SHEET_NOTE_ALIASES_REMOVED_IN}  # noqa: E731
+    assert _profile_dataset_impl(str(xlsx))["deprecated"] == [entry("sheet_note")]
+    assert _compare_datasets_impl(str(xlsx), str(xlsx))["deprecated"] == [entry("sheet_note_a"), entry("sheet_note_b")]
+    assert _proxy_hints_impl(str(xlsx))["deprecated"] == [entry("sheet_notes")]
+    for result in (_profile_dataset_impl(str(csv_path)), _compare_datasets_impl(str(csv_path), str(csv_path)),
+                   _proxy_hints_impl(str(csv_path))):
+        assert "deprecated" not in result
+
+
+def test_sheet_note_aliases_are_gone_by_the_release_that_removes_them():
+    # #984: a reminder that fails when the version reaches the announced removal release.
+    from faircode import __version__
+    from faircode.mcp_server import SHEET_NOTE_ALIASES, SHEET_NOTE_ALIASES_REMOVED_IN
+    version = lambda text: tuple(int(part) for part in text.split("."))  # noqa: E731
+    assert version(__version__) < version(SHEET_NOTE_ALIASES_REMOVED_IN), (
+        f"faircode {__version__} reached {SHEET_NOTE_ALIASES_REMOVED_IN}: remove {SHEET_NOTE_ALIASES} "
+        f"and this test (SPEC section 11)")

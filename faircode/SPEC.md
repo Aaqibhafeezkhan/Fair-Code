@@ -529,7 +529,7 @@ CLI's `--proxy-hints-with`, each naming a file whose rows align 1:1 with the pro
 column to pull the dropped attribute's original values from. Parsed via `proxy.py`'s shared
 `parse_held_out_specs`, so the validation is identical to the CLI's. See section 13 and issue #328.
 
-Every message a tool has for the caller - an ignored sheet, an encoding that cannot apply to a workbook, a near-unique held-out column that was skipped - is in one `notes` list on `profile_dataset`, `compare_datasets` and `proxy_hints` (#950). `sheet_note`, `sheet_note_a`/`sheet_note_b` and `sheet_notes` are kept for now as deprecated aliases of the sheet entries.
+Every message a tool has for the caller - an ignored sheet, an encoding that cannot apply to a workbook, a near-unique held-out column that was skipped - is in one `notes` list on `profile_dataset`, `compare_datasets` and `proxy_hints` (#950). `sheet_note`, `sheet_note_a`/`sheet_note_b` and `sheet_notes` are deprecated aliases of the sheet entries and will be removed in **3.0.0**, the next major release (#984). Until then a result that carries any of them also has a `deprecated` list, one `{"field": "sheet_note", "use": "notes", "removed_in": "3.0.0"}` entry per alias present, so a caller that still reads one is told; a result without an alias has no `deprecated` key. A test fails once the package version reaches 3.0.0 while the aliases still exist.
 
 The proxy-test and output parameters below are all optional. An invalid value is raised as a
 `ValueError`, so it reaches the agent as a `ToolError` carrying the message shown.

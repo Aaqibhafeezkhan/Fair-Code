@@ -1606,3 +1606,16 @@ def test_a_subcommand_without_a_handler_fails_loudly(monkeypatch):
     monkeypatch.setattr(cli, "build_parser", parser_with_unhandled_command)
     with pytest.raises(AssertionError, match="no handler for command 'bogus'"):
         main(["bogus"])
+
+
+
+@pytest.mark.parametrize("command", ["profile", "compare"])
+def test_csv_dash_with_json_is_refused_before_anything_reaches_stdout(tmp_path, capsys, command):
+    # #970
+    a = tmp_path / "a.csv"
+    a.write_text("sex\nM\nF\nM\nF\n", encoding="utf-8")
+    inputs = [str(a)] if command == "profile" else [str(a), str(a)]
+    assert main([command, *inputs, "--csv", "-", "--json"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err.strip().endswith("error: --csv - and --json both write to stdout; use one")

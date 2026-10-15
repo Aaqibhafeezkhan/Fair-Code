@@ -514,3 +514,35 @@ def test_web_held_out_workbook_row_with_an_encoding_gets_the_ignored_notice():
     assert out["explicit"] == {"ignored": True, "notes": [note]}
     assert out["inherit_picker"] == {"ignored": True, "notes": [note]}
     assert out["quiet"] == {"notes": []} and out["row_auto"] == {"notes": []}      # the flag is absent unless true
+
+
+def test_non_ascii_digit_columns_are_screened_the_same_in_both_engines():
+    """#967: a held-out column written in Arabic-Indic, full-width or Devanagari digits is not
+    numeric, so a near-unique one is skipped as an identifier by the CLI and by the web."""
+    from faircode.proxy import parse_held_out_specs
+    n = 40
+    df = pd.DataFrame({"sex": ["m", "f"] * (n // 2)})
+    shifts = {"arabic": 0x0660, "fullwidth": 0xFF10, "devanagari": 0x0966}
+    held = {name: [str(i).translate({48 + d: base + d for d in range(10)}) for i in range(n)]
+            for name, base in shifts.items()}
+    py = {}
+    for name in held:
+        notes = []
+        kept = parse_held_out_specs([f"h.csv={name}"], df, lambda p: pd.DataFrame(held), notes=notes,
+                                    max_categorical_card=20)
+        py[name] = (name in kept, bool(notes))
+    assert py == {name: (False, True) for name in held}
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var rows=[],held=[];"
+        "var shifts={arabic:0x660,fullwidth:0xFF10,devanagari:0x966};"
+        "for(var i=0;i<40;i++){rows.push({sex:i%2?'m':'f'});var r={};"
+        "Object.keys(shifts).forEach(function(k){r[k]=String(i).replace(/[0-9]/g,function(d){return String.fromCharCode(shifts[k]+Number(d));});});held.push(r);}"
+        "var t={columns:['sex'],rows:rows};var res={};"
+        "(async function(){for(var k of Object.keys(shifts)){var notes=[];"
+        "var out=await E.buildHeldOut([{name:'h.json',column:k,data:JSON.stringify(held)}],t,notes,20);"
+        "res[k]=[Object.keys(out).indexOf(k)!==-1,notes.length>0];}"
+        "process.stdout.write(JSON.stringify(res));})();"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert {k: tuple(v) for k, v in out.items()} == py

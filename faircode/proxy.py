@@ -322,7 +322,9 @@ def near_unique_note(name, distinct, max_categorical_card):
             f"not a group, so it was not tested")
 
 
-_NUMBER = re.compile(r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?\Z")
+# ASCII-only so a column written in Arabic-Indic or full-width digits is judged the same as in the
+# web engine, where \d is 0-9 only (#967).
+_NUMBER = re.compile(r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?\Z", re.ASCII)
 
 
 def _all_numeric(series):

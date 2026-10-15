@@ -707,3 +707,12 @@ def test_held_out_path_may_contain_an_escaped_equals_sign(tmp_path):
     assert entry["path"] == f"{tmp_path}/data=v2.csv" and entry["key_normalize"] is True and entry["encoding"] == "utf-8"
     with pytest.raises(ValueError, match=r"does not exist but .*data=v2.csv' does - write the = inside the file name as \\="):
         parse_held_out_specs([f"{tmp_path}/data=v2.csv=race:id"], df, read_table)
+
+
+@pytest.mark.parametrize("digits", ["١٢٣", "１２３", "१२३"])
+def test_non_ascii_digits_are_not_numbers_for_the_identifier_screen(digits):
+    # #967: Arabic-Indic, full-width and Devanagari digits are values, not numbers (the web
+    # engine's \d is 0-9 only), so the near-unique screen treats them like any other text.
+    from faircode.proxy import _all_numeric
+    assert not _all_numeric(pd.Series([digits, digits[::-1]]))
+    assert _all_numeric(pd.Series(["123", "-4.5", ".5", "1e3"]))

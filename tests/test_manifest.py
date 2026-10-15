@@ -278,3 +278,66 @@ def test_every_shipped_manifest_loads_without_error(path):
             f"{manifest.name}: row_filters references column "
             f"'{row_filter.column}', which isn't in {manifest.dataset_path.name}"
         )
+
+
+_FILTER_FRAME = pd.DataFrame({"race": ["A", "B", "C", None, "A"], "n": [1, 2, 3, 4, 5]})
+
+
+@pytest.mark.parametrize("operator, value, expected_index", [
+    ("isin", ["A", "B"], [0, 1, 4]),
+    ("not_isin", ["A", "B"], [2, 3]),          # a NaN is not in the list, so it is kept
+    ("equals", "A", [0, 4]),
+    ("not_equals", "A", [1, 2, 3]),            # NaN != "A", so the missing row is kept
+])
+def test_row_filter_operators_select_the_expected_rows(operator, value, expected_index):
+    # #977: one test per operator, with a NaN in the column.
+    kept = RowFilter(column="race", **{operator: value}).apply(_FILTER_FRAME)
+    assert kept.index.tolist() == expected_index
+
+
+@pytest.mark.parametrize("operator, value", [
+    ("isin", ["A"]), ("not_isin", ["A"]), ("equals", "A"), ("not_equals", "A"), ("notna", True),
+])
+def test_row_filter_on_a_missing_column_raises_keyerror(operator, value):
+    # #977: a typo'd column must not silently keep (or drop) every row.
+    with pytest.raises(KeyError, match="nope"):
+        RowFilter(column="nope", **{operator: value}).apply(_FILTER_FRAME)
+
+
+def test_row_filters_combine_with_and_semantics():
+    kept = RowFilter(column="race", not_isin=["C"], equals="A").apply(_FILTER_FRAME)
+    assert kept.index.tolist() == [0, 4]
+
+
+def test_threshold_attribute_needs_a_valid_direction_and_a_threshold():
+    # #977: validation errors listed in MANIFEST_SPEC.
+    with pytest.raises(ValueError, match="needs a 'threshold' field"):
+        ProtectedAttribute(name="age", type="numeric_threshold", column="age")
+    with pytest.raises(ValueError, match="disadvantaged must be 'below' or 'above'"):
+        ProtectedAttribute(name="age", type="numeric_threshold", column="age", threshold=40, disadvantaged="sideways")
+
+
+def test_manifest_without_protected_attributes_is_rejected(tmp_path):
+    path = _write_manifest(tmp_path, _minimal_manifest_dict(protected_attributes=[]))
+    with pytest.raises(ValueError, match="protected_attributes must have at least one entry"):
+        load_manifest(path)
+
+
+def test_a_value_in_both_categorical_lists_is_rejected():
+    with pytest.raises(ValueError, match=r"value\(s\) \['x'\] appear in both"):
+        ProtectedAttribute(name="g", type="categorical", column="g",
+                           disadvantaged_values=["x", "y"], advantaged_values=["x", "z"])
+
+
+def test_categorical_attribute_with_both_lists_leaves_other_values_unknown():
+    pa = ProtectedAttribute(name="g", type="categorical", column="g",
+                            disadvantaged_values=["a"], advantaged_values=["b"])
+    disadv, known = pa.disadvantaged_mask(pd.DataFrame({"g": ["a", "b", "c", None]}))
+    assert known.tolist() == [True, True, False, False]
+    assert disadv.tolist() == [True, False, False, False]
+
+
+def test_manifest_audit_dir_is_the_manifest_folder(tmp_path):
+    (tmp_path / "toy.csv").write_text("label,group,x1,x2\n1,a,1,2\n")
+    manifest = load_manifest(_write_manifest(tmp_path, _minimal_manifest_dict()))
+    assert manifest.audit_dir == tmp_path

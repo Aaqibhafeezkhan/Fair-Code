@@ -341,3 +341,18 @@ def test_xlsx_provenance_records_the_sheet_read_and_the_ones_ignored(dataset, tm
 
     entries = held_out_entries([f"{book}=sex"], ["x"])
     assert (entries[0]["sheet"], entries[0]["sheets_ignored"]) == ("Main", 1)
+
+
+def test_build_accepts_two_three_and_four_element_held_out_tuples(tmp_path):
+    # #979: the shorter shapes are documented; only the four-element form was exercised.
+    held = tmp_path / "h.csv"
+    held.write_text("ident\n1\n2\n", encoding="utf-8")
+    spec = [f"{held}=ident"]
+    two = build(held_out=[("proxy_hints_with", spec)])["proxy_hints_with"]
+    three = build(held_out=[("proxy_hints_with", spec, ["sex"])])["proxy_hints_with"]
+    four_untouched = build(held_out=[("proxy_hints_with", spec, ["sex"], [])])["proxy_hints_with"]
+    four_skipped = build(held_out=[("proxy_hints_with", spec, ["sex"], ["ident"])])["proxy_hints_with"]
+    assert two == three == four_untouched
+    assert [e["column"] for e in two] == ["ident"] and "tested" not in two[0]
+    assert four_skipped[0]["tested"] is False and "skip_reason" in four_skipped[0]
+    assert build(held_out=[("proxy_hints_with", [])]).get("proxy_hints_with") is None   # empty specs: omitted

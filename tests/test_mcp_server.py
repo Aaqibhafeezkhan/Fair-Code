@@ -927,3 +927,36 @@ def test_every_mcp_tool_reports_all_notes_under_one_notes_key(tmp_path):
     hinted = _proxy_hints_impl(str(csv), alpha=1.0, held_out_with=[f"{book}=sex@latin-1"])
     assert hinted["notes"][0] == sheet and any("held-out file" in n for n in hinted["notes"])
     assert hinted["sheet_notes"] == [sheet]
+
+
+@requires_scipy
+@requires_openpyxl
+def test_compare_datasets_merges_held_out_notes_after_the_existing_notes(tmp_path):
+    # #978: the sheet notice and the near-unique held-out skip both reach `notes`, in that order.
+    from faircode.proxy import near_unique_note
+    path_a, path_b = tmp_path / "a.xlsx", tmp_path / "b.csv"
+    _write_multi_sheet_xlsx(path_a, "sex", ["M"] * 30 + ["F"] * 30)
+    path_b.write_text("sex\n" + "M\nF\n" * 30, encoding="utf-8")
+    held = tmp_path / "h.csv"
+    held.write_text("ident\n" + "\n".join(f"id{i}" for i in range(60)) + "\n", encoding="utf-8")
+    result = _compare_datasets_impl(str(path_a), str(path_b), proxy_hints=True,
+                                    held_out_with_a=[f"{held}=ident"])
+    assert result["notes"] == ["read sheet 'Data' - 1 other sheet(s) ignored",
+                               near_unique_note("ident", 60, 20)]
+
+
+def test_list_explainers_tool_turns_expected_failures_into_tool_errors(monkeypatch):
+    # #978: both exception types the wrapper anticipates become a ToolError with the message.
+    import asyncio
+    import re
+
+    import faircode.mcp_server as mcp_server
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    server = build_server()
+    for exc in (ValueError("unknown tag 'x'"), FileNotFoundError("explainers index is missing")):
+        def boom(tag=None, _exc=exc):
+            raise _exc
+        monkeypatch.setattr(mcp_server, "_list_explainers_impl", boom)
+        with pytest.raises(ToolError, match=re.escape(str(exc))):
+            asyncio.run(server.call_tool("list_explainers", {"tag": "x"}))

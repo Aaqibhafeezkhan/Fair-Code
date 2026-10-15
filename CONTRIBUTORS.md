@@ -34,7 +34,7 @@ ordered by merged PR count, most first - ties broken by commit count, then by ea
 date. Within each entry, the PR numbers link the claim to the actual diff, so nothing here is an
 unverifiable "thanks to".
 
-**Snapshot:** 2026-10-14, covering everything merged through **PR #943** (no pull request has merged since).
+**Snapshot:** 2026-10-15, covering everything merged through **PR #991**.
 Anything merged after that date is real and welcome, but is not yet reflected here - the
 [contributors graph](https://github.com/yakew7/Fair-Code/graphs/contributors) is always the live
 source of truth, and the `contrib.rocks` grid above regenerates from it automatically.
@@ -487,6 +487,12 @@ Documented the MCP tools' `alpha`, `correction`, `held_out_with_a`/`held_out_wit
 
 Closed issue #914 the day after it was filed: held-out files can each carry their own text encoding with a `PATH=COLUMN[:KEY][~]@ENCODING` suffix, validated against Python's codec registry before any file is read, recorded per entry in provenance, and mirrored by a per-row encoding select in the web held-out control, with tests in the proxy, CLI, MCP, provenance and JS parity suites ([#916](https://github.com/yakew7/Fair-Code/pull/916), closing #914).
 
+### Ensar - [@Enard52](https://github.com/Enard52)
+
+**2 merged PRs · 2 commits · first merged 2026-10-14**
+
+Made `scripts/generate_key_fold.py` handle a missing `node` with a plain message instead of a traceback ([#990](https://github.com/yakew7/Fair-Code/pull/990), closing issue #982), and extended `scripts/check_issue_refs.py` to check the issue numbers cited in `CONTRIBUTORS.md` and `METRICS.md` as well as the roadmap and changelog ([#991](https://github.com/yakew7/Fair-Code/pull/991), closing issue #981).
+
 ---
 
 ## Contributions by area
@@ -503,7 +509,7 @@ A cross-cut of the same work, for anyone looking for who to ask about what.
 | **CI & workflows** (`.github/`) | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@cannotdoit13](https://github.com/cannotdoit13), [@Shreyash0712](https://github.com/Shreyash0712), [@evanjain-dot](https://github.com/evanjain-dot), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@AnayDhawan](https://github.com/AnayDhawan), [@raonishanth2000-hub](https://github.com/raonishanth2000-hub), [@saikeerthanakavuri](https://github.com/saikeerthanakavuri) |
 | **Website & explainer build** | [@yakew7](https://github.com/yakew7), [@anujkamdar](https://github.com/anujkamdar), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@Ayaan-20-11](https://github.com/Ayaan-20-11), [@sushicat75](https://github.com/sushicat75), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan), [@slsgzs-cloud](https://github.com/slsgzs-cloud), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@AnayDhawan](https://github.com/AnayDhawan), [@thadidaniel-ctrl](https://github.com/thadidaniel-ctrl), [@Abitha1861](https://github.com/Abitha1861) |
 | **Tests** (`tests/`) | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@tomatotomata](https://github.com/tomatotomata), [@ImMortaL0P](https://github.com/ImMortaL0P), [@evanjain-dot](https://github.com/evanjain-dot), [@propcgamer20-png](https://github.com/propcgamer20-png), [@mahirhir](https://github.com/mahirhir), [@StudentSuite3](https://github.com/StudentSuite3), [@oxura](https://github.com/oxura), [@shauryagangrade](https://github.com/shauryagangrade), [@nitishchauhan002](https://github.com/nitishchauhan002), [@be-student](https://github.com/be-student), [@wangzhengzhuo05](https://github.com/wangzhengzhuo05), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@KingEmma7](https://github.com/KingEmma7) |
-| **Contributor tooling & docs** | [@yakew7](https://github.com/yakew7), [@propcgamer20-png](https://github.com/propcgamer20-png), [@ahmdkaml](https://github.com/ahmdkaml), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@Circout-sudo](https://github.com/Circout-sudo), [@nivedmahendran](https://github.com/nivedmahendran), [@lovishmenaria14-gif](https://github.com/lovishmenaria14-gif), [@Zinniacodes01](https://github.com/Zinniacodes01), [@carryok](https://github.com/carryok), [@SatvikMishra08](https://github.com/SatvikMishra08), [@minutechreview](https://github.com/minutechreview) |
+| **Contributor tooling & docs** | [@yakew7](https://github.com/yakew7), [@Enard52](https://github.com/Enard52), [@propcgamer20-png](https://github.com/propcgamer20-png), [@ahmdkaml](https://github.com/ahmdkaml), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@Circout-sudo](https://github.com/Circout-sudo), [@nivedmahendran](https://github.com/nivedmahendran), [@lovishmenaria14-gif](https://github.com/lovishmenaria14-gif), [@Zinniacodes01](https://github.com/Zinniacodes01), [@carryok](https://github.com/carryok), [@SatvikMishra08](https://github.com/SatvikMishra08), [@minutechreview](https://github.com/minutechreview) |
 
 ---
 
@@ -534,6 +540,7 @@ makes `git shortlog -sne` reconcilable with the list above.
 | [@Shreyash0712](https://github.com/Shreyash0712) | `Shreyash0712`, `Shreyash Swami` |
 | [@Swastik-Yadav](https://github.com/Swastik-Yadav) | `Swastik-Yadav`, `CHiGO` |
 | [@ImMortaL0P](https://github.com/ImMortaL0P) | `Mangalam` |
+| [@Enard52](https://github.com/Enard52) | `Ensar` |
 | [@tomatotomata](https://github.com/tomatotomata) | `ahmadalguydi` |
 | [@adity982](https://github.com/adity982) | `Aditya Datta` |
 | [@peda-cos](https://github.com/peda-cos) | `Pedro Monteiro` |

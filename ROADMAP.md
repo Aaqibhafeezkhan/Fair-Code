@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 51 | 52 | 56 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
+| 51 | 52 | 57 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -186,9 +186,11 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Copy as CLI command and docs: `--sample`, export options and quoting tests (#928, #929, #934), the restored-keywords note (#930), README held-out syntax and the MCP parameter tables (#922, #931), the asset-source record for `brag-output/` (#936), one coverage run in CI (#932), a faster OG-image test (#933), the PRNG oracle in the tests (#927) and a split parity test file (#938)
 - [x] Portability, reproducibility and checks: no regex lookbehind in browser scripts (#956), web exports with `tested: false` and notes (#951), a verified case-folding table (#946), `\=` in held-out paths (#958), a named near-unique constant (#957), the compare HTML rename sections (#953), one MCP `notes` key (#950), an explicit held-out report (#947), parsed README commands (#948), a roadmap issue-number checker (#963), the SPEC proxy section (#955) and the brag-output licences (#954)
 - [x] Web and test hardening: inline errors for the exact inputs (#962), a content-named keywords file (#944), the workbook encoding notice (#952), `pythonpath` for shared helpers (#945), and tests for `python -m faircode`, compare flags, MCP reader errors, delimiter sniffing, proxy-hint rendering and rename tolerance (#966, #959, #965, #964, #960, #949)
-- [ ] Engine parity and correctness follow-ups: Arabic-Indic digits in the numeric check (#967), repeated held-out columns after a skip (#980), and untested validation, empty-subgroup, manifest and provenance branches (#968-#979)
-- [ ] Web and tooling follow-ups: shared helpers for the two views (#983), a browser-level smoke test (#988), the MCP start-up and alias removal plan (#987, #984), a missing-node fallback for the key-fold check (#982), subprocess coverage (#986), the issue-number checker for contributors and metrics (#981), a smaller profile parity test file (#985) and the contributor notes for the new checks (#989)
-
+- [x] Engine parity and correctness: only ASCII digits in the numeric check (#967), a repeated held-out column after a skip (#980), array and object columns skipped by the web engine (#973), a loud failure for an unhandled subcommand (#971), and tests for the validation, empty-subgroup, manifest, stdin, `--rename`, `--keywords`, `--csv -` and provenance branches (#968-#970, #972, #974-#979)
+- [x] Web and tooling: shared helpers for the two views (#983), a browser-level smoke test with its own workflow (#988), an MCP stdio test and the alias removal plan (#987, #984), a missing-node fallback for the key-fold check (#982), the issue-number checker for contributors and metrics (#981) and a smaller profile parity test file (#985)
+- [ ] Engine and loader follow-ups: nested JSON objects in the web engine (#992), mixed number and string labels (#993), unused pandas categories as zero-row groups (#994), empty files (#1010), labels that differ only in case or spacing (#1009), and the row-filter rules in MANIFEST_SPEC (#999)
+- [ ] Tooling and docs follow-ups: a clear message when the mcp extra is missing (#995), one source for the web version (#996), a `make test-browser` target (#997), an up-to-date AGENTS.md (#998), more browser interactions (#1000), the remaining duplicated view functions (#1008), subprocess coverage (#986) and the contributor notes for the new checks (#989)
+- [ ] Test follow-ups: compare HTML "more groups" (#1001), reference rows with a non-numeric share (#1002), insufficient-data metrics (#1003), the missing-openpyxl message (#1004), doubled quotes in delimiter sniffing (#1005), unreadable workbooks and a malformed `@ENCODING` (#1006) and the figures command (#1007)
 ---
 
 ## Phase 6 - Research Paper and Publication - Paused, Retargeted for Next Year

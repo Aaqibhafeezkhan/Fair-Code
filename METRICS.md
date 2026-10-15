@@ -4,7 +4,7 @@
 
 ![Stars](https://img.shields.io/badge/Stars-51-brightgreen?style=flat-square&logo=github)
 ![Contributors](https://img.shields.io/badge/Contributors-52-blue?style=flat-square)
-![Forks](https://img.shields.io/badge/Forks-56-orange?style=flat-square)
+![Forks](https://img.shields.io/badge/Forks-57-orange?style=flat-square)
 ![Watching](https://img.shields.io/badge/Watching-8-yellow?style=flat-square)
 ![Explainers](https://img.shields.io/badge/Explainers-62-blueviolet?style=flat-square)
 ![Countries](https://img.shields.io/badge/Countries-20-informational?style=flat-square)
@@ -46,7 +46,7 @@ Weekly snapshot of project health. Updated every Friday.
 | 2026-W39 | 48 | 45 | 8 | 40 | 30K+ total | 20 | 25 | 7 total |
 | 2026-W40 | 49 | 50 | 8 | 45 | 30K+ total | 20 | 41 | 7 total |
 | 2026-W41 | 49 | 55 | 8 | 50 | 30K+ total | 20 | 72 | 7 total |
-| 2026-W42 | 51 | 56 | 8 | 52 | 30K+ total | 20 | 65 | 7 total |
+| 2026-W42 | 51 | 57 | 8 | 52 | 30K+ total | 20 | 86 | 7 total |
 
 > **2026-W27 - v1.2.0 shipped:** Open Dataset Profiler (CLI + client-side web tool) released; 23 explainers total.
 >
@@ -113,7 +113,8 @@ Weekly snapshot of project health. Updated every Friday.
 > **2026-W42 (later) - the fifth sweep: 20 non-explainer issues closed by us, 3 more by a new contributor, 23 fresh ones opened:** every unassigned non-explainer issue left from the last sweep was fixed and committed on its own, with a parity test wherever both engines are touched: the exact test's shuffles are capped and settable in the web (#925, #926), skipped near-unique held-out columns reach the JSON notes and provenance (#921), encoding notices and `@ENCODING` reach held-out workbooks and the web column box (#923, #924), keys fold NFKC with a generator for the case-folding table (#935, #939), rename suggestions tolerate a different group count and `--rename` pairs land in the compare CSV (#918, #920), Copy as CLI command gained `--sample`, the export options and quoting tests (#928, #929, #934), the keywords box says when it was restored (#930), and the docs and tooling gained the held-out syntax table, the MCP parameter tables with a test, the brag-output asset record, a single CI coverage run, a faster OG-image test and a split parity suite (#922, #931, #936, #932, #933, #938). #848 stayed untouched because it is assigned. [@peda-cos](https://github.com/peda-cos) joined and fixed #917, #919 and #937 through PRs #941-#943; their PRs did not link the issues, so we verified each fix against its repro and closed them with credit. The backlog was replenished with 23 independently reproduced issues (#944-#966, none of them explainers, found from probes and coverage gaps), three pinned: a stale-table guard for the case-folding sweep (#946), the web provenance missing `tested: false` (#951) and a regex lookbehind that would stop the whole script on older Safari (#956). **Contributors `51 -> 52`** (counted from `CONTRIBUTORS.md`; GitHub's contributors API reports 51), forks `56 -> 57`, stars `50 -> 51` (live GitHub numbers); issues closed this week `19 -> 42` (a GitHub search count since 2026-10-12). Countries and social reach not re-measured.
 >
 > **2026-W42 (Wednesday) - the sixth sweep: all 23 non-explainer issues closed, 23 fresh ones opened, no new contributors:** every issue of the previous sweep (#944-#966) was fixed and committed on its own: no regex lookbehind in browser scripts (#956), the web exports and held-out specs now match the CLI for skipped columns, `@ENCODING` and workbook notices (#951, #952, #958), the exact inputs report errors inline (#962), one MCP `notes` key (#950), the proxy specification moved to its own SPEC section (#955), and new guards that parse every documented command (#948), compare the case-folding table with Python while saying what it could not compare (#946) and check roadmap and changelog issue numbers against GitHub (#963). The brag-output licences were researched and recorded: ende.app states CC BY 4.0 and Kenney CC0 (#954). #848 stayed untouched because it is assigned. The backlog was replenished with 23 independently reproduced issues (#967-#989, none of them explainers, found from coverage gaps and probes), three pinned: the Arabic-Indic digit mismatch in the numeric check (#967), a repeated held-out column slipping past the duplicate check after a skip (#980) and the helpers duplicated across the two web views (#983). Contributors stay `52` (counted from `CONTRIBUTORS.md`; GitHub's contributors API reports 51), stars `51`, forks `57 -> 56` (a fork was removed; live GitHub numbers); issues closed this week `42 -> 65` (a GitHub search count since 2026-10-12). Countries and social reach not re-measured.
-
+>
+> **2026-W42 (Thursday) - the seventh sweep: 19 non-explainer issues closed, 19 fresh ones opened, one new contributor:** every unassigned non-explainer issue left from the sixth sweep was fixed and committed on its own: only ASCII digits count as numbers in the held-out screen in both engines (#967), a held-out column given twice is rejected even after a skip (#980), the web engine skips array and object columns like Python (#973), the MCP sheet-note aliases carry a removal version and a `deprecated` hint (#984), the server is driven over stdio (#987), the helpers both web views duplicated moved into `assets/profiler-shared.js` (#983), a Playwright smoke test opens the real pages (#988), the 948-line parity test file was split (#985), and eleven coverage gaps got tests (#968-#972, #974-#979). [@Enard52](https://github.com/Enard52) merged two tooling PRs (#990, #991). Probes of nested JSON, mixed-type columns, unused pandas categories and empty files produced the next 19 issues (#992-#1010), three pinned. #848, #986 and #989 are assigned and were left alone.
 ---
 
 ## Targets
@@ -121,12 +122,12 @@ Weekly snapshot of project health. Updated every Friday.
 | Metric | Current | Target | Timeline |
 |--------|--------:|-------:|----------|
 | Stars | 51 | 50+ | End of 2026 |
-| Forks | 56 | 60+ | End of 2026 |
+| Forks | 57 | 60+ | End of 2026 |
 | Watching | 8 | 12+ | End of 2026 |
 | Contributors | 52 | 20+ | End of 2026 |
 | Social reach | 30K+ | 40K+ | End of 2026 |
 | Countries reached | 20 | 20+ | End of 2026 |
-| Issues closed | 65 (this week, since 2026-10-12) | Track weekly | Ongoing |
+| Issues closed | 86 (this week, since 2026-10-12) | Track weekly | Ongoing |
 | Code audits | 7 | 8+ | End of 2026 |
 | Explainers | 62 | 65+ | End of 2026 |
 
@@ -146,4 +147,4 @@ Weekly snapshot of project health. Updated every Friday.
 
 *Resume-ready line (fill in at application time):*
 
-> Created and scaled Fair Code, an open-source responsible AI platform explaining algorithmic bias through code audits, healthcare-bias case studies, beginner explainers, and contributor-led GitHub documentation; grew the project to **51 stars**, **52 contributors**, **56 forks**, **30K+ social views**, and website visitors from **20 countries**.
+> Created and scaled Fair Code, an open-source responsible AI platform explaining algorithmic bias through code audits, healthcare-bias case studies, beginner explainers, and contributor-led GitHub documentation; grew the project to **51 stars**, **52 contributors**, **57 forks**, **30K+ social views**, and website visitors from **20 countries**.

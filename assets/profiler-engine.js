@@ -1991,7 +1991,7 @@
   // Mirrors compare.py apply_renames (#913): a copy of resultB with each renames[aName] dimension
   // renamed to aName.
   function applyRenames(resultA, resultB, renames) {
-    var namesA = {}, namesB = {}, byB = {}, targets = {};
+    var namesA = {}, namesB = {}, byB = {};
     resultA.dimensions.forEach(function (d) { namesA[d.name] = 1; });
     resultB.dimensions.forEach(function (d) { namesB[d.name] = 1; });
     Object.keys(renames).forEach(function (aName) {
@@ -2002,8 +2002,6 @@
       if (namesB[aName]) throw new Error("--rename: the second dataset already has a dimension named '" + aName + "'");
       if (byB[bName]) throw new Error("--rename: '" + bName + "' is renamed more than once");
       byB[bName] = aName;
-      if (targets[aName]) throw new Error('--rename: two columns cannot be renamed to the same name');
-      targets[aName] = 1;
     });
     var out = Object.assign({}, resultB);
     out.dimensions = resultB.dimensions.map(function (d) {

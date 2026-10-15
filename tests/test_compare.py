@@ -235,3 +235,16 @@ def test_rename_compares_a_renamed_dimension_as_one_without_touching_the_tables(
     c = profile(pd.DataFrame({"race": ["x", "y"] * 40, "ethnicity": ["x", "y"] * 40}))
     with pytest.raises(ValueError, match="already has a dimension named 'race'"):
         compare(a, c, renames={"race": "ethnicity"})
+
+
+def test_rename_rejects_one_b_dimension_used_for_two_a_dimensions():
+    # #968: two A names pointing at the same B dimension (and a B name repeated) are refused
+    # with the exact message; a dict can't hold one A name twice, so this is the only
+    # "same target" shape left.
+    import pytest
+    a = profile(pd.DataFrame({"race": ["x", "y"] * 40, "sex": ["m", "f"] * 40}))
+    b = profile(pd.DataFrame({"ethnicity": ["x", "y"] * 40, "gender": ["m", "f"] * 40}))
+    with pytest.raises(ValueError, match=r"^--rename: 'ethnicity' is renamed more than once$"):
+        compare(a, b, renames={"race": "ethnicity", "sex": "ethnicity"})
+    assert compare(a, b, renames={"race": "ethnicity", "sex": "gender"})["renamed_dimensions"] == [
+        {"a": "race", "b": "ethnicity"}, {"a": "sex", "b": "gender"}]

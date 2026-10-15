@@ -1393,6 +1393,19 @@ def test_compare_rename_flag_aligns_a_renamed_column_and_validates(tmp_path, cap
     assert "renames a dimension to itself" in capsys.readouterr().err
 
 
+def test_rename_given_twice_or_to_one_target_is_rejected(tmp_path, capsys):
+    # #968
+    a, b = tmp_path / "a.csv", tmp_path / "b.csv"
+    a.write_text("race,sex\n" + "x,m\ny,f\n" * 30)
+    b.write_text("ethnicity,gender\n" + "x,m\ny,f\n" * 30)
+    with pytest.raises(SystemExit) as exc:
+        main(["compare", str(a), str(b), "--rename", "race=ethnicity", "--rename", "race=gender"])
+    assert exc.value.code == 2
+    assert "error: --rename 'race' given twice" in capsys.readouterr().err
+    assert main(["compare", str(a), str(b), "--rename", "race=ethnicity", "--rename", "sex=ethnicity"]) == 2
+    assert "--rename: 'ethnicity' is renamed more than once" in capsys.readouterr().err
+
+
 def test_proxy_exact_permutations_rejects_more_than_a_million(tmp_path, capsys):
     # #926
     path = tmp_path / "d.csv"

@@ -102,6 +102,16 @@ def test_python_js_compare_rename_option_parity(tmp_path):
         ["node", "scripts/engine-js.js", "compare", str(path_b), str(path_b), json.dumps({"sex": "sex"})],
         capture_output=True, text=True, encoding="utf-8")
     assert js_identity.returncode != 0 and "renames a dimension to itself" in js_identity.stderr
+    # #968: two A names to one B dimension give the same message in both engines.
+    path_c = tmp_path / "c.csv"
+    path_c.write_text("gender,ethnicity\n" + "\n".join(f"{'M' if i % 2 else 'F'},{['White', 'Black', 'White'][i % 3]}" for i in range(48)) + "\n")
+    twice = {"race": "ethnicity", "sex": "ethnicity"}
+    with pytest.raises(ValueError, match="'ethnicity' is renamed more than once"):
+        compare(profile(pd.read_csv(path_a)), profile(pd.read_csv(path_c)), "a.csv", "c.csv", renames=twice)
+    js_twice = subprocess.run(
+        ["node", "scripts/engine-js.js", "compare", str(path_a), str(path_c), json.dumps(twice)],
+        capture_output=True, text=True, encoding="utf-8")
+    assert js_twice.returncode != 0 and "--rename: 'ethnicity' is renamed more than once" in js_twice.stderr
 
 
 def test_compare_view_offers_compare_as_one_buttons_for_rename_suggestions():

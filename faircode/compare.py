@@ -397,8 +397,6 @@ def apply_renames(result_a: dict, result_b: dict, renames: dict) -> dict:
         if b_name in by_b:
             raise ValueError(f"--rename: '{b_name}' is renamed more than once")
         by_b[b_name] = a_name
-    if len(set(by_b.values())) != len(by_b):
-        raise ValueError("--rename: two columns cannot be renamed to the same name")
     dims = [dict(d, name=by_b[d["name"]]) if d["name"] in by_b else d for d in result_b["dimensions"]]
     return dict(result_b, dimensions=dims)
 

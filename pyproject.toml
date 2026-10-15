@@ -49,6 +49,7 @@ faircode = [
 pythonpath = [".", "tests"]
 markers = [
     "slow: trains models (tests/test_benchmark.py); skip locally with -m \"not slow\", CI runs everything",
+    "browser: opens the real pages in Chromium through Playwright (tests/browser); skipped when Playwright is missing",
 ]
 
 [tool.ruff]

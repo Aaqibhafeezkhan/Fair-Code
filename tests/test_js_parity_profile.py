@@ -933,3 +933,16 @@ def test_python_js_reject_out_of_range_group_limits_with_the_same_message(tmp_pa
     done = subprocess.run(["node", "scripts/engine-js.js", "profile", str(path), str(opts_file)],
                           capture_output=True, text=True, encoding="utf-8")
     assert done.returncode != 0 and str(py_err.value) in done.stderr
+
+
+def test_python_js_skip_array_valued_columns_like_unhashable_cells(tmp_path):
+    """#973: a column of arrays next to a normal one is not a dimension in either engine."""
+    path = tmp_path / "nested.json"
+    path.write_text(json.dumps([{"sex": "m" if i % 2 else "f", "tags": [i % 2], "note": f"n{i % 3}"}
+                                for i in range(20)]), encoding="utf-8")
+    from faircode.loaders_extra import read_table as read_any_table
+    py = profile(read_any_table(str(path)), None, {})
+    js = json.loads(subprocess.run(["node", "scripts/engine-js.js", "profile-json", str(path)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert [d["name"] for d in py["dimensions"]] == ["sex", "note"]
+    assert js == json.loads(json.dumps(py))

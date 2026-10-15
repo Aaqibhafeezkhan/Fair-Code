@@ -656,6 +656,9 @@
       }
       var kind = classifyName(col, keywords);
       if (kind !== null) { detected.push({ name: col, kind: kind }); return; }
+      // A column holding objects or arrays cannot form groups; mirrors detect.py skipping the
+      // TypeError from nunique() on unhashable cells (#844, #973).
+      if (table.rows.some(function (r) { return r[col] !== null && typeof r[col] === 'object'; })) return;
       var n = nunique(table.rows, col);
       if (n >= 2 && n <= maxCategoricalCard) {
         detected.push({ name: col, kind: 'categorical' });

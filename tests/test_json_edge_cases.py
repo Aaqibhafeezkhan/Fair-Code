@@ -232,3 +232,18 @@ def test_records_json_with_nested_objects_flattens(tmp_path):
     assert list(loaded.columns) == ["sex", "loc.state"]
     assert loaded["loc.state"].tolist() == ["TX", "CA"]
 
+
+
+def test_dict_and_list_columns_are_skipped_by_detection_and_profile():
+    # #973: unhashable cells make series.nunique() raise TypeError; the column is skipped
+    # quietly instead of turning a nested-JSON frame into a crash.
+    import pandas as pd
+    from faircode import profile
+    from faircode.detect import detect_columns
+    df = pd.DataFrame({"sex": ["m", "f"] * 5,
+                       "meta": [{"a": 1}, {"a": 2}] * 5,
+                       "tags": [["x"], ["y"]] * 5})
+    assert [d["name"] for d in detect_columns(df)] == ["sex"]
+    result = profile(df)
+    assert [d["name"] for d in result["dimensions"]] == ["sex"]
+    assert "meta" not in str(result["dimensions"]) and "tags" not in str(result["dimensions"])

@@ -921,8 +921,9 @@ def main(argv: list[str] | None = None) -> int:
               f"{len(performance_df)} performance rows to {args.out}/", file=sys.stderr)
         return 0
 
-    parser.print_help()
-    return 1
+    # parse_args() (required=True) exits on a missing command, so reaching here means a
+    # subcommand was registered without a handler: fail loudly instead of printing help (#971).
+    raise AssertionError(f"no handler for command {args.command!r}")
 
 
 if __name__ == "__main__":

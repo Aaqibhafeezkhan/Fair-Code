@@ -1592,3 +1592,17 @@ def test_the_documented_command_check_catches_a_bad_flag(capsys):
         with pytest.raises(SystemExit):
             build_parser().parse_args(shlex.split(bad)[1:])
         capsys.readouterr()
+
+
+
+def test_a_subcommand_without_a_handler_fails_loudly(monkeypatch):
+    # #971: main() must not answer an unhandled command with the help text and exit 1.
+    def parser_with_unhandled_command():
+        parser = real_build_parser()
+        parser._subparsers._group_actions[0].add_parser("bogus")
+        return parser
+
+    real_build_parser = cli.build_parser
+    monkeypatch.setattr(cli, "build_parser", parser_with_unhandled_command)
+    with pytest.raises(AssertionError, match="no handler for command 'bogus'"):
+        main(["bogus"])

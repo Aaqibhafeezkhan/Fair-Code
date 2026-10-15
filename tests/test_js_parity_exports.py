@@ -1,5 +1,6 @@
 """The web CSV/HTML exports against the Python writers, including the compare sections. (split out of test_js_parity.py, #938)."""
 
+import json
 import subprocess
 
 import pandas as pd
@@ -140,3 +141,21 @@ def test_web_compare_csv_lists_renamed_dimensions_like_python(tmp_path):
     section = "\n\nrenamed_dimension_a,renamed_dimension_b\nrace,ethnicity\n\nflag\n"
     assert section in web.replace("\r\n", "\n") and section in py.replace("\r\n", "\n")
     assert "renamed_dimension_a" not in compare_to_csv(compare(pa, pb, "a.csv", "b.csv"))
+
+
+def test_web_html_report_says_imbalance_inf_for_an_empty_subgroup_like_python(tmp_path):
+    """#975: a zero-row group (an unused pandas category) gives imbalance_ratio None; the web
+    report builder prints the same meta text as to_html()."""
+    from faircode.report import to_html
+    column = pd.Series(pd.Categorical(["M"] * 30 + ["F"] * 30, categories=["M", "F", "X"]))
+    result = profile(pd.DataFrame({"sex": column}))
+    src = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
+    helpers = src[src.index("var GRADE_COLOR"):src.index("function render(")]
+    builders = src[src.index("function buildHtmlReport(r)"):src.index("async function downloadCsvReport")]
+    script = ("var DISPLAY_GROUPS=12;" + helpers +
+              "require(process.argv[1]);var E=globalThis.FairCodeProfiler;" + builders +
+              "process.stdout.write(buildHtmlReport(JSON.parse(process.argv[2])));")
+    done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(result)],
+                          capture_output=True, text=True, encoding="utf-8", check=True)
+    assert "imbalance inf (empty subgroup)" in done.stdout
+    assert "imbalance inf (empty subgroup)" in to_html(result)

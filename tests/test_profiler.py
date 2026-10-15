@@ -699,3 +699,18 @@ def test_italian_and_dutch_built_ins():
         assert classify_name(name) == kind, name
     for name in ("beta", "rassegna", "stadium", "etagere"):
         assert classify_name(name) is None, name
+
+
+def _dimension_with_an_empty_subgroup():
+    # #975: an unused category of a pandas Categorical column (e.g. from a parquet file) is a
+    # group with 0 rows; no reference baseline is needed to get one.
+    column = pd.Series(pd.Categorical(["M"] * 30 + ["F"] * 30, categories=["M", "F", "X"]))
+    return profile(pd.DataFrame({"sex": column}))
+
+
+def test_empty_subgroup_is_flagged_with_an_infinite_imbalance():
+    result = _dimension_with_an_empty_subgroup()
+    dim = result["dimensions"][0]
+    assert dim["imbalance_ratio"] is None and dim["n_groups"] == 3
+    assert next(g for g in dim["groups"] if g["label"] == "X")["count"] == 0
+    assert "sex: a subgroup is effectively absent (0 rows)" in result["flags"]

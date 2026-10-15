@@ -81,7 +81,7 @@ def _sex_race_csv(tmp_path):
 
 
 # Delimiter-sniffing samples and the delimiter both engines must pick (#964); used by test_loaders.py and
-# test_js_parity_profile.py.
+# test_js_parity_profile_parsing.py.
 SNIFF_CASES = [
     ("", ","),                                             # empty sample: the default
     ("a\tb\tc\n1\t2\t3\n", "\t"),

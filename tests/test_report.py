@@ -747,3 +747,29 @@ def test_terminal_and_html_reports_say_imbalance_inf_for_an_empty_subgroup():
     result = profile(pd.DataFrame({"sex": column}))
     assert "(imbalance inf (empty subgroup))" in to_terminal(result)
     assert "imbalance inf (empty subgroup)" in to_html(result)
+
+
+def _fifteen_group_profile():
+    df = pd.DataFrame({"tier": [f"grp{i % 15:02d}" for i in range(150)]})
+    return profile(df, {"tier": "categorical"}, {"max_categorical_card": 30})
+
+
+def test_terminal_reports_cap_a_long_dimension_with_an_and_n_more_groups_line():
+    # #976: DISPLAY_GROUPS (12) rows are shown, the other three are counted in a closing line.
+    result = _fifteen_group_profile()
+    assert len(result["dimensions"][0]["groups"]) == 15
+    text = to_terminal(result)
+    assert text.count("  … and 3 more groups") == 1
+    assert not any(line.startswith("  grp14") for line in text.splitlines())   # (it still appears in the flags)
+    drift = compare_to_terminal(compare(result, result, "a.csv", "b.csv"))
+    assert drift.count("  … and 3 more groups") == 1
+    assert not any(line.startswith("  grp14") for line in drift.splitlines())
+
+
+def test_compare_terminal_names_the_two_detected_kinds_for_a_kind_mismatch():
+    # #976: sex on one side and race on the other (what --map does) skips the drift comparison
+    # and says why.
+    side_a = profile(pd.DataFrame({"col": ["m", "f"] * 40}), {"col": "sex"})
+    side_b = profile(pd.DataFrame({"col": ["x", "y"] * 40}), {"col": "race"})
+    text = compare_to_terminal(compare(side_a, side_b, "a.csv", "b.csv"))
+    assert "  detected as sex vs race on the two datasets" in text

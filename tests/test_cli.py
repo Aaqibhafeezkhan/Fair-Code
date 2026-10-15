@@ -1679,3 +1679,13 @@ def test_out_of_range_group_limits_exit_2(tmp_path, capsys, command, flag, value
     inputs = [str(a)] if command == "profile" else [str(a), str(a)]
     assert main([command, *inputs, flag, value]) == 2
     assert f"error: {message}" in capsys.readouterr().err
+
+
+def test_compare_rename_across_kinds_reports_the_kind_mismatch(tmp_path, capsys):
+    # #976: --rename pairs a sex column with a race column; the terminal report says why the
+    # drift comparison was skipped (--map alone cannot do this: both sides share the override).
+    a, b = tmp_path / "a.csv", tmp_path / "b.csv"
+    a.write_text("sex\n" + "m\nf\n" * 40)
+    b.write_text("race\n" + "x\ny\n" * 40)
+    assert main(["compare", str(a), str(b), "--rename", "sex=race"]) == 0
+    assert "detected as sex vs race on the two datasets" in capsys.readouterr().out

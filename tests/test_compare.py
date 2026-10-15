@@ -248,3 +248,15 @@ def test_rename_rejects_one_b_dimension_used_for_two_a_dimensions():
         compare(a, b, renames={"race": "ethnicity", "sex": "ethnicity"})
     assert compare(a, b, renames={"race": "ethnicity", "sex": "gender"})["renamed_dimensions"] == [
         {"a": "race", "b": "ethnicity"}, {"a": "sex", "b": "gender"}]
+
+
+def test_an_age_dimension_with_no_groups_is_not_an_age_banding_mismatch():
+    # #976: an all-missing age column has no group labels on its side; the guard returns False
+    # instead of comparing an empty list's all() with the other side's.
+    from faircode.compare import _age_banding_mismatch
+    empty = profile(pd.DataFrame({"age": [None] * 20}), {"age": "age"})["dimensions"][0]
+    banded = profile(pd.DataFrame({"age": [20, 40, 60, 80] * 5}), {"age": "age"})["dimensions"][0]
+    assert empty["groups"] == [] and banded["groups"]
+    assert _age_banding_mismatch(empty, banded) is False and _age_banding_mismatch(banded, empty) is False
+    assert compare(profile(pd.DataFrame({"age": [None] * 20}), {"age": "age"}),
+                   profile(pd.DataFrame({"age": [20, 40, 60, 80] * 5}), {"age": "age"}))["dimensions"][0]["kind_mismatch"] is False

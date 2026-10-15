@@ -1244,7 +1244,7 @@
   // column is missing from such a workbook, the error says which sheets were skipped.
   async function buildHeldOut(specs, table, notes, maxCategoricalCard) {
     if (maxCategoricalCard === undefined || maxCategoricalCard === null) maxCategoricalCard = DEFAULT_OPTS.max_categorical_card;
-    var out = {};
+    var out = {}, supplied = {};   // supplied: kept or skipped, so a column named twice is an error either way (#980)
     for (var i = 0; i < specs.length; i++) {
       var spec = specs[i], heldTable, sheetNote = null;
       if (/\.xlsx$/i.test(spec.name)) {
@@ -1265,7 +1265,8 @@
       else if (/\.json$/i.test(spec.name)) heldTable = parseJSON(spec.data);
       else heldTable = parseCSV(spec.data);
       try {
-        var values = parseHeldOut(heldTable, spec.column, table, out, spec.key, spec.normalize);
+        var values = parseHeldOut(heldTable, spec.column, table, supplied, spec.key, spec.normalize);
+        supplied[spec.column] = true;
         // A near-unique column (an ID, free text) is skipped with a note, like proxy.py
         // _keep_held_out (#908).
         var seen = Object.create(null), distinct = 0, present = 0;

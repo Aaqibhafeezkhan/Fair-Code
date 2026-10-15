@@ -378,6 +378,7 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
     `skipped` when that list is given, so provenance can say it was not tested (#921).
     """
     held_out = {}
+    seen_columns = set()   # kept or skipped: a column named twice is an error either way (#980)
     for original_spec in specs or []:
         spec, spec_encoding = split_held_out_encoding(original_spec)
         spec, normalize = resolve_key_marker(spec, df.columns, normalize_keys)
@@ -398,10 +399,11 @@ def parse_held_out_specs(specs, df: pd.DataFrame, read_table, *, flag="--proxy-h
             raise ValueError(
                 f"{flag} column '{column}' already exists in the profiled dataset - "
                 f"held-out columns must not collide with a real one")
-        if column in held_out:
+        if column in seen_columns:
             raise ValueError(
                 f"{flag} column '{column}' was already supplied by an earlier "
                 f"{flag} spec - held-out columns must not collide with each other")
+        seen_columns.add(column)
         if key is not None:
             # split_held_out_spec only returns a key that names profiled column(s), so this
             # resolves; an unknown key makes the whole right-hand side the column name (#869).

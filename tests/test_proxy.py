@@ -716,3 +716,16 @@ def test_non_ascii_digits_are_not_numbers_for_the_identifier_screen(digits):
     from faircode.proxy import _all_numeric
     assert not _all_numeric(pd.Series([digits, digits[::-1]]))
     assert _all_numeric(pd.Series(["123", "-4.5", ".5", "1e3"]))
+
+
+def test_a_column_named_twice_is_rejected_whether_the_first_was_kept_or_skipped():
+    # #980: the duplicate check used to look only at kept columns, so a repeated near-unique
+    # column slipped past it and was silently skipped twice.
+    from faircode.proxy import parse_held_out_specs
+    n = 100
+    df = pd.DataFrame({"sex": ["m", "f"] * (n // 2)})
+    held = pd.DataFrame({"ident": [f"id{i}" for i in range(n)], "race": ["a", "b"] * (n // 2)})
+    read = lambda path: held  # noqa: E731
+    for column in ("race", "ident"):
+        with pytest.raises(ValueError, match=f"column '{column}' was already supplied by an earlier"):
+            parse_held_out_specs([f"h.csv={column}", f"h.csv={column}"], df, read, notes=[], max_categorical_card=20)

@@ -546,3 +546,20 @@ def test_non_ascii_digit_columns_are_screened_the_same_in_both_engines():
     out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
                                     capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert {k: tuple(v) for k, v in out.items()} == py
+
+
+def test_web_held_out_rejects_a_repeated_column_even_when_the_first_was_skipped():
+    """#980: like proxy.py, a column given twice is an error whether the first was kept or
+    skipped as near-unique."""
+    script = (
+        "require(process.argv[1]);var E=globalThis.FairCodeProfiler;var rows=[],held=[];"
+        "for(var i=0;i<100;i++){rows.push({sex:i%2?'m':'f'});held.push({ident:'id'+i,race:'ab'[i%2]});}"
+        "var t={columns:['sex'],rows:rows};var res={};"
+        "(async function(){for(var c of ['ident','race']){try{await E.buildHeldOut(["
+        "{name:'h.json',column:c,data:JSON.stringify(held)},{name:'h.json',column:c,data:JSON.stringify(held)}],t,[],20);"
+        "res[c]='no error';}catch(e){res[c]=e.message;}}"
+        "process.stdout.write(JSON.stringify(res));})();"
+    )
+    out = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js")],
+                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert out == {c: f"held-out column '{c}' was already supplied" for c in ("ident", "race")}

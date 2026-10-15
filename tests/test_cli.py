@@ -1619,3 +1619,17 @@ def test_csv_dash_with_json_is_refused_before_anything_reaches_stdout(tmp_path, 
     captured = capsys.readouterr()
     assert captured.out == ""
     assert captured.err.strip().endswith("error: --csv - and --json both write to stdout; use one")
+
+
+
+@pytest.mark.parametrize("command", ["profile", "compare"])
+def test_unreadable_keywords_file_exits_2(tmp_path, capsys, command):
+    # #969: a missing path and a directory both hit the OSError branch.
+    a = tmp_path / "a.csv"
+    a.write_text("sex\nM\nF\nM\nF\n", encoding="utf-8")
+    inputs = [str(a)] if command == "profile" else [str(a), str(a)]
+    for bad in (tmp_path / "no-such-words.json", tmp_path):
+        with pytest.raises(SystemExit) as exc:
+            main([command, *inputs, "--keywords", str(bad)])
+        assert exc.value.code == 2
+        assert f"error: could not read --keywords file {bad}:" in capsys.readouterr().err

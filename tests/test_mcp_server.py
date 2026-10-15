@@ -960,3 +960,86 @@ def test_list_explainers_tool_turns_expected_failures_into_tool_errors(monkeypat
         monkeypatch.setattr(mcp_server, "_list_explainers_impl", boom)
         with pytest.raises(ToolError, match=re.escape(str(exc))):
             asyncio.run(server.call_tool("list_explainers", {"tag": "x"}))
+
+
+def _stdio_session(requests, timeout=60):
+    """Start `python -m faircode.mcp_server`, send newline-delimited JSON-RPC `requests` and return
+    the responses by id once every request that has an id was answered, then close stdin so the
+    server exits cleanly (#987). stdin stays open meanwhile: closing it early cancels a call."""
+    import json
+    import subprocess
+    import sys
+    import threading
+
+    proc = subprocess.Popen([sys.executable, "-m", "faircode.mcp_server"], stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
+    watchdog = threading.Timer(timeout, proc.kill)
+    watchdog.start()
+    try:
+        wanted = {r["id"] for r in requests if "id" in r}
+        for request in requests:
+            proc.stdin.write(json.dumps(request) + "\n")
+        proc.stdin.flush()
+        replies = {}
+        while wanted - set(replies):
+            line = proc.stdout.readline()
+            assert line, f"server exited early: {proc.stderr.read()}"
+            reply = json.loads(line)
+            if "id" in reply:
+                replies[reply["id"]] = reply
+        proc.stdin.close()
+        assert proc.wait(timeout=timeout) == 0, proc.stderr.read()
+        return replies
+    finally:
+        watchdog.cancel()
+        if proc.poll() is None:
+            proc.kill()
+        proc.stdout.close()
+        proc.stderr.close()
+
+
+_INITIALIZE = [
+    {"jsonrpc": "2.0", "id": 1, "method": "initialize",
+     "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                "clientInfo": {"name": "faircode-test", "version": "0"}}},
+    {"jsonrpc": "2.0", "method": "notifications/initialized"},
+]
+
+
+def test_server_starts_over_stdio_and_lists_every_tool_with_its_parameters(tmp_path):
+    # #987: the real entry point, the handshake and tools/list, not just build_server() in-process.
+    import asyncio
+
+    replies = _stdio_session(_INITIALIZE + [{"jsonrpc": "2.0", "id": 2, "method": "tools/list"}])
+    assert replies[1]["result"]["serverInfo"]["name"] == "faircode"
+    listed = {t["name"]: sorted(t["inputSchema"]["properties"]) for t in replies[2]["result"]["tools"]}
+    assert {"profile_dataset", "compare_datasets", "proxy_hints", "list_explainers",
+            "get_explainer", "get_benchmark_results"} <= set(listed)
+    in_process = asyncio.run(build_server().list_tools())
+    assert listed == {t.name: sorted(t.input_schema["properties"]) for t in in_process}
+    assert {"path", "format"} <= set(listed["profile_dataset"])
+    assert {"path_a", "path_b", "renames"} <= set(listed["compare_datasets"])
+
+
+def test_a_tool_call_works_end_to_end_over_stdio(tmp_path):
+    import json
+
+    path = tmp_path / "a.csv"
+    path.write_text("sex\n" + "M\nF\n" * 10, encoding="utf-8")
+    replies = _stdio_session(_INITIALIZE + [{
+        "jsonrpc": "2.0", "id": 3, "method": "tools/call",
+        "params": {"name": "profile_dataset", "arguments": {"path": str(path)}}}])
+    result = replies[3]["result"]
+    assert not result.get("isError")
+    payload = result.get("structuredContent") or json.loads(result["content"][0]["text"])
+    assert payload["n_rows"] == 20 and payload["dimensions"][0]["name"] == "sex"
+
+
+def test_the_console_script_points_at_main():
+    tomllib = pytest.importorskip("tomllib")
+    from pathlib import Path
+    import faircode.mcp_server as mcp_server
+
+    pyproject = tomllib.loads((Path(__file__).resolve().parent.parent / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["scripts"]["faircode-mcp"] == "faircode.mcp_server:main"
+    assert callable(mcp_server.main)

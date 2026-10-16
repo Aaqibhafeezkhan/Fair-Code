@@ -304,9 +304,15 @@ def test_row_filter_on_a_missing_column_raises_keyerror(operator, value):
         RowFilter(column="nope", **{operator: value}).apply(_FILTER_FRAME)
 
 
-def test_row_filters_combine_with_and_semantics():
-    kept = RowFilter(column="race", not_isin=["C"], equals="A").apply(_FILTER_FRAME)
-    assert kept.index.tolist() == [0, 4]
+def test_a_row_filter_with_two_operators_is_rejected():
+    # #999: MANIFEST_SPEC says exactly one operator per filter; two filters AND together instead.
+    with pytest.raises(ValueError, match="exactly one operator, got not_isin and equals"):
+        RowFilter(column="race", not_isin=["C"], equals="A")
+    with pytest.raises(ValueError, match="got isin and notna"):
+        RowFilter(column="race", isin=["A"], notna=True)
+    first, second = RowFilter(column="race", not_isin=["C"]), RowFilter(column="race", equals="A")
+    assert second.apply(first.apply(_FILTER_FRAME)).index.tolist() == [0, 4]
+    assert RowFilter(column="race", notna=False, equals="A").column == "race"   # notna: false is not an operator
 
 
 def test_threshold_attribute_needs_a_valid_direction_and_a_threshold():

@@ -33,11 +33,18 @@ class RowFilter:
         # MANIFEST_SPEC.md requires "exactly one of the operators below" for a
         # row_filters entry. A block with only `column` set (a blanked or
         # copy-pasted YAML entry) would otherwise silently keep every row.
-        if (self.isin is None and self.not_isin is None and self.equals is None
-                and self.not_equals is None and not self.notna):
+        given = [name for name, value in (
+            ("isin", self.isin), ("not_isin", self.not_isin), ("equals", self.equals),
+            ("not_equals", self.not_equals), ("notna", self.notna or None)) if value is not None]
+        if not given:
             raise ValueError(
                 f"{self.column}: row filter needs one of "
                 f"isin / not_isin / equals / not_equals / notna"
+            )
+        if len(given) > 1:   # one operator per filter, as MANIFEST_SPEC says (#999); add a second filter instead
+            raise ValueError(
+                f"{self.column}: row filter takes exactly one operator, got {' and '.join(given)} "
+                f"(write one row_filters entry per operator)"
             )
 
     def apply(self, df: pd.DataFrame) -> pd.DataFrame:

@@ -64,6 +64,11 @@ row_filters:
 | `not_equals` | keep rows where `column != value`         |
 | `notna`      | keep rows where `column` is not null      |
 
+A filter has exactly one operator; giving two (for example `isin` and `equals`) is an error that names
+both - write one `row_filters` entry per operator. A missing value (NaN) never matches `isin` or
+`equals`, so those drop it; it does match `not_isin` and `not_equals` ("not one of the list"), so those
+keep it - add a `notna: true` filter to drop missing rows as well.
+
 ## `target`
 
 How the binary label is derived. Exactly one `method`:

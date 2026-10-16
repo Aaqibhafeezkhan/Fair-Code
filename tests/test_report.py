@@ -773,3 +773,16 @@ def test_compare_terminal_names_the_two_detected_kinds_for_a_kind_mismatch():
     side_b = profile(pd.DataFrame({"col": ["x", "y"] * 40}), {"col": "race"})
     text = compare_to_terminal(compare(side_a, side_b, "a.csv", "b.csv"))
     assert "  detected as sex vs race on the two datasets" in text
+
+
+def test_compare_html_caps_a_long_dimension_and_survives_all_zero_shares():
+    # #1001: the HTML drift card has its own "more groups" line and its own bar-scaling guard.
+    result = _fifteen_group_profile()
+    cmp_result = compare(result, result, "a.csv", "b.csv")
+    html_out = compare_to_html(cmp_result)
+    assert html_out.count('<div class="dim-more">… and 3 more groups</div>') == 1
+    assert "grp11" in html_out and "grp12" not in html_out
+    for group in cmp_result["dimensions"][0]["groups"]:
+        group.update(share_a=0.0, share_b=0.0, share_delta=0.0)
+    flat = compare_to_html(cmp_result)           # max_share would be 0: must not divide by zero
+    assert "nan" not in flat.lower() and "inf" not in flat.lower().replace("information", "")

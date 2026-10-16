@@ -108,3 +108,19 @@ def test_main_smoke_test_with_metric_flag_and_custom_results_dir(tmp_path, capsy
     captured = capsys.readouterr()
     assert f"Figures written to {results_dir / 'figures'}/" in captured.out
     assert (results_dir / "figures" / "toy_audit_strategies.png").is_file()
+
+
+def test_python_dash_m_faircode_figures_writes_the_pngs(tmp_path):
+    # #1007: the module's own entry point, not only main() called in-process.
+    import subprocess
+    import sys
+
+    _fairness_df().to_csv(tmp_path / "results_fairness.csv", index=False)
+    done = subprocess.run([sys.executable, "-m", "faircode.figures", str(tmp_path)],
+                          capture_output=True, text=True, encoding="utf-8")
+    assert done.returncode == 0, done.stderr
+    assert f"Figures written to {tmp_path}" in done.stdout
+    assert (tmp_path / "figures" / "toy_audit_strategies.png").is_file()
+    unknown = subprocess.run([sys.executable, "-m", "faircode.figures", str(tmp_path), "--metric", "no_such_metric"],
+                             capture_output=True, text=True, encoding="utf-8")
+    assert unknown.returncode != 0 and "no rows for audit=" in unknown.stderr

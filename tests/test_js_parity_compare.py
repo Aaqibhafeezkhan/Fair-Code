@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from faircode import compare, profile
-from js_helpers import REPO_ROOT
+from js_helpers import REPO_ROOT, SHARED_PRELUDE
 
 
 def test_python_js_compare_parity_for_quality_flags_and_renames(tmp_path):
@@ -201,11 +201,11 @@ def test_compare_html_reports_list_renamed_and_possibly_renamed_dimensions_alike
     path_a.write_text("sex,race\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
     path_b.write_text("sex,ethnicity\n" + "\n".join(f"{'m' if i % 2 else 'f'},{'x' if i % 3 else 'y'}" for i in range(60)) + "\n")
     src = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
-    helpers = (src[src.index("function pct("):src.index("function wireSlot")]
+    helpers = (src[src.index("function stripNegZero"):src.index("function wireSlot")]
                + src[src.index("function kindMismatchReason"):src.index("function driftCard")])
     builders = src[src.index("function proxyHintItems"):src.index("function compareReportBaseName")]
     script = (
-        "var DISPLAY_GROUPS=12;" + helpers +
+        "var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
         "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;" + builders +
         "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"
         "var pa=E.profile(load(process.argv[2]),{},{}),pb=E.profile(load(process.argv[3]),{},{});"

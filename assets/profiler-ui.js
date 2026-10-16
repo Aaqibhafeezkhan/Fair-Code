@@ -18,6 +18,7 @@
   var showRestoredNote = S.showRestoredNote, announceKeywords = S.announceKeywords;
   var fileDigest = S.fileDigest, heldOutEntries = S.heldOutEntries, setSkipNotes = S.setSkipNotes;
   var flashButton = S.flashButton, fallbackCopy = S.fallbackCopy;
+  var esc = S.esc, pct = S.pct, prefersReducedMotion = S.prefersReducedMotion, readProxyAlpha = S.readProxyAlpha;
   var exact = S.createExactInputs('proxy');
   var exactControls = exact.controls, clearExactError = exact.clearError, showExactError = exact.showError;
   var syncExactInputs = exact.sync, wireExactInputs = exact.wire;
@@ -283,19 +284,8 @@
   var GRADE_COLOR = { A: 'var(--accent3)', B: 'var(--accent3)',
                       C: 'var(--warn)', D: 'var(--accent)', F: 'var(--accent)' };
 
-  function prefersReducedMotion() {
-    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
   // A dimension with no groups was not measured; its stored 0 is a placeholder (#838).
   function dimScoreText(d) { return d.n_groups === 0 ? 'not measured' : d.dimension_score + '/100'; }
-
-  function pct(x) { return (x * 100).toFixed(1) + '%'; }
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
-  }
 
   function render(r, name, scroll) {
     currentResult = r;
@@ -475,19 +465,6 @@
   // Opt-in: computed on click, not on every render, since the chi-squared
   // pass over every dimension pair is work most visits never ask for.
 
-  // Significance level for the proxy check (--proxy-alpha, #786): blank means
-  // the 0.05 default; anything outside (0, 1] is rejected like the CLI does.
-  function readProxyAlpha(input, host) {
-    var raw = input.value.trim();
-    if (raw === '') return 0.05;
-    var a = parseFloat(raw);
-    if (!(a > 0 && a <= 1)) {
-      host.innerHTML = '<p class="profiler-error">Significance level must be in (0, 1].</p>';
-      return null;
-    }
-    return a;
-  }
-
 
   async function renderProxyHints() {
     if (!currentTable || !currentResult) return;
@@ -589,21 +566,7 @@
     mappingBlock.hidden = false;
   }
 
-  function readOverrides() {
-    var overrides = {};
-    var selects = mappingList.querySelectorAll('.map-select');
-    for (var i = 0; i < selects.length; i++) {
-      var sel = selects[i];
-      var row = sel.closest('.map-row');
-      if (sel.value !== 'auto') {
-        overrides[sel.getAttribute('data-col')] = sel.value;
-        if (row) row.classList.add('overridden');
-      } else if (row) {
-        row.classList.remove('overridden');
-      }
-    }
-    return overrides;
-  }
+  function readOverrides() { return S.readOverrides(mappingList); }
 
   // Delegated so it keeps working across re-renders of the list.
   mappingList.addEventListener('change', function (e) {

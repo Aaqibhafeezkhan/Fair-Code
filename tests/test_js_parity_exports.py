@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from faircode import compare, profile
-from js_helpers import REPO_ROOT, _run_ui_exports, _sex_race_csv, result_with_an_empty_subgroup
+from js_helpers import REPO_ROOT, SHARED_PRELUDE, _run_ui_exports, _sex_race_csv, result_with_an_empty_subgroup
 
 
 def test_web_csv_export_matches_python_to_csv(tmp_path):
@@ -151,7 +151,7 @@ def test_web_html_report_says_imbalance_inf_for_an_empty_subgroup_like_python(tm
     src = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
     helpers = src[src.index("var GRADE_COLOR"):src.index("function render(")]
     builders = src[src.index("function buildHtmlReport(r)"):src.index("async function downloadCsvReport")]
-    script = ("var DISPLAY_GROUPS=12;" + helpers +
+    script = ("var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
               "require(process.argv[1]);var E=globalThis.FairCodeProfiler;" + builders +
               "process.stdout.write(buildHtmlReport(JSON.parse(process.argv[2])));")
     done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(result)],

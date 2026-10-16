@@ -43,6 +43,11 @@ def shared_prologue(path_arg=1):
 
 SHARED_JS = REPO_ROOT / "assets" / "profiler-shared.js"
 
+# Node source that evaluates profiler-shared.js against stub window/document objects and brings its
+# pure helpers (esc, pct) into scope, for tests that slice the view files' own functions out (#1008).
+SHARED_PRELUDE = ("var shared=(function(){var window={},document={};" + SHARED_JS.read_text(encoding="utf-8")
+                  + ";return window.FairCodeShared;})();var esc=shared.esc,pct=shared.pct;")
+
 
 def _run_js_proxy_hints(csv_path, alpha=0.05, exact=False):
     script = (
@@ -67,7 +72,7 @@ def _run_ui_exports(csv_path, with_hints, reference=None, provenance=None):
     helpers = src[src.index("var GRADE_COLOR"):src.index("function render(")]
     builders = src[src.index("function buildHtmlReport(r)"):src.index("async function downloadCsvReport")]
     script = (
-        "var DISPLAY_GROUPS=12;" + helpers +
+        "var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
         "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;"
         + builders +
         "var t=E.parseCSV(fs.readFileSync(process.argv[2],'utf-8'));var r=E.profile(t,{}," + json.dumps({"reference": reference} if reference else {}) + ");"

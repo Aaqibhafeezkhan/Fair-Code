@@ -168,12 +168,52 @@
     return ok;
   }
 
+  // ── Small helpers both views used to define twice (#1008) ───────────────
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function pct(x) { return (x * 100).toFixed(1) + '%'; }
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  // Significance level for the proxy check (--proxy-alpha, #786): blank means
+  // the 0.05 default; anything outside (0, 1] is rejected like the CLI does.
+  function readProxyAlpha(input, host) {
+    var raw = input.value.trim();
+    if (raw === '') return 0.05;
+    var a = parseFloat(raw);
+    if (!(a > 0 && a <= 1)) {
+      host.innerHTML = '<p class="profiler-error">Significance level must be in (0, 1].</p>';
+      return null;
+    }
+    return a;
+  }
+  // {column: kind} for every mapping select in `list` that is not Auto; marks the row as overridden.
+  function readOverrides(list) {
+    var overrides = {};
+    var selects = list.querySelectorAll('.map-select');
+    for (var i = 0; i < selects.length; i++) {
+      var sel = selects[i];
+      var row = sel.closest('.map-row');
+      if (sel.value !== 'auto') {
+        overrides[sel.getAttribute('data-col')] = sel.value;
+        if (row) row.classList.add('overridden');
+      } else if (row) {
+        row.classList.remove('overridden');
+      }
+    }
+    return overrides;
+  }
+
   window.FairCodeShared = {
     VERSION: VERSION, KEYWORDS_KEY: KEYWORDS_KEY, KEYWORDS_EVENT: KEYWORDS_EVENT,
     readStoredKeywords: readStoredKeywords, writeStoredKeywords: writeStoredKeywords,
     setKeywordsError: setKeywordsError, checkKeywordsText: checkKeywordsText,
     showRestoredNote: showRestoredNote, announceKeywords: announceKeywords,
     createExactInputs: createExactInputs, fileDigest: fileDigest, heldOutEntries: heldOutEntries,
-    setSkipNotes: setSkipNotes, flashButton: flashButton, fallbackCopy: fallbackCopy
+    esc: esc, pct: pct, prefersReducedMotion: prefersReducedMotion, readProxyAlpha: readProxyAlpha,
+    readOverrides: readOverrides, setSkipNotes: setSkipNotes, flashButton: flashButton, fallbackCopy: fallbackCopy
   };
 })();

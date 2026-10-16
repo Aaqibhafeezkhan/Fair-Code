@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from faircode import compare, profile
-from js_helpers import REPO_ROOT, SHARED_JS, _run_js_proxy_hints, _run_ui_exports, _sex_race_csv, shared_prologue
+from js_helpers import REPO_ROOT, SHARED_JS, SHARED_PRELUDE, _run_js_proxy_hints, _run_ui_exports, _sex_race_csv, shared_prologue
 
 
 def test_proxy_hint_results_are_live_regions():
@@ -148,12 +148,12 @@ def test_web_compare_csv_and_html_match_python_and_include_proxy_hints(tmp_path)
     path_b.write_text("\n".join(rows) + "\n", encoding="utf-8")
 
     src = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
-    helpers = (src[src.index("function pct("):src.index("function wireSlot")]
+    helpers = (src[src.index("function stripNegZero"):src.index("function wireSlot")]
                + src[src.index("function kindMismatchReason"):src.index("function driftCard")])
     builders = src[src.index("function proxyHintItems"):src.index("function compareReportBaseName")]
     csvs = src[src.index("var csvRow = E.csvRow"):src.index("async function downloadCompareCsvReport")]
     script = (
-        "var DISPLAY_GROUPS=12;" + helpers +
+        "var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
         "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;"
         + builders + csvs +
         "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"

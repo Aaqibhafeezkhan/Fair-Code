@@ -18,6 +18,7 @@
   var showRestoredNote = S.showRestoredNote, announceKeywords = S.announceKeywords;
   var fileDigest = S.fileDigest, heldOutEntries = S.heldOutEntries, setSkipNotes = S.setSkipNotes;
   var flashButton = S.flashButton, fallbackCopy = S.fallbackCopy;
+  var esc = S.esc, pct = S.pct, prefersReducedMotion = S.prefersReducedMotion, readProxyAlpha = S.readProxyAlpha;
   var exact = S.createExactInputs('compareProxy');
   var exactControls = exact.controls, clearExactError = exact.clearError, showExactError = exact.showError;
   var syncExactInputs = exact.sync, wireExactInputs = exact.wire;
@@ -97,12 +98,6 @@
   var currentRenames = {}; // {a_name: b_name} dimensions compared as one (--rename, #913)
   var currentOpts = {}; // threshold overrides (issue #351), applied to both A and B
 
-  function pct(x) { return (x * 100).toFixed(1) + '%'; }
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
-  }
   function stripNegZero(x, dp) {
     // Mirrors faircode.report._strip_neg_zero: a tiny negative value that
     // rounds to zero at the display precision should render as "0.0", not
@@ -116,10 +111,6 @@
     var s = x.toFixed(dp === undefined ? 1 : dp);
     return (x > 0 ? '+' : '') + s;
   }
-  function prefersReducedMotion() {
-    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
   // ── File wiring for one slot ('A' or 'B') ──────────────────────────────
   function wireSlot(key, drop, input, nameEl) {
     drop.addEventListener('click', function () { input.click(); });
@@ -399,21 +390,7 @@
     mappingBlock.hidden = false;
   }
 
-  function readOverrides() {
-    var overrides = {};
-    var selects = mappingList.querySelectorAll('.map-select');
-    for (var i = 0; i < selects.length; i++) {
-      var sel = selects[i];
-      var row = sel.closest('.map-row');
-      if (sel.value !== 'auto') {
-        overrides[sel.getAttribute('data-col')] = sel.value;
-        if (row) row.classList.add('overridden');
-      } else if (row) {
-        row.classList.remove('overridden');
-      }
-    }
-    return overrides;
-  }
+  function readOverrides() { return S.readOverrides(mappingList); }
 
   // Delegated so it keeps working across re-renders of the list.
   mappingList.addEventListener('change', function (e) {
@@ -831,19 +808,6 @@
   // Opt-in proxy hints for both datasets (issue #757), mirroring
   // `faircode compare --proxy-hints`; attached to currentCmp so the HTML
   // report, JSON copy and CSV include them.
-
-  // Significance level for the proxy check (--proxy-alpha, #786): blank means
-  // the 0.05 default; anything outside (0, 1] is rejected like the CLI does.
-  function readProxyAlpha(input, host) {
-    var raw = input.value.trim();
-    if (raw === '') return 0.05;
-    var a = parseFloat(raw);
-    if (!(a > 0 && a <= 1)) {
-      host.innerHTML = '<p class="profiler-error">Significance level must be in (0, 1].</p>';
-      return null;
-    }
-    return a;
-  }
 
 
   async function renderCompareProxyHints() {

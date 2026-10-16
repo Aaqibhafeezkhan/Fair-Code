@@ -333,8 +333,22 @@
   // pandas' read_json/read_excel do the same, so a later record with an
   // extra key (or an earlier one missing a key another has) isn't silently
   // dropped.
+  // Nested plain objects become dotted columns (loc.state), like pandas.json_normalize in
+  // loaders_extra.read_table (#844, #992); arrays and null stay as cells.
+  function flattenRecord(record, prefix, out) {
+    Object.keys(record).forEach(function (key) {
+      var value = record[key], name = prefix + key;
+      if (value && typeof value === 'object' && !Array.isArray(value)) flattenRecord(value, name + '.', out);
+      else out[name] = value;
+    });
+    return out;
+  }
+
   function recordsToTable(records) {
     if (!records.length) return { columns: [], rows: [] };
+    records = records.map(function (r) {
+      return r && typeof r === 'object' && !Array.isArray(r) ? flattenRecord(r, '', {}) : r;
+    });
     var columns = [];
     var seen = {};
     for (var pi = 0; pi < records.length; pi++) {

@@ -279,3 +279,17 @@ def test_python_js_skip_array_valued_columns_like_unhashable_cells(tmp_path):
                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert [d["name"] for d in py["dimensions"]] == ["sex", "note"]
     assert js == json.loads(json.dumps(py))
+
+
+def test_python_js_flatten_nested_json_objects_into_dotted_columns(tmp_path):
+    """#992: {"loc": {"state": "TX"}} is the column loc.state in both engines; arrays stay cells."""
+    from faircode.loaders_extra import read_table as read_any_table
+    path = tmp_path / "nested.json"
+    path.write_text(json.dumps([
+        {"sex": "m" if i % 2 else "f", "loc": {"state": "TX" if i % 3 else "CA", "geo": {"zone": i % 2}}, "tags": [i % 2]}
+        for i in range(30)]), encoding="utf-8")
+    py = profile(read_any_table(str(path)), None, {})
+    js = json.loads(subprocess.run(["node", "scripts/engine-js.js", "profile-json", str(path)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert [d["name"] for d in py["dimensions"]] == ["sex", "loc.state", "loc.geo.zone"]
+    assert js == json.loads(json.dumps(py))

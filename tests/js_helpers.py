@@ -107,6 +107,10 @@ SNIFF_CASES = [
     ("a;b\r\n\r\n1;2\r\n", ";"),                           # CRLF and a blank line
     ('a;b\n"1;2\n3', ";"),                                 # unterminated quote at the end: that row is dropped
     ("a;b\n1;2\n1;2\n1;2\n1;2\n1;2;3\n", ";"),             # only the first five logical rows are checked
+    ('a;b\n"x;""y;z";2\n', ";"),                           # a doubled quote inside a quoted field stays quoted (#1005)
+    ('a;b\n"x"";""y";2\n', ";"),                           # ... also when the doubled quote sits next to the delimiter
+    ('a,b;c\n"x,""y,z";2;3\n', ","),                       # ... and when it hides a comma from a mixed-delimiter row
+    ("\n\n", ","),                                        # only blank lines: no logical row to count
 ]
 
 

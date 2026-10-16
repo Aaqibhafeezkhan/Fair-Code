@@ -118,3 +118,82 @@ def test_home_page_loads_without_errors(page, site):
     page.goto(f"{site}/index.html")
     page.wait_for_load_state("networkidle")
     _clean(page)
+
+
+# ── Interactions (#1000): the controls real people use first ─────────────────────────────────
+
+_CSV = "sex,race,age\n" + "".join(
+    f"{'male' if i % 2 else 'female'},{['White', 'Black', 'Asian'][i % 3]},{20 + i % 40}\n" for i in range(90))
+
+
+def _upload(page, tmp_path, text=_CSV, name="people.csv", selector="#fileInput"):
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    page.set_input_files(selector, str(path))
+
+
+def _open_details(page):
+    page.evaluate("document.querySelectorAll('details').forEach(function (d) { d.open = true; })")
+
+
+def test_uploading_a_file_shows_results_and_a_threshold_edit_reprofiles(page, site, tmp_path):
+    page.goto(f"{site}/profiler.html")
+    _upload(page, tmp_path)
+    page.wait_for_selector("#results:not([hidden])")
+    _open_details(page)
+    page.fill("#minShareInput", "0.4")
+    page.wait_for_function("document.getElementById('results').innerText.includes('under-represented')")
+    page.fill("#minShareInput", "1.5")          # rejected by the engine: the panel must come back
+    page.wait_for_selector("#results:not([hidden])")
+    _clean(page)
+
+
+def test_a_bad_file_shows_an_error_not_a_console_error(page, site, tmp_path):
+    page.goto(f"{site}/profiler.html")
+    _upload(page, tmp_path, text="", name="empty.csv")
+    page.wait_for_selector("#error:not([hidden])")
+    assert "empty" in page.inner_text("#error")
+    _clean(page)
+
+
+def test_keywords_are_remembered_and_the_other_view_picks_them_up(page, site, tmp_path):
+    page.goto(f"{site}/profiler.html?demo")
+    page.wait_for_selector("#results:not([hidden])")
+    _open_details(page)
+    page.fill("#keywordsInput", '{"sex": ["gndr"]}')
+    page.wait_for_function("localStorage.getItem('faircode.keywords.v1') !== null")
+    page.wait_for_function("document.getElementById('compareKeywordsInput').value.includes('gndr')")
+    page.fill("#keywordsInput", '{"colour": ["x"]}')
+    page.wait_for_function("!document.getElementById('keywordsError').hidden")
+    assert "unknown key" in page.inner_text("#keywordsError")
+    page.reload()
+    page.wait_for_selector("#results", state="attached")
+    _clean(page)
+
+
+def test_a_held_out_row_feeds_the_proxy_check(page, site, tmp_path):
+    page.goto(f"{site}/profiler.html")
+    _upload(page, tmp_path, text="sex,age\n" + "".join(f"{'male' if i % 2 else 'female'},{20 + i % 40}\n" for i in range(90)))
+    page.wait_for_selector("#results:not([hidden])")
+    _open_details(page)
+    held = tmp_path / "held.csv"
+    held.write_text("race\n" + "".join(f"{['White', 'Black', 'Asian'][i % 3]}\n" for i in range(90)), encoding="utf-8")
+    page.set_input_files("#heldOutRows input[type=file]", str(held))
+    page.fill("#heldOutRows input[type=text]", "race")
+    page.click("#proxyHintsBtn")
+    page.wait_for_function("document.getElementById('proxyHintsResults').children.length > 0")
+    _clean(page)
+
+
+def test_the_exact_inputs_follow_the_checkbox_and_report_a_bad_value_inline(page, site):
+    page.goto(f"{site}/profiler.html?demo")
+    page.wait_for_selector("#results:not([hidden])")
+    _open_details(page)
+    assert page.is_disabled("#proxyExactPermutationsInput")
+    page.check("#proxyExactInput")
+    assert page.is_enabled("#proxyExactPermutationsInput")
+    page.fill("#proxyExactPermutationsInput", "0")
+    page.click("#proxyHintsBtn")
+    page.wait_for_selector("#proxyExactError:not([hidden])")
+    assert "Shuffles" in page.inner_text("#proxyExactError")
+    _clean(page)

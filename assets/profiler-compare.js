@@ -9,9 +9,9 @@
   'use strict';
 
   var DISPLAY_GROUPS = 12; // mirror faircode/report.py
-  var FAIRCODE_VERSION = '2.3.0'; // mirrors profiler-ui.js's own copy
   var E = window.FairCodeProfiler;
   var S = window.FairCodeShared;   // helpers shared with the other view (#983)
+  var FAIRCODE_VERSION = S.VERSION;
   var KEYWORDS_EVENT = S.KEYWORDS_EVENT;
   var readStoredKeywords = S.readStoredKeywords, writeStoredKeywords = S.writeStoredKeywords;
   var setKeywordsError = S.setKeywordsError, checkKeywordsText = S.checkKeywordsText;

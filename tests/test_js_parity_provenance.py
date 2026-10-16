@@ -204,3 +204,17 @@ def test_web_held_out_provenance_marks_skipped_near_unique_columns_like_python()
     ui = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
     cmp_js = (REPO_ROOT / "assets" / "profiler-compare.js").read_text(encoding="utf-8")
     assert "setSkipNotes(currentResult, specs);" in ui and "setSkipNotes(currentCmp, specsA.concat(specsB));" in cmp_js
+
+
+def test_web_version_constant_matches_the_package_version():
+    """#996: one VERSION in profiler-shared.js, equal to faircode.__version__ and pyproject.toml, and
+    both views read it from there instead of keeping a literal."""
+    import re
+    from faircode import __version__
+    shared = (REPO_ROOT / "assets" / "profiler-shared.js").read_text(encoding="utf-8")
+    assert re.search(r"var VERSION = '([^']+)';", shared).group(1) == __version__
+    pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert re.search(r'^version = "([^"]+)"', pyproject, re.M).group(1) == __version__
+    for name in ("profiler-ui.js", "profiler-compare.js"):
+        js = (REPO_ROOT / "assets" / name).read_text(encoding="utf-8")
+        assert "var FAIRCODE_VERSION = S.VERSION;" in js and "'2.3.0'" not in js

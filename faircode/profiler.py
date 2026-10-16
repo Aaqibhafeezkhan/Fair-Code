@@ -502,6 +502,9 @@ _REF_SHARE_ALIASES = ("share", "expected", "expected_share", "proportion",
                       "percent", "pct")
 
 
+_REFERENCE_SHARE = re.compile(r"[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?", re.ASCII)
+
+
 def parse_reference(df: pd.DataFrame) -> dict:
     """Parse a long-format reference baseline into {column: {group: share}}.
 
@@ -538,9 +541,15 @@ def parse_reference(df: pd.DataFrame) -> dict:
         already_scaled = isinstance(value, str) and value.strip().endswith("%")
         if already_scaled:
             value = value.strip()[:-1]
+        # Only plain decimal numbers count (no nan, inf, 1_0 or hex), the same grammar as the web
+        # engine; a row with anything else is skipped (#1002).
+        if isinstance(value, str) and not _REFERENCE_SHARE.fullmatch(value.strip()):
+            continue
         try:
             share = float(value)
         except (TypeError, ValueError):
+            continue
+        if not math.isfinite(share):
             continue
         raw.append((str(row[col_c]).strip(), str(row[grp_c]).strip(), share, already_scaled))
 

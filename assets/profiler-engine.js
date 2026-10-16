@@ -1778,9 +1778,10 @@
       // numeric literal (unlike parseFloat, which parses only a leading
       // prefix - "60abc" -> 60, "1e1junk" -> 10), and rejects '' the same
       // way Python's float('') raises. Mirrors faircode.profiler.parse_reference.
-      if (text === '') return;
+      // Plain decimals only (no nan, Infinity, 0x10 or 1_0), like parse_reference in Python (#1002).
+      if (!/^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/.test(text)) return;
       var share = Number(text);
-      if (isNaN(share)) return;
+      if (!isFinite(share)) return;
       raw.push([String(row[colC]).trim(), String(row[grpC]).trim(), share, alreadyScaled]);
     });
     // Percent-vs-fraction scale is decided per column (grouped by the column

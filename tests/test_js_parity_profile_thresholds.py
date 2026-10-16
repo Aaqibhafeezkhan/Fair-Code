@@ -214,3 +214,19 @@ def test_python_js_reject_out_of_range_group_limits_with_the_same_message(tmp_pa
     done = subprocess.run(["node", "scripts/engine-js.js", "profile", str(path), str(opts_file)],
                           capture_output=True, text=True, encoding="utf-8")
     assert done.returncode != 0 and str(py_err.value) in done.stderr
+
+
+def test_python_js_parse_reference_skips_the_same_unreadable_shares(tmp_path):
+    """#1002: n/a, empty, ?, nan, inf, 1_0 and 0x10 are not shares in either engine; plain decimals,
+    exponents and a percent suffix are, and the skipped rows leave the others untouched."""
+    from faircode.profiler import parse_reference
+    values = ["0.4", "n/a", "", "?", "nan", "inf", "-inf", "Infinity", "1_0", "0x10", "1e-1", " 30% ", ".5"]
+    df = pd.DataFrame({"column": ["c"] * len(values), "group": [f"g{i}" for i in range(len(values))], "share": values})
+    py = parse_reference(df)
+    assert sorted(py["c"]) == ["g0", "g10", "g11", "g12"]
+    table = {"columns": list(df.columns), "rows": df.to_dict(orient="records")}
+    script = ("require(process.argv[1]);process.stdout.write(JSON.stringify("
+              "globalThis.FairCodeProfiler.parseReference(JSON.parse(process.argv[2]))));")
+    js = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(table)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert js == py

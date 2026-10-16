@@ -367,3 +367,21 @@ def test_reading_xlsx_without_openpyxl_names_the_extra(tmp_path, monkeypatch, ca
         main(["profile", str(path)])
     assert exc.value.code == 2
     assert "pip install faircode[excel]" in capsys.readouterr().err
+
+
+def test_get_xlsx_sheet_info_returns_none_for_a_workbook_without_sheets(tmp_path, monkeypatch):
+    # #1006: an opened workbook that lists no sheets stays silent; the real read reports the problem.
+    class NoSheets:
+        sheet_names = []
+
+    monkeypatch.setattr(pd, "ExcelFile", lambda path: NoSheets())
+    path = tmp_path / "a.xlsx"
+    path.write_bytes(b"PK")
+    assert get_xlsx_sheet_info(str(path)) is None
+
+
+def test_held_out_encoding_notes_skip_a_malformed_encoding_suffix():
+    # #1006: `h.xlsx=race@` has an empty codec name; the real parse reports it, the notice must not raise.
+    from faircode.loaders_extra import held_out_encoding_ignored_notes
+    assert held_out_encoding_ignored_notes(["h.xlsx=race@"], "latin-1") == []
+    assert held_out_encoding_ignored_notes(["h.xlsx=race@no-such-codec"]) == []

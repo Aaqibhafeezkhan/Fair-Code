@@ -215,3 +215,21 @@ def test_demographic_parity_diff_reproduces_compas_headline_gap():
     disadv = np.array([True] * n + [False] * n)
     m = compute_metrics(y_true, y_pred, disadv, n_resamples=50, n_permutations=50)
     assert m["demographic_parity_diff"]["value"] == pytest.approx(0.8677, abs=5e-4)
+
+
+def test_an_empty_group_gives_insufficient_data_for_every_metric():
+    # #1003: no disadvantaged rows at all, so no ratio, gap or equalized-odds figure is reported.
+    result = compute_metrics(np.array([1, 0, 1, 0]), np.array([1, 0, 1, 1]), np.array([False] * 4),
+                             n_resamples=50, n_permutations=50)
+    assert {name: (report["value"], report["note"]) for name, report in result.items()} == {
+        name: (None, "insufficient_data") for name in result}
+
+
+def test_equalized_odds_is_driven_by_the_tpr_gap_when_the_fpr_gap_is_undefined():
+    # #1003: the advantaged group has no negatives, so only the TPR gap exists.
+    y_true = np.array([1, 1, 0, 0, 1, 1, 1, 1])
+    y_pred = np.array([1, 0, 1, 0, 1, 0, 1, 1])
+    disadvantaged = np.array([True] * 4 + [False] * 4)
+    result = compute_metrics(y_true, y_pred, disadvantaged, n_resamples=50, n_permutations=50)
+    assert result["equalized_odds_diff"]["note"] == "driven_by_tpr_gap"
+    assert result["equalized_odds_diff"]["value"] == result["equal_opportunity_diff"]["value"] == -0.25

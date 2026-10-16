@@ -349,3 +349,21 @@ def test_logical_row_counts_skip_quoted_newlines_and_respect_max_rows():
     assert counts('a;b\n"x;\ny";2\n', ";") == [1, 1]          # a quoted newline does not end the row
     assert counts("a;b\n" * 9, ";", max_rows=3) == [1, 1, 1]
     assert counts("", ";") == [] and counts("\n\n", ";") == []
+
+
+def test_reading_xlsx_without_openpyxl_names_the_extra(tmp_path, monkeypatch, capsys):
+    # #1004: pandas raises ImportError when openpyxl is missing; the user gets one plain line.
+    from faircode.cli import main
+
+    def no_openpyxl(*args, **kwargs):
+        raise ImportError("Missing optional dependency 'openpyxl'")
+
+    monkeypatch.setattr(pd, "read_excel", no_openpyxl)
+    path = tmp_path / "a.xlsx"
+    path.write_bytes(b"PK")
+    with pytest.raises(RuntimeError, match=r"requires the 'openpyxl' package \(install with: pip install faircode\[excel\]\)"):
+        read_table(str(path))
+    with pytest.raises(SystemExit) as exc:
+        main(["profile", str(path)])
+    assert exc.value.code == 2
+    assert "pip install faircode[excel]" in capsys.readouterr().err

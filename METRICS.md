@@ -46,7 +46,7 @@ Weekly snapshot of project health. Updated every Friday.
 | 2026-W39 | 48 | 45 | 8 | 40 | 30K+ total | 20 | 25 | 7 total |
 | 2026-W40 | 49 | 50 | 8 | 45 | 30K+ total | 20 | 41 | 7 total |
 | 2026-W41 | 49 | 55 | 8 | 50 | 30K+ total | 20 | 72 | 7 total |
-| 2026-W42 | 51 | 57 | 8 | 52 | 30K+ total | 20 | 86 | 7 total |
+| 2026-W42 | 51 | 57 | 8 | 52 | 30K+ total | 20 | 104 | 7 total |
 
 > **2026-W27 - v1.2.0 shipped:** Open Dataset Profiler (CLI + client-side web tool) released; 23 explainers total.
 >
@@ -115,6 +115,8 @@ Weekly snapshot of project health. Updated every Friday.
 > **2026-W42 (Wednesday) - the sixth sweep: all 23 non-explainer issues closed, 23 fresh ones opened, no new contributors:** every issue of the previous sweep (#944-#966) was fixed and committed on its own: no regex lookbehind in browser scripts (#956), the web exports and held-out specs now match the CLI for skipped columns, `@ENCODING` and workbook notices (#951, #952, #958), the exact inputs report errors inline (#962), one MCP `notes` key (#950), the proxy specification moved to its own SPEC section (#955), and new guards that parse every documented command (#948), compare the case-folding table with Python while saying what it could not compare (#946) and check roadmap and changelog issue numbers against GitHub (#963). The brag-output licences were researched and recorded: ende.app states CC BY 4.0 and Kenney CC0 (#954). #848 stayed untouched because it is assigned. The backlog was replenished with 23 independently reproduced issues (#967-#989, none of them explainers, found from coverage gaps and probes), three pinned: the Arabic-Indic digit mismatch in the numeric check (#967), a repeated held-out column slipping past the duplicate check after a skip (#980) and the helpers duplicated across the two web views (#983). Contributors stay `52` (counted from `CONTRIBUTORS.md`; GitHub's contributors API reports 51), stars `51`, forks `57 -> 56` (a fork was removed; live GitHub numbers); issues closed this week `42 -> 65` (a GitHub search count since 2026-10-12). Countries and social reach not re-measured.
 >
 > **2026-W42 (Thursday) - the seventh sweep: 19 non-explainer issues closed, 19 fresh ones opened, one new contributor:** every unassigned non-explainer issue left from the sixth sweep was fixed and committed on its own: only ASCII digits count as numbers in the held-out screen in both engines (#967), a held-out column given twice is rejected even after a skip (#980), the web engine skips array and object columns like Python (#973), the MCP sheet-note aliases carry a removal version and a `deprecated` hint (#984), the server is driven over stdio (#987), the helpers both web views duplicated moved into `assets/profiler-shared.js` (#983), a Playwright smoke test opens the real pages (#988), the 948-line parity test file was split (#985), and eleven coverage gaps got tests (#968-#972, #974-#979). [@Enard52](https://github.com/Enard52) merged two tooling PRs (#990, #991). Probes of nested JSON, mixed-type columns, unused pandas categories and empty files produced the next 19 issues (#992-#1010), three pinned. #848, #986 and #989 are assigned and were left alone.
+>
+> **2026-W42 (Friday) - the eighth sweep: 17 non-explainer issues fixed, one closed as not planned, 18 fresh ones opened, no new contributors:** every unassigned non-explainer issue left from the seventh sweep got a commit of its own, with a parity test wherever both engines are touched: nested JSON objects, number-versus-string labels and unreadable reference shares now agree (#992, #993, #1002), unused pandas categories no longer inflate the group count (#994), empty files have one clear message (#1010), a manifest row filter takes exactly one operator (#999), `make test-browser` and eight more browser interactions exist (#997, #1000), the shared module took over five more helpers (#1008), and seven coverage gaps got tests. #998 asked for a change to the gitignored `AGENTS.md` and was closed as not planned. Probes with malformed CSV and JSON (float-looking codes, booleans, big integers, ragged rows, unterminated quotes, JSON Lines) produced the next 18 issues (#1011-#1028), three pinned. #848, #986, #989 and #1009 are assigned and were left alone.
 ---
 
 ## Targets
@@ -127,7 +129,7 @@ Weekly snapshot of project health. Updated every Friday.
 | Contributors | 52 | 20+ | End of 2026 |
 | Social reach | 30K+ | 40K+ | End of 2026 |
 | Countries reached | 20 | 20+ | End of 2026 |
-| Issues closed | 86 (this week, since 2026-10-12) | Track weekly | Ongoing |
+| Issues closed | 104 (this week, since 2026-10-12) | Track weekly | Ongoing |
 | Code audits | 7 | 8+ | End of 2026 |
 | Explainers | 62 | 65+ | End of 2026 |
 

@@ -817,7 +817,14 @@ def build_server():
 
 
 def main() -> None:
-    build_server().run()
+    try:
+        server = build_server()
+    except ImportError as exc:   # the 'mcp' extra is missing (#995)
+        import sys
+        print("faircode-mcp needs the optional 'mcp' extra: pip install faircode[mcp] "
+              f"({exc})", file=sys.stderr)
+        raise SystemExit(2) from None
+    server.run()
 
 
 if __name__ == "__main__":

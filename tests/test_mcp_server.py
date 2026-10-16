@@ -1069,3 +1069,14 @@ def test_sheet_note_aliases_are_gone_by_the_release_that_removes_them():
     assert version(__version__) < version(SHEET_NOTE_ALIASES_REMOVED_IN), (
         f"faircode {__version__} reached {SHEET_NOTE_ALIASES_REMOVED_IN}: remove {SHEET_NOTE_ALIASES} "
         f"and this test (SPEC section 11)")
+
+
+def test_entry_point_names_the_missing_extra_instead_of_a_traceback():
+    # #995: with `mcp` unimportable the server exits 2 with one line that names the extra.
+    import subprocess
+    import sys
+
+    code = "import sys; sys.modules['mcp'] = None; from faircode.mcp_server import main; main()"
+    done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8")
+    assert done.returncode == 2
+    assert "pip install faircode[mcp]" in done.stderr and "Traceback" not in done.stderr

@@ -286,6 +286,8 @@
 
   function parseCSV(text, delimiter) {
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
+    // Same wording as loaders_extra.EMPTY_DATASET_MESSAGE: a file with no header row is an error (#1010).
+    if (text.trim() === '') throw new Error('dataset is empty (no header row)');
     delimiter = delimiter || sniffDelimiter(text);
     var rows = [], field = '', row = [], inQuotes = false;
     // A row made of one quoted empty field ("") is a real missing value to

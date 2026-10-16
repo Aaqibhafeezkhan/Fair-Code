@@ -385,3 +385,25 @@ def test_held_out_encoding_notes_skip_a_malformed_encoding_suffix():
     from faircode.loaders_extra import held_out_encoding_ignored_notes
     assert held_out_encoding_ignored_notes(["h.xlsx=race@"], "latin-1") == []
     assert held_out_encoding_ignored_notes(["h.xlsx=race@no-such-codec"]) == []
+
+
+def test_an_empty_file_says_so_in_plain_words(tmp_path, capsys, monkeypatch):
+    # #1010: not pandas' "No columns to parse from file"; the same words in the CLI, stdin and MCP.
+    import io
+    from faircode.cli import main
+    from faircode.loaders_extra import EMPTY_DATASET_MESSAGE
+    path = tmp_path / "zero.csv"
+    path.write_text("", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"dataset is empty \(no header row\)"):
+        read_table(str(path))
+    with pytest.raises(SystemExit) as exc:
+        main(["profile", str(path)])
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert f"could not read dataset {path}: {EMPTY_DATASET_MESSAGE}" in err and "No columns" not in err
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    with pytest.raises(ValueError, match="dataset is empty"):
+        read_table("-")
+    header_only = tmp_path / "header.csv"
+    header_only.write_text("sex,race\n", encoding="utf-8")
+    assert list(read_table(str(header_only)).columns) == ["sex", "race"]    # a header row is not empty

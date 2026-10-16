@@ -22,7 +22,18 @@ from .loaders import SNIFF_SAMPLE_BYTES, _sniff_delimiter, resolve_encoding, sni
 from .loaders import read_table as _read_table_frozen
 
 
+EMPTY_DATASET_MESSAGE = "dataset is empty (no header row)"   # mirrors parseCSV() in assets/profiler-engine.js (#1010)
+
+
 def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
+    """Read `path` ("-" for stdin) into a DataFrame; see _read_table_impl for the formats."""
+    try:
+        return _read_table_impl(path, encoding)
+    except pd.errors.EmptyDataError:   # pandas says "No columns to parse from file"
+        raise ValueError(EMPTY_DATASET_MESSAGE) from None
+
+
+def _read_table_impl(path: str, encoding: str | None = None) -> pd.DataFrame:
     if path == "-":
         # No file extension to dispatch on for a stdin stream, so always
         # sniff - the same fallback loaders.read_table() uses for an

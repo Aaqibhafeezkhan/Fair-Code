@@ -1080,3 +1080,11 @@ def test_entry_point_names_the_missing_extra_instead_of_a_traceback():
     done = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8")
     assert done.returncode == 2
     assert "pip install faircode[mcp]" in done.stderr and "Traceback" not in done.stderr
+
+
+def test_profile_dataset_names_an_empty_file_plainly(tmp_path):
+    # #1010
+    path = tmp_path / "zero.csv"
+    path.write_text("", encoding="utf-8")
+    with pytest.raises(RuntimeError, match=r"could not read dataset .*zero\.csv: dataset is empty \(no header row\)"):
+        _profile_dataset_impl(str(path))

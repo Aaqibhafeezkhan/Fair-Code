@@ -305,3 +305,20 @@ def test_python_js_count_one_group_for_a_number_and_its_string_form(tmp_path):
                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert [(g["label"], g["count"]) for g in py["dimensions"][0]["groups"]] == [("1", 20), ("a", 10), ("b", 10)]
     assert js == json.loads(json.dumps(py))
+
+
+def test_python_js_reject_an_empty_file_with_the_same_message(tmp_path):
+    """#1010: zero bytes (or only whitespace) is an error in both engines; a header row alone is not."""
+    from faircode.loaders_extra import EMPTY_DATASET_MESSAGE, read_table as read_any_table
+    for text in ("", "\n\n", "﻿"):
+        path = tmp_path / "empty.csv"
+        path.write_text(text, encoding="utf-8")
+        with pytest.raises(ValueError, match="dataset is empty"):
+            read_any_table(str(path))
+        done = subprocess.run(["node", "scripts/engine-js.js", "profile", str(path)],
+                              capture_output=True, text=True, encoding="utf-8")
+        assert done.returncode != 0 and EMPTY_DATASET_MESSAGE in done.stderr, repr(text)
+    header = tmp_path / "header.csv"
+    header.write_text("sex,race\n", encoding="utf-8")
+    assert subprocess.run(["node", "scripts/engine-js.js", "profile", str(header)],
+                          capture_output=True, text=True, encoding="utf-8").returncode == 0

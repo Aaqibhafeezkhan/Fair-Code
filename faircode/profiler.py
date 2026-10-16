@@ -332,8 +332,9 @@ def _dimension(df: pd.DataFrame, name: str, kind: str,
 
     # Categorical path (sex, race, geography, generic categorical, non-numeric age).
     null_count = int(col.isna().sum())
-    # astype(object): a pandas Categorical would otherwise list its unused categories as 0-row groups (#994).
-    vc = col.dropna().astype(object).value_counts()
+    # astype(str): a Categorical would otherwise list unused categories as 0-row groups (#994), and the
+    # number 1 and the string "1" would be two groups with one label (#993); the web keys on text too.
+    vc = col.dropna().astype(str).value_counts()
     counts = {label: int(c) for label, c in vc.items()}
     result = _analyze_groups(counts, n_total, null_count, skewness, min_share, min_group_size)
     result.update({"name": name, "kind": kind})

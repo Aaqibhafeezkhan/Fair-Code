@@ -293,3 +293,15 @@ def test_python_js_flatten_nested_json_objects_into_dotted_columns(tmp_path):
                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert [d["name"] for d in py["dimensions"]] == ["sex", "loc.state", "loc.geo.zone"]
     assert js == json.loads(json.dumps(py))
+
+
+def test_python_js_count_one_group_for_a_number_and_its_string_form(tmp_path):
+    """#993: 1 and "1" in one JSON column are one group labelled 1 in both engines."""
+    from faircode.loaders_extra import read_table as read_any_table
+    path = tmp_path / "mixed.json"
+    path.write_text(json.dumps([{"race": v} for v in [1, "1", "a", "b"] * 10]), encoding="utf-8")
+    py = profile(read_any_table(str(path)), None, {})
+    js = json.loads(subprocess.run(["node", "scripts/engine-js.js", "profile-json", str(path)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert [(g["label"], g["count"]) for g in py["dimensions"][0]["groups"]] == [("1", 20), ("a", 10), ("b", 10)]
+    assert js == json.loads(json.dumps(py))

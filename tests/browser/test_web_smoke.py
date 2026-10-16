@@ -7,8 +7,8 @@ script load-order mistake is caught.
 
 Needs the optional Playwright package and a browser, so it is skipped when they are missing:
 
-    pip install playwright && python -m playwright install chromium
-    python -m pytest tests/browser -q
+    make setup-browser   # pip install -e ".[browser]" and python -m playwright install chromium
+    make test-browser    # python -m pytest tests/browser -q
 
 CI runs it in its own, non-required workflow (.github/workflows/browser-smoke.yml).
 """
@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-sync_api = pytest.importorskip("playwright.sync_api", reason="optional 'playwright' package not installed")
+sync_api = pytest.importorskip("playwright.sync_api", reason="Playwright is not installed: run `make setup-browser`")
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 pytestmark = pytest.mark.browser
@@ -48,7 +48,7 @@ def browser():
         try:
             instance = playwright.chromium.launch()
         except Exception as exc:   # noqa: BLE001 - no browser binary installed
-            pytest.skip(f"Chromium is not available: {exc}")
+            pytest.skip(f"Chromium is not available (run `make setup-browser`): {exc}")
         yield instance
         instance.close()
 

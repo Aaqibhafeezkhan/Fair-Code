@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 PY := python3
 
-.PHONY: help setup test test-fast coverage key-fold key-fold-check build-explainers favicons fix-explainer-count lint audits check
+.PHONY: help setup test test-fast test-browser setup-browser coverage key-fold key-fold-check build-explainers favicons fix-explainer-count lint audits check
 
 help:  ## Show the available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -19,6 +19,12 @@ test:  ## Run the full test suite (mirrors CI)
 
 test-fast:  ## Run the suite without the slow model-training benchmark tests (CI still runs everything)
 	$(PY) -m pytest tests/ -q -m "not slow"
+
+setup-browser:  ## Install Playwright and Chromium for the browser smoke test (tests/browser)
+	$(PY) -m pip install -e ".[browser]" && $(PY) -m playwright install chromium
+
+test-browser:  ## Open the real pages in Chromium and fail on any console error (run `make setup-browser` once first)
+	$(PY) -m pytest tests/browser -q
 
 coverage:  ## Run the full test suite with a faircode/ coverage report (what CI's profiler job runs; the figure is informational, not a gate)
 	$(PY) -m pytest tests/ -q --cov=faircode --cov-report=term-missing

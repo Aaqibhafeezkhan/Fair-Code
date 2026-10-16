@@ -24,6 +24,7 @@ proxy = ["scipy>=1.10"]
 benchmark = ["scikit-learn>=1.8.0", "pyyaml>=6.0", "fairlearn>=0.14.0", "matplotlib>=3.10"]
 mcp = ["mcp>=2.0"]
 test = ["pytest>=8.0", "pytest-cov>=5.0"]
+browser = ["playwright>=1.40"]   # tests/browser; also run `python -m playwright install chromium`
 
 [project.urls]
 Homepage = "https://github.com/yakew7/Fair-Code"

@@ -65,6 +65,8 @@ make check             # everything CI runs: lint + full test suite + audits
 make test              # just the test suite
 make test-fast         # the suite minus the ~80 s model-training benchmark tests (marked `slow`); CI still runs everything; the pre-push hook uses the same fast set
 make audits            # every audit's unfair.py/fair.py + the CLI smoke tests (mirrors audits.yml's required run-audits job, plus the profiler/benchmark-harness jobs' CLI steps)
+make setup-browser     # once: install Playwright + Chromium for the browser smoke test (tests/browser, #988)
+make test-browser      # open profiler.html, benchmark.html and index.html in Chromium; fails on any console error
 make coverage          # test suite with pytest-cov line coverage (informational, not a CI gate)
 make build-explainers  # regenerate explainer pages, sitemap, and OG images (dark + light) after editing explainers/*.md
 make fix-explainer-count  # correct any stale "N explainers" mention in README/CONTRIBUTORS/METRICS/ROADMAP after adding/removing an explainer

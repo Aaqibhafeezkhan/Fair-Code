@@ -108,3 +108,16 @@ SNIFF_CASES = [
     ('a;b\n"1;2\n3', ";"),                                 # unterminated quote at the end: that row is dropped
     ("a;b\n1;2\n1;2\n1;2\n1;2\n1;2;3\n", ";"),             # only the first five logical rows are checked
 ]
+
+
+def result_with_an_empty_subgroup():
+    """A profile whose `sex` dimension has a 0-row group `X` (#975). profile() no longer produces one
+    from data (#994), so the dimension is built from the group counts directly."""
+    import pandas as pd
+    from faircode import profile
+    from faircode.profiler import _analyze_groups, _build_flags
+    result = profile(pd.DataFrame({"sex": ["M"] * 30 + ["F"] * 30}))
+    dim = result["dimensions"][0]
+    dim.update(_analyze_groups({"M": 30, "F": 30, "X": 0}, 60, 0))
+    result["flags"] = _build_flags(result["dimensions"], [])
+    return result

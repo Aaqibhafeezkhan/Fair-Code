@@ -743,8 +743,8 @@ def test_compare_html_report_renders_and_escapes_proxy_hint_sections():
 
 def test_terminal_and_html_reports_say_imbalance_inf_for_an_empty_subgroup():
     # #975
-    column = pd.Series(pd.Categorical(["M"] * 30 + ["F"] * 30, categories=["M", "F", "X"]))
-    result = profile(pd.DataFrame({"sex": column}))
+    from js_helpers import result_with_an_empty_subgroup
+    result = result_with_an_empty_subgroup()
     assert "(imbalance inf (empty subgroup))" in to_terminal(result)
     assert "imbalance inf (empty subgroup)" in to_html(result)
 

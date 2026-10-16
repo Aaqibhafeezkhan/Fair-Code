@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from faircode import compare, profile
-from js_helpers import REPO_ROOT, _run_ui_exports, _sex_race_csv
+from js_helpers import REPO_ROOT, _run_ui_exports, _sex_race_csv, result_with_an_empty_subgroup
 
 
 def test_web_csv_export_matches_python_to_csv(tmp_path):
@@ -144,11 +144,10 @@ def test_web_compare_csv_lists_renamed_dimensions_like_python(tmp_path):
 
 
 def test_web_html_report_says_imbalance_inf_for_an_empty_subgroup_like_python(tmp_path):
-    """#975: a zero-row group (an unused pandas category) gives imbalance_ratio None; the web
+    """#975: a zero-row group gives imbalance_ratio None; the web
     report builder prints the same meta text as to_html()."""
     from faircode.report import to_html
-    column = pd.Series(pd.Categorical(["M"] * 30 + ["F"] * 30, categories=["M", "F", "X"]))
-    result = profile(pd.DataFrame({"sex": column}))
+    result = result_with_an_empty_subgroup()
     src = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
     helpers = src[src.index("var GRADE_COLOR"):src.index("function render(")]
     builders = src[src.index("function buildHtmlReport(r)"):src.index("async function downloadCsvReport")]

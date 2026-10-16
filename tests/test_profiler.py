@@ -701,16 +701,24 @@ def test_italian_and_dutch_built_ins():
         assert classify_name(name) is None, name
 
 
-def _dimension_with_an_empty_subgroup():
-    # #975: an unused category of a pandas Categorical column (e.g. from a parquet file) is a
-    # group with 0 rows; no reference baseline is needed to get one.
-    column = pd.Series(pd.Categorical(["M"] * 30 + ["F"] * 30, categories=["M", "F", "X"]))
-    return profile(pd.DataFrame({"sex": column}))
-
-
 def test_empty_subgroup_is_flagged_with_an_infinite_imbalance():
-    result = _dimension_with_an_empty_subgroup()
+    # #975: a 0-row group (built from counts: profile() cannot produce one from data since #994)
+    from js_helpers import result_with_an_empty_subgroup
+    result = result_with_an_empty_subgroup()
     dim = result["dimensions"][0]
     assert dim["imbalance_ratio"] is None and dim["n_groups"] == 3
     assert next(g for g in dim["groups"] if g["label"] == "X")["count"] == 0
     assert "sex: a subgroup is effectively absent (0 rows)" in result["flags"]
+
+
+def test_unused_categories_are_not_zero_row_groups():
+    # #994: a Categorical (for example from Parquet) must score like the same data as plain text.
+    values = ["M"] * 30 + ["F"] * 30
+    unused = pd.Series(pd.Categorical(values, categories=["M", "F", "X"]))
+    categorical = profile(pd.DataFrame({"sex": unused}))
+    plain = profile(pd.DataFrame({"sex": values}))
+    dim = categorical["dimensions"][0]
+    assert [g["label"] for g in dim["groups"]] == ["F", "M"]
+    assert dim["n_groups"] == 2 and dim["imbalance_ratio"] == 1.0
+    assert categorical["overall_score"] == plain["overall_score"]
+    assert not any("effectively absent" in f for f in categorical["flags"])

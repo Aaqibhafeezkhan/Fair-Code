@@ -1689,3 +1689,16 @@ def test_compare_rename_across_kinds_reports_the_kind_mismatch(tmp_path, capsys)
     b.write_text("race\n" + "x\ny\n" * 40)
     assert main(["compare", str(a), str(b), "--rename", "sex=race"]) == 0
     assert "detected as sex vs race on the two datasets" in capsys.readouterr().out
+
+
+def test_unsupported_spreadsheet_format_is_named_not_blamed_on_encoding(tmp_path, capsys):
+    # #1018
+    path = tmp_path / "old.xls"
+    path.write_bytes(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 200)
+
+    with pytest.raises(SystemExit) as exc:
+        main(["profile", str(path)])
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "unsupported format .xls" in err and ".xlsx" in err
+    assert "--encoding" not in err and "not valid utf-8" not in err

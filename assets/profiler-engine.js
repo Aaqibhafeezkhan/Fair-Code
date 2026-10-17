@@ -387,7 +387,7 @@
     var rows = [], field = '', row = [], inQuotes = false;
     // A row made of one quoted empty field ("") is a real missing value to
     // pandas, not a blank line to skip (#835).
-    var rowQuoted = false;
+    var rowQuoted = false, quoteStartRow = 0;
     for (var i = 0; i < text.length; i++) {
       var c = text[i];
       if (inQuotes) {
@@ -397,6 +397,7 @@
         } else field += c;
       } else if (c === '"' && field === '') {
         inQuotes = true;
+        quoteStartRow = rows.length;
         rowQuoted = true;
       } else if (c === delimiter) {
         row.push(field); field = '';
@@ -408,8 +409,15 @@
         rowQuoted = false;
       } else field += c;
     }
+    // Same wording as loaders._plain_parser_message; pandas refuses both and so do we (#1023, #1024).
+    if (inQuotes) throw new Error('a quoted field starting at row ' + quoteStartRow + ' is never closed');
     if (field !== '' || row.length || rowQuoted) { row.push(field); rows.push(row); }
     if (!rows.length) return { columns: [], rows: [] };
+    for (var lr = 1; lr < rows.length; lr++) {
+      if (rows[lr].length > rows[0].length) {
+        throw new Error('line ' + (lr + 1) + ' has ' + rows[lr].length + ' fields but the header has ' + rows[0].length);
+      }
+    }
 
     var columns = dedupeHeaders(rows[0]);
     var data = [];

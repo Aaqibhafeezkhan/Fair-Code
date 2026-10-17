@@ -11,6 +11,7 @@ encoding error (#1018).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -107,7 +108,22 @@ def _read_delimited(path: str, *, default: str, encoding: str | None = None) -> 
     encoding = resolve_encoding(path, encoding)
     with open(path, "r", encoding=encoding, errors="replace", newline="") as fh:
         sample = fh.read(SNIFF_SAMPLE_BYTES)
-    return pd.read_csv(path, sep=_sniff_delimiter(sample, default=default), encoding=encoding)
+    try:
+        return pd.read_csv(path, sep=_sniff_delimiter(sample, default=default), encoding=encoding)
+    except pd.errors.ParserError as exc:
+        raise ValueError(_plain_parser_message(str(exc))) from exc
+
+
+def _plain_parser_message(text: str) -> str:
+    """pandas' tokenizer errors in the words the web engine uses (#1023, #1024)."""
+    ragged = re.search(r"Expected (\d+) fields? in line (\d+), saw (\d+)", text)
+    if ragged:
+        expected, line, saw = ragged.groups()
+        return f"line {line} has {saw} fields but the header has {expected}"
+    unclosed = re.search(r"EOF inside string starting at row (\d+)", text)
+    if unclosed:
+        return f"a quoted field starting at row {unclosed.group(1)} is never closed"
+    return text
 
 
 def _logical_row_delimiter_counts(text: str, delimiter: str, max_rows: int = 5) -> list[int]:

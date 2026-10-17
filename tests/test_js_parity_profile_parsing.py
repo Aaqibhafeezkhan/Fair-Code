@@ -393,3 +393,26 @@ def test_python_js_reject_a_nul_byte_with_the_same_stem(tmp_path):
     utf16.write_bytes("sex,race\nm,a\nf,b\n".encode("utf-16"))
     assert list(read_any_table(str(utf16)).columns) == ["sex", "race"]
     assert list(read_any_table(str(utf16), encoding="utf-16").columns) == ["sex", "race"]
+
+
+@pytest.mark.parametrize("name, text, message", [
+    ("ragged.csv", "sex,race\nm,a\nf,b,extra\nm,a\nf,b\n", "line 3 has 3 fields but the header has 2"),
+    ("unclosed.csv", 'sex,race\nm,a\nf,"b\nm,a\n', "a quoted field starting at row 2 is never closed"),
+])
+def test_python_js_refuse_malformed_rows_with_the_same_message(tmp_path, name, text, message):
+    """#1023, #1024: a row longer than the header and a quote that never closes are errors in both
+    engines, in the same words (not pandas' 'C error' text, and not silently trimmed or swallowed)."""
+    from faircode.loaders_extra import read_table as read_any_table
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        read_any_table(str(path))
+    done = subprocess.run(["node", "scripts/engine-js.js", "profile", str(path)],
+                          capture_output=True, text=True, encoding="utf-8")
+    assert done.returncode != 0 and message in done.stderr
+
+
+def test_a_short_row_is_still_padded_with_missing_values(tmp_path):
+    """The other direction is not an error: pandas and the JS parser both fill the gap with a blank."""
+    result = _label_parity(tmp_path, "short.csv", "sex,race\nm,a\nf\nm,a\nf,b\n")
+    assert result["dimensions"][1]["missing_pct"] == 0.25

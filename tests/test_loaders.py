@@ -407,3 +407,27 @@ def test_an_empty_file_says_so_in_plain_words(tmp_path, capsys, monkeypatch):
     header_only = tmp_path / "header.csv"
     header_only.write_text("sex,race\n", encoding="utf-8")
     assert list(read_table(str(header_only)).columns) == ["sex", "race"]    # a header row is not empty
+
+
+@pytest.mark.parametrize("suffix", [".xls", ".ods", ".feather", ".pkl", ".zip", ".7z", ".XLS"])
+def test_read_table_names_an_unsupported_binary_format(tmp_path, suffix):
+    # #1018: the old file read as text and failed with a "not valid utf-8, pass --encoding" hint, which cannot help.
+    path = tmp_path / f"data{suffix}"
+    path.write_bytes(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 200)
+
+    with pytest.raises(ValueError, match=r"unsupported format .*: save it as \.xlsx or \.csv") as exc:
+        read_table(str(path))
+    assert suffix.lower() in str(exc.value)
+    assert "--encoding" not in str(exc.value)
+
+
+def test_read_table_reports_a_missing_unsupported_file_as_missing(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        read_table(str(tmp_path / "gone.xls"))
+
+
+def test_read_table_still_sniffs_an_unknown_text_extension(tmp_path):
+    path = tmp_path / "data.dat"
+    path.write_text("sex,age\nM,30\nF,41\n", encoding="utf-8")
+
+    assert list(read_table(str(path)).columns) == ["sex", "age"]

@@ -4,6 +4,9 @@ Supports .csv, .tsv, and .xlsx (the last requires the optional `openpyxl`
 extra: `pip install faircode[excel]`). Files with an unrecognized or missing
 extension fall back to sniffing the delimiter from their content, so a
 tab-separated export saved with a `.csv` extension still reads correctly.
+A few well-known formats that are not supported (.xls, .ods and so on) are
+rejected by name instead, because reading them as text only produces an
+encoding error (#1018).
 """
 
 from __future__ import annotations
@@ -11,6 +14,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+
+# Formats people commonly try that are binary and not supported. Reading one as text fails with a
+# "not valid utf-8" error that points at --encoding, which cannot help, so name the format instead (#1018).
+UNSUPPORTED_SUFFIXES = (".xls", ".ods", ".feather", ".pkl", ".zip", ".7z")
 
 SNIFF_DELIMITERS = ",\t;|"
 SNIFF_SAMPLE_BYTES = 8192
@@ -66,6 +73,10 @@ def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
 
     if suffix == ".csv":
         return _read_delimited(path, default=",", encoding=encoding)
+
+    # A missing file keeps its "file not found" error: only an existing file is reported as the wrong format.
+    if suffix in UNSUPPORTED_SUFFIXES and Path(path).exists():
+        raise ValueError(f"unsupported format {suffix}: save it as .xlsx or .csv")
 
     return _read_delimited(path, default=",", encoding=encoding)
 

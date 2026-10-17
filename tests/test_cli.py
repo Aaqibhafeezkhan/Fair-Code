@@ -1585,6 +1585,22 @@ def test_every_documented_faircode_command_parses_with_the_real_parser(capsys):
     assert not failures, "\n".join(failures)
 
 
+def test_every_long_option_is_mentioned_in_the_readme_or_spec():
+    # #1040: a flag that only shows up in --help (benchmark --root, --no-plots) cannot be found by a reader.
+    from faircode.cli import build_parser
+    root = Path(__file__).resolve().parent.parent
+    docs = (root / "README.md").read_text(encoding="utf-8") + (root / "faircode" / "SPEC.md").read_text(encoding="utf-8")
+    subparsers = build_parser()._subparsers._group_actions[0].choices
+    missing = [
+        f"{name} {option}"
+        for name, sub in subparsers.items()
+        for action in sub._actions
+        for option in action.option_strings
+        if option.startswith("--") and option != "--help" and option not in docs
+    ]
+    assert not missing, "undocumented options: " + ", ".join(missing)
+
+
 def test_the_documented_command_check_catches_a_bad_flag(capsys):
     import shlex
     from faircode.cli import build_parser

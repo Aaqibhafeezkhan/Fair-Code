@@ -209,13 +209,14 @@ def to_terminal(result: dict) -> str:
         add(f"{title}    score {_dim_score_text(d)}")
         add("-" * WIDTH)
         shown = d["groups"][:DISPLAY_GROUPS]
+        label_w = _label_width(g["label"] for g in shown)
         for g in shown:
             mark = "  <- under-represented" if g["label"] in d["under_represented"] else ""
             warning = ("  ⚠ small group (metric may be unreliable)" if g.get("small_group") else "")
             ci = ""
             if g.get("ci_low") is not None and g.get("ci_high") is not None:
                 ci = f"  [95% CI {g['ci_low'] * 100:.1f}-{g['ci_high'] * 100:.1f}%]"
-            add(f"  {g['label'][:18]:<18} {_bar(g['share'])} "
+            add(f"  {_clip(g['label'], label_w)} {_bar(g['share'])} "
                 f"{g['share'] * 100:5.1f}%  (n={g['count']:,}){ci}{mark}{warning}")
         if len(d["groups"]) > DISPLAY_GROUPS:
             add(f"  … and {len(d['groups']) - DISPLAY_GROUPS} more groups")
@@ -233,8 +234,9 @@ def to_terminal(result: dict) -> str:
         if d.get("reference"):
             ref_groups = d["reference"]["groups"]
             add(f"  reference (deviation {d['reference']['deviation'] * 100:.1f}%):")
+            ref_w = _label_width((g["label"] for g in ref_groups[:DISPLAY_GROUPS]), minimum=16, maximum=28)
             for g in ref_groups[:DISPLAY_GROUPS]:
-                add(f"    {g['label'][:16]:<16} exp {g['expected'] * 100:5.1f}%  "
+                add(f"    {_clip(g['label'], ref_w)} exp {g['expected'] * 100:5.1f}%  "
                     f"act {g['actual'] * 100:5.1f}%  "
                     f"({_strip_neg_zero(g['delta'] * 100):+5.1f} pp)")
             if len(ref_groups) > DISPLAY_GROUPS:
@@ -271,6 +273,17 @@ def _kind_mismatch_reason(cd: dict) -> str:
     if cd["kind_a"] != cd["kind_b"]:
         return f"detected as {cd['kind_a']} vs {cd['kind_b']} on the two datasets"
     return "age values banded on one dataset, raw on the other"
+
+
+def _label_width(labels, minimum=18, maximum=30) -> int:
+    """Column width for the group labels shown: the longest one, within [minimum, maximum] (#1021)."""
+    return max(minimum, min(maximum, max((len(label) for label in labels), default=0)))
+
+
+def _clip(label: str, width: int) -> str:
+    """`label` padded to `width`, with a trailing ellipsis when it is cut, so a long label never
+    looks like another one with the same start."""
+    return (label if len(label) <= width else label[:width - 1] + "…").ljust(width)
 
 
 def _strip_neg_zero(val: float, dp: int = 1) -> float:
@@ -324,10 +337,11 @@ def compare_to_terminal(cmp: dict) -> str:
         add(f"  score {cd['dimension_score_a']} → {cd['dimension_score_b']} "
             f"({_delta(cd['dimension_score_delta'])})    TVD {cd['tvd']:.3f}")
         add("-" * WIDTH)
+        label_w = _label_width(g["label"] for g in cd["groups"][:DISPLAY_GROUPS])
         for g in cd["groups"][:DISPLAY_GROUPS]:
             tag = {"appeared": "  (appeared)", "disappeared": "  (disappeared)",
                    "shifted": "", "unchanged": ""}[g["status"]]
-            add(f"  {g['label'][:18]:<18} {g['share_a'] * 100:5.1f}% → "
+            add(f"  {_clip(g['label'], label_w)} {g['share_a'] * 100:5.1f}% → "
                 f"{g['share_b'] * 100:5.1f}%  "
                 f"({_strip_neg_zero(g['share_delta'] * 100):+5.1f} pp){tag}")
         if len(cd["groups"]) > DISPLAY_GROUPS:

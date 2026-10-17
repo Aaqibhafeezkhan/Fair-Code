@@ -267,22 +267,19 @@ def test_to_terminal_marks_under_represented_group(mock_profile_result):
     assert "<- under-represented" in out
 
 
-def test_to_terminal_truncates_a_long_group_label_and_keeps_alignment(mock_profile_result):
-    label = "Not Hispanic or Latino"  # 22 chars, over the [:18] truncation
+def test_to_terminal_widens_for_a_long_group_label_and_keeps_alignment(mock_profile_result):
+    label = "Not Hispanic or Latino"  # 22 chars: the column widens instead of cutting it (#1021)
     mock_profile_result["dimensions"][0]["groups"][0]["label"] = label
 
     out = to_terminal(mock_profile_result)
 
-    assert label[:18] in out
-    assert label not in out  # the full, untruncated label must not appear
-    truncated_line = next(line for line in out.splitlines() if label[:18] in line)
-    # The truncated label pads to a fixed 18-char column, so the share
-    # percentage that follows still lands where every other row's does.
-    assert " 45.0%" in truncated_line
+    rows = [line for line in out.splitlines() if "(n=" in line][:2]
+    assert label in rows[0] and " 45.0%" in rows[0]
+    assert len({line.index("%") for line in rows}) == 1      # every row's percentage lands in the same column
 
 
-def test_to_terminal_truncates_a_long_reference_group_label(mock_profile_result):
-    ref_label = "Some Long Reference Group Name"  # 31 chars, over [:16]
+def test_to_terminal_marks_a_cut_reference_group_label(mock_profile_result):
+    ref_label = "Some Long Reference Group Name That Is Way Past The Cap"  # over the 28-char maximum
     mock_profile_result["dimensions"][0]["reference"] = {
         "deviation": 0.05,
         "groups": [
@@ -292,7 +289,7 @@ def test_to_terminal_truncates_a_long_reference_group_label(mock_profile_result)
 
     out = to_terminal(mock_profile_result)
 
-    assert ref_label[:16] in out
+    assert ref_label[:27] + "…" in out
     assert ref_label not in out
 
 
@@ -786,3 +783,20 @@ def test_compare_html_caps_a_long_dimension_and_survives_all_zero_shares():
         group.update(share_a=0.0, share_b=0.0, share_delta=0.0)
     flat = compare_to_html(cmp_result)           # max_share would be 0: must not divide by zero
     assert "nan" not in flat.lower() and "inf" not in flat.lower().replace("information", "")
+
+
+def test_terminal_reports_keep_long_group_labels_apart():
+    # #1021: two census-style labels that share their first 18 characters must not print alike.
+    long_a, long_b = "Hispanic or Latino (any race)", "Hispanic or Latino (white)"
+    df = pd.DataFrame({"race": [long_a, long_b] * 20, "sex": ["m", "f", "f"] * 13 + ["m"]})
+    result = profile(df)
+    text = to_terminal(result)
+    assert long_a in text and long_b in text            # both fit in the widened column
+    very_long = "x" * 40
+    clipped = to_terminal(profile(pd.DataFrame({"race": [very_long, very_long + "y"] * 20})))
+    rows = [line for line in clipped.splitlines() if "(n=" in line]
+    assert rows and all("x" * 29 + "…" in line and very_long not in line for line in rows)   # cut with a marker
+    ref = profile(df, opts={"reference": {"race": {long_a: 0.5, long_b: 0.5}}})
+    assert "Hispanic or Latino (any race)" in to_terminal(ref).split("reference (deviation")[1]
+    drift = compare_to_terminal(compare(result, result, "a.csv", "b.csv"))
+    assert long_a in drift and long_b in drift

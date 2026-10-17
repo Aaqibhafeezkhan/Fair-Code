@@ -17,11 +17,15 @@ All notable changes to Fair Code are documented here, newest first.
 > `paper/results-frozen/` (tag [`v1.0-paper`](https://github.com/yakew7/Fair-Code/releases/tag/v1.0-paper))
 > is kept as a historical reference snapshot. See [CLAUDE.md](CLAUDE.md).
 
-## [2.3.0] - 13 Sep 2026
+## [Unreleased]
+
+Nothing yet. Changes made after 2.3.0 are listed here until the next release.
+
+## [2.3.0] - 17 Oct 2026
 
 Another self-filed, self-fixed sweep - 19 issues found through direct verification, each fixed and
 committed individually - followed by a round of community PRs closing several of the replenishment
-issues filed alongside it. Not tagged as a formal release.
+issues filed alongside it. Released as `v2.3.0` on 17 Oct 2026 and now covers everything since `v2.2.0` (448 commits, 339 closed issues, 62 merged pull requests).
 
 Two further self-filed, self-fixed sweeps landed later in this same version: 14 issues (#695-#709),
 then 11 more (#718-#728) - each independently verified and committed on its own, covering doc/number

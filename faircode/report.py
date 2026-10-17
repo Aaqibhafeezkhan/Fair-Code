@@ -251,13 +251,15 @@ def to_terminal(result: dict) -> str:
             add(f"  ! {f}")
         add("")
 
-    if result.get("proxy_hints"):
+    if result.get("proxy_hints") is not None:
         add("=" * WIDTH)
         add("PROXY HINTS  (chi-squared association, informational)")
         add("=" * WIDTH)
         for h in result["proxy_hints"]:
             add(f"  ~ {h['a']} ↔ {h['b']}  "
                 f"(χ² p={h['p_value']:.4g}, Cramér's V={h['cramers_v']:.2f}{_hint_notes(h)})")
+        if not result["proxy_hints"]:
+            add(f"  {_no_hints_text(len(result['dimensions']))}")
         add("")
 
     add("=" * WIDTH)
@@ -273,6 +275,13 @@ def _kind_mismatch_reason(cd: dict) -> str:
     if cd["kind_a"] != cd["kind_b"]:
         return f"detected as {cd['kind_a']} vs {cd['kind_b']} on the two datasets"
     return "age values banded on one dataset, raw on the other"
+
+
+def _no_hints_text(n_dimensions=None) -> str:
+    """Why a requested proxy check printed no pair, so "tested, none found" is not mistaken for "not run" (#1022)."""
+    if n_dimensions is not None and n_dimensions < 2:
+        return f"none tested: a pair needs at least two dimensions (found {n_dimensions})"
+    return "none found: no pair of dimensions is significantly associated"
 
 
 def _label_width(labels, minimum=18, maximum=30) -> int:
@@ -356,10 +365,12 @@ def compare_to_terminal(cmp: dict) -> str:
         add("")
 
     for key, label in (("proxy_hints_a", "A"), ("proxy_hints_b", "B")):
-        if cmp.get(key):
+        if cmp.get(key) is not None:
             add("=" * WIDTH)
             add(f"PROXY HINTS - {label}  (chi-squared association, informational)")
             add("=" * WIDTH)
+            if not cmp[key]:
+                add(f"  {_no_hints_text()}")
             for h in cmp[key]:
                 add(f"  ~ {h['a']} ↔ {h['b']}  "
                     f"(χ² p={h['p_value']:.4g}, Cramér's V={h['cramers_v']:.2f}{_hint_notes(h)})")
@@ -530,12 +541,12 @@ def to_html(result: dict) -> str:
         flag_html = f'<section class="flags"><h2>Flags</h2><ul>{items}</ul></section>'
 
     proxy_html = ""
-    if result.get("proxy_hints"):
+    if result.get("proxy_hints") is not None:
         items = "".join(
             f'<li>{esc(h["a"])} ↔ {esc(h["b"])} '
             f'(χ² p={h["p_value"]:.4g}, Cramér\'s V={h["cramers_v"]:.2f}{_hint_notes(h)})</li>'
             for h in result["proxy_hints"]
-        )
+        ) or f"<li>{esc(_no_hints_text(len(result['dimensions'])))}</li>"
         proxy_html = (
             '<section class="flags"><h2>Proxy Hints '
             '<span class="kind">chi-squared association, informational</span></h2>'
@@ -744,12 +755,12 @@ def compare_to_html(cmp: dict) -> str:
     # Proxy Hints (A/B)
     proxy_html = ""
     for key, label in (("proxy_hints_a", "A"), ("proxy_hints_b", "B")):
-        if cmp.get(key):
+        if cmp.get(key) is not None:
             items = "".join(
                 f'<li>{esc(h["a"])} ↔ {esc(h["b"])} '
                 f'(χ² p={h["p_value"]:.4g}, Cramér\'s V={h["cramers_v"]:.2f}{_hint_notes(h)})</li>'
                 for h in cmp[key]
-            )
+            ) or f"<li>{esc(_no_hints_text())}</li>"
             proxy_html += (
                 f'<section class="flags"><h2>Proxy Hints - {label} '
                 '<span class="kind">chi-squared association, informational</span></h2>'

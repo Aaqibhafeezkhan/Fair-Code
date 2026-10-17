@@ -800,3 +800,16 @@ def test_terminal_reports_keep_long_group_labels_apart():
     assert "Hispanic or Latino (any race)" in to_terminal(ref).split("reference (deviation")[1]
     drift = compare_to_terminal(compare(result, result, "a.csv", "b.csv"))
     assert long_a in drift and long_b in drift
+
+
+def test_a_requested_proxy_check_with_no_hint_says_so():
+    # #1022: an empty list is "tested, none found" (or "no pair possible"); an absent key prints nothing.
+    two = profile(pd.DataFrame({"sex": ["m", "f"] * 20, "race": ["a", "a", "b", "b"] * 10}))
+    one = profile(pd.DataFrame({"sex": ["m", "f"] * 20}))
+    assert "PROXY HINTS" not in to_terminal(two) and "Proxy Hints" not in to_html(two)
+    for result, text in ((dict(two, proxy_hints=[]), "none found: no pair of dimensions is significantly associated"),
+                         (dict(one, proxy_hints=[]), "none tested: a pair needs at least two dimensions (found 1)")):
+        assert text in to_terminal(result) and text in to_html(result)
+    cmp_result = dict(compare(two, two, "a.csv", "b.csv"), proxy_hints_a=[], proxy_hints_b=[])
+    assert compare_to_terminal(cmp_result).count("none found") == 2
+    assert compare_to_html(cmp_result).count("none found") == 2

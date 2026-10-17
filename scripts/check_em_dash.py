@@ -21,7 +21,7 @@ EN_DASH = "\u2013"  # en dash, allowed for numeric ranges
 
 # Tracked text files with these extensions are scanned for em dashes. Data (.csv)
 # and dependency pins (.txt) are deliberately out of scope.
-SCAN_EXT = {".md", ".py", ".js", ".html", ".css", ".yml", ".yaml"}
+SCAN_EXT = {".md", ".py", ".js", ".html", ".css", ".yml", ".yaml", ".ipynb", ".txt", ".toml", ".cff", ".json"}
 
 # Opt-out path list (the escape hatch): files that legitimately contain an em
 # dash, or that must not be edited. Keep this list short and justified.

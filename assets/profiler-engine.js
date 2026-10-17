@@ -357,8 +357,9 @@
   }
 
   // JSON.parse turns every number into a double, so an integer above 2**53 would lose its low
-  // digits; such literals (outside strings) are quoted first so they stay exact text (#1014).
-  function quoteBigIntegers(text) {
+  // digits; such literals (outside strings) are quoted first so they stay exact text (#1014). The
+  // non-standard NaN and Infinity literals Python accepts are rewritten too (#1026).
+  function tolerantJSONText(text) {
     var out = '', i = 0, n = text.length, start;
     while (i < n) {
       var c = text[i];
@@ -367,6 +368,12 @@
         while (i < n && text[i] !== '"') i += text[i] === '\\' ? 2 : 1;
         i++;
         out += text.slice(start, i);
+      } else if (text.startsWith('NaN', i)) {            // Python's json.loads accepts these (#1026): NaN is a
+        out += 'null'; i += 3;                          // missing value, an infinity its text, as str(float('inf'))
+      } else if (text.startsWith('Infinity', i)) {
+        out += '"inf"'; i += 8;
+      } else if (text.startsWith('-Infinity', i)) {
+        out += '"-inf"'; i += 9;
       } else if (c === '-' || (c >= '0' && c <= '9')) {
         start = i++;
         while (i < n && /[0-9.eE+\-]/.test(text[i])) i++;
@@ -488,7 +495,7 @@
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
     var parsed;
     try {
-      parsed = JSON.parse(quoteBigIntegers(text));
+      parsed = JSON.parse(tolerantJSONText(text));
     } catch (syntaxErr) {
       // Raw SyntaxError messages are browser-specific (e.g. "Unexpected end
       // of JSON input" vs "Unexpected token") and confusing in the dropzone's

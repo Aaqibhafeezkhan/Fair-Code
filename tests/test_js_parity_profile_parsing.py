@@ -416,3 +416,12 @@ def test_a_short_row_is_still_padded_with_missing_values(tmp_path):
     """The other direction is not an error: pandas and the JS parser both fill the gap with a blank."""
     result = _label_parity(tmp_path, "short.csv", "sex,race\nm,a\nf\nm,a\nf,b\n")
     assert result["dimensions"][1]["missing_pct"] == 0.25
+
+
+def test_python_js_accept_nan_and_infinity_literals_in_json(tmp_path):
+    """#1026: NaN is a missing value and Infinity is the text inf in both engines."""
+    records = ",".join('{"sex":"%s","race":%s}' % ("m" if i % 2 else "f", ["NaN", "Infinity", '"a"', "-Infinity"][i % 4])
+                       for i in range(40))
+    result = _label_parity(tmp_path, "nan.json", "[" + records + "]", "profile-json")
+    assert _labels(result, 1) == [("-inf", 10), ("a", 10), ("inf", 10)]
+    assert result["dimensions"][1]["missing_pct"] == 0.25

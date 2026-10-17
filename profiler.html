@@ -169,7 +169,7 @@
     <section class="dropzone" id="dropzone" tabindex="0" role="button"
              aria-label="Upload a CSV, TSV, JSON, or Excel file, or click to browse"
              aria-describedby="dropzoneHint">
-      <input type="file" id="fileInput" accept=".csv,.tsv,.json,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+      <input type="file" id="fileInput" accept=".csv,.tsv,.json,.jsonl,.ndjson,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
       <div class="dropzone-inner">
         <div class="dropzone-icon" aria-hidden="true">⊕</div>
         <p class="dropzone-title">Drop a CSV, TSV, JSON, or Excel file here, or <span class="link">browse</span></p>
@@ -216,7 +216,7 @@
         <label class="csv-provenance"><input type="checkbox" id="csvProvenanceInput"> include provenance</label>
         <button class="action-btn" id="referenceBtn" type="button">⚖ Score vs reference…</button>
         <button class="action-btn" id="referenceClearBtn" type="button" hidden>✕ Clear reference</button>
-        <input type="file" id="referenceInput" accept=".csv,.tsv,.json,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+        <input type="file" id="referenceInput" accept=".csv,.tsv,.json,.jsonl,.ndjson,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
         <span class="reference-status" id="referenceStatus" aria-live="polite"></span>
       </div>
 
@@ -366,14 +366,14 @@
       <div class="compare-drops">
         <div class="mini-drop" id="dropA" tabindex="0" role="button"
              aria-label="Upload baseline dataset A (CSV, TSV, JSON, or Excel)">
-          <input type="file" id="fileA" accept=".csv,.tsv,.json,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+          <input type="file" id="fileA" accept=".csv,.tsv,.json,.jsonl,.ndjson,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
           <span class="mini-drop-tag">A · Baseline</span>
           <span class="mini-drop-name" id="nameA">Drop CSV/TSV/JSON/XLSX, or <span class="link">browse</span></span>
           <span class="mini-drop-status" id="statusA" aria-live="polite"></span>
         </div>
         <div class="mini-drop" id="dropB" tabindex="0" role="button"
              aria-label="Upload current dataset B (CSV, TSV, JSON, or Excel)">
-          <input type="file" id="fileB" accept=".csv,.tsv,.json,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+          <input type="file" id="fileB" accept=".csv,.tsv,.json,.jsonl,.ndjson,.xlsx,text/csv,text/tab-separated-values,text/plain,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
           <span class="mini-drop-tag">B · Current</span>
           <span class="mini-drop-name" id="nameB">Drop CSV/TSV/JSON/XLSX, or <span class="link">browse</span></span>
           <span class="mini-drop-status" id="statusB" aria-live="polite"></span>

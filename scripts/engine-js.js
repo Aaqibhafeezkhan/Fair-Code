@@ -71,7 +71,7 @@ async function main() {
 
   if (command === "profile-json" && args.length === 1) {
     const E = loadEngine();
-    const table = E.parseJSON(fs.readFileSync(args[0], "utf8"));
+    const table = E.parseJSON(fs.readFileSync(args[0], "utf8"), /\.(jsonl|ndjson)$/i.test(args[0]));
     process.stdout.write(JSON.stringify(E.profile(table)));
     return;
   }

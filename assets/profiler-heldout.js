@@ -2,7 +2,7 @@
    Fair Code - held-out column rows for the proxy check (issues #801-#803)
 
    Renders "file + column name" rows into a container (add/remove, any number
-   of columns, .csv/.tsv/.json/.xlsx) and collects them into the specs that
+   of columns, .csv/.tsv/.json/.jsonl/.xlsx) and collects them into the specs that
    FairCodeProfiler.buildHeldOut() turns into a {column: values} map - the
    browser counterpart of repeating --proxy-hints-with PATH=COLUMN. Shared by
    the single-dataset and compare views. Column and join key are separate
@@ -17,7 +17,7 @@
 
   'use strict';
 
-  var ACCEPT = '.csv,.tsv,.json,.xlsx,text/csv,application/json,' +
+  var ACCEPT = '.csv,.tsv,.json,.jsonl,.ndjson,.xlsx,text/csv,application/json,' +
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
   // `getEncoding` (optional) returns the text-encoding choice of the page's picker (#857).

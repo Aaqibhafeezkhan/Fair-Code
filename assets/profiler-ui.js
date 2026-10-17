@@ -142,12 +142,12 @@
   proxyHintsBtn.addEventListener('click', renderProxyHints);
 
   function readFile(file) {
-    var okExt = /\.(csv|tsv|json|xlsx)$/i.test(file.name);
+    var okExt = /\.(csv|tsv|json|jsonl|ndjson|xlsx)$/i.test(file.name);
     var isXlsxType = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     var okType = file.type === 'text/csv' || file.type === 'text/tab-separated-values' ||
       file.type === 'application/json' || isXlsxType;
     if (!okExt && !okType) {
-      return showError('Please choose a .csv, .tsv, .json, or .xlsx file.');
+      return showError('Please choose a .csv, .tsv, .json, .jsonl, or .xlsx file.');
     }
     var reader = new FileReader();
     reader.onerror = function () { showError('Could not read that file.'); };
@@ -200,8 +200,8 @@
 
   function runText(text, name, file) {
     try {
-      if (/\.json$/i.test(name) || (file && file.type === 'application/json')) {
-        var table = E.parseJSON(text);
+      if (/\.(json|jsonl|ndjson)$/i.test(name) || (file && file.type === 'application/json')) {
+        var table = E.parseJSON(text, /\.(jsonl|ndjson)$/i.test(name));
       } else {
         var table = E.parseCSV(text);
       }
@@ -815,8 +815,8 @@
           // Same decoding as the dataset (picker choice, else a sniffed BOM, else UTF-8), so a
           // latin-1 census file's labels match the dataset's groups (#890).
           var text = E.decodeText(reader.result, encodingSelect ? encodingSelect.value : 'auto').text;
-          var table = (/\.json$/i.test(f.name) || f.type === 'application/json')
-            ? E.parseJSON(text) : E.parseCSV(text);
+          var table = (/\.(json|jsonl|ndjson)$/i.test(f.name) || f.type === 'application/json')
+            ? E.parseJSON(text, /\.(jsonl|ndjson)$/i.test(f.name)) : E.parseCSV(text);
           applyReferenceTable(table);
         } catch (err) {
           showError('Could not read reference baseline: ' + err.message);

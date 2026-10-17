@@ -487,12 +487,30 @@
     return { columns: columns, rows: rows };
   }
 
+  function parseJSONLines(text) {
+    var records = [], lines = text.split(/\r?\n/);
+    lines.forEach(function (line, index) {
+      if (line.trim() === '') return;
+      var record;
+      try { record = JSON.parse(tolerantJSONText(line)); }
+      catch (err) { throw new Error('line ' + (index + 1) + ' is not valid JSON: ' + err.message); }
+      if (!record || typeof record !== 'object' || Array.isArray(record)) {
+        throw new Error('line ' + (index + 1) + ' is not a JSON object');
+      }
+      records.push(record);
+    });
+    if (!records.length) throw new Error('dataset is empty (no header row)');
+    return recordsToTable(records);
+  }
+
   // ── JSON parsing ────────────────────────────────────────────────────────
   // Handles Pandas/standard JSON in records ([{col: val}]) and split
   // ({columns: [...], data: [[...]]}) formats.
-  function parseJSON(text) {
+  // `jsonLines` (a .jsonl or .ndjson file name): one object per line, read as records (#1027).
+  function parseJSON(text, jsonLines) {
     if (typeof text !== 'string') text = String(text);
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
+    if (jsonLines) return parseJSONLines(text);
     var parsed;
     try {
       parsed = JSON.parse(tolerantJSONText(text));
@@ -1392,7 +1410,7 @@
           if (notes) notes.push(sheetNote);
         }
       }
-      else if (/\.json$/i.test(spec.name)) heldTable = parseJSON(spec.data);
+      else if (/\.(json|jsonl|ndjson)$/i.test(spec.name)) heldTable = parseJSON(spec.data, /\.(jsonl|ndjson)$/i.test(spec.name));
       else heldTable = parseCSV(spec.data);
       try {
         var values = parseHeldOut(heldTable, spec.column, table, supplied, spec.key, spec.normalize);

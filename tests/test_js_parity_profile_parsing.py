@@ -425,3 +425,27 @@ def test_python_js_accept_nan_and_infinity_literals_in_json(tmp_path):
     result = _label_parity(tmp_path, "nan.json", "[" + records + "]", "profile-json")
     assert _labels(result, 1) == [("-inf", 10), ("a", 10), ("inf", 10)]
     assert result["dimensions"][1]["missing_pct"] == 0.25
+
+
+def test_python_js_read_json_lines_files(tmp_path):
+    """#1027: .jsonl and .ndjson are one record per line in both engines, with nested objects flattened;
+    a bad line is named, and a one-record file is not mistaken for a plain JSON object."""
+    from faircode.loaders_extra import read_table as read_any_table
+    lines = "\n".join(json.dumps({"sex": "m" if i % 2 else "f", "loc": {"state": "TX" if i % 3 else "CA"}}) for i in range(30))
+    for name in ("rows.jsonl", "rows.ndjson"):
+        result = _label_parity(tmp_path, name, lines + "\n\n", "profile-json")
+        assert [d["name"] for d in result["dimensions"]] == ["sex", "loc.state"] and result["n_rows"] == 30
+    one = _label_parity(tmp_path, "one.jsonl", '{"sex": "m"}\n', "profile-json")
+    assert one["n_rows"] == 1
+    for text, message in (('{"sex": "m"}\n{oops}\n', "line 2 is not valid JSON"), ('{"sex": "m"}\n[1, 2]\n', "line 2 is not a JSON object")):
+        bad = tmp_path / "bad.jsonl"
+        bad.write_text(text, encoding="utf-8")
+        with pytest.raises(ValueError, match=message):
+            read_any_table(str(bad))
+        done = subprocess.run(["node", "scripts/engine-js.js", "profile-json", str(bad)],
+                              capture_output=True, text=True, encoding="utf-8")
+        assert done.returncode != 0 and message in done.stderr
+    empty = tmp_path / "empty.jsonl"
+    empty.write_text("\n\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="dataset is empty"):
+        read_any_table(str(empty))

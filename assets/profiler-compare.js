@@ -140,11 +140,11 @@
 
   function readFile(key, file, drop, nameEl) {
     var statusEl = key === 'A' ? fileStatusA : fileStatusB;
-    var okExt = /\.(csv|tsv|json|xlsx)$/i.test(file.name);
+    var okExt = /\.(csv|tsv|json|jsonl|ndjson|xlsx)$/i.test(file.name);
     var isXlsxType = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     var okType = file.type === 'text/csv' || file.type === 'text/tab-separated-values' ||
       file.type === 'application/json' || isXlsxType;
-    if (!okExt && !okType) return showError('Please choose a .csv, .tsv, .json, or .xlsx file.');
+    if (!okExt && !okType) return showError('Please choose a .csv, .tsv, .json, .jsonl, or .xlsx file.');
 
     var reader = new FileReader();
     reader.onerror = function () { showError('Could not read dataset ' + key + '.'); };
@@ -186,8 +186,8 @@
           var decoded = E.decodeText(reader.result, encodingSelect ? encodingSelect.value : 'auto');
           slotEncoding = decoded.encoding;
           var text = decoded.text;
-          var table = (/\.json$/i.test(file.name) || file.type === 'application/json')
-            ? E.parseJSON(text) : E.parseCSV(text);
+          var table = (/\.(json|jsonl|ndjson)$/i.test(file.name) || file.type === 'application/json')
+            ? E.parseJSON(text, /\.(jsonl|ndjson)$/i.test(file.name)) : E.parseCSV(text);
           applyTable(table);
         } catch (err) {
           showError('Could not read dataset ' + key + ': ' + err.message);

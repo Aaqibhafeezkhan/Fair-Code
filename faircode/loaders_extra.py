@@ -53,6 +53,25 @@ def _read_table_impl(path: str, encoding: str | None = None) -> pd.DataFrame:
 
     suffix = Path(path).suffix.lower()
 
+    if suffix in (".jsonl", ".ndjson"):   # JSON Lines: one object per line (#1027)
+        encoding = resolve_encoding(path, encoding)
+        with open(path, "r", encoding=encoding) as f:
+            lines = f.read().splitlines()
+        records = []
+        for number, line in enumerate(lines, start=1):
+            if not line.strip():
+                continue
+            try:
+                record = json.loads(line.lstrip("\ufeff"))
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"line {number} is not valid JSON: {exc}") from exc
+            if not isinstance(record, dict):
+                raise ValueError(f"line {number} is not a JSON object")
+            records.append(record)
+        if not records:
+            raise ValueError(EMPTY_DATASET_MESSAGE)
+        return pd.json_normalize(records)
+
     if suffix == ".json":
         encoding = resolve_encoding(path, encoding)
         with open(path, "r", encoding=encoding) as f:

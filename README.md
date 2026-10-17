@@ -959,7 +959,7 @@ no train/test split, no proxy removal.
 It ships in two forms that share one analysis spec ([faircode/SPEC.md](faircode/SPEC.md)), so the
 same CSV produces the same numbers in both:
 
-**Web - drop in a CSV, TSV, JSON, or Excel file, audit it in your browser.** Open
+**Web - drop in a CSV, TSV, JSON, JSON Lines, or Excel file, audit it in your browser.** Open
 **[profiler.html](profiler.html)** (linked from the site nav, live at
 [thefaircode.xyz](https://www.thefaircode.xyz)). All analysis runs client-side - **your file never
 leaves your browser** - which matters for health data; `.xlsx` parsing uses

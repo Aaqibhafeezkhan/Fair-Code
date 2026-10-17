@@ -1135,7 +1135,14 @@ pip install -e ".[benchmark]"                      # scikit-learn + pyyaml + fai
 faircode benchmark                                  # discovers every */audit.yaml, writes results/
 faircode benchmark --out results/ --n-resamples 2000 --n-permutations 2000
 faircode benchmark COMPAS/audit.yaml                # run a subset explicitly
+faircode benchmark --root ~/audits                  # search ~/audits/*/audit.yaml instead of the current directory
+faircode benchmark --no-plots                       # CSVs only: no figures/ and matplotlib is not needed
 ```
+
+`--root PATH` is the directory searched for `*/audit.yaml` (one level down; default: the current
+directory), so the harness can run from outside the repository. It is ignored when you pass manifest
+paths. `--no-plots` skips the `figures/*.png` files; `results_fairness.csv`, `results_performance.csv`
+and `summary.csv` are still written.
 
 Writes `results_fairness.csv`, `results_performance.csv`, `summary.csv`, and one
 `figures/<audit>_strategies.png` per audit (300 dpi, rendered by `faircode/figures.py` straight from

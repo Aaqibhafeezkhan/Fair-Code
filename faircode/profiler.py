@@ -252,6 +252,16 @@ def _skewness(values: list[float]):
     return m3 / (m2 ** 1.5)
 
 
+def _label(value) -> str:
+    """The group label of one cell: str() of the value, except that a whole-number float is written
+    without its ".0" (a pandas column of integers with one blank is float64, so 1 would otherwise
+    become "1.0"; the web engine, which sees the text, says "1"). Mirrors columnLabeler() in
+    assets/profiler-engine.js (#1011, #1013)."""
+    if isinstance(value, float) and math.isfinite(value) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
 # ── Per-dimension metrics (SPEC section 3) ──────────────────────────────────
 def _analyze_groups(labels_counts: dict, n_total: int, null_count: int,
                     skewness=None, min_share_threshold=MIN_SHARE_THRESHOLD, min_group_size=MIN_GROUP_SIZE) -> dict:
@@ -335,10 +345,12 @@ def _dimension(df: pd.DataFrame, name: str, kind: str,
 
     # Categorical path (sex, race, geography, generic categorical, non-numeric age).
     null_count = int(col.isna().sum())
-    # astype(str): a Categorical would otherwise list unused categories as 0-row groups (#994), and the
-    # number 1 and the string "1" would be two groups with one label (#993); the web keys on text too.
-    vc = col.dropna().astype(str).value_counts()
-    counts = {label: int(c) for label, c in vc.items()}
+    # Counting labels, not values: a Categorical would otherwise list unused categories as 0-row groups
+    # (#994), and the number 1 and the string "1" would be two groups with one label (#993).
+    counts: dict = {}
+    for value in col.dropna().tolist():
+        label = _label(value)
+        counts[label] = counts.get(label, 0) + 1
     result = _analyze_groups(counts, n_total, null_count, skewness, min_share, min_group_size)
     result.update({"name": name, "kind": kind})
     return result
@@ -379,7 +391,7 @@ def _intersections(df: pd.DataFrame, dims: list[dict],
                     for value, num in zip(df[name], nums)
                 ]
                 return pd.Series(labels, index=df.index)
-        return df[name].astype("object")
+        return df[name].astype("object").map(lambda v: v if pd.isna(v) else _label(v))
 
     sa = labelize(a["name"], a["kind"])
     sb = labelize(b["name"], b["kind"])

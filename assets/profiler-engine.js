@@ -284,6 +284,99 @@
     });
   }
 
+  // ── Group labels (#1011-#1016) ──────────────────────────────────────────
+  // Python labels a group by str() of the pandas value, so the label depends on the dtype pandas
+  // inferred: a whole-number float is "1" (not "1.0"), a boolean is "True", an integer keeps every
+  // digit. These helpers give the browser the same labels; faircode/profiler.py _label() is the twin.
+
+  // Orders labels by code point like Python's sorted(); `<` compares UTF-16 units, which puts a
+  // surrogate pair (emoji and other astral characters) before U+E000-U+FFFF.
+  function cmpText(a, b) {
+    if (a === b) return 0;
+    var n = Math.min(a.length, b.length);
+    for (var i = 0; i < n; i++) {
+      var ca = a.charCodeAt(i), cb = b.charCodeAt(i);
+      if (ca === cb) continue;
+      var sa = ca >= 0xD800 && ca <= 0xDFFF, sb = cb >= 0xD800 && cb <= 0xDFFF;
+      if (sa !== sb) { if (sa && cb >= 0xE000) return 1; if (sb && ca >= 0xE000) return -1; }
+      return ca < cb ? -1 : 1;
+    }
+    return a.length < b.length ? -1 : 1;
+  }
+
+  // The label of a number the way Python writes it after pandas made it a float: whole numbers
+  // lose their ".0" and exponents have two digits (1e-07), like repr().
+  function numberLabel(n) {
+    if (!isFinite(n)) return String(n);
+    if (Number.isInteger(n)) return typeof BigInt === 'function' ? BigInt(n).toString() : String(n);
+    if (Math.abs(n) < 1e-4) return n.toExponential().replace(/e([+-])(\d)$/, 'e$10$2');
+    return String(n);
+  }
+
+  var DECIMAL_TEXT = /^[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?$/;
+  var INTEGER_TEXT = /^[-+]?\d+$/;
+  var BOOL_TEXT = { 'True': 'True', 'TRUE': 'True', 'true': 'True', 'False': 'False', 'FALSE': 'False', 'false': 'False' };
+
+  // Returns label(v) for the cells of column `name`. Typed cells (JSON, XLSX) are labelled one by
+  // one; CSV text is typed per column the way pandas does: all booleans, all integers or all
+  // numbers become those, anything else stays text.
+  function columnLabeler(table, name) {
+    var rows = table.rows, i, v;
+    if (table.textSource) {
+      var all = function (test) {
+        var seen = false;
+        for (i = 0; i < rows.length; i++) {
+          v = rows[i][name];
+          if (v === null) continue;
+          seen = true;
+          if (!test(String(v).trim())) return false;
+        }
+        return seen;
+      };
+      if (all(function (t) { return BOOL_TEXT[t] !== undefined; })) {
+        return function (x) { return BOOL_TEXT[String(x).trim()]; };
+      }
+      if (all(function (t) { return DECIMAL_TEXT.test(t); })) {
+        var wholeColumn = all(function (t) { return INTEGER_TEXT.test(t); });
+        return function (x) {
+          var t = String(x).trim();
+          if (wholeColumn && typeof BigInt === 'function') {
+            var big = BigInt(t);
+            if (big >= -9223372036854775808n && big <= 18446744073709551615n) return big.toString();
+          }
+          return numberLabel(Number(t));
+        };
+      }
+      return function (x) { return x; };
+    }
+    return function (x) {
+      if (typeof x === 'boolean') return x ? 'True' : 'False';
+      if (typeof x === 'number') return numberLabel(x);
+      return x;
+    };
+  }
+
+  // JSON.parse turns every number into a double, so an integer above 2**53 would lose its low
+  // digits; such literals (outside strings) are quoted first so they stay exact text (#1014).
+  function quoteBigIntegers(text) {
+    var out = '', i = 0, n = text.length, start;
+    while (i < n) {
+      var c = text[i];
+      if (c === '"') {
+        start = i++;
+        while (i < n && text[i] !== '"') i += text[i] === '\\' ? 2 : 1;
+        i++;
+        out += text.slice(start, i);
+      } else if (c === '-' || (c >= '0' && c <= '9')) {
+        start = i++;
+        while (i < n && /[0-9.eE+\-]/.test(text[i])) i++;
+        var token = text.slice(start, i);
+        out += /^-?\d{16,}$/.test(token) ? '"' + token + '"' : token;
+      } else { out += c; i++; }
+    }
+    return out;
+  }
+
   function parseCSV(text, delimiter) {
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
     // Same wording as loaders_extra.EMPTY_DATASET_MESSAGE: a file with no header row is an error (#1010).
@@ -327,7 +420,7 @@
       }
       data.push(obj);
     }
-    return { columns: columns, rows: data };
+    return { columns: columns, rows: data, textSource: true };   // textSource: cells are text, typed per column by columnLabeler()
   }
   // Shared by parseJSON's records branch and parseXLSX: turn an array of
   // plain-object records into { columns, rows }. Columns are the union of
@@ -385,7 +478,7 @@
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
     var parsed;
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(quoteBigIntegers(text));
     } catch (syntaxErr) {
       // Raw SyntaxError messages are browser-specific (e.g. "Unexpected end
       // of JSON input" vs "Unexpected token") and confusing in the dropzone's
@@ -648,11 +741,11 @@
     return null;
   }
 
-  function nunique(rows, col) {
-    var seen = Object.create(null);
+  function nunique(table, col) {
+    var rows = table.rows, label = columnLabeler(table, col), seen = Object.create(null);
     for (var i = 0; i < rows.length; i++) {
       var v = rows[i][col];
-      if (v !== null) seen[v] = 1;
+      if (v !== null) seen[label(v)] = 1;
     }
     return Object.keys(seen).length;
   }
@@ -675,7 +768,7 @@
       // A column holding objects or arrays cannot form groups; mirrors detect.py skipping the
       // TypeError from nunique() on unhashable cells (#844, #973).
       if (table.rows.some(function (r) { return r[col] !== null && typeof r[col] === 'object'; })) return;
-      var n = nunique(table.rows, col);
+      var n = nunique(table, col);
       if (n >= 2 && n <= maxCategoricalCard) {
         detected.push({ name: col, kind: 'categorical' });
       }
@@ -840,7 +933,7 @@
     // count desc, then label asc - deterministic tie-break to match Python.
     groups.sort(function (a, b) {
       return (b.count - a.count) ||
-             (a.label < b.label ? -1 : a.label > b.label ? 1 : 0);
+             cmpText(a.label, b.label);
     });
 
     var shares = groups.map(function (g) { return g.share; });
@@ -922,11 +1015,11 @@
     // Categorical path.
     // Raw category labels may name Object.prototype properties. Keep them
     // as literal keys, matching Python's value_counts().
-    var c = Object.create(null), nulls = 0;
+    var c = Object.create(null), nulls = 0, label = columnLabeler(table, name);
     for (i = 0; i < nTotal; i++) {
       v = rows[i][name];
       if (v === null) nulls++;
-      else c[v] = (c[v] || 0) + 1;
+      else { v = label(v); c[v] = (c[v] || 0) + 1; }
     }
     var r = analyzeGroups(c, nTotal, nulls, null, minShareThreshold, minGroupSize);
     r.name = name; r.kind = kind;
@@ -957,7 +1050,8 @@
         return out;
       }
     }
-    for (i = 0; i < rows.length; i++) out.push(rows[i][name]);
+    var label = columnLabeler(table, name);
+    for (i = 0; i < rows.length; i++) out.push(rows[i][name] === null ? null : label(rows[i][name]));
     return out;
   }
 
@@ -997,7 +1091,7 @@
     });
     if (!cells.length) return [];
     cells.sort(function (x, y) {  // deterministic order, matches Python
-      return x.a < y.a ? -1 : x.a > y.a ? 1 : (x.b < y.b ? -1 : x.b > y.b ? 1 : 0);
+      return cmpText(x.a, y.a) || cmpText(x.b, y.b);
     });
     return [{ dims: [a.name, b.name], cells: cells }];
   }
@@ -1615,7 +1709,7 @@
       });
       groups.sort(function (x, y) {
         return (Math.abs(y.delta) - Math.abs(x.delta)) ||
-               (x.label < y.label ? -1 : x.label > y.label ? 1 : 0);
+               cmpText(x.label, y.label);
       });
       d.reference = { deviation: round(0.5 * deviation, 4), groups: groups };
     });
@@ -1888,7 +1982,7 @@
     // most-shifted first, then label asc - matches Python.
     groups.sort(function (x, y) {
       return (Math.abs(y.share_delta) - Math.abs(x.share_delta)) ||
-             (x.label < y.label ? -1 : x.label > y.label ? 1 : 0);
+             cmpText(x.label, y.label);
     });
 
     return {
@@ -1911,7 +2005,7 @@
   // One-to-one label match: exact, then case-insensitive, then alphabetic prefix; Jaccard of
   // the result. Mirrors compare.py _label_overlap (#887).
   function labelOverlap(labelsA, labelsB) {
-    var restA = labelsA.slice().sort(), restB = labelsB.slice().sort(), matched = 0;
+    var restA = labelsA.slice().sort(cmpText), restB = labelsB.slice().sort(cmpText), matched = 0;
     function take(same) {
       var left = [];
       restA.forEach(function (a) {

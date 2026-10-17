@@ -78,7 +78,24 @@ def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
     if suffix in UNSUPPORTED_SUFFIXES and Path(path).exists():
         raise ValueError(f"unsupported format {suffix}: save it as .xlsx or .csv")
 
+    # An unknown suffix is sniffed as text, but a file that is not text at all must not "profile" (#1019).
+    _reject_nul_bytes(path, encoding, "{path} looks like a binary file, not a table (it contains NUL bytes)")
     return _read_delimited(path, default=",", encoding=encoding)
+
+
+def _reject_nul_bytes(path: str, encoding: str | None, message: str) -> None:
+    """Raise ValueError(message.format(path=path)) if the decoded text of `path` holds a NUL character.
+
+    Checked on decoded text, so a UTF-16 file read with the right encoding (whose bytes are full of
+    zeros) passes. pandas' C parser would cut a field at a NUL without a word (#1025)."""
+    encoding = resolve_encoding(path, encoding)
+    with open(path, "r", encoding=encoding, errors="replace", newline="") as fh:
+        while True:
+            chunk = fh.read(1 << 20)
+            if not chunk:
+                return
+            if "\x00" in chunk:
+                raise ValueError(message.format(path=path))
 
 
 def _read_delimited(path: str, *, default: str, encoding: str | None = None) -> pd.DataFrame:

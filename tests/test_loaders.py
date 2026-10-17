@@ -431,3 +431,18 @@ def test_read_table_still_sniffs_an_unknown_text_extension(tmp_path):
     path.write_text("sex,age\nM,30\nF,41\n", encoding="utf-8")
 
     assert list(read_table(str(path)).columns) == ["sex", "age"]
+
+
+def test_a_binary_file_with_an_unknown_suffix_is_rejected(tmp_path):
+    # #1019: a stub that is not text must not profile with exit 0; a real .dat TSV still reads.
+    from faircode.cli import main
+    binary = tmp_path / "a.sav"
+    binary.write_bytes(b"ARROW1\x00\x00junk\x00\x01\x02")
+    with pytest.raises(ValueError, match="looks like a binary file, not a table"):
+        read_table(str(binary))
+    with pytest.raises(SystemExit) as exc:
+        main(["profile", str(binary)])
+    assert exc.value.code == 2
+    tsv = tmp_path / "a.dat"
+    tsv.write_text("sex\tage\nM\t30\nF\t40\n", encoding="utf-8")
+    assert list(read_table(str(tsv)).columns) == ["sex", "age"]

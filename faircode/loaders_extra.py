@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .loaders import SNIFF_SAMPLE_BYTES, _sniff_delimiter, resolve_encoding, sniff_bom_encoding
+from .loaders import NUL_MESSAGE, SNIFF_SAMPLE_BYTES, _sniff_delimiter, resolve_encoding, sniff_bom_encoding
 from .loaders import read_table as _read_table_frozen
 
 
@@ -43,6 +43,8 @@ def _read_table_impl(path: str, encoding: str | None = None) -> pd.DataFrame:
             content = raw.decode(encoding or sniff_bom_encoding(raw[:4]) or "utf-8")
         else:
             content = sys.stdin.read()
+        if "\x00" in content:   # same check and wording as loaders.read_table (#1025)
+            raise ValueError(NUL_MESSAGE.format(path="stdin"))
         delimiter = _sniff_delimiter(content[:SNIFF_SAMPLE_BYTES])
         return pd.read_csv(io.StringIO(content), sep=delimiter)
 

@@ -68,11 +68,9 @@ def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
                 "(install with: pip install faircode[excel])"
             ) from exc
 
-    if suffix == ".tsv":
-        return _read_delimited(path, default="\t", encoding=encoding)
-
-    if suffix == ".csv":
-        return _read_delimited(path, default=",", encoding=encoding)
+    if suffix in (".tsv", ".csv"):
+        _reject_nul_bytes(path, encoding, NUL_MESSAGE)
+        return _read_delimited(path, default="\t" if suffix == ".tsv" else ",", encoding=encoding)
 
     # A missing file keeps its "file not found" error: only an existing file is reported as the wrong format.
     if suffix in UNSUPPORTED_SUFFIXES and Path(path).exists():
@@ -81,6 +79,9 @@ def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
     # An unknown suffix is sniffed as text, but a file that is not text at all must not "profile" (#1019).
     _reject_nul_bytes(path, encoding, "{path} looks like a binary file, not a table (it contains NUL bytes)")
     return _read_delimited(path, default=",", encoding=encoding)
+
+
+NUL_MESSAGE = "{path} contains NUL bytes: is it UTF-16 without a byte-order mark? try --encoding utf-16"
 
 
 def _reject_nul_bytes(path: str, encoding: str | None, message: str) -> None:

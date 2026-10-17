@@ -381,6 +381,8 @@
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // strip BOM
     // Same wording as loaders_extra.EMPTY_DATASET_MESSAGE: a file with no header row is an error (#1010).
     if (text.trim() === '') throw new Error('dataset is empty (no header row)');
+    // Same check as loaders._reject_nul_bytes: pandas would cut a field at a NUL without a word (#1025).
+    if (text.indexOf('\0') !== -1) throw new Error('the file contains NUL bytes: is it UTF-16 without a byte-order mark? pick UTF-16 as the encoding');
     delimiter = delimiter || sniffDelimiter(text);
     var rows = [], field = '', row = [], inQuotes = false;
     // A row made of one quoted empty field ("") is a real missing value to

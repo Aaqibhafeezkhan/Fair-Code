@@ -376,3 +376,20 @@ def test_ties_are_ordered_by_code_point_in_both_engines(tmp_path):
     text = json.dumps([{"race": v, "sex": "m" if i % 2 else "f"} for i, v in enumerate(["\U0001F600", "ｚ", "a"] * 10)])
     result = _label_parity(tmp_path, "astral.json", text, "profile-json")
     assert [label for label, _ in _labels(result)] == ["a", "ｚ", "😀"]
+
+
+def test_python_js_reject_a_nul_byte_with_the_same_stem(tmp_path):
+    """#1025: a NUL inside a cell is an error in both engines, not 'b' in one and 'b\\x00c' in the other;
+    UTF-16 read with the right encoding (full of zero bytes) still loads."""
+    from faircode.loaders_extra import read_table as read_any_table
+    path = tmp_path / "nul.csv"
+    path.write_bytes(b"sex,race\nm,a\nf,b\x00c\nm,a\n")
+    with pytest.raises(ValueError, match="contains NUL bytes"):
+        read_any_table(str(path))
+    done = subprocess.run(["node", "scripts/engine-js.js", "profile", str(path)],
+                          capture_output=True, text=True, encoding="utf-8")
+    assert done.returncode != 0 and "contains NUL bytes" in done.stderr
+    utf16 = tmp_path / "u16.csv"
+    utf16.write_bytes("sex,race\nm,a\nf,b\n".encode("utf-16"))
+    assert list(read_any_table(str(utf16)).columns) == ["sex", "race"]
+    assert list(read_any_table(str(utf16), encoding="utf-16").columns) == ["sex", "race"]

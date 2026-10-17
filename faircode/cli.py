@@ -839,6 +839,13 @@ def main(argv: list[str] | None = None) -> int:
         if held_report.notes:   # visible to --json consumers, not only on stderr (#921)
             result["notes"] = list(held_report.notes)
 
+        if args.fail_on_drift and not (any(d["groups"] or d["kind_mismatch"] for d in result["dimensions"])
+                                      or result["added_dimensions"] or result["removed_dimensions"]):
+            # like --fail-under on a profile with no score: a gate with nothing to measure must not pass (#1017)
+            print("error: cannot apply --fail-on-drift: no dimension was found in either dataset to compare",
+                  file=sys.stderr)
+            return 2
+
         if args.html:
             html_content = compare_to_html(result)
             try:

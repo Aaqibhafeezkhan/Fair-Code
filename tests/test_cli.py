@@ -1702,3 +1702,18 @@ def test_unsupported_spreadsheet_format_is_named_not_blamed_on_encoding(tmp_path
     err = capsys.readouterr().err
     assert "unsupported format .xls" in err and ".xlsx" in err
     assert "--encoding" not in err and "not valid utf-8" not in err
+
+
+def test_fail_on_drift_refuses_to_pass_when_nothing_can_be_compared(tmp_path, capsys):
+    # #1017: two files with no detectable dimension, or only headers, are an error for the gate.
+    nodims = tmp_path / "nodims.csv"
+    nodims.write_text("x,y\n1,2\n", encoding="utf-8")
+    header = tmp_path / "header.csv"
+    header.write_text("sex,race\n", encoding="utf-8")
+    for path in (nodims, header):
+        assert main(["compare", str(path), str(path), "--fail-on-drift"]) == 2
+        assert "cannot apply --fail-on-drift" in capsys.readouterr().err
+    assert main(["compare", str(nodims), str(nodims)]) == 0          # without the gate it is just a report
+    same = tmp_path / "same.csv"
+    same.write_text("sex\n" + "m\nf\n" * 20, encoding="utf-8")
+    assert main(["compare", str(same), str(same), "--fail-on-drift"]) == 0   # a real, drift-free comparison passes

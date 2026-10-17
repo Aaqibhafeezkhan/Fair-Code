@@ -326,6 +326,8 @@ five categories above), `false` if `flags` is empty or contains only kind-mismat
 snapshots that makes a dimension unmeasurable (e.g. one side's ages banded, the other left raw)
 doesn't false-positive as "drift detected" in a CI gate (see issue #472).
 
+A gate with nothing to measure does not pass: when no dimension has any group on either side and none was added or removed (two files with no detectable dimension, or only headers), `--fail-on-drift` exits 2 with "cannot apply --fail-on-drift", like `profile --fail-under` on a profile with no score (#1017).
+
 ### Result shape
 
 ```jsonc

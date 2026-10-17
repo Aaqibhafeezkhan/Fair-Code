@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 51 | 52 | 57 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
+| 51 | 53 | 58 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -190,9 +190,12 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Web and tooling: shared helpers for the two views (#983), a browser-level smoke test with its own workflow (#988), an MCP stdio test and the alias removal plan (#987, #984), a missing-node fallback for the key-fold check (#982), the issue-number checker for contributors and metrics (#981) and a smaller profile parity test file (#985)
 - [x] Engine and loader fixes: nested JSON objects in the web engine (#992), mixed number and string labels (#993), unused pandas categories (#994), empty files (#1010), unreadable reference shares (#1002) and the row-filter rules in MANIFEST_SPEC (#999)
 - [x] Tooling, web and test follow-ups: a clear message when the mcp extra is missing (#995), one source for the web version (#996), `make test-browser` (#997), more browser interactions (#1000), the shared view helpers (#1008) and tests for compare HTML, metrics, loaders, sniffing, workbooks and the figures command (#1001, #1003-#1007)
-- [ ] Label and number parity between the engines: float-looking codes (#1011), JSON booleans, `1.0`, large integers and exponents (#1012-#1015), and the order of labels outside the BMP (#1016)
-- [ ] Input handling: a clear error for `.xls`, binary files and JSON Lines (#1018, #1019, #1027), ragged rows, unterminated quotes, NUL bytes and JSON `NaN` (#1023-#1026)
-- [ ] Reports and gates: `compare --fail-on-drift` with nothing to compare (#1017), long group labels in the terminal (#1021), an empty proxy-hint result (#1022), blank reference shares (#1028), the em-dash check's file types (#1020), subprocess coverage (#986), the contributor notes for the new checks (#989), labels that differ only in case (#1009) and the remaining view duplication in `render` and `readFile`
+- [x] Label and number parity between the engines: float-looking codes, booleans, `1.0`, large integers, exponents and the order of labels outside the BMP (#1011-#1016)
+- [x] Input handling: `.xls` (#1018), binary files, JSON Lines, ragged rows, unterminated quotes, NUL bytes and JSON `NaN` (#1019, #1023-#1027)
+- [x] Reports and gates: `compare --fail-on-drift` with nothing to compare (#1017), long group labels (#1021), an empty proxy-hint result (#1022), blank reference shares (#1028), the em-dash check's file types (#1020) and labels that differ only in case (#1009)
+- [ ] Engine parity follow-ups: JSON strings `NA` and empty (#1036), XLSX dates (#1039), numeric and blank headers (#1045, #1046), long labels that still collide (#1038)
+- [ ] Scale and flags: quadratic flag building and tens of thousands of flags for a high-cardinality column in the profile and compare views (#1042, #1043, #1052)
+- [ ] MCP, CLI and docs follow-ups: `--fail-under` range (#1037), undocumented benchmark flags (#1040), unknown benchmark filters (#1041), proxy hints on one dimension (#1044), the citation version (#1047), stale benchmark and snapshot wording (#1048, #1049), workflow timeouts (#1050), the leaked workbook handle (#1051), subprocess coverage (#986) and the contributor notes for the new checks (#989)
 ---
 
 ## Phase 6 - Research Paper and Publication - Paused, Retargeted for Next Year

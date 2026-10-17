@@ -3,8 +3,8 @@
 # Fair Code - Metrics Tracker
 
 ![Stars](https://img.shields.io/badge/Stars-51-brightgreen?style=flat-square&logo=github)
-![Contributors](https://img.shields.io/badge/Contributors-52-blue?style=flat-square)
-![Forks](https://img.shields.io/badge/Forks-57-orange?style=flat-square)
+![Contributors](https://img.shields.io/badge/Contributors-53-blue?style=flat-square)
+![Forks](https://img.shields.io/badge/Forks-58-orange?style=flat-square)
 ![Watching](https://img.shields.io/badge/Watching-8-yellow?style=flat-square)
 ![Explainers](https://img.shields.io/badge/Explainers-62-blueviolet?style=flat-square)
 ![Countries](https://img.shields.io/badge/Countries-20-informational?style=flat-square)
@@ -46,7 +46,7 @@ Weekly snapshot of project health. Updated every Friday.
 | 2026-W39 | 48 | 45 | 8 | 40 | 30K+ total | 20 | 25 | 7 total |
 | 2026-W40 | 49 | 50 | 8 | 45 | 30K+ total | 20 | 41 | 7 total |
 | 2026-W41 | 49 | 55 | 8 | 50 | 30K+ total | 20 | 72 | 7 total |
-| 2026-W42 | 51 | 57 | 8 | 52 | 30K+ total | 20 | 104 | 7 total |
+| 2026-W42 | 51 | 58 | 8 | 53 | 30K+ total | 20 | 123 | 7 total |
 
 > **2026-W27 - v1.2.0 shipped:** Open Dataset Profiler (CLI + client-side web tool) released; 23 explainers total.
 >
@@ -117,6 +117,8 @@ Weekly snapshot of project health. Updated every Friday.
 > **2026-W42 (Thursday) - the seventh sweep: 19 non-explainer issues closed, 19 fresh ones opened, one new contributor:** every unassigned non-explainer issue left from the sixth sweep was fixed and committed on its own: only ASCII digits count as numbers in the held-out screen in both engines (#967), a held-out column given twice is rejected even after a skip (#980), the web engine skips array and object columns like Python (#973), the MCP sheet-note aliases carry a removal version and a `deprecated` hint (#984), the server is driven over stdio (#987), the helpers both web views duplicated moved into `assets/profiler-shared.js` (#983), a Playwright smoke test opens the real pages (#988), the 948-line parity test file was split (#985), and eleven coverage gaps got tests (#968-#972, #974-#979). [@Enard52](https://github.com/Enard52) merged two tooling PRs (#990, #991). Probes of nested JSON, mixed-type columns, unused pandas categories and empty files produced the next 19 issues (#992-#1010), three pinned. #848, #986 and #989 are assigned and were left alone.
 >
 > **2026-W42 (Friday) - the eighth sweep: 17 non-explainer issues fixed, one closed as not planned, 18 fresh ones opened, no new contributors:** every unassigned non-explainer issue left from the seventh sweep got a commit of its own, with a parity test wherever both engines are touched: nested JSON objects, number-versus-string labels and unreadable reference shares now agree (#992, #993, #1002), unused pandas categories no longer inflate the group count (#994), empty files have one clear message (#1010), a manifest row filter takes exactly one operator (#999), `make test-browser` and eight more browser interactions exist (#997, #1000), the shared module took over five more helpers (#1008), and seven coverage gaps got tests. #998 asked for a change to the gitignored `AGENTS.md` and was closed as not planned. Probes with malformed CSV and JSON (float-looking codes, booleans, big integers, ragged rows, unterminated quotes, JSON Lines) produced the next 18 issues (#1011-#1028), three pinned. #848, #986, #989 and #1009 are assigned and were left alone.
+>
+> **2026-W42 (Saturday) - the ninth sweep: 17 non-explainer issues fixed, 17 fresh ones opened, one new contributor:** the unassigned follow-ups of the eighth sweep were fixed and committed (the six label-spelling parity issues in one commit, the ragged-row and unclosed-quote pair in another): both engines now label groups alike and read malformed rows, NUL bytes, JSON `NaN` and JSON Lines the same way, `compare --fail-on-drift` no longer passes with nothing to compare, the terminal report widens its label column and says when a proxy check found nothing, and the em-dash check now scans notebooks. [@minutechreview](https://github.com/minutechreview) fixed the `.xls` message (#1034) and [@prami25r](https://github.com/prami25r) joined with the case-and-spacing label warning (#1035). Probes with a 500,000-row file and with workbooks produced the next 17 issues (#1036-#1052), three pinned. #848, #986 and #989 are assigned and were left alone.
 ---
 
 ## Targets
@@ -124,12 +126,12 @@ Weekly snapshot of project health. Updated every Friday.
 | Metric | Current | Target | Timeline |
 |--------|--------:|-------:|----------|
 | Stars | 51 | 50+ | End of 2026 |
-| Forks | 57 | 60+ | End of 2026 |
+| Forks | 58 | 60+ | End of 2026 |
 | Watching | 8 | 12+ | End of 2026 |
-| Contributors | 52 | 20+ | End of 2026 |
+| Contributors | 53 | 20+ | End of 2026 |
 | Social reach | 30K+ | 40K+ | End of 2026 |
 | Countries reached | 20 | 20+ | End of 2026 |
-| Issues closed | 104 (this week, since 2026-10-12) | Track weekly | Ongoing |
+| Issues closed | 123 (this week, since 2026-10-12) | Track weekly | Ongoing |
 | Code audits | 7 | 8+ | End of 2026 |
 | Explainers | 62 | 65+ | End of 2026 |
 
@@ -149,4 +151,4 @@ Weekly snapshot of project health. Updated every Friday.
 
 *Resume-ready line (fill in at application time):*
 
-> Created and scaled Fair Code, an open-source responsible AI platform explaining algorithmic bias through code audits, healthcare-bias case studies, beginner explainers, and contributor-led GitHub documentation; grew the project to **51 stars**, **52 contributors**, **57 forks**, **30K+ social views**, and website visitors from **20 countries**.
+> Created and scaled Fair Code, an open-source responsible AI platform explaining algorithmic bias through code audits, healthcare-bias case studies, beginner explainers, and contributor-led GitHub documentation; grew the project to **51 stars**, **53 contributors**, **58 forks**, **30K+ social views**, and website visitors from **20 countries**.

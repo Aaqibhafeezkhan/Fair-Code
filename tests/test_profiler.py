@@ -722,3 +722,11 @@ def test_unused_categories_are_not_zero_row_groups():
     assert dim["n_groups"] == 2 and dim["imbalance_ratio"] == 1.0
     assert categorical["overall_score"] == plain["overall_score"]
     assert not any("effectively absent" in f for f in categorical["flags"])
+
+
+@pytest.mark.parametrize("bad", [float("nan"), None, float("inf"), float("-inf")])
+def test_parse_reference_skips_numeric_blank_and_non_finite_share_cells(bad):
+    # #1028: pandas reads an empty share cell as NaN (JSON null as None); neither may become a share.
+    from faircode.profiler import parse_reference
+    ref = parse_reference(pd.DataFrame({"column": ["c"] * 3, "group": ["a", "b", "c"], "share": [0.5, bad, 0.5]}))
+    assert ref == {"c": {"a": 0.5, "c": 0.5}}

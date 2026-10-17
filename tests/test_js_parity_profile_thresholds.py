@@ -230,3 +230,18 @@ def test_python_js_parse_reference_skips_the_same_unreadable_shares(tmp_path):
     js = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(table)],
                                    capture_output=True, text=True, encoding="utf-8", check=True).stdout)
     assert js == py
+
+
+def test_python_js_parse_reference_skip_null_and_nan_cells(tmp_path):
+    """#1028: JSON null and NaN share cells are skipped in both engines, so a blank cell in a
+    reference table never becomes a share."""
+    from faircode.profiler import parse_reference
+    rows = [{"column": "c", "group": "a", "share": 0.5}, {"column": "c", "group": "b", "share": None},
+            {"column": "c", "group": "d", "share": float("nan")}, {"column": "c", "group": "e", "share": 0.5}]
+    py = parse_reference(pd.DataFrame(rows))
+    table = {"columns": ["column", "group", "share"], "rows": [dict(r, share=None if r["share"] != r["share"] else r["share"]) for r in rows]}
+    script = ("require(process.argv[1]);process.stdout.write(JSON.stringify("
+              "globalThis.FairCodeProfiler.parseReference(JSON.parse(process.argv[2]))));")
+    js = json.loads(subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(table)],
+                                   capture_output=True, text=True, encoding="utf-8", check=True).stdout)
+    assert py == js == {"c": {"a": 0.5, "e": 0.5}}

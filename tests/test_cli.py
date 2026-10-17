@@ -1717,3 +1717,16 @@ def test_fail_on_drift_refuses_to_pass_when_nothing_can_be_compared(tmp_path, ca
     same = tmp_path / "same.csv"
     same.write_text("sex\n" + "m\nf\n" * 20, encoding="utf-8")
     assert main(["compare", str(same), str(same), "--fail-on-drift"]) == 0   # a real, drift-free comparison passes
+
+
+def test_reference_csv_with_a_blank_share_ignores_that_row(tmp_path, capsys):
+    # #1028: a blank share cell is skipped, not used as nan, and the rest of the baseline still applies.
+    data = tmp_path / "d.csv"
+    data.write_text("sex\n" + "M\nF\n" * 30, encoding="utf-8")
+    ref = tmp_path / "ref.csv"
+    ref.write_text("column,group,share\nsex,M,0.5\nsex,F,0.5\nsex,X,\n", encoding="utf-8")
+    assert main(["profile", str(data), "--reference", str(ref), "--json"]) == 0
+    out = capsys.readouterr().out
+    assert "NaN" not in out and "Infinity" not in out
+    groups = {g["label"] for g in json.loads(out)["dimensions"][0]["reference"]["groups"]}
+    assert groups == {"M", "F"}

@@ -556,6 +556,11 @@ def main(argv: list[str] | None = None) -> int:
         if not args.sample and not args.csv:
             print("error: profile needs a csv argument (or --sample)", file=sys.stderr)
             return 2
+        if args.fail_under is not None and not 0 <= args.fail_under <= 100:
+            # The score is 0-100: above that the gate always fails, below 0 it never does (#1037).
+            print(f"error: --fail-under must be between 0 and 100, got {args.fail_under:g}",
+                  file=sys.stderr)
+            return 2
         if args.proxy_alpha is not None and not 0 < args.proxy_alpha <= 1:
             print("error: --proxy-alpha must be in (0, 1]", file=sys.stderr)
             return 2

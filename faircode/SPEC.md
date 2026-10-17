@@ -200,6 +200,11 @@ Grade bands:
 | D     | 40–54   | Strong imbalance / sparse subgroups                  |
 | F     | 0–39    | Severe imbalance or single-group dimensions          |
 
+`faircode profile --fail-under N` compares the score with `N` for a CI gate: exit 1 when the score is
+below `N`, exit 0 otherwise. `N` must be between 0 and 100, the range of the score. Any other value,
+including `nan`, exits 2 with "--fail-under must be between 0 and 100, got N" before the dataset is
+read, because a value above 100 would fail every run and a negative one would never fail (#1037).
+
 The score intentionally reflects **balance only**. Missing-data %, imbalance ratios, and
 intersectional gaps are surfaced as **flags** alongside the score, not folded into it - this keeps
 the two engines trivially in sync and the score easy to explain.

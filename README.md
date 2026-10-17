@@ -1047,7 +1047,7 @@ provenance) instead of being tested; raise `--max-categorical-card` to test it a
 For CI, `--fail-under N` returns exit code `1` and explains the failing score
 on stderr when the overall representation score is below `N`; report output,
 including `--json`, remains on stdout. A score at or above the threshold exits
-successfully.
+successfully. `N` must be between 0 and 100; any other value exits `2` with an error.
 
 `--json` output carries a `provenance` block recording the SHA-256 of the input
 file, the `faircode` version, and the thresholds actually resolved for the run,

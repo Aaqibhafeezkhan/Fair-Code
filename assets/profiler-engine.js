@@ -269,8 +269,11 @@
   // Handles quoted fields, escaped quotes (""), and newlines inside quotes.
   // pandas renames a repeated header to name.1, name.2, ... (skipping any name
   // already taken); without this the second copy overwrote the first in every
-  // row object and both dimensions read the LAST column's values (#834).
+  // row object and both dimensions read the LAST column's values (#834). A blank
+  // header cell is named "Unnamed: N" (N = zero-based column index) first, as pandas
+  // does, so the column has the same name in both engines (#1046).
   function dedupeHeaders(columns) {
+    columns = columns.map(function (c, i) { return c === '' ? 'Unnamed: ' + i : c; });
     var used = Object.create(null), seen = Object.create(null);
     columns.forEach(function (c) { used[c] = (used[c] || 0) + 1; });
     var taken = Object.create(null);

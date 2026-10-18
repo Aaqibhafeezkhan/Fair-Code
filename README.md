@@ -1161,41 +1161,30 @@ model as the Profiler, reusing its CSV parser (`assets/profiler-engine.js`).
 
 ## Reproducibility & Results History
 
-The repo keeps changing - new audits, new strategies, reruns with more resamples - so reproducing a
-specific past result means pinning down exactly what produced it, not just re-running whatever's
-currently in `results/`.
+The repo keeps changing - new audits, new strategies, reruns with more resamples - so reproducing a specific past result means pinning down exactly what produced it, not just re-running whatever's currently in `results/`.
 
-**The randomness is pinned.** All seven manifests use `random_state: 42`. Every model family
-(`faircode/models.py`), every train/test split (stratified), and every bootstrap resample /
-permutation shuffle (`faircode/significance.py`, `faircode/metrics.py`) takes that seed explicitly -
-nothing reads numpy's global random state, so two runs of the same manifest against the same data
-are bit-for-bit identical.
+**The randomness is pinned.** All seven manifests use `random_state: 42`. Every model family (`faircode/models.py`), every train/test split (stratified), and every bootstrap resample / permutation shuffle (`faircode/significance.py`, `faircode/metrics.py`) takes that seed explicitly - nothing reads numpy's global random state, so two runs of the same manifest against the same data are bit-for-bit identical.
 
-**The environment can be pinned.** [`requirements-lock.txt`](requirements-lock.txt) is an exact
-`pip freeze` of the environment that produced a past run of `results/` - not the loose version
-ranges in `requirements.txt`, which drift over time. Reproduce that exact environment with
-`pip install -r requirements-lock.txt`.
+**The environment can be pinned.** [`requirements-lock.txt`](requirements-lock.txt) is an exact `pip freeze` of the environment that produced a past run of `results/` - not the loose version ranges in `requirements.txt`, which drift over time. Reproduce that exact environment with:
 
-**A results snapshot can be frozen for later comparison.** `results/` at the repo root is live - it
-changes every time someone reruns the harness or a new audit lands. `paper/results-frozen/` is a
-kept snapshot from an earlier analysis pass, useful as a point of comparison while the repo keeps
-moving:
+```bash
+pip install -r requirements-lock.txt
+```
+
+**A results snapshot can be frozen for later comparison.** `results/` at the repo root is live - it changes every time someone reruns the harness or a new audit lands. `paper/results-frozen/` is a kept snapshot from an earlier analysis pass, useful as a point of comparison while the repo keeps moving.
+
+**For new audits and reruns:** Update `results/` as usual. Do not regenerate `paper/results-frozen/` or move the `v1.0-paper` tag as part of an ordinary audit. Run `scripts/freeze_paper_results.py` only when deliberately creating a new reference snapshot; it replaces the existing frozen snapshot and mirrors its CSV files into `faircode/_results_frozen/`.
+
+To deliberately create a new reference snapshot, run:
 
 ```bash
 python3 scripts/freeze_paper_results.py --tag <some-tag>
 ```
 
-This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the exact git commit, the
-Python/scikit-learn/fairlearn/pandas/numpy versions, and the exact list of `audit.yaml` manifests
-included - so a given snapshot is a defined, reproducible set tied to a specific commit, not an
-informal count. It prints (but never runs) the `git tag` / `git push --tags` command needed to
-actually tag the release, since tagging is a deliberate, public action this script shouldn't take on
-its own.
+This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the exact git commit, the Python/scikit-learn/fairlearn/pandas/numpy versions, and the exact list of `audit.yaml` manifests included - so a given snapshot is a defined, reproducible set tied to a specific commit, not an informal count. The script prints (but never runs) the `git tag` / `git push --tags` command needed to actually tag the release, since tagging is a deliberate, public action this script shouldn't take on its own.
 
-**The current reference snapshot is tagged.** `paper/results-frozen/` carries the
-[`v1.0-paper`](https://github.com/yakew7/Fair-Code/releases/tag/v1.0-paper) tag (commit `bbef2ba`),
-published as a GitHub release and deliberately kept off "Latest" so it never displaces the current release. It's
-kept as historical reference, not as evidence for a live publication - see [CLAUDE.md](CLAUDE.md).
+**The current reference snapshot is tagged.** `paper/results-frozen/` carries the [`v1.0-paper`](https://github.com/yakew7/Fair-Code/releases/tag/v1.0-paper) tag (commit `bbef2ba`), published as a GitHub release and deliberately kept off "Latest" so it never displaces the current release. It's kept as historical reference, not as evidence for a live publication - see [CLAUDE.md](CLAUDE.md).
+
 
 ---
 

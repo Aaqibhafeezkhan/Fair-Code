@@ -539,6 +539,8 @@ CLI already prints to stderr, as a `sheet_note` field (`sheet_note_a`/`sheet_not
 `compare_datasets`; `sheet_notes`, a list, on `proxy_hints` covering both `path` and any
 `held_out_with` files) - omitted entirely when nothing was ignored. See issue #386.
 
+An empty `hints` list is explained in `notes`, in the same words as the terminal and HTML reports (#1044): "none tested: a pair needs at least two dimensions (found N)" when fewer than two dimensions (counting any `held_out_with` columns) exist, otherwise "none found: no pair of dimensions is significantly associated". A result with at least one hint has no such note.
+
 `proxy_hints` only tests columns present in the dataset given by default, so it cannot flag a
 remaining column as a proxy for a protected attribute that has already been dropped from the
 dataset entirely - unless `held_out_with` is given: a list of `"PATH=COLUMN"` strings mirroring the

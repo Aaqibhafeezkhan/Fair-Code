@@ -73,6 +73,25 @@ direct commit (`b632cfb`) rather than going through this audit first, exactly
 the gap #188 asked to close. Treat this entry as the audit that should have
 gated that merge, not one that happened before it.
 
+## Job timeouts and concurrency (#1050)
+
+GitHub's default job timeout is six hours, so a hung benchmark or browser job can hold a
+runner for that long, and pushing again to a pull request used to leave every superseded
+run going. Policy for every workflow in `.github/workflows/`:
+
+- **Every job sets `timeout-minutes`.** Recent runs finish in under five minutes end to end,
+  so the limits leave a wide margin: 5 for the small check jobs, 10 for lint, favicons,
+  explainers and browser smoke, 15 for the audit matrix, 20 for the profiler tests, 30 for
+  the benchmark harness and CodeQL. Raise a limit in the same PR that makes a job slower.
+- **Workflows that run on `pull_request` set `concurrency`**, grouped by workflow and pull
+  request number (or ref for pushes). `cancel-in-progress` is on only for `pull_request`
+  events, so a new commit cancels the stale PR run but a run on `main` is never cancelled.
+- **Left alone:** `first.interaction.yml` and `pr-review-ping.yml` (`pull_request_target` and
+  `issues` events post one-off comments and must not be cancelled).
+- **Not changed:** several workflows still trigger on both `push` and `pull_request`, so a
+  commit on a branch with an open PR starts each of those jobs twice. Restricting `push` to
+  `main` would fix that but changes which events gate a merge, so it is a separate decision.
+
 ## Conclusion
 
 All five audited version jumps (including `github/codeql-action`'s first

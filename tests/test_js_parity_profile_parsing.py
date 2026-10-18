@@ -223,13 +223,17 @@ def test_python_js_sample_dataset_is_byte_identical():
 @pytest.mark.parametrize("name,text", [
     ("duplicate_headers", "sex,sex,race\nM,F,A\nM,F,B\nM,F,A\nF,M,B\n"),
     ("duplicate_headers_colliding_suffix", "a,a,a,a.1\n1,2,3,4\n"),
+    ("blank_header_cell", "sex,,race\nM,a,x\nF,b,y\nM,a,x\nF,b,y\n"),
+    ("all_blank_header_row", ",,\nM,a,x\nF,b,y\nM,a,x\nF,b,y\n"),
+    ("blank_header_next_to_unnamed_name", "Unnamed: 1,,race\nM,a,x\nF,b,y\nM,a,x\nF,b,y\n"),
     ("quoted_empty_single_column_row", 'region\r\n""\r\nN\r\nS\r\n'),
     ("quoted_empty_last_line", 'region\r\nN\r\n""'),
     ("non_ascii_digit_ages", "age\n٣٠\n25\n40\n٣٠\n"),
 ])
 def test_python_js_parity_on_parser_edge_cases(tmp_path, name, text):
     """#834 (pandas-style header de-duplication), #835 (a quoted-empty row is a
-    missing value, not a blank line) and #836 (only ASCII digits are ages):
+    missing value, not a blank line), #836 (only ASCII digits are ages) and #1046
+    (a blank header cell is "Unnamed: N", not an empty name):
     the CSV parsers and the profile of the result agree on each."""
     path = tmp_path / f"{name}.csv"
     path.write_text(text, encoding="utf-8", newline="")

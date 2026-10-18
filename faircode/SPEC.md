@@ -23,7 +23,7 @@ that is what the `unfair.py` / `fair.py` audits do. The Profiler answers a diffe
 
 ## 1. Column auto-detection
 
-Repeated header names are made unique the way pandas does (`name`, `name.1`, `name.2`, ... skipping names already taken) before anything else; the browser parser does the same so two same-named columns are two dimensions, never one overwriting the other (#834).
+A blank header cell is named `Unnamed: N` (N is the zero-based column index), as pandas does. Repeated header names are then made unique the same way (`name`, `name.1`, `name.2`, ... skipping names already taken) before anything else; the browser parser does the same so two same-named columns are two dimensions, never one overwriting the other (#834).
 
 **Tokenize** the column name: strip accents (Unicode NFD, then drop U+0300-U+036F, so `Género`
 becomes `Genero`), split on separators **and** camelCase boundaries, then lower-case.

@@ -27,6 +27,8 @@ The repo's earlier paper freeze has lifted (see [CLAUDE.md](CLAUDE.md)) - develo
 - **Everything else** - explainers, website content, documentation, `faircode/` changes, tests, tooling - is open too.
 - **`requirements-lock.txt`** no longer needs special handling; Dependabot's version-bump PRs against it can be reviewed and merged like any other dependency update.
 
+**When running a new audit:** New audits and reruns should update `results/` only. Do not modify `paper/results-frozen/` or the `v1.0-paper` tag when contributing new results. Run `python3 scripts/freeze_paper_results.py` only when deliberately creating a new reference snapshot for a paper. This script replaces the existing frozen snapshot and mirrors its CSV files into `faircode/_results_frozen/`, so do not run it as part of an ordinary audit.
+
 **One rule for explainers:** if your explainer quotes a Fair Code result, say which source it's from - `results/` (current) or [`paper/results-frozen/`](paper/results-frozen/) (an earlier reference snapshot, kept for comparison) - so a reader isn't left guessing which numbers are live.
 
 Full policy: [CLAUDE.md](CLAUDE.md).

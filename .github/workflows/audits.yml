@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
     # Decides whether `profiler`/`benchmark-harness` below need to run at
@@ -26,6 +30,7 @@ jobs:
     # (#237) - same question ("could this change affect the test suite?"),
     # same answer. Keep the two in sync.
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       code_relevant: ${{ steps.filter.outputs.code_relevant }}
     steps:
@@ -62,6 +67,7 @@ jobs:
 
   run-audits:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -104,6 +110,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code_relevant == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -152,6 +159,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code_relevant == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 

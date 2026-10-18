@@ -367,6 +367,39 @@ def test_proxy_hints_with_no_significant_pairs_returns_an_empty_list_not_an_erro
     assert "provenance" in result
 
 
+def test_proxy_hints_with_one_dimension_says_none_were_tested(tmp_path):
+    # #1044: with a single dimension no pair can be tested, which is not "tested, none found".
+    path = tmp_path / "a.csv"
+    path.write_text("sex\n" + "m\nf\n" * 20, encoding="utf-8")
+
+    result = _proxy_hints_impl(str(path))
+
+    assert result["hints"] == []
+    assert result["notes"] == ["none tested: a pair needs at least two dimensions (found 1)"]
+
+
+def test_proxy_hints_with_no_significant_pair_says_none_were_found(tmp_path):
+    # sex and occupation cross evenly, so they are independent and the pair is tested.
+    rows = ["sex,occupation"] + [f"{sex},{job}" for _ in range(25) for sex in ("male", "female") for job in ("engineer", "nurse")]
+    path = tmp_path / "a.csv"
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+    result = _proxy_hints_impl(str(path))
+
+    assert result["hints"] == []
+    assert result["notes"] == ["none found: no pair of dimensions is significantly associated"]
+
+
+def test_proxy_hints_with_a_hint_has_no_none_note(tmp_path):
+    rows = ["sex,occupation"] + [
+        f"{'male' if i % 2 == 0 else 'female'},{'engineer' if i % 2 == 0 else 'nurse'}" for i in range(100)
+    ]
+    path = tmp_path / "a.csv"
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+    assert "notes" not in _proxy_hints_impl(str(path))
+
+
 def test_proxy_hints_runtime_error_propagates_with_a_clean_message(tmp_path, monkeypatch):
     import faircode.mcp_server as mcp_server
 

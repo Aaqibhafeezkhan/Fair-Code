@@ -51,7 +51,7 @@ from .provenance import build as build_provenance
 from .provenance import proxy_params
 from .proxy import PROXY_ALPHA, parse_held_out_specs, partition_held_out_path
 from .proxy import proxy_hints as compute_proxy_hints
-from .report import compare_to_csv, to_csv
+from .report import _no_hints_text, compare_to_csv, to_csv
 
 _MAP_CHOICES = VALID_KINDS + ("ignore",)
 
@@ -397,6 +397,10 @@ def _proxy_hints_impl(path, overrides=None, held_out_with=None, alpha=None,
     if sheet_notes:
         output["sheet_notes"] = sheet_notes   # deprecated alias of the sheet entries in `notes` (#950)
     notes = sheet_notes + [n for n in (encoding_ignored_note(path, encoding),) if n] + held_notes
+    if not output["hints"]:
+        # "tested, none found" and "no pair could be tested" are different answers (#1044); a held-out
+        # column is compared with every dimension, so it counts toward the two a pair needs.
+        notes.append(_no_hints_text(len(result["dimensions"]) + len(held_out or {})))
     if notes:
         output["notes"] = notes
     _flag_deprecated_aliases(output)

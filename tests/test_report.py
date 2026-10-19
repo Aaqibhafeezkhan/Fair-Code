@@ -278,6 +278,26 @@ def test_to_terminal_widens_for_a_long_group_label_and_keeps_alignment(mock_prof
     assert len({line.index("%") for line in rows}) == 1      # every row's percentage lands in the same column
 
 
+def test_to_terminal_distinguishes_two_long_labels_sharing_a_prefix(mock_profile_result):
+    # Two labels past the 30-char cap that share their first 29 characters used to clip
+    # to the same "<29 chars>…" text and read as a duplicated row; the colliding ones now
+    # get a middle ellipsis so their differing tails stay visible (#1038).
+    dim = mock_profile_result["dimensions"][0]
+    dim["under_represented"] = []
+    dim["groups"] = [
+        {"label": "x" * 40, "share": 0.5, "count": 600},
+        {"label": "x" * 40 + "y", "share": 0.5, "count": 600},
+    ]
+
+    out = to_terminal(mock_profile_result)
+
+    rows = [line for line in out.splitlines() if "(n=" in line][:2]
+    assert len(rows) == 2
+    assert rows[0] != rows[1]               # the two long labels no longer collapse to one text
+    assert "…" in rows[0] and "…" in rows[1]
+    assert ("y" in rows[0]) ^ ("y" in rows[1])   # the distinguishing tail shows on exactly one row
+
+
 def test_to_terminal_marks_a_cut_reference_group_label(mock_profile_result):
     ref_label = "Some Long Reference Group Name That Is Way Past The Cap"  # over the 28-char maximum
     mock_profile_result["dimensions"][0]["reference"] = {

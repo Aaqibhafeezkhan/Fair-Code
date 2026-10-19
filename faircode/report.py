@@ -210,13 +210,14 @@ def to_terminal(result: dict) -> str:
         add("-" * WIDTH)
         shown = d["groups"][:DISPLAY_GROUPS]
         label_w = _label_width(g["label"] for g in shown)
-        for g in shown:
+        labels = _clip_labels((g["label"] for g in shown), label_w)
+        for g, label in zip(shown, labels):
             mark = "  <- under-represented" if g["label"] in d["under_represented"] else ""
             warning = ("  ⚠ small group (metric may be unreliable)" if g.get("small_group") else "")
             ci = ""
             if g.get("ci_low") is not None and g.get("ci_high") is not None:
                 ci = f"  [95% CI {g['ci_low'] * 100:.1f}-{g['ci_high'] * 100:.1f}%]"
-            add(f"  {_clip(g['label'], label_w)} {_bar(g['share'])} "
+            add(f"  {label} {_bar(g['share'])} "
                 f"{g['share'] * 100:5.1f}%  (n={g['count']:,}){ci}{mark}{warning}")
         if len(d["groups"]) > DISPLAY_GROUPS:
             add(f"  … and {len(d['groups']) - DISPLAY_GROUPS} more groups")
@@ -234,9 +235,11 @@ def to_terminal(result: dict) -> str:
         if d.get("reference"):
             ref_groups = d["reference"]["groups"]
             add(f"  reference (deviation {d['reference']['deviation'] * 100:.1f}%):")
-            ref_w = _label_width((g["label"] for g in ref_groups[:DISPLAY_GROUPS]), minimum=16, maximum=28)
-            for g in ref_groups[:DISPLAY_GROUPS]:
-                add(f"    {_clip(g['label'], ref_w)} exp {g['expected'] * 100:5.1f}%  "
+            ref_shown = ref_groups[:DISPLAY_GROUPS]
+            ref_w = _label_width((g["label"] for g in ref_shown), minimum=16, maximum=28)
+            ref_labels = _clip_labels((g["label"] for g in ref_shown), ref_w)
+            for g, label in zip(ref_shown, ref_labels):
+                add(f"    {label} exp {g['expected'] * 100:5.1f}%  "
                     f"act {g['actual'] * 100:5.1f}%  "
                     f"({_strip_neg_zero(g['delta'] * 100):+5.1f} pp)")
             if len(ref_groups) > DISPLAY_GROUPS:
@@ -295,6 +298,33 @@ def _clip(label: str, width: int) -> str:
     return (label if len(label) <= width else label[:width - 1] + "…").ljust(width)
 
 
+def _clip_middle(label: str, width: int) -> str:
+    """Like `_clip`, but keep a head and a tail with the ellipsis between them, so two long
+    labels that share a long prefix stay distinguishable by their ends (#1038)."""
+    if len(label) <= width:
+        return label.ljust(width)
+    keep = width - 1          # one column for the ellipsis
+    tail = keep // 2
+    head = keep - tail
+    return (label[:head] + "…" + label[-tail:]).ljust(width)
+
+
+def _clip_labels(labels, width) -> list:
+    """Clip each label to `width` for display, aligned to the input order. A label that fits is
+    padded; a long one gets a trailing ellipsis (`_clip`). When two distinct labels would clip to
+    the same text, the colliding ones are re-clipped with a middle ellipsis (`head…tail`) so they
+    do not read as a duplicated row (#1038)."""
+    labels = list(labels)
+    clipped = [_clip(label, width) for label in labels]
+    distinct_sources = {}
+    for label, text in zip(labels, clipped):
+        distinct_sources.setdefault(text, set()).add(label)
+    return [
+        _clip_middle(label, width) if len(distinct_sources[text]) > 1 else text
+        for label, text in zip(labels, clipped)
+    ]
+
+
 def _strip_neg_zero(val: float, dp: int = 1) -> float:
     """Return 0.0 when ``val`` rounds to zero at ``dp`` decimals, so a tiny
     negative value does not render as a misleading ``-0.0``."""
@@ -346,11 +376,13 @@ def compare_to_terminal(cmp: dict) -> str:
         add(f"  score {cd['dimension_score_a']} → {cd['dimension_score_b']} "
             f"({_delta(cd['dimension_score_delta'])})    TVD {cd['tvd']:.3f}")
         add("-" * WIDTH)
-        label_w = _label_width(g["label"] for g in cd["groups"][:DISPLAY_GROUPS])
-        for g in cd["groups"][:DISPLAY_GROUPS]:
+        comp_shown = cd["groups"][:DISPLAY_GROUPS]
+        label_w = _label_width(g["label"] for g in comp_shown)
+        comp_labels = _clip_labels((g["label"] for g in comp_shown), label_w)
+        for g, label in zip(comp_shown, comp_labels):
             tag = {"appeared": "  (appeared)", "disappeared": "  (disappeared)",
                    "shifted": "", "unchanged": ""}[g["status"]]
-            add(f"  {_clip(g['label'], label_w)} {g['share_a'] * 100:5.1f}% → "
+            add(f"  {label} {g['share_a'] * 100:5.1f}% → "
                 f"{g['share_b'] * 100:5.1f}%  "
                 f"({_strip_neg_zero(g['share_delta'] * 100):+5.1f} pp){tag}")
         if len(cd["groups"]) > DISPLAY_GROUPS:

@@ -162,10 +162,14 @@ def test_hidden_first_sheet_python(tmp_path):
     assert df.empty
 
 
-def _date_workbook():
+def _date_workbook(date1904=False):
     import datetime
 
     wb = openpyxl.Workbook()
+    if date1904:
+        from openpyxl.utils.datetime import CALENDAR_MAC_1904
+
+        wb.epoch = CALENDAR_MAC_1904
     ws = wb.active
     ws.append(["sex", "race", "ethnicity"])
     for i in range(60):
@@ -179,11 +183,13 @@ def _date_workbook():
 
 @requires_openpyxl
 @pytest.mark.parametrize("tz", ["UTC", "America/New_York", "Asia/Kolkata"])
-def test_xlsx_date_cells_get_the_same_labels_in_both_engines(tmp_path, tz):
-    """#1039: a date cell is '2020-01-01 00:00:00' in pandas; the web engine used the Excel serial (43831)."""
+@pytest.mark.parametrize("date1904", [False, True], ids=["1900", "1904"])
+def test_xlsx_date_cells_get_the_same_labels_in_both_engines(tmp_path, tz, date1904):
+    """#1039: a date cell is '2020-01-01 00:00:00' in pandas; the web engine used the Excel serial (43831).
+    #1076: a 1904-system workbook gets the same labels too, not dates four years and a day early."""
     import os
 
-    path = _save_workbook(tmp_path, _date_workbook(), "dates.xlsx")
+    path = _save_workbook(tmp_path, _date_workbook(date1904), "dates.xlsx")
     py = {d["name"]: sorted(g["label"] for g in d["groups"])
           for d in __import__("faircode").profile(read_table(str(path)))["dimensions"]}
     result = subprocess.run(

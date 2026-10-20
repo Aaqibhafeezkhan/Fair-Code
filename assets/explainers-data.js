@@ -649,5 +649,15 @@ window.FAIR_CODE_EXPLAINERS = [
       "metrics",
       "data"
     ]
+  },
+  {
+    "slug": "fairness-in-ranking",
+    "title": "Fairness in Ranking",
+    "subtitle": "Two similar scores can still mean very different attention.",
+    "summary": "Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men's exposure.",
+    "tags": [
+      "metrics",
+      "detection"
+    ]
   }
 ];

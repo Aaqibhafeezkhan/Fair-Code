@@ -446,5 +446,12 @@
     "subtitle": "Hedge against the worst group instead of constraining one metric.",
     "summary": "Learn how group DRO trains against an adversary that shifts weight onto whichever group the model currently fails, and how it differs from a parity-constrained method like ExponentiatedGradient. See the real worst-group gain on Benefits Denial, the cost to the other groups, and how the step size over-hedges.",
     "tags": ["metrics", "data"]
+  },
+  {
+    "slug": "fairness-in-ranking",
+    "title": "Fairness in Ranking",
+    "subtitle": "Two similar scores can still mean very different attention.",
+    "summary": "Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men's exposure.",
+    "tags": ["metrics", "detection"]
   }
 ]

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fairness in Ranking · Fair Code</title>
+<meta name="description" content="Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men&#x27;s exposure.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/fairness-in-ranking.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Fairness in Ranking · Fair Code">
+<meta property="og:description" content="Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men&#x27;s exposure.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/fairness-in-ranking.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/fairness-in-ranking.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness in Ranking · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/fairness-in-ranking.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness in Ranking · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fairness in Ranking · Fair Code">
+<meta name="twitter:description" content="Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men&#x27;s exposure.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/fairness-in-ranking.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Fairness in Ranking",
+      "description": "Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men's exposure.",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-in-ranking.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-in-ranking.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Fairness in Ranking?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Fairness in ranking asks whether groups receive their fair share of exposure - the attention an item gets from its position in an ordered list - not just whether they receive similar scores."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every metric elsewhere in this repo (Demographic Parity, Equalized Odds, Predictive Parity) is defined for a binary decision: hired or not, flagged or not, approved or not. A search engine, a job-recommendation feed or a marketplace results page does not make one decision per person. It produces an ordered list, and where someone lands decides how many people ever look at them. Users click near the top; position bias is large and well documented."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Fairness in Ranking",
+          "item": "https://www.thefaircode.xyz/explainers/fairness-in-ranking.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/fairness-in-ranking.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Fairness in Ranking</h1>
+      <p class="explainer-lede">Two similar scores can still mean very different attention.</p>
+      <p class="explainer-lede">Learn why classification metrics cannot see the harm of an ordered list, and how exposure, a position-weighted measure of attention, can. See a hiring ranking on AI Fair Recruitment where whole-list exposure looks fair (0.955) while the top-1,000 shortlist gives women 0.107 of men&#x27;s exposure.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A model can score two candidates almost the same and still bury one of them on page three. Classification fairness metrics cannot see that harm, because it only exists once you add position.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Fairness in ranking</strong> asks whether groups receive their fair share of <em>exposure</em> - the attention an item gets from its position in an ordered list - not just whether they receive similar scores.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Every metric elsewhere in this repo (<a href="demographic-parity.html">Demographic Parity</a>, <a href="equalized-odds.html">Equalized Odds</a>, <a href="predictive-parity.html">Predictive Parity</a>) is defined for a binary decision: hired or not, flagged or not, approved or not. A search engine, a job-recommendation feed or a marketplace results page does not make one decision per person. It produces an ordered list, and where someone lands decides how many people ever look at them. Users click near the top; position bias is large and well documented.</p>
+<p>So two candidates with nearly identical scores can get very different outcomes, and the damage is a group-level one that only appears when a ranking function and an attention model are stacked on top of the scores.</p>
+<h3 id="core-concept-exposure">Core Concept: Exposure</h3>
+<p>Exposure is a position-weighted measure of the attention an item receives. A standard choice borrowed from information retrieval discounts by the log of the rank:</p>
+<pre><code>exposure(rank) = 1 / log2(rank + 1)       rank 1 -&gt; 1.00,  rank 3 -&gt; 0.50,  rank 7 -&gt; 0.33</code></pre>
+<p>Fairness of exposure (Singh and Joachims, 2018) asks whether groups with the same average relevance get the same average exposure. It is not enough for the groups&#x27; average <em>scores</em> to match. Compare it with demographic parity: parity looks at a rate over a decision, exposure looks at a distribution over positions.</p>
+<p>Where the list is cut off matters. A hiring team that looks at the top 1,000 of 23,062 candidates gives zero exposure to everyone below rank 1,000, and averaging a discount over the full list washes that out.</p>
+<h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
+<p>The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit, logistic regression, the benchmark&#x27;s own split (23,062 test candidates, 36.5% of them women). Instead of thresholding at 0.5, sort the test candidates by predicted hire probability. Two rankings: the baseline model with <code>Gender</code> as a feature, and the same model with <code>Gender</code> removed.</p>
+<pre><code>baseline (Gender is a feature)
+  female share of the top 1000: 0.070 (pool 0.365)
+  exposure ratio female/male, whole list: 0.955
+  exposure ratio female/male, top 1000 only: 0.107
+  exposure per unit of hire rate, female/male: 0.116
+mitigated (Gender removed)
+  female share of the top 1000: 0.356 (pool 0.365)
+  exposure ratio female/male, whole list: 1.001
+  exposure ratio female/male, top 1000 only: 1.015
+  exposure per unit of hire rate, female/male: 1.099</code></pre>
+<p>The whole-list exposure ratio for the baseline is 0.955, which looks like near parity. Only the top-1,000 cutoff shows what is happening: women get 0.107 of men&#x27;s exposure and make up 7.0% of the shortlist against 36.5% of the pool. Removing <code>Gender</code> brings the shortlist to 35.6% women. Dividing exposure by each group&#x27;s actual hire rate (24.6% for women, 26.6% for men) gives 1.099 after mitigation: women now get about 10% more exposure per unit of hire rate than men.</p>
+<p>For scale, the benchmark&#x27;s classification rows for the same audit in <code>results/</code> (the current results) show a demographic parity gap of -0.0656 for the baseline and -0.0065 without <code>Gender</code>. A 6.6 point gap in a threshold decision became a shortlist with 7% women. The classification metric understates it.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 ranking.py</code>). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.model_selection import train_test_split
+from faircode.manifest import load_manifest
+from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses
+from faircode.strategies import encode_features
+from faircode.models import build_model
+
+def load_audit(folder, with_gender=False):
+    manifest = load_manifest(f&quot;{folder}/audit.yaml&quot;)
+    df, y, masks = _load_dataset(manifest)        # masks[name] is 1 for the disadvantaged group
+    columns = list(dict.fromkeys(manifest.core_features + manifest.proxy_features + ([&#x27;Gender&#x27;] if with_gender else [])))
+    X = encode_features(df, columns)
+    train, test = train_test_split(np.arange(len(df)), test_size=manifest.test_size,
+                                   random_state=manifest.random_state, stratify=y)
+    return manifest, X, y, {k: v.to_numpy() for k, v in masks.items()}, train, test
+
+manifest, X_biased, y, masks, train, test = load_audit(&quot;AI Fair Recruitment&quot;, with_gender=True)
+_, X_fair, *_ = load_audit(&quot;AI Fair Recruitment&quot;, with_gender=False)
+female = masks[&quot;gender&quot;][test]                      # 1 = female candidate (the disadvantaged group)
+hired = y.iloc[test].to_numpy()
+K = 1000                                            # only the top 1,000 of 23,062 candidates are ever looked at
+
+def scores(X):
+    model = build_model(&quot;logistic_regression&quot;, manifest.random_state)
+    return model.fit(X.iloc[train], y.iloc[train]).predict_proba(X.iloc[test])[:, 1]
+
+def exposure(score, k=None):
+    order = np.argsort(-score, kind=&quot;stable&quot;)
+    rank = np.empty(len(score), dtype=int)
+    rank[order] = np.arange(1, len(score) + 1)
+    e = 1 / np.log2(rank + 1)                       # position discount: rank 1 -&gt; 1.0, rank 3 -&gt; 0.5, rank 7 -&gt; 0.33
+    return e if k is None else np.where(rank &lt;= k, e, 0.0)
+
+def report(score, name):
+    top = np.argsort(-score, kind=&quot;stable&quot;)[:K]
+    whole, cut = exposure(score), exposure(score, K)
+    print(f&quot;{name}\n  female share of the top {K}: {female[top].mean():.3f} (pool {female.mean():.3f})&quot;
+          f&quot;\n  exposure ratio female/male, whole list: {whole[female == 1].mean() / whole[female == 0].mean():.3f}&quot;
+          f&quot;\n  exposure ratio female/male, top {K} only: {cut[female == 1].mean() / cut[female == 0].mean():.3f}&quot;
+          f&quot;\n  exposure per unit of hire rate, female/male: &quot;
+          f&quot;{(cut[female == 1].mean() / hired[female == 1].mean()) / (cut[female == 0].mean() / hired[female == 0].mean()):.3f}&quot;)
+
+report(scores(X_biased), &quot;baseline (Gender is a feature)&quot;)
+report(scores(X_fair), &quot;mitigated (Gender removed)&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The discount function is an assumption.</strong> <code>1 / log2(rank + 1)</code> is a convention. A steeper or flatter attention curve changes every number above. Estimate it from real click data when you have it.</li><li><strong>The cutoff is an assumption too.</strong> The whole-list ratio was 0.955 and the top-1,000 ratio 0.107 for the same model. Report the cutoff you used.</li><li><strong>Equal exposure is not always the goal.</strong> Singh and Joachims ask for exposure proportional to merit. The &quot;per unit of hire rate&quot; line is that idea in a crude form, and it overshoots to 1.099 here.</li><li><strong>Re-ranking trades off with utility.</strong> Forcing equal exposure moves some higher-scored candidates down. That is a <a href="fairness-accuracy-tradeoff.html">fairness-accuracy trade-off</a> in a different shape, and it is measured with ranking utility instead of accuracy.</li><li><strong>Hire rate is a noisy relevance label.</strong> If the historical hiring decisions are biased, &quot;relevance&quot; inherits the bias. See <a href="label-bias.html">Label Bias</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="demographic-parity.html">Demographic Parity</a> - the classification counterpart that exposure generalizes</li><li><a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a> - re-ranking costs utility</li><li><a href="subgroup-fairness.html">Subgroup Fairness</a> - exposure can differ for intersections the aggregate hides</li><li><a href="label-bias.html">Label Bias</a> - when the relevance label is itself biased</li><li><a href="feedback-loop-bias.html">Feedback Loop Bias</a> - ranked results shape the clicks that retrain the ranker</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-hiring"><code>AI Fair Recruitment/</code></a> - the audit used for the example above</li><li><a href="../results/"><code>results/</code></a> - the benchmark rows quoted for the classification gap</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1802.07281" target="_blank" rel="noreferrer noopener">Singh, A., Joachims, T. (2018): Fairness of Exposure in Rankings</a> - KDD 2018; the exposure framework and the proportional-to-merit criterion.</li><li><a href="https://arxiv.org/abs/1805.01788" target="_blank" rel="noreferrer noopener">Biega, A. J., Gummadi, K. P., Weikum, G. (2018): Equity of Attention: Amortizing Individual Fairness in Rankings</a> - SIGIR 2018; fair attention for individual items across a series of rankings.</li><li><a href="https://dl.acm.org/doi/10.1145/582415.582418" target="_blank" rel="noreferrer noopener">Jarvelin, K., Kekalainen, J. (2002): Cumulated Gain-Based Evaluation of IR Techniques</a> - ACM TOIS 20(4); the log-discount position model used above.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reweighing · Fair Code</title>
+<meta name="description" content="Learn how reweighing gives each (group, label) cell the weight it would have under independence, using one sample_weight argument and no model change. See it cut a parity gap on German Credit Lending and fail on Benefits Denial, where the features still separate the groups.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/reweighing.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Reweighing · Fair Code">
+<meta property="og:description" content="Learn how reweighing gives each (group, label) cell the weight it would have under independence, using one sample_weight argument and no model change. See it cut a parity gap on German Credit Lending and fail on Benefits Denial, where the features still separate the groups.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/reweighing.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/reweighing.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Reweighing · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/reweighing.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Reweighing · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Reweighing · Fair Code">
+<meta name="twitter:description" content="Learn how reweighing gives each (group, label) cell the weight it would have under independence, using one sample_weight argument and no model change. See it cut a parity gap on German Credit Lending and fail on Benefits Denial, where the features still separate the groups.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/reweighing.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Reweighing",
+      "description": "Learn how reweighing gives each (group, label) cell the weight it would have under independence, using one sample_weight argument and no model change. See it cut a parity gap on German Credit Lending and fail on Benefits Denial, where the features still separate the groups.",
+      "url": "https://www.thefaircode.xyz/explainers/reweighing.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/reweighing.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Reweighing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Reweighing is a pre-processing mitigation that assigns each training row a weight so that, in the weighted data, group membership and the label are statistically independent, without changing any feature or any label."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "In a biased dataset, the disadvantaged group is under-represented among positive labels. A model trained on it learns that base-rate gap and reproduces it. Dropping the protected column (Fairness Through Unawareness) does not fix it when proxies carry the signal, and in-processing methods such as ExponentiatedGradient need you to swap the training procedure."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Reweighing",
+          "item": "https://www.thefaircode.xyz/explainers/reweighing.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/reweighing.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Reweighing</h1>
+      <p class="explainer-lede">Fix the training data&#x27;s group-label link before fitting.</p>
+      <p class="explainer-lede">Learn how reweighing gives each (group, label) cell the weight it would have under independence, using one sample_weight argument and no model change. See it cut a parity gap on German Credit Lending and fail on Benefits Denial, where the features still separate the groups.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Fix the training data before you train the model: give each (group, label) cell the weight it would have if group and label were independent.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Reweighing</strong> is a pre-processing mitigation that assigns each training row a weight so that, in the weighted data, group membership and the label are statistically independent, without changing any feature or any label.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>In a biased dataset, the disadvantaged group is under-represented among positive labels. A model trained on it learns that base-rate gap and reproduces it. Dropping the protected column (<a href="fairness-through-unawareness.html">Fairness Through Unawareness</a>) does not fix it when proxies carry the signal, and in-processing methods such as <code>ExponentiatedGradient</code> need you to swap the training procedure.</p>
+<p>Reweighing needs neither. It is one line before <code>fit</code>: pass <code>sample_weight</code>. Every estimator that accepts weights can use it, and the data itself is not edited, which is why it is popular when you cannot change the model or may not alter records.</p>
+<h3 id="core-concept-weights-from-expected-over-observed">Core Concept: Weights From Expected Over Observed</h3>
+<p>For group <code>s</code> and label <code>y</code>, the weight is the count you would expect if the two were independent divided by the count you actually see:</p>
+<pre><code>weight(s, y) = P(s) * P(y) / P(s, y)</code></pre>
+<p>A cell that is over-represented gets weight below 1. An under-represented cell gets weight above 1. In the weighted data the positive rate is the same in both groups, so a model that only learns from the labels has no gap to copy. The method is from Kamiran and Calders (2012).</p>
+<h3 id="concrete-example-german-credit-lending">Concrete Example: German Credit Lending</h3>
+<p>The <a href="../index.html#project-credit">German Credit Lending</a> audit: positive is a good credit rating, the disadvantaged group is age under 30, logistic regression, core features only, benchmark split.</p>
+<pre><code>German Credit Lending - age
+  weights per (group, label): {(0, 0): 1.176, (0, 1): 0.94, (1, 0): 0.802, (1, 1): 1.119}
+  baseline   accuracy 0.700 | positive rate disadvantaged 0.710 advantaged 0.802 | parity gap -0.0914
+  reweighing accuracy 0.695 | positive rate disadvantaged 0.826 advantaged 0.809 | parity gap +0.0169
+Benefits Denial - sex
+  weights per (group, label): {(0, 0): 1.094, (0, 1): 0.787, (1, 0): 0.852, (1, 1): 2.206}
+  baseline   accuracy 0.811 | positive rate disadvantaged 0.059 advantaged 0.109 | parity gap -0.0509
+  reweighing accuracy 0.811 | positive rate disadvantaged 0.059 advantaged 0.111 | parity gap -0.0523</code></pre>
+<p>Reweighing took the parity gap from -0.0914 to +0.0169 for 0.5 points of accuracy (0.700 to 0.695). The baseline row matches the benchmark&#x27;s S2 strategy in <code>results/</code> (the current results): accuracy 0.700 and a gap of -0.0914. For comparison, the same file has S3 <code>in_processing</code> at a gap of +0.068 and accuracy 0.715, and S4 <code>post_processing</code> at +0.0467 and 0.720.</p>
+<p>That is one data set of 1,000 rows. The test split is about 200 rows, and the benchmark&#x27;s own p-value for the S2 gap is 0.17, so neither the baseline gap nor the improvement is statistically firm. See <a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a>.</p>
+<h3 id="where-it-does-not-work">Where It Does Not Work</h3>
+<p>The second block in the output is the same method on <a href="../index.html#project-benefits">Benefits Denial</a>, sex as the attribute. The weights are doing something (women with high income get 2.206x weight), but the parity gap does not move: -0.0509 before, -0.0523 after. The features still separate the groups, and the model keeps using them.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 reweighing.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.model_selection import train_test_split
+from faircode.manifest import load_manifest
+from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses
+from faircode.strategies import encode_features
+from faircode.models import build_model
+
+def load_audit(folder):
+    manifest = load_manifest(f&quot;{folder}/audit.yaml&quot;)
+    df, y, masks = _load_dataset(manifest)        # masks[name] is 1 for the disadvantaged group
+    columns = list(dict.fromkeys(manifest.core_features))   # S2 feature set: no protected columns, no proxies
+    X = encode_features(df, columns)
+    train, test = train_test_split(np.arange(len(df)), test_size=manifest.test_size,
+                                   random_state=manifest.random_state, stratify=y)
+    return manifest, X, y, {k: v.to_numpy() for k, v in masks.items()}, train, test
+
+def reweighing_weights(s, y):
+    &quot;&quot;&quot;Kamiran and Calders: weight = P(group) * P(label) / P(group, label), per (group, label) cell.&quot;&quot;&quot;
+    w = np.empty(len(y))
+    for g in (0, 1):
+        for label in (0, 1):
+            cell = (s == g) &amp; (y == label)
+            w[cell] = (s == g).mean() * (y == label).mean() / cell.mean()
+    return w
+
+def run(folder, attribute):
+    manifest, X, y, masks, train, test = load_audit(folder)
+    s_tr, s_te = masks[attribute][train], masks[attribute][test]
+    y_tr, y_te = y.iloc[train].to_numpy(), y.iloc[test].to_numpy()
+    w = reweighing_weights(s_tr, y_tr)
+    print(folder, &quot;-&quot;, attribute)
+    print(&quot;  weights per (group, label):&quot;, {(g, l): round(float(w[(s_tr == g) &amp; (y_tr == l)][0]), 3) for g in (0, 1) for l in (0, 1)})
+    for name, weight in ((&quot;baseline&quot;, None), (&quot;reweighing&quot;, w)):
+        model = build_model(&quot;logistic_regression&quot;, manifest.random_state).fit(X.iloc[train], y_tr, sample_weight=weight)
+        pred = model.predict(X.iloc[test])
+        print(f&quot;  {name:10s} accuracy {(pred == y_te).mean():.3f} | positive rate disadvantaged {pred[s_te == 1].mean():.3f} &quot;
+              f&quot;advantaged {pred[s_te == 0].mean():.3f} | parity gap {pred[s_te == 1].mean() - pred[s_te == 0].mean():+.4f}&quot;)
+
+run(&quot;German Credit Lending&quot;, &quot;age&quot;)
+run(&quot;Benefits Denial&quot;, &quot;sex&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It only touches the label-group association.</strong> If other features separate the groups, as in Benefits Denial, the weights cannot stop the model from using them. Pair it with <a href="proxy-variables.html">proxy removal</a>.</li><li><strong>It can lift the disadvantaged group past parity.</strong> The German Credit gap went from -0.0914 to +0.0169. Weights target the training distribution, not a chosen test-set gap.</li><li><strong>Extreme weights make fits unstable.</strong> A cell with few rows and a large weight can dominate. The Benefits weight of 2.206 is mild, but a rare cell gets a much larger one.</li><li><strong>It targets demographic parity.</strong> It makes no promise about equalized odds or calibration.</li><li><strong>Small data gives noisy estimates.</strong> The weights are estimated from the same few rows, and the evaluation is on a small test set.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - where pre-, in- and post-processing sit in the benchmark</li><li><a href="demographic-parity.html">Demographic Parity</a> - the criterion reweighing is built to reach</li><li><a href="class-imbalance.html">Class Imbalance</a> - the same weighting mechanics, applied to labels</li><li><a href="label-bias.html">Label Bias</a> - why the observed label association exists</li><li><a href="fairness-through-unawareness.html">Fairness Through Unawareness</a> - why dropping the column is not enough</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-credit"><code>German Credit Lending/</code></a> - the audit used for the main example</li><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit where it does not work</li><li><a href="../results/"><code>results/</code></a> - the benchmark rows quoted for S2, S3 and S4</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://link.springer.com/article/10.1007/s10115-011-0463-8" target="_blank" rel="noreferrer noopener">Kamiran, F., Calders, T. (2012): Data Preprocessing Techniques for Classification without Discrimination</a> - Knowledge and Information Systems 33(1); the reweighing method.</li><li>Calders, T., Kamiran, F., Pechenizkiy, M. (2009). Building Classifiers with Independency Constraints. IEEE ICDM Workshops - the earlier formulation of the independence goal.</li><li><a href="https://arxiv.org/abs/1810.01943" target="_blank" rel="noreferrer noopener">Bellamy, R. et al. (2019): AI Fairness 360</a> - IBM Journal of Research and Development 63(4/5); an open-source toolkit that ships reweighing among its pre-processing methods.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

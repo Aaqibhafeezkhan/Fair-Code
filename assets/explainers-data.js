@@ -659,5 +659,34 @@ window.FAIR_CODE_EXPLAINERS = [
       "metrics",
       "detection"
     ]
+  },
+  {
+    "slug": "reweighing",
+    "title": "Reweighing",
+    "subtitle": "Fix the training data's group-label link before fitting.",
+    "summary": "Learn how reweighing gives each (group, label) cell the weight it would have under independence, using one sample_weight argument and no model change. See it cut a parity gap on German Credit Lending and fail on Benefits Denial, where the features still separate the groups.",
+    "tags": [
+      "data",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "group-specific-thresholds",
+    "title": "Group-Specific Thresholds",
+    "subtitle": "Keep the model, move the cutoff.",
+    "summary": "Learn how post-processing picks a different score cutoff per group to satisfy demographic parity or equal opportunity without retraining. See the thresholds on Tenant Screening, how they compare with the benchmark's S4 row, and why using the group at decision time can be unlawful.",
+    "tags": [
+      "metrics"
+    ]
+  },
+  {
+    "slug": "permutation-test-fairness-gaps",
+    "title": "Permutation Tests for Fairness Gaps",
+    "subtitle": "Is the gap a finding or a coincidence?",
+    "summary": "Learn how shuffling group labels turns a fairness gap into a p-value, and how the same 5-point gap on Benefits Denial is significant in 72% of 1,000-row audits and only 17% of 200-row ones. Includes a hand-written test checked against faircode.significance.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
   }
 ];

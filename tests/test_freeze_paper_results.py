@@ -42,3 +42,30 @@ def test_mirror_for_mcp_never_writes_to_frozen_dir(tmp_path, monkeypatch):
     after = {p.name: p.read_text(encoding="utf-8") for p in frozen_dir.iterdir()}
 
     assert before == after
+
+
+def test_mirror_current_for_mcp_copies_the_live_results(tmp_path, monkeypatch):
+    script = importlib.import_module("scripts.freeze_paper_results")
+
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+    for name in ("results_fairness.csv", "results_performance.csv", "summary.csv"):
+        (results_dir / name).write_text(f"audit\n{name}\n", encoding="utf-8")
+    mirror_dir = tmp_path / "faircode" / "_results_current"
+
+    monkeypatch.setattr(script, "RESULTS_DIR", results_dir)
+    monkeypatch.setattr(script, "MCP_CURRENT_MIRROR_DIR", mirror_dir)
+
+    before = {p.name: p.read_text(encoding="utf-8") for p in results_dir.iterdir()}
+    script.mirror_current_for_mcp()
+
+    for name, text in before.items():
+        assert (mirror_dir / name).read_text(encoding="utf-8") == text
+    assert {p.name: p.read_text(encoding="utf-8") for p in results_dir.iterdir()} == before
+
+
+def test_package_mirrors_match_their_sources():
+    script = importlib.import_module("scripts.freeze_paper_results")
+    for name in script.MCP_MIRROR_FILES:
+        assert (script.MCP_CURRENT_MIRROR_DIR / name).read_bytes() == (script.RESULTS_DIR / name).read_bytes()
+        assert (script.MCP_MIRROR_DIR / name).read_bytes() == (script.FROZEN_DIR / name).read_bytes()

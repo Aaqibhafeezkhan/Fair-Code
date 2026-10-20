@@ -41,6 +41,7 @@ RESULTS_DIR = REPO_ROOT / "results"
 FROZEN_DIR = REPO_ROOT / "paper" / "results-frozen"
 LOCKFILE = REPO_ROOT / "requirements-lock.txt"
 MCP_MIRROR_DIR = REPO_ROOT / "faircode" / "_results_frozen"
+MCP_CURRENT_MIRROR_DIR = REPO_ROOT / "faircode" / "_results_current"
 MCP_MIRROR_FILES = ("results_fairness.csv", "results_performance.csv", "summary.csv")
 
 
@@ -55,6 +56,18 @@ def mirror_for_mcp():
         src = FROZEN_DIR / name
         if src.exists():
             shutil.copy2(src, MCP_MIRROR_DIR / name)
+
+
+def mirror_current_for_mcp():
+    """Copies the three live results/ CSVs into MCP_CURRENT_MIRROR_DIR so
+    get_benchmark_results(source="current") works from an installed package
+    (#1049). Regenerate it whenever results/ changes - CI's generated-files
+    check fails if it is stale. Only reads from RESULTS_DIR."""
+    MCP_CURRENT_MIRROR_DIR.mkdir(parents=True, exist_ok=True)
+    for name in MCP_MIRROR_FILES:
+        src = RESULTS_DIR / name
+        if src.exists():
+            shutil.copy2(src, MCP_CURRENT_MIRROR_DIR / name)
 
 
 def _run(cmd):
@@ -157,6 +170,7 @@ def freeze(tag: str | None = None) -> Path:
 
     (FROZEN_DIR / "MANIFEST.md").write_text("\n".join(manifest_lines) + "\n")
     mirror_for_mcp()
+    mirror_current_for_mcp()
 
     print(f"Froze {RESULTS_DIR} -> {FROZEN_DIR}")
     print(f"  MCP mirror: {MCP_MIRROR_DIR}")

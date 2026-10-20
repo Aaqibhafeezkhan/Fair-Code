@@ -41,7 +41,7 @@ packages = ["faircode"]
 faircode = [
     "SPEC.md", "MANIFEST_SPEC.md",
     "_explainers/*.md", "_explainers/data.json",
-    "_results_frozen/*.csv",
+    "_results_frozen/*.csv", "_results_current/*.csv",
 ]
 
 [tool.pytest.ini_options]

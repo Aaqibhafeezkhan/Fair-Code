@@ -516,7 +516,7 @@ parity obligation of its own - there is no equivalent MCP surface for the JS eng
 | `proxy_hints` | `proxy_hints()` | Returns `{"hints": [...]}`, never a bare list - a list return value gets split by the MCP SDK into one content block per element, and an empty list becomes zero blocks, indistinguishable from an error to a caller. Accepts `alpha`, `correction`, `held_out_with`, the dimension knobs `max_age`/`age_reference_year`/`keywords`/`max_categorical_card`/`max_dimension_groups` (#883), and `include_provenance` (default true, attaching dataset hash, params, overrides, and held-out files, section 10) |
 | `list_explainers` | `faircode/_explainers/data.json` (mirrored from `assets/explainers-data.json`) | Phase 2: read-only lookup, no analysis. Returns `{"explainers": [{slug, title, subtitle, summary, tags}, ...]}`; optional `tag` filters to explainers carrying it, erroring if none match |
 | `get_explainer` | `faircode/_explainers/<slug>.md` (mirrored from `explainers/<slug>.md`) | Phase 2: returns `{slug, title, subtitle, tags, content}` - `content` is the raw Markdown source. Errors clearly (`FileNotFoundError`) for an unknown slug |
-| `get_benchmark_results` | `faircode/_results_frozen/results_{fairness,performance}.csv` (mirrored from `paper/results-frozen/`) | Phase 2: filters the frozen CSV named by `kind` on exact-match `audit`/`model`/`strategy`/`metric`/`protected_attribute` (a filter naming a column `kind` doesn't have raises `ValueError` rather than being ignored). Returns `{results, total_matches, truncated}`, capped at 200 rows |
+| `get_benchmark_results` | `faircode/_results_frozen/results_{fairness,performance}.csv` (mirrored from `paper/results-frozen/`, the earlier reference snapshot) or `faircode/_results_current/results_{fairness,performance}.csv` (mirrored from the live `results/`) | Phase 2: filters the CSV named by `kind`, in the set named by `source` (`"frozen"` default, or `"current"`), on exact-match `audit`/`model`/`strategy`/`metric`/`protected_attribute` (a filter naming a column `kind` doesn't have raises `ValueError` rather than being ignored; so does an unknown `source`). Returns `{source, results, total_matches, truncated}`, capped at 200 rows; `source` names which set answered, so a quoted number can say whether it is current or the reference snapshot |
 
 The first three tools accept `overrides` (the section 1 `{column: kind}` map, as a JSON object rather
 than repeated `--map COL=KIND` strings) and the relevant section 7 thresholds by name.
@@ -589,11 +589,11 @@ all - they only read this repo's own files, never a caller-supplied path - and u
 before it's used to build a filesystem path, closing a path-traversal read a malformed slug like
 `"../README"` could otherwise reach (issue #387).
 
-None of `explainers/`, `assets/explainers-data.json`, or `paper/results-frozen/` are files
+None of `explainers/`, `assets/explainers-data.json`, `results/`, or `paper/results-frozen/` are files
 `pyproject.toml` actually ships - a real `pip install faircode[mcp]` never has them on disk. All
 three Phase 2 tools instead read a package-internal, generated mirror under `faircode/`
-(`_explainers/`, built by `scripts/build_explainers.py`; `_results_frozen/`, built by
-`scripts/freeze_paper_results.py`), declared as real `package-data` so it ships in the wheel. See
+(`_explainers/`, built by `scripts/build_explainers.py`; `_results_frozen/` and `_results_current/`, built by
+`scripts/freeze_paper_results.py`'s `mirror_for_mcp()` and `mirror_current_for_mcp()`), declared as real `package-data` so it ships in the wheel. See
 issue #388, verified by building an actual wheel and installing it in a clean venv.
 
 ---

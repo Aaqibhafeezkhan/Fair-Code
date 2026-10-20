@@ -17,6 +17,7 @@ pytest.importorskip("mcp", reason="MCP tools need the optional mcp extra")
 
 from faircode.mcp_server import (  # noqa: E402
     _compare_datasets_impl,
+    RESULTS_CURRENT_FILES,
     RESULTS_FROZEN_FILES,
     _get_benchmark_results_impl,
     _get_explainer_impl,
@@ -1146,3 +1147,33 @@ def test_profile_dataset_names_an_empty_file_plainly(tmp_path):
     path.write_text("", encoding="utf-8")
     with pytest.raises(RuntimeError, match=r"could not read dataset .*zero\.csv: dataset is empty \(no header row\)"):
         _profile_dataset_impl(str(path))
+
+
+def test_get_benchmark_results_names_its_source_and_defaults_to_the_frozen_snapshot():
+    default = _get_benchmark_results_impl(audit="compas", strategy="baseline")
+    assert default["source"] == "frozen"
+    frozen = _get_benchmark_results_impl(audit="compas", strategy="baseline", source="frozen")
+    assert frozen["results"] == default["results"]
+
+
+def test_get_benchmark_results_can_return_the_current_results():
+    import pandas as pd
+
+    current = _get_benchmark_results_impl(audit="compas", strategy="baseline", source="current")
+    assert current["source"] == "current"
+    assert current["total_matches"] > 0
+    live = pd.read_csv(RESULTS_CURRENT_FILES["fairness"])
+    live = live[(live["audit"] == "compas") & (live["strategy"] == "baseline")]
+    assert current["total_matches"] == len(live)
+
+
+def test_get_benchmark_results_rejects_an_unknown_source():
+    with pytest.raises(ValueError, match="source must be one of"):
+        _get_benchmark_results_impl(source="paper")
+
+
+def test_get_benchmark_results_missing_current_mirror_names_the_right_recovery(tmp_path, monkeypatch):
+    missing = tmp_path / "_results_current" / "results_fairness.csv"
+    monkeypatch.setitem(RESULTS_CURRENT_FILES, "fairness", missing)
+    with pytest.raises(FileNotFoundError, match="mirror_current_for_mcp"):
+        _get_benchmark_results_impl(source="current")

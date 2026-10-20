@@ -88,6 +88,7 @@ TEXT_GLOBS = [
     "faircode/_explainers/*.md",
     "faircode/_explainers/data.json",
     "faircode/_results_frozen/*.csv",
+    "faircode/_results_current/*.csv",
 ]
 
 _JSONLD_DATE_LINE = re.compile(
@@ -162,7 +163,8 @@ def _fresh_build_dir(stack):
         [sys.executable, "scripts/build_explainers.py"],
         [sys.executable, "scripts/generate_og_images.py"],
         [sys.executable, "-c",
-         "from scripts.freeze_paper_results import mirror_for_mcp; mirror_for_mcp()"],
+         "from scripts.freeze_paper_results import mirror_for_mcp, mirror_current_for_mcp; "
+         "mirror_for_mcp(); mirror_current_for_mcp()"],
     ):
         subprocess.run(cmd, cwd=tmp, check=True, capture_output=True, text=True)
 

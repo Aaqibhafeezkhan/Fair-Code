@@ -219,3 +219,9 @@ def test_main_passes_with_correctly_sized_og_images(tmp_path, monkeypatch, capsy
 
     assert exit_code == 0
     assert "up to date" in capsys.readouterr().out
+
+
+def test_text_globs_covers_the_results_current_mcp_mirror():
+    # faircode/_results_current/*.csv (#1049): the live-results mirror must be as
+    # tamper-evident as the frozen one.
+    assert "faircode/_results_current/*.csv" in _script().TEXT_GLOBS

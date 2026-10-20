@@ -815,7 +815,8 @@ def test_terminal_reports_keep_long_group_labels_apart():
     very_long = "x" * 40
     clipped = to_terminal(profile(pd.DataFrame({"race": [very_long, very_long + "y"] * 20})))
     rows = [line for line in clipped.splitlines() if "(n=" in line]
-    assert rows and all("x" * 29 + "…" in line and very_long not in line for line in rows)   # cut with a marker
+    assert rows and all("…" in line and very_long not in line for line in rows)   # cut with a marker
+    assert len(rows) == 2 and rows[0] != rows[1]   # ...and two long labels sharing a prefix stay distinct (#1038)
     ref = profile(df, opts={"reference": {"race": {long_a: 0.5, long_b: 0.5}}})
     assert "Hispanic or Latino (any race)" in to_terminal(ref).split("reference (deviation")[1]
     drift = compare_to_terminal(compare(result, result, "a.csv", "b.csv"))

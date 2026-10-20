@@ -10,6 +10,8 @@ and prints the per-row change, so nobody has to diff two CSVs by hand:
     python3 scripts/diff_results.py --kind fairness --all # every row, not just the ones that moved
     python3 scripts/diff_results.py --json                # machine-readable
     python3 scripts/diff_results.py --fail-on-change      # exit 1 if any row is flagged (for CI)
+    python3 scripts/diff_results.py --audit COMPAS        # only these audits (repeatable)
+    python3 scripts/diff_results.py --summary             # one line per audit and kind
 
 Join keys: fairness = audit, strategy, model, protected_attribute, metric; performance = audit,
 strategy, model, metric. A row present on one side only is reported as `only_current` or
@@ -72,7 +74,8 @@ def diff_table(current: pd.DataFrame, reference: pd.DataFrame, keys: list[str],
 
 
 def diff_dirs(current_dir: Path, reference_dir: Path, kinds=("fairness", "performance"),
-              threshold: float = DEFAULT_THRESHOLD) -> dict:
+              threshold: float = DEFAULT_THRESHOLD, audits=None) -> dict:
+    """With `audits`, only rows whose audit is one of those names are joined."""
     out = {}
     for kind in kinds:
         filename, keys = KINDS[kind]
@@ -80,8 +83,52 @@ def diff_dirs(current_dir: Path, reference_dir: Path, kinds=("fairness", "perfor
         for p in (cur_path, ref_path):
             if not p.is_file():
                 raise FileNotFoundError(f"{p} not found")
-        out[kind] = diff_table(pd.read_csv(cur_path), pd.read_csv(ref_path), keys, threshold)
+        current, reference = pd.read_csv(cur_path), pd.read_csv(ref_path)
+        if audits:
+            wanted = set(audits)
+            current = current[current["audit"].astype(str).isin(wanted)]
+            reference = reference[reference["audit"].astype(str).isin(wanted)]
+        out[kind] = diff_table(current, reference, keys, threshold)
     return out
+
+
+def known_audits(current_dir: Path, reference_dir: Path, kinds=("fairness", "performance")) -> set[str]:
+    """Every audit name on either side, for checking --audit."""
+    names = set()
+    for kind in kinds:
+        filename = KINDS[kind][0]
+        for directory in (current_dir, reference_dir):
+            path = Path(directory) / filename
+            if path.is_file():
+                names.update(pd.read_csv(path)["audit"].astype(str))
+    return names
+
+
+def summarize(diff: dict) -> dict:
+    """Per kind, one dict per audit: rows compared, rows flagged, largest absolute delta (None if no numeric delta)."""
+    out = {}
+    for kind, rows in diff.items():
+        per_audit = {}
+        for r in rows:
+            s = per_audit.setdefault(r["audit"], {"audit": r["audit"], "compared": 0, "flagged": 0,
+                                                  "max_abs_delta": None})
+            s["compared"] += 1
+            s["flagged"] += _flagged(r)
+            if r["delta"] is not None and (s["max_abs_delta"] is None or abs(r["delta"]) > s["max_abs_delta"]):
+                s["max_abs_delta"] = abs(r["delta"])
+        out[kind] = [per_audit[a] for a in sorted(per_audit)]
+    return out
+
+
+def render_summary(summary: dict) -> str:
+    lines = []
+    for kind, audits in summary.items():
+        lines.append(f"{kind}:")
+        for s in audits:
+            largest = "n/a" if s["max_abs_delta"] is None else f"{s['max_abs_delta']:.4f}"
+            lines.append(f"  {s['audit']}: {s['compared']} compared, {s['flagged']} flagged, largest |delta| {largest}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def _flagged(row: dict) -> bool:
@@ -124,16 +171,28 @@ def main(argv=None) -> int:
     p.add_argument("--all", action="store_true", help="list unchanged rows too")
     p.add_argument("--json", action="store_true", help="print the diff as JSON")
     p.add_argument("--fail-on-change", action="store_true", help="exit 1 if any row is flagged")
+    p.add_argument("--audit", action="append", metavar="NAME",
+                   help="only compare this audit (repeatable; default: every audit)")
+    p.add_argument("--summary", action="store_true",
+                   help="print one line per audit and kind instead of every row")
     args = p.parse_args(argv)
     if args.threshold < 0:
         p.error("--threshold must be zero or positive")
     kinds = ("fairness", "performance") if args.kind == "both" else (args.kind,)
     try:
-        diff = diff_dirs(args.current, args.reference, kinds, args.threshold)
+        if args.audit:
+            unknown = sorted(set(args.audit) - known_audits(args.current, args.reference, kinds))
+            if unknown:
+                print(f"error: unknown audit(s): {', '.join(unknown)}", file=sys.stderr)
+                return 2
+        diff = diff_dirs(args.current, args.reference, kinds, args.threshold, args.audit)
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    if args.json:
+    if args.summary:
+        summary = summarize(diff)
+        print(json.dumps(summary, indent=2) if args.json else render_summary(summary), end="\n" if args.json else "")
+    elif args.json:
         print(json.dumps(diff, indent=2))
     else:
         print(render(diff, args.all, args.threshold), end="")

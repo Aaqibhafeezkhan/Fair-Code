@@ -604,7 +604,9 @@ issue #388, verified by building an actual wheel and installing it in a clean ve
 reports each row as `moved` (|current − reference| greater than `--threshold`, default 0.01, or a
 value empty on one side only), `unchanged`, `only_current` or `only_reference`. Rows present on one
 side only are always flagged. `--json` prints the structured diff, `--all` lists unchanged rows, and
-`--fail-on-change` exits 1 when anything is flagged. It only reads both directories.
+`--fail-on-change` exits 1 when anything is flagged. `--audit NAME` (repeatable) restricts the
+join to those audits, and `--summary` prints one line per audit and kind instead (rows compared,
+rows flagged, largest absolute delta); both work with `--json`. It only reads both directories.
 
 ---
 

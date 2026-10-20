@@ -84,3 +84,47 @@ def test_the_real_snapshot_and_current_results_compare():
     diff = dr.diff_dirs(dr.CURRENT_DIR, dr.REFERENCE_DIR)
     assert set(diff) == {"fairness", "performance"}
     assert diff["fairness"] and diff["performance"]
+
+
+def _two_audits(tmp_path):
+    ref = _fair([["a", "baseline", "lr", "sex", "dp", 0.10], ["b", "baseline", "lr", "sex", "dp", 0.10],
+                 ["b", "baseline", "lr", "sex", "eo", 0.20]])
+    cur = _fair([["a", "baseline", "lr", "sex", "dp", 0.10], ["b", "baseline", "lr", "sex", "dp", 0.30],
+                 ["b", "baseline", "lr", "sex", "eo", 0.15]])
+    _write(tmp_path / "ref", ref)
+    _write(tmp_path / "cur", cur)
+    return ["--current", str(tmp_path / "cur"), "--reference", str(tmp_path / "ref"), "--kind", "fairness"]
+
+
+def test_audit_restricts_the_join_and_is_repeatable(tmp_path, capsys):
+    args = _two_audits(tmp_path)
+    assert dr.main([*args, "--audit", "a", "--json", "--all"]) == 0
+    rows = json.loads(capsys.readouterr().out)["fairness"]
+    assert {r["audit"] for r in rows} == {"a"}
+    assert dr.main([*args, "--audit", "a", "--audit", "b", "--json", "--all"]) == 0
+    assert len(json.loads(capsys.readouterr().out)["fairness"]) == 3
+
+
+def test_unknown_audit_is_an_error(tmp_path, capsys):
+    assert dr.main([*_two_audits(tmp_path), "--audit", "nope"]) == 2
+    assert "unknown audit(s): nope" in capsys.readouterr().err
+
+
+def test_summary_counts_rows_and_largest_delta_per_audit(tmp_path, capsys):
+    args = _two_audits(tmp_path)
+    assert dr.main([*args, "--summary", "--json"]) == 0
+    summary = json.loads(capsys.readouterr().out)["fairness"]
+    assert [s["audit"] for s in summary] == ["a", "b"]
+    assert summary[0] == {"audit": "a", "compared": 1, "flagged": 0, "max_abs_delta": 0.0}
+    assert (summary[1]["compared"], summary[1]["flagged"]) == (2, 2)
+    assert summary[1]["max_abs_delta"] == pytest.approx(0.2)
+
+    assert dr.main([*args, "--summary", "--audit", "b"]) == 0
+    out = capsys.readouterr().out
+    assert "b: 2 compared, 2 flagged, largest |delta| 0.2000" in out
+    assert "a:" not in out
+
+
+def test_summary_largest_delta_is_none_without_numeric_deltas():
+    diff = {"fairness": [{"audit": "a", "status": "only_current", "delta": None}]}
+    assert dr.summarize(diff) == {"fairness": [{"audit": "a", "compared": 1, "flagged": 1, "max_abs_delta": None}]}

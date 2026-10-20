@@ -608,9 +608,10 @@
   // with raw: true returned the Excel serial number (43831) instead (#1039). Date cells are
   // rewritten to that text before sheet_to_json, from the serial's own calendar parts rather than
   // a JS Date, so the label does not depend on the machine's time zone. A time-only cell prints
-  // as "HH:MM:SS", like Python's datetime.time.
-  function formatXlsxDateCell(serial) {
-    var c = global.XLSX.SSF.parse_date_code(serial);
+  // as "HH:MM:SS", like Python's datetime.time. A workbook saved with the 1904 date system (old Mac
+  // Excel) stores serials 1,462 days smaller, so its flag is passed through (#1076).
+  function formatXlsxDateCell(serial, date1904) {
+    var c = global.XLSX.SSF.parse_date_code(serial, { date1904: !!date1904 });
     if (!c) return null;
     function p(n, w) { n = String(n); while (n.length < (w || 2)) n = '0' + n; return n; }
     var time = p(c.H) + ':' + p(c.M) + ':' + p(Math.floor(c.S));
@@ -618,13 +619,13 @@
     return p(c.y, 4) + '-' + p(c.m) + '-' + p(c.d) + ' ' + time;
   }
 
-  function stringifyXlsxDateCells(sheet) {
+  function stringifyXlsxDateCells(sheet, date1904) {
     Object.keys(sheet).forEach(function (addr) {
       if (addr.charAt(0) === '!') return;
       var cell = sheet[addr];
       if (cell && cell.t === 'n' && typeof cell.v === 'number' && cell.z &&
           global.XLSX.SSF.is_date(cell.z)) {
-        var text = formatXlsxDateCell(cell.v);
+        var text = formatXlsxDateCell(cell.v, date1904);
         if (text !== null) sheet[addr] = { t: 's', v: text, w: text };
       }
     });
@@ -644,7 +645,9 @@
     if (!sheetName) return { table: { columns: [], rows: [] }, ignoredSheets: [], sheetName: null };
 
     var sheet = workbook.Sheets[sheetName];
-    stringifyXlsxDateCells(sheet);
+    var date1904 = !!(workbook.Workbook && workbook.Workbook.WBProps &&
+                      workbook.Workbook.WBProps.date1904);
+    stringifyXlsxDateCells(sheet, date1904);
     var records = global.XLSX.utils.sheet_to_json(sheet, { defval: null, raw: true });
 
     if (records.length === 0) {

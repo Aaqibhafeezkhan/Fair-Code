@@ -320,7 +320,14 @@ Fair-Code/
 │   ├── differential-privacy.md
 │   ├── reject-option-classification.md
 │   ├── simpsons-paradox.md
-│   └── subgroup-fairness.md
+│   ├── subgroup-fairness.md
+│   ├── algorithmic-recourse.md
+│   ├── maxmin-fairness.md
+│   ├── distributionally-robust-optimization.md
+│   ├── fairness-in-ranking.md
+│   ├── reweighing.md
+│   ├── group-specific-thresholds.md
+│   └── permutation-test-fairness-gaps.md
 │
 ├── .pre-commit-config.yaml              # em-dash/broken-links/ruff + build-explainers pre-push hooks
 ├── CHANGELOG.md
@@ -811,10 +818,10 @@ features = [
 
 ## Explainers
 
-62 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
+68 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
 
 <details>
-<summary><strong>Show all 62 explainers →</strong></summary>
+<summary><strong>Show all 68 explainers →</strong></summary>
 
 | Explainer | What it covers |
 |-----------|----------------|
@@ -879,6 +886,13 @@ features = [
 | [What Is Reject Option Classification?](explainers/reject-option-classification.md) | A post-processing mitigation that hands the favorable outcome to the disadvantaged group only in the model's least-confident cases |
 | [What Is Simpson's Paradox in Fairness Audits?](explainers/simpsons-paradox.md) | Why a model can look fair pooled across groups while every disaggregated subgroup shows the opposite pattern |
 | [What Is Subgroup Fairness (and Fairness Gerrymandering)?](explainers/subgroup-fairness.md) | Why passing every single-attribute fairness check doesn't rule out a large gap hiding in an unchecked combination of attributes |
+| [What Is Algorithmic Recourse?](explainers/algorithmic-recourse.md) | What an applicant can realistically change to flip a model's decision, and why recourse can cost one group more than another |
+| [What Is Max-Min (Rawlsian) Fairness?](explainers/maxmin-fairness.md) | Judging a model by its worst-off group instead of by parity, and why the two can disagree |
+| [What Is Distributionally Robust Optimization (DRO) for Fairness?](explainers/distributionally-robust-optimization.md) | Training against the worst-case group instead of constraining one parity metric, and what it costs the other groups |
+| [What Is Fairness in Ranking?](explainers/fairness-in-ranking.md) | Why classification metrics cannot see the harm of an ordered list, and how exposure measures it |
+| [What Is Reweighing?](explainers/reweighing.md) | A pre-processing mitigation that weights each (group, label) cell as if group and label were independent |
+| [What Are Group-Specific Thresholds?](explainers/group-specific-thresholds.md) | A post-processing mitigation that keeps the model and moves the score cutoff per group |
+| [What Is a Permutation Test for a Fairness Gap?](explainers/permutation-test-fairness-gaps.md) | Shuffling group labels to tell a real gap from sampling noise, and why the same gap can be significant or not by sample size |
 
 </details>
 
@@ -1062,7 +1076,7 @@ from the inputs, so `--json` stays reproducible; `--no-provenance` omits it.
 tools over stdio: `profile_dataset`, `compare_datasets`, and `proxy_hints` wrap the same analysis
 engine the CLI uses, so an MCP-aware agent can profile a file mid-conversation instead of shelling
 out and parsing text; `list_explainers`, `get_explainer`, and `get_benchmark_results` are read-only
-lookups against this repo's own published explainers and frozen benchmark results. Same local-only
+lookups against this repo's own published explainers and benchmark results (the current `results/`, or the earlier reference snapshot with `source="frozen"`). Same local-only
 trust boundary as the CLI - stdio, no network listener, no auth; nothing here is a new capability.
 Point a client at it with:
 
@@ -1216,7 +1230,7 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [ ] LLM bias audit
 
 <details>
-<summary><strong>Show 64 completed items →</strong></summary>
+<summary><strong>Show 71 completed items →</strong></summary>
 
 - [x] COMPAS Criminal Justice Bias
 - [x] AI Fair Recruitment Bias
@@ -1280,6 +1294,13 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [x] Explainer: Why Fairness Through Unawareness Fails
 - [x] Explainer: What Is LIME?
 - [x] Explainer: What Is a Counterfactual Explanation?
+- [x] Explainer: Algorithmic Recourse
+- [x] Explainer: Max-Min (Rawlsian) Fairness
+- [x] Explainer: Distributionally Robust Optimization (DRO) for Fairness
+- [x] Explainer: Fairness in Ranking
+- [x] Explainer: Reweighing
+- [x] Explainer: Group-Specific Thresholds
+- [x] Explainer: Permutation Tests for Fairness Gaps
 - [x] Fairness audit web dashboard - [Open Dataset Profiler](#open-dataset-profiler)
 - [x] Bias detection utility library (`faircode/` module)
 
@@ -1301,12 +1322,12 @@ The full public roadmap - with phases, completion status, and content schedule -
 |--------|------:|
 | GitHub Stars | 51 |
 | External Contributors | 52 |
-| Forks | 58 |
+| Forks | 62 |
 | Watching | 8 |
 | Combined Social Reach (Instagram + LinkedIn) | 30K+ |
 | Countries Reached (Website Visitors) | 20 |
 | Code Audits Published | 7 |
-| Explainers Published | 62 |
+| Explainers Published | 68 |
 
 Tracked weekly in [METRICS.md](METRICS.md).
 

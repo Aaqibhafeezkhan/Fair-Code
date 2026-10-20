@@ -4,9 +4,9 @@
 
 ![Stars](https://img.shields.io/badge/Stars-51-brightgreen?style=flat-square&logo=github)
 ![Contributors](https://img.shields.io/badge/Contributors-53-blue?style=flat-square)
-![Forks](https://img.shields.io/badge/Forks-58-orange?style=flat-square)
+![Forks](https://img.shields.io/badge/Forks-62-orange?style=flat-square)
 ![Watching](https://img.shields.io/badge/Watching-8-yellow?style=flat-square)
-![Explainers](https://img.shields.io/badge/Explainers-62-blueviolet?style=flat-square)
+![Explainers](https://img.shields.io/badge/Explainers-68-blueviolet?style=flat-square)
 ![Countries](https://img.shields.io/badge/Countries-20-informational?style=flat-square)
 ![Updated](https://img.shields.io/badge/Updated-Weekly-lightgrey?style=flat-square)
 
@@ -47,6 +47,7 @@ Weekly snapshot of project health. Updated every Friday.
 | 2026-W40 | 49 | 50 | 8 | 45 | 30K+ total | 20 | 41 | 7 total |
 | 2026-W41 | 49 | 55 | 8 | 50 | 30K+ total | 20 | 72 | 7 total |
 | 2026-W42 | 51 | 58 | 8 | 53 | 30K+ total | 20 | 123 | 7 total |
+| 2026-W43 | 51 | 62 | 8 | 53 | 30K+ total | 20 | 17 | 7 total |
 
 > **2026-W27 - v1.2.0 shipped:** Open Dataset Profiler (CLI + client-side web tool) released; 23 explainers total.
 >
@@ -119,6 +120,8 @@ Weekly snapshot of project health. Updated every Friday.
 > **2026-W42 (Friday) - the eighth sweep: 17 non-explainer issues fixed, one closed as not planned, 18 fresh ones opened, no new contributors:** every unassigned non-explainer issue left from the seventh sweep got a commit of its own, with a parity test wherever both engines are touched: nested JSON objects, number-versus-string labels and unreadable reference shares now agree (#992, #993, #1002), unused pandas categories no longer inflate the group count (#994), empty files have one clear message (#1010), a manifest row filter takes exactly one operator (#999), `make test-browser` and eight more browser interactions exist (#997, #1000), the shared module took over five more helpers (#1008), and seven coverage gaps got tests. #998 asked for a change to the gitignored `AGENTS.md` and was closed as not planned. Probes with malformed CSV and JSON (float-looking codes, booleans, big integers, ragged rows, unterminated quotes, JSON Lines) produced the next 18 issues (#1011-#1028), three pinned. #848, #986, #989 and #1009 are assigned and were left alone.
 >
 > **2026-W42 (Saturday) - the ninth sweep: 17 non-explainer issues fixed, 17 fresh ones opened, one new contributor:** the unassigned follow-ups of the eighth sweep were fixed and committed (the six label-spelling parity issues in one commit, the ragged-row and unclosed-quote pair in another): both engines now label groups alike and read malformed rows, NUL bytes, JSON `NaN` and JSON Lines the same way, `compare --fail-on-drift` no longer passes with nothing to compare, the terminal report widens its label column and says when a proxy check found nothing, and the em-dash check now scans notebooks. [@minutechreview](https://github.com/minutechreview) fixed the `.xls` message (#1034) and [@prami25r](https://github.com/prami25r) joined with the case-and-spacing label warning (#1035). Probes with a 500,000-row file and with workbooks produced the next 17 issues (#1036-#1052), three pinned. #848, #986 and #989 are assigned and were left alone.
+>
+> **2026-W43 (Tuesday) - the tenth sweep: twelve issues fixed and six new explainers:** the high-cardinality flag flood (#1042, #1043, #1052) is fixed in both engines (per-group flags past ten collapse into one summary line and every view caps the list at 50), XLSX date cells carry the same label as pandas in the web engine (#1039), `get_benchmark_results` can return the live `results/` and names its source (#1049), `scripts/diff_results.py` diffs `results/` against the reference snapshot (#1065), Dependabot's minor and patch bumps are grouped with the results-affecting libraries kept separate (#1069), and ROADMAP Phase 6 lists what can start now (#1067). Six explainers shipped: the three standing requests (#543 max-min fairness, #544 distributionally robust optimization, #736 fairness in ranking) and the three that close the Phase 1 gap to 65+ (#1070: reweighing, group-specific thresholds, permutation tests for fairness gaps); explainer count `62 → 68`, each with a real run against a repo audit and the benchmark's current `results/` rows. Forks `58 → 62` (live GitHub numbers); stars, watching, contributors, countries and social reach unchanged. Issues closed (17) is the five closed so far this week plus the twelve this batch closes on merge. Contributors: `@sammist2` and `@Asmit-08` are already in the live API count of 53 (52 external + the maintainer).
 ---
 
 ## Targets
@@ -126,14 +129,14 @@ Weekly snapshot of project health. Updated every Friday.
 | Metric | Current | Target | Timeline |
 |--------|--------:|-------:|----------|
 | Stars | 51 | 50+ | End of 2026 |
-| Forks | 58 | 60+ | End of 2026 |
+| Forks | 62 | 75+ | End of 2026 |
 | Watching | 8 | 12+ | End of 2026 |
 | Contributors | 53 | 20+ | End of 2026 |
 | Social reach | 30K+ | 40K+ | End of 2026 |
 | Countries reached | 20 | 20+ | End of 2026 |
-| Issues closed | 123 (this week, since 2026-10-12) | Track weekly | Ongoing |
+| Issues closed | 17 (this week, since 2026-10-19) | Track weekly | Ongoing |
 | Code audits | 7 | 8+ | End of 2026 |
-| Explainers | 62 | 65+ | End of 2026 |
+| Explainers | 68 | 75+ | End of 2026 |
 
 ---
 

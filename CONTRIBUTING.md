@@ -377,6 +377,13 @@ Explainers live in `explainers/` and should make one fairness concept easy to un
 | `reject-option-classification.md` | A post-processing mitigation that hands the favorable outcome to the disadvantaged group only in the model's least-confident cases |
 | `simpsons-paradox.md` | Why a model can look fair pooled across groups while every disaggregated subgroup shows the opposite pattern |
 | `subgroup-fairness.md` | Why passing every single-attribute fairness check doesn't rule out a large gap hiding in an unchecked combination of attributes |
+| `algorithmic-recourse.md` | What an applicant can realistically change to flip a model's decision, and why recourse can cost one group more than another |
+| `maxmin-fairness.md` | Judging a model by its worst-off group instead of by parity, and why the two can disagree |
+| `distributionally-robust-optimization.md` | Training against the worst-case group instead of constraining one parity metric, and what it costs the other groups |
+| `fairness-in-ranking.md` | Why classification metrics cannot see the harm of an ordered list, and how exposure measures it |
+| `reweighing.md` | A pre-processing mitigation that weights each (group, label) cell as if group and label were independent |
+| `group-specific-thresholds.md` | A post-processing mitigation that keeps the model and moves the score cutoff per group |
+| `permutation-test-fairness-gaps.md` | Shuffling group labels to tell a real gap from sampling noise, and why the same gap can be significant or not by sample size |
 
 ### A good explainer should include
 

@@ -19,7 +19,30 @@ All notable changes to Fair Code are documented here, newest first.
 
 ## [Unreleased]
 
+### Added
+
+- Six explainers, each run against a real audit and quoting the benchmark's current `results/` rows:
+  [Max-Min (Rawlsian) Fairness](explainers/maxmin-fairness.md) (closes #543),
+  [Distributionally Robust Optimization (DRO) for Fairness](explainers/distributionally-robust-optimization.md) (closes #544),
+  [Fairness in Ranking](explainers/fairness-in-ranking.md) (closes #736),
+  [Reweighing](explainers/reweighing.md), [Group-Specific Thresholds](explainers/group-specific-thresholds.md) and
+  [Permutation Tests for Fairness Gaps](explainers/permutation-test-fairness-gaps.md) (together close #1070).
+  The explainer count goes from 62 to 68, with generated pages, OG images, sitemap entries, `llms-full.txt` and the MCP mirror.
+- `scripts/diff_results.py` joins `results/` and `paper/results-frozen/` on audit, strategy, model, protected attribute and metric, prints per-row deltas, and flags rows that moved by more than `--threshold` or exist on one side only; `--json`, `--all`, `--kind` and `--fail-on-change` are available (closes #1065).
+- `get_benchmark_results` takes `source` (`"frozen"` by default, or `"current"` for the live `results/`) and names it in the result, backed by a new `faircode/_results_current/` mirror built by `mirror_current_for_mcp()` and checked by the generated-files job; the tool docstring and SPEC now call `paper/results-frozen/` an earlier reference snapshot (closes #1049).
+
+### Changed
+
+- Per-group profile flags past 10 of the same kind in one dimension (or intersection) collapse into one summary flag, and the terminal, HTML and web views list at most 50 flags and then "and N more"; the full per-group detail stays in `--json` and the CSV (closes #1043, SPEC section 6).
+- `compare` summarises more than 10 appeared or disappeared groups in one dimension as one flag, like the profile side (closes #1052, SPEC section 8).
+- `.github/dependabot.yml` groups minor and patch updates into one weekly pip PR and one Actions PR, and keeps `numpy`, `pandas`, `scikit-learn`, `scipy`, `fairlearn` and `matplotlib` as one PR each; CONTRIBUTING.md has a "Dependency updates" section on rerunning the benchmark and running `scripts/diff_results.py` before merging one (closes #1069).
+- ROADMAP Phase 6 lists the prerequisites that can start now (a fresh full run, the snapshot diff, the venue decision, the next freeze trigger) apart from the steps gated on next year's submission (closes #1067).
+- CONTRIBUTORS.md is updated through PR #1075, adds `@sammist2` and `@Asmit-08`, and is re-sorted by merged PRs, then commits, then earliest first-merged date.
+
 ### Fixed
+
+- Profiling a file with a high-cardinality geography column was quadratic in `_build_flags` (a list membership test per group); it now uses a set, in Python and JavaScript. 60,000 rows with 45,000 zip codes profile in about 1.6 s instead of about 10 s (closes #1042).
+- The web engine labelled XLSX date cells with their Excel serial number (`43831`); they now read `2020-01-01 00:00:00` like pandas, computed from the serial so the label does not depend on the time zone, and time-only cells read `HH:MM:SS` (closes #1039).
 
 - `get_xlsx_sheet_info` now closes the workbook it opens to list sheet names, rather than leaking the file handle. The unclosed handle raised a `ResourceWarning` on garbage collection and, on Windows, kept the `.xlsx` locked against deletion or overwrite ([#1051](https://github.com/yakew7/Fair-Code/issues/1051)).
 

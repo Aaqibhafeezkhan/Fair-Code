@@ -45,7 +45,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 ## Phase 1 - Bias Glossary and Beginner Explainers ✅
 
-**Status: Foundational library complete - 62 explainers published, past the original 60+ target, working toward 65+**
+**Status: Foundational library complete - 68 explainers published, past the original 60+ target and the 65+ goal, working toward 75+**
 
 Build the foundational vocabulary and explain core fairness concepts clearly enough for a non-technical reader.
 
@@ -87,6 +87,13 @@ Build the foundational vocabulary and explain core fairness concepts clearly eno
 - [x] What Is the Base Rate Fallacy?
 - [x] What Is Reject Inference?
 - [x] What Is a Precision-Recall Curve?
+- [x] What Is Algorithmic Recourse?
+- [x] What Is Max-Min (Rawlsian) Fairness?
+- [x] What Is Distributionally Robust Optimization (DRO) for Fairness?
+- [x] What Is Fairness in Ranking?
+- [x] What Is Reweighing?
+- [x] What Are Group-Specific Thresholds?
+- [x] What Is a Permutation Test for a Fairness Gap?
 
 ---
 

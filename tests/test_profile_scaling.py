@@ -8,13 +8,24 @@ import pandas as pd
 from faircode import profile
 
 
-def test_profile_with_many_distinct_labels_is_not_quadratic():
+def _profile_seconds(n_rows, n_labels):
     rng = np.random.default_rng(5)
     df = pd.DataFrame({
-        "sex": rng.choice(["m", "f"], 60000),
-        "zip": rng.integers(10000, 60000, 60000).astype(str),
+        "sex": rng.choice(["m", "f"], n_rows),
+        "zip": rng.integers(10000, 10000 + n_labels, n_rows).astype(str),
     })
-    start = time.time()
-    result = profile(df)
-    assert time.time() - start < 5
-    assert next(d for d in result["dimensions"] if d["name"] == "zip")["n_groups"] > 20000
+    best = float("inf")
+    for _ in range(2):
+        start = time.perf_counter()
+        result = profile(df)
+        best = min(best, time.perf_counter() - start)
+    assert next(d for d in result["dimensions"] if d["name"] == "zip")["n_groups"] > 0.5 * n_labels
+    return best
+
+
+def test_profile_with_many_distinct_labels_is_not_quadratic():
+    # Compare growth, not wall-clock time, so a slow CI runner does not matter: quadrupling the
+    # labels costs about 4x when linear and about 16x when quadratic.
+    small = _profile_seconds(40_000, 20_000)
+    large = _profile_seconds(160_000, 80_000)
+    assert large / small < 9, f"{small:.2f}s -> {large:.2f}s"

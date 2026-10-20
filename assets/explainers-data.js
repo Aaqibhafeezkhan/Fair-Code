@@ -630,5 +630,14 @@ window.FAIR_CODE_EXPLAINERS = [
       "detection",
       "healthcare"
     ]
+  },
+  {
+    "slug": "maxmin-fairness",
+    "title": "Max-Min (Rawlsian) Fairness",
+    "subtitle": "Make the worst-off group as well off as possible, even if groups end up unequal.",
+    "summary": "Learn why parity metrics and Rawls' difference principle can disagree: a model can lift the worst-off group and still widen a parity gap. See a worst-group reweighting loop on Benefits Denial, what it does to every other group, and why a minimum group size is not optional.",
+    "tags": [
+      "metrics"
+    ]
   }
 ];

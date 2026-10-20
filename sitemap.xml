@@ -6,11 +6,11 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/profiler.html</loc>
-    <lastmod>2026-09-30</lastmod>
+    <lastmod>2026-10-17</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/benchmark.html</loc>
-    <lastmod>2026-09-30</lastmod>
+    <lastmod>2026-10-12</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/proxy-variables.html</loc>
@@ -259,5 +259,8 @@
   <url>
     <loc>https://www.thefaircode.xyz/explainers/algorithmic-recourse.html</loc>
     <lastmod>2026-09-28</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/maxmin-fairness.html</loc>
   </url>
 </urlset>

@@ -7,6 +7,23 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    groups:
+      # One weekly PR for the minor and patch bumps of everything that cannot change a
+      # benchmark number (tooling, notebook and transitive packages).
+      lockfile-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          # These libraries compute the numbers in results/ (models, splits, metrics,
+          # intervals). Their bumps stay one PR each so the PR can say whether results/
+          # moved. See "Dependency updates" in CONTRIBUTING.md.
+          - numpy
+          - pandas
+          - scikit-learn
+          - scipy
+          - fairlearn
+          - matplotlib
 
   - package-ecosystem: github-actions
     directory: /
@@ -15,3 +32,8 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    groups:
+      actions-minor-and-patch:
+        update-types:
+          - minor
+          - patch

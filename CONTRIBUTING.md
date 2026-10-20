@@ -25,7 +25,7 @@ The repo's earlier paper freeze has lifted (see [CLAUDE.md](CLAUDE.md)) - develo
 
 - **Audits** merge to `main` as usual, same as any other contribution.
 - **Everything else** - explainers, website content, documentation, `faircode/` changes, tests, tooling - is open too.
-- **`requirements-lock.txt`** no longer needs special handling; Dependabot's version-bump PRs against it can be reviewed and merged like any other dependency update.
+- **`requirements-lock.txt`** no longer needs special handling; Dependabot's version-bump PRs against it can be reviewed and merged like any other dependency update (see [Dependency updates](#dependency-updates)).
 
 **When running a new audit:** New audits and reruns should update `results/` only. Do not modify `paper/results-frozen/` or the `v1.0-paper` tag when contributing new results. Run `python3 scripts/freeze_paper_results.py` only when deliberately creating a new reference snapshot for a paper. This script replaces the existing frozen snapshot and mirrors its CSV files into `faircode/_results_frozen/`, so do not run it as part of an ordinary audit.
 
@@ -450,6 +450,24 @@ Branch rules on `main`:
 - the branch cannot be deleted
 
 If CI fails, push a new commit to your branch and let the check rerun.
+
+### Dependency updates
+
+`.github/dependabot.yml` opens at most five pip and five GitHub Actions PRs a week, grouped like this:
+
+- **Minor and patch bumps of tooling, notebook and transitive packages** arrive as one weekly pip PR (and one for Actions). Review it like any other PR: CI passing is the bar.
+- **`numpy`, `pandas`, `scikit-learn`, `scipy`, `fairlearn` and `matplotlib`** are not grouped, so each bump is its own PR. They compute the numbers in `results/` (models, splits, metrics, intervals), so a bump can change a result without touching a line of code.
+- **Major bumps** are never grouped; read the changelog before merging.
+
+Before merging a bump of one of those six libraries, rerun the benchmark on the new versions and compare it with the committed results:
+
+```bash
+python3 -m pip install -r requirements-lock.txt   # on the PR branch
+faircode benchmark --out /tmp/bump-results
+python3 scripts/diff_results.py --current /tmp/bump-results --reference results --threshold 0.001
+```
+
+If rows moved, say so in the PR and refresh `results/` in the same PR or an immediate follow-up; if nothing moved, say that. Do not touch `paper/results-frozen/`. A benchmark rerun is not an automatic CI check because it is slow; the reviewer asks for the diff above.
 
 ---
 

@@ -1113,11 +1113,39 @@ CSV layout in [section 12](faircode/SPEC.md#12-csv-export)):
 | `renames` | `compare_datasets` | `{"race": "ethnicity"}` compares a renamed dimension as one (CLI `--rename`) |
 | `kind` | `get_benchmark_results` | Result type: `"fairness"` (default) or `"performance"`. Fairness results include protected-attribute metrics; performance results include model-performance metrics. |
 | `source` | `get_benchmark_results` | Results to read: `"frozen"` (default), the earlier reference snapshot in `paper/results-frozen/`, or `"current"`, the live results in `results/`. The returned `source` identifies which set was used. |
-| `audit` | `get_benchmark_results` | Optional exact-match filter for the audit, e.g. `"compas"`. |
-| `model` | `get_benchmark_results` | Optional exact-match filter for the model, e.g. `"logistic_regression"`. |
-| `strategy` | `get_benchmark_results` | Optional exact-match filter for the strategy, e.g. `"baseline"`. |
-| `metric` | `get_benchmark_results` | Optional exact-match filter for the metric. |
-| `protected_attribute` | `get_benchmark_results` | Optional exact-match filter for the protected attribute; applies to fairness results, not performance results. |
+| `audit` | `get_benchmark_results` | Optional case-sensitive exact-match filter for the audit, e.g. `"compas"`. |
+| `model` | `get_benchmark_results` | Optional case-sensitive exact-match filter for the model, e.g. `"logistic_regression"`. |
+| `strategy` | `get_benchmark_results` | Optional case-sensitive exact-match filter for the strategy, e.g. `"baseline"`. |
+| `metric` | `get_benchmark_results` | Optional case-sensitive exact-match filter for the metric. |
+| `protected_attribute` | `get_benchmark_results` | Optional case-sensitive exact-match filter for the protected attribute; applies to fairness results, not performance results. |
+
+`get_benchmark_results` matches filter values exactly and case-sensitively. For example, use `audit="compas"` rather than `audit="COMPAS"`. Omit optional filters to leave those dimensions unfiltered. A filter for a column that does not exist in the selected result type raises an error rather than being ignored.
+
+The tool returns `source`, `results`, `total_matches`, and `truncated`. Results are capped at 200 rows. If `truncated` is `true`, add filters to narrow the query rather than assuming the returned rows represent all matches. If a filter matches no values, `results` is empty and a `notes` entry identifies valid values for that column.
+
+Example arguments for the MCP tool `get_benchmark_results`:
+
+Read the earlier frozen reference snapshot:
+
+```json
+{
+  "source": "frozen",
+  "kind": "fairness",
+  "audit": "compas"
+}
+```
+
+Read the live benchmark results:
+
+```json
+{
+  "source": "current",
+  "kind": "fairness",
+  "audit": "compas"
+}
+```
+
+The returned `source` field identifies which result set answered the query. Use `"frozen"` for the earlier reference snapshot or `"current"` for the live results.
 
 The engine is domain-agnostic - it works on any tabular CSV (health, hiring, lending, justice),
 auto-detecting demographic columns (sex, race, age, geography) by name. Beyond the single-dataset

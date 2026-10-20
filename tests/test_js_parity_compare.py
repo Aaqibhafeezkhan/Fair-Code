@@ -205,7 +205,7 @@ def test_compare_html_reports_list_renamed_and_possibly_renamed_dimensions_alike
                + src[src.index("function kindMismatchReason"):src.index("function driftCard")])
     builders = src[src.index("function proxyHintItems"):src.index("function compareReportBaseName")]
     script = (
-        "var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
+        "var DISPLAY_GROUPS=12;var MAX_DISPLAYED_FLAGS=50;" + SHARED_PRELUDE + helpers +
         "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;" + builders +
         "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"
         "var pa=E.profile(load(process.argv[2]),{},{}),pb=E.profile(load(process.argv[3]),{},{});"

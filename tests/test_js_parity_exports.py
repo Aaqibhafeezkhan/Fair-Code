@@ -151,7 +151,7 @@ def test_web_html_report_says_imbalance_inf_for_an_empty_subgroup_like_python(tm
     src = (REPO_ROOT / "assets" / "profiler-ui.js").read_text(encoding="utf-8")
     helpers = src[src.index("var GRADE_COLOR"):src.index("function render(")]
     builders = src[src.index("function buildHtmlReport(r)"):src.index("async function downloadCsvReport")]
-    script = ("var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
+    script = ("var DISPLAY_GROUPS=12;var MAX_DISPLAYED_FLAGS=50;" + SHARED_PRELUDE + helpers +
               "require(process.argv[1]);var E=globalThis.FairCodeProfiler;" + builders +
               "process.stdout.write(buildHtmlReport(JSON.parse(process.argv[2])));")
     done = subprocess.run(["node", "-e", script, str(REPO_ROOT / "assets" / "profiler-engine.js"), json.dumps(result)],

@@ -15,6 +15,14 @@ import re
 
 WIDTH = 62
 DISPLAY_GROUPS = 12  # cap rows shown per dimension; full data stays in the result
+MAX_DISPLAYED_FLAGS = 50  # terminal/HTML/web list this many flags, then "and N more" (#1043)
+
+
+def _flag_items_html(flags: list) -> str:
+    items = "".join(f"<li>{html.escape(str(f))}</li>" for f in flags[:MAX_DISPLAYED_FLAGS])
+    if len(flags) > MAX_DISPLAYED_FLAGS:
+        items += f"<li>… and {len(flags) - MAX_DISPLAYED_FLAGS} more flags (all of them are in --json and the CSV)</li>"
+    return items
 
 
 def to_json(result: dict, indent: int = 2, provenance: dict | None = None) -> str:
@@ -250,8 +258,10 @@ def to_terminal(result: dict) -> str:
         add("=" * WIDTH)
         add("FLAGS")
         add("=" * WIDTH)
-        for f in result["flags"]:
+        for f in result["flags"][:MAX_DISPLAYED_FLAGS]:
             add(f"  ! {f}")
+        if len(result["flags"]) > MAX_DISPLAYED_FLAGS:
+            add(f"  … and {len(result['flags']) - MAX_DISPLAYED_FLAGS} more flags (all of them are in --json)")
         add("")
 
     if result.get("proxy_hints") is not None:
@@ -412,8 +422,10 @@ def compare_to_terminal(cmp: dict) -> str:
         add("=" * WIDTH)
         add("DRIFT FLAGS")
         add("=" * WIDTH)
-        for f in cmp["flags"]:
+        for f in cmp["flags"][:MAX_DISPLAYED_FLAGS]:
             add(f"  ! {f}")
+        if len(cmp["flags"]) > MAX_DISPLAYED_FLAGS:
+            add(f"  … and {len(cmp['flags']) - MAX_DISPLAYED_FLAGS} more flags (all of them are in --json)")
         add("")
 
     add("=" * WIDTH)
@@ -569,7 +581,7 @@ def to_html(result: dict) -> str:
 
     flag_html = ""
     if result["flags"]:
-        items = "".join(f"<li>{esc(f)}</li>" for f in result["flags"])
+        items = _flag_items_html(result["flags"])
         flag_html = f'<section class="flags"><h2>Flags</h2><ul>{items}</ul></section>'
 
     proxy_html = ""
@@ -763,7 +775,7 @@ def compare_to_html(cmp: dict) -> str:
     # Flags Block
     flags_html = ""
     if cmp["flags"]:
-        items = "".join(f"<li>{esc(f)}</li>" for f in cmp["flags"])
+        items = _flag_items_html(cmp["flags"])
         flags_html = f'<section class="flags"><h2>Drift Flags</h2><ul>{items}</ul></section>'
 
     # Renamed / possibly renamed dimensions (#953): the structured version of the rename flags.

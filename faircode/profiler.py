@@ -25,6 +25,7 @@ DATE_SAMPLE_SIZE = 200  # deterministic whole-column sample for date detection
 MAX_DIMENSION_GROUPS = 50  # drop identifier/date-like columns (geography exempt)
 MIN_GROUP_SIZE = 100  # warn when a subgroup has fewer than N rows (default: 100)
 MAX_AGE = 120  # numeric ages above this are reported as implausible, not banded (SPEC 2)
+FLAG_GROUP_CAP = 10  # past this many same-kind per-group flags in one dimension, emit one summary flag (#1043)
 BIRTH_YEAR_MIN = 1900  # with age_reference_year, whole numbers from here up to it are birth years
 
 # Shared with proxy join keys; matches KEY_TRIM in profiler-engine.js.
@@ -452,6 +453,24 @@ def _apply_reference(dimensions: list[dict], reference: dict,
     return flags
 
 
+def _summarise_group_flags(entries: list[tuple[str, str, int]], summaries: dict) -> list[str]:
+    """Collapse per-group flags of one kind past FLAG_GROUP_CAP into a single
+    summary line, placed where the first collapsed flag would have been (#1043).
+    `entries` is (kind, text, count-for-summary) in group order."""
+    totals: dict[str, int] = {}
+    for kind, _, _ in entries:
+        totals[kind] = totals.get(kind, 0) + 1
+    out: list[str] = []
+    summarised: set[str] = set()
+    for kind, text, _ in entries:
+        if totals[kind] <= FLAG_GROUP_CAP:
+            out.append(text)
+        elif kind not in summarised:
+            summarised.add(kind)
+            out.append(summaries[kind](totals[kind], max(c for k, _, c in entries if k == kind)))
+    return out
+
+
 def _build_flags(dimensions: list[dict], intersections: list[dict],
                  imbalance_flag=IMBALANCE_FLAG, missing_flag=MISSING_FLAG,
                  max_age=MAX_AGE) -> list[str]:
@@ -459,25 +478,30 @@ def _build_flags(dimensions: list[dict], intersections: list[dict],
     for d in dimensions:
         folded_labels = {}
         under = set(d["under_represented"])  # set lookup: a list made this quadratic (#1042)
+        entries: list[tuple[str, str, int]] = []
         for g in d["groups"]:
             folded = g["label"].strip(KEY_TRIM_CHARS).casefold()
             if folded in folded_labels:
-                flags.append(
+                entries.append(("case", (
                     f"{d['name']}: '{folded_labels[folded]}' and '{g['label']}' "
-                    "differ only in case or spacing"
-                )
+                    "differ only in case or spacing"), 0))
             else:
                 folded_labels[folded] = g["label"]
             if g["label"] in under:
-                flags.append(
+                entries.append(("under", (
                     f"{d['name']}: '{g['label']}' is under-represented "
-                    f"({g['share'] * 100:.1f}%)"
-                )
+                    f"({g['share'] * 100:.1f}%)"), 0))
             if g.get("small_group"):
-                flags.append(
+                entries.append(("small", (
                     f"{d['name']}: '{g['label']}' has only {g['count']} rows; "
-                    f"fairness metrics may be unreliable"
-                )
+                    f"fairness metrics may be unreliable"), g["count"]))
+        name = d["name"]
+        flags.extend(_summarise_group_flags(entries, {
+            "case": lambda n, _c, name=name: f"{name}: {n} pairs of labels differ only in case or spacing",
+            "under": lambda n, _c, name=name: f"{name}: {n} groups are under-represented",
+            "small": lambda n, c, name=name: (
+                f"{name}: {n} groups have only {c} rows or fewer; fairness metrics may be unreliable"),
+        }))
         if d["imbalance_ratio"] is not None and d["imbalance_ratio"] >= imbalance_flag:
             flags.append(
                 f"{d['name']}: imbalance ratio {d['imbalance_ratio']:.1f}× "
@@ -504,11 +528,15 @@ def _build_flags(dimensions: list[dict], intersections: list[dict],
                 )
     for inter in intersections:
         a, b = inter["dims"]
+        entries = []
         for cell in inter["cells"]:
             kind = "absent" if cell["count"] == 0 else f"only {cell['count']} rows"
-            flags.append(
-                f"{a}='{cell['a']}' × {b}='{cell['b']}' is {kind}"
-            )
+            entries.append(("absent" if cell["count"] == 0 else "thin", (
+                f"{a}='{cell['a']}' × {b}='{cell['b']}' is {kind}"), cell["count"]))
+        flags.extend(_summarise_group_flags(entries, {
+            "absent": lambda n, _c, a=a, b=b: f"{a} × {b}: {n} combinations are absent",
+            "thin": lambda n, c, a=a, b=b: f"{a} × {b}: {n} combinations have only {c} rows or fewer",
+        }))
     return flags
 
 

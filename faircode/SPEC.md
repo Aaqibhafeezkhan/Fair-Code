@@ -249,6 +249,14 @@ with `imbalance_ratio ≥ 3`, every dimension with `missing_pct ≥ 0.05`, every
 `implausible_values` (an optional integer key present only when above zero, #840), and every
 intersectional gap, plus the label-collision warnings from section 3.
 
+**Per-group flag cap.** Within one dimension, once more than `FLAG_GROUP_CAP` (**10**) flags of the
+same kind (under-represented, small group, or label collision) would be raised, they are replaced
+by one summary flag at the position of the first (for example `zip: 17930 groups have only 29 rows
+or fewer; fairness metrics may be unreliable`). The same rule applies to the absent and thin cells of
+one intersection. The per-group detail is not lost: every group stays in `dimensions[].groups`
+(`--json`) and the CSV rows. The terminal, HTML and web views list at most `MAX_DISPLAYED_FLAGS`
+(**50**) flags, then "and N more flags".
+
 ---
 
 ## 7. Defaults (single place to tune)

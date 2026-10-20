@@ -9,6 +9,7 @@
   'use strict';
 
   var DISPLAY_GROUPS = 12; // mirror faircode/report.py
+  var MAX_DISPLAYED_FLAGS = 50; // mirror faircode/report.py
   var E = window.FairCodeProfiler;
   var S = window.FairCodeShared;   // helpers shared with the other view (#983)
   var FAIRCODE_VERSION = S.VERSION;
@@ -310,11 +311,17 @@
     flagsList.innerHTML = '';
     if (r.flags.length) {
       document.getElementById('flagCount').textContent = '(' + r.flags.length + ')';
-      r.flags.forEach(function (f) {
+      r.flags.slice(0, MAX_DISPLAYED_FLAGS).forEach(function (f) {
         var li = document.createElement('li');
         li.textContent = f;
         flagsList.appendChild(li);
       });
+      if (r.flags.length > MAX_DISPLAYED_FLAGS) {
+        var more = document.createElement('li');
+        more.textContent = '… and ' + (r.flags.length - MAX_DISPLAYED_FLAGS) +
+          ' more flags (all of them are in the CSV export)';
+        flagsList.appendChild(more);
+      }
       flagsBlock.hidden = false;
     } else {
       flagsBlock.hidden = true;
@@ -893,7 +900,10 @@
 
     var flagHtml = '';
     if (r.flags.length) {
-      var items = r.flags.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('');
+      var items = r.flags.slice(0, MAX_DISPLAYED_FLAGS).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('');
+      if (r.flags.length > MAX_DISPLAYED_FLAGS) {
+        items += '<li>… and ' + (r.flags.length - MAX_DISPLAYED_FLAGS) + ' more flags (all of them are in --json and the CSV)</li>';
+      }
       flagHtml = '<section class="flags"><h2>Flags</h2><ul>' + items + '</ul></section>';
     }
 

@@ -1754,6 +1754,28 @@
     return flags;
   }
 
+  // Collapse per-group flags of one kind past FLAG_GROUP_CAP into one summary
+  // line, placed where the first collapsed flag would have been (#1043).
+  // entries: [{kind, text, count}] in group order. Mirrors _summarise_group_flags.
+  var FLAG_GROUP_CAP = 10;
+  function summariseGroupFlags(entries, summaries) {
+    var totals = Object.create(null), maxCount = Object.create(null);
+    entries.forEach(function (e) {
+      totals[e.kind] = (totals[e.kind] || 0) + 1;
+      if (!(e.kind in maxCount) || e.count > maxCount[e.kind]) maxCount[e.kind] = e.count;
+    });
+    var out = [], done = Object.create(null);
+    entries.forEach(function (e) {
+      if (totals[e.kind] <= FLAG_GROUP_CAP) {
+        out.push(e.text);
+      } else if (!done[e.kind]) {
+        done[e.kind] = true;
+        out.push(summaries[e.kind](totals[e.kind], maxCount[e.kind]));
+      }
+    });
+    return out;
+  }
+
   function buildFlags(dimensions, inters, imbalanceFlag, missingFlag, maxAge) {
     if (imbalanceFlag === undefined) imbalanceFlag = IMBALANCE_FLAG;
     if (missingFlag === undefined) missingFlag = MISSING_FLAG;
@@ -1763,25 +1785,32 @@
       var foldedLabels = Object.create(null);
       var under = Object.create(null);  // object lookup: indexOf made this quadratic (#1042)
       d.under_represented.forEach(function (l) { under[l] = true; });
+      var entries = [];
       d.groups.forEach(function (g) {
         var folded = foldKeyCase(g.label.replace(KEY_TRIM, ''));
         if (Object.prototype.hasOwnProperty.call(foldedLabels, folded)) {
-          flags.push(d.name + ": '" + foldedLabels[folded] + "' and '" + g.label +
-                     "' differ only in case or spacing");
+          entries.push({kind: 'case', count: 0, text: d.name + ": '" + foldedLabels[folded] + "' and '" + g.label +
+                     "' differ only in case or spacing"});
         } else {
           foldedLabels[folded] = g.label;
         }
         if (under[g.label] === true) {
-          flags.push(d.name + ": '" + g.label + "' is under-represented (" +
-                     (g.share * 100).toFixed(1) + '%)');
+          entries.push({kind: 'under', count: 0, text: d.name + ": '" + g.label + "' is under-represented (" +
+                     (g.share * 100).toFixed(1) + '%)'});
         }
         if (g.small_group) {
-          flags.push(
+          entries.push({kind: 'small', count: g.count, text:
             d.name + ": '" + g.label + "' has only " +
-            g.count + " rows; fairness metrics may be unreliable"
-          );
+            g.count + " rows; fairness metrics may be unreliable"});
         }
       });
+      flags = flags.concat(summariseGroupFlags(entries, {
+        'case': function (n) { return d.name + ': ' + n + ' pairs of labels differ only in case or spacing'; },
+        under: function (n) { return d.name + ': ' + n + ' groups are under-represented'; },
+        small: function (n, c) {
+          return d.name + ': ' + n + ' groups have only ' + c + ' rows or fewer; fairness metrics may be unreliable';
+        }
+      }));
       if (d.imbalance_ratio !== null && d.imbalance_ratio >= imbalanceFlag) {
         flags.push(d.name + ': imbalance ratio ' + d.imbalance_ratio.toFixed(1) +
                    '× between largest and smallest group');
@@ -1806,10 +1835,15 @@
     });
     inters.forEach(function (inter) {
       var a = inter.dims[0], b = inter.dims[1];
-      inter.cells.forEach(function (cell) {
+      var entries = inter.cells.map(function (cell) {
         var kind = cell.count === 0 ? 'absent' : 'only ' + cell.count + ' rows';
-        flags.push(a + "='" + cell.a + "' × " + b + "='" + cell.b + "' is " + kind);
+        return {kind: cell.count === 0 ? 'absent' : 'thin', count: cell.count,
+                text: a + "='" + cell.a + "' × " + b + "='" + cell.b + "' is " + kind};
       });
+      flags = flags.concat(summariseGroupFlags(entries, {
+        absent: function (n) { return a + ' × ' + b + ': ' + n + ' combinations are absent'; },
+        thin: function (n, c) { return a + ' × ' + b + ': ' + n + ' combinations have only ' + c + ' rows or fewer'; }
+      }));
     });
     return flags;
   }

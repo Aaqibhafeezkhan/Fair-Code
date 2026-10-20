@@ -72,7 +72,7 @@ def _run_ui_exports(csv_path, with_hints, reference=None, provenance=None):
     helpers = src[src.index("var GRADE_COLOR"):src.index("function render(")]
     builders = src[src.index("function buildHtmlReport(r)"):src.index("async function downloadCsvReport")]
     script = (
-        "var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
+        "var DISPLAY_GROUPS=12;var MAX_DISPLAYED_FLAGS=50;" + SHARED_PRELUDE + helpers +
         "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;"
         + builders +
         "var t=E.parseCSV(fs.readFileSync(process.argv[2],'utf-8'));var r=E.profile(t,{}," + json.dumps({"reference": reference} if reference else {}) + ");"

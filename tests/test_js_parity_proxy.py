@@ -153,7 +153,7 @@ def test_web_compare_csv_and_html_match_python_and_include_proxy_hints(tmp_path)
     builders = src[src.index("function proxyHintItems"):src.index("function compareReportBaseName")]
     csvs = src[src.index("var csvRow = E.csvRow"):src.index("async function downloadCompareCsvReport")]
     script = (
-        "var DISPLAY_GROUPS=12;" + SHARED_PRELUDE + helpers +
+        "var DISPLAY_GROUPS=12;var MAX_DISPLAYED_FLAGS=50;" + SHARED_PRELUDE + helpers +
         "require(process.argv[1]);var fs=require('fs');var E=globalThis.FairCodeProfiler;"
         + builders + csvs +
         "function load(p){return E.parseCSV(fs.readFileSync(p,'utf-8'));}"

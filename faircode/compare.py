@@ -18,7 +18,7 @@ import math
 import re
 import unicodedata
 
-from .profiler import NO_KIND_DETECTED_FLAG, _is_age_band_label, _r
+from .profiler import FLAG_GROUP_CAP, NO_KIND_DETECTED_FLAG, _is_age_band_label, _r
 
 # A one-sided A/B dimension pair of the same kind whose group labels overlap at least
 # this much (Jaccard) is reported as a probable rename (#866). Mirror in the JS engine.
@@ -343,19 +343,22 @@ def _build_flags(result_a: dict, result_b: dict, score_delta: int | None,
                 f"(PSI {cd['psi']:.2f})"
             )
             drift_detected = True
-        for g in cd["groups"]:
-            if g["status"] == "appeared":
+        for status in ("appeared", "disappeared"):
+            moved = [g for g in cd["groups"] if g["status"] == status]
+            if not moved:
+                continue
+            drift_detected = True
+            if len(moved) > FLAG_GROUP_CAP:
+                # One line, not one per group: a high-cardinality column would
+                # otherwise bury every other drift signal (#1052). Full detail
+                # stays in cd["groups"] (--json) and the CSV rows.
+                flags.append(f"{cd['name']}: {len(moved)} groups {status}")
+                continue
+            for g in moved:
                 flags.append(
-                    f"{cd['name']}: '{g['label']}' appeared "
+                    f"{cd['name']}: '{g['label']}' {status} "
                     f"({g['share_a'] * 100:.1f}% → {g['share_b'] * 100:.1f}%)"
                 )
-                drift_detected = True
-            elif g["status"] == "disappeared":
-                flags.append(
-                    f"{cd['name']}: '{g['label']}' disappeared "
-                    f"({g['share_a'] * 100:.1f}% → {g['share_b'] * 100:.1f}%)"
-                )
-                drift_detected = True
     for n in added:
         flags.append(f"dimension '{n}' is present only in {name_b}")
         drift_detected = True

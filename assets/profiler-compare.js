@@ -9,6 +9,7 @@
   'use strict';
 
   var DISPLAY_GROUPS = 12; // mirror faircode/report.py
+  var MAX_DISPLAYED_FLAGS = 50; // mirror faircode/report.py
   var E = window.FairCodeProfiler;
   var S = window.FairCodeShared;   // helpers shared with the other view (#983)
   var FAIRCODE_VERSION = S.VERSION;
@@ -433,7 +434,7 @@
       flags = '<div class="flags-block" style="margin-top:24px">' +
         '<h3><span aria-hidden="true">⚑</span> Drift flags <span class="count">(' +
         cmp.flags.length + ')</span></h3><ul>' +
-        cmp.flags.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') +
+        flagItems(cmp.flags) +
         '</ul></div>';
     }
 
@@ -563,11 +564,20 @@
   // Ports faircode/report.py's compare_to_html so the browser report matches
   // the CLI's `faircode compare --html` output (same palette, same layout,
   // same field names as the DOM render above).
+
   function proxyHintItems(hints) {
     return hints.map(function (h) {
       return '<li>' + esc(h.a) + ' ↔ ' + esc(h.b) + ' (χ² p=' + h.p_value.toPrecision(4) +
         ', Cramér’s V=' + h.cramers_v.toFixed(2) + (h.p_adjusted !== undefined ? ', adj p=' + h.p_adjusted.toPrecision(4) : '') + E.proxyFamily(h) + E.proxyNotes(h) + ')</li>';
     }).join('');
+  }
+
+  function flagItems(flags) {
+    var items = flags.slice(0, MAX_DISPLAYED_FLAGS).map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('');
+    if (flags.length > MAX_DISPLAYED_FLAGS) {
+      items += '<li>… and ' + (flags.length - MAX_DISPLAYED_FLAGS) + ' more flags (all of them are in the CSV export)</li>';
+    }
+    return items;
   }
 
   function buildCompareHtmlReport(cmp) {
@@ -672,7 +682,7 @@
 
     var flagsHtml = '';
     if (cmp.flags.length) {
-      var items = cmp.flags.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('');
+      var items = flagItems(cmp.flags);
       flagsHtml = '<section class="flags"><h2>Drift Flags</h2><ul>' + items + '</ul></section>';
     }
 

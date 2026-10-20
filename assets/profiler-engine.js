@@ -2284,18 +2284,19 @@
                    ' representation drift (PSI ' + cd.psi.toFixed(2) + ')');
         driftDetected = true;
       }
-      cd.groups.forEach(function (g) {
-        if (g.status === 'appeared') {
-          flags.push(cd.name + ": '" + g.label + "' appeared (" +
-                     (g.share_a * 100).toFixed(1) + '% → ' +
-                     (g.share_b * 100).toFixed(1) + '%)');
-          driftDetected = true;
-        } else if (g.status === 'disappeared') {
-          flags.push(cd.name + ": '" + g.label + "' disappeared (" +
-                     (g.share_a * 100).toFixed(1) + '% → ' +
-                     (g.share_b * 100).toFixed(1) + '%)');
-          driftDetected = true;
+      ['appeared', 'disappeared'].forEach(function (status) {
+        var moved = cd.groups.filter(function (g) { return g.status === status; });
+        if (!moved.length) return;
+        driftDetected = true;
+        if (moved.length > FLAG_GROUP_CAP) {
+          flags.push(cd.name + ': ' + moved.length + ' groups ' + status);
+          return;
         }
+        moved.forEach(function (g) {
+          flags.push(cd.name + ": '" + g.label + "' " + status + ' (' +
+                     (g.share_a * 100).toFixed(1) + '% → ' +
+                     (g.share_b * 100).toFixed(1) + '%)');
+        });
       });
     });
     added.forEach(function (n) { flags.push("dimension '" + n + "' is present only in " + nameB); driftDetected = true; });

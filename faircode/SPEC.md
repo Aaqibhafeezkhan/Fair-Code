@@ -333,6 +333,11 @@ group, every added/removed dimension, **and** every `kind_mismatch` dimension's 
 couldn't be measured, not evidence of drift), so it's the one category of `flags` entry
 **excluded** from `drift_detected`.
 
+**Appeared/disappeared cap.** When one dimension has more than `FLAG_GROUP_CAP` (**10**)
+`appeared` (or `disappeared`) groups, `flags` carries one line (`zip: 22400 groups appeared`)
+instead of one per group; `drift_detected` is unaffected, and every group stays in
+`dimensions[].groups` and the CSV. The flag list is displayed capped at `MAX_DISPLAYED_FLAGS` (50).
+
 `drift_detected` is a boolean - `true` iff at least one *real* drift signal fired (any of the first
 five categories above), `false` if `flags` is empty or contains only kind-mismatch notices. The CLI's
 `compare --fail-on-drift` checks `drift_detected`, not `bool(flags)`, so a schema change between two

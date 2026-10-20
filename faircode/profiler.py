@@ -458,6 +458,7 @@ def _build_flags(dimensions: list[dict], intersections: list[dict],
     flags: list[str] = []
     for d in dimensions:
         folded_labels = {}
+        under = set(d["under_represented"])  # set lookup: a list made this quadratic (#1042)
         for g in d["groups"]:
             folded = g["label"].strip(KEY_TRIM_CHARS).casefold()
             if folded in folded_labels:
@@ -467,7 +468,7 @@ def _build_flags(dimensions: list[dict], intersections: list[dict],
                 )
             else:
                 folded_labels[folded] = g["label"]
-            if g["label"] in d["under_represented"]:
+            if g["label"] in under:
                 flags.append(
                     f"{d['name']}: '{g['label']}' is under-represented "
                     f"({g['share'] * 100:.1f}%)"

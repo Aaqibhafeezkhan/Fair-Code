@@ -953,9 +953,10 @@
     var out = csvRow(['dimension', 'kind', 'label', 'count', 'share',
       'ci_low', 'ci_high', 'under_represented', 'small_group']);
     r.dimensions.forEach(function (d) {
+      var underSet = new Set(d.under_represented);
       d.groups.forEach(function (g) {
         out += csvRow([d.name, d.kind, g.label, g.count, g.share, g.ci_low, g.ci_high,
-          d.under_represented.indexOf(g.label) !== -1, g.small_group]);
+          underSet.has(g.label), g.small_group]);
       });
     });
     out += csvRow([]) + csvRow(['flag']);

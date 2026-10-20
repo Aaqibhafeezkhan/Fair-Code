@@ -1761,6 +1761,8 @@
     var flags = [];
     dimensions.forEach(function (d) {
       var foldedLabels = Object.create(null);
+      var under = Object.create(null);  // object lookup: indexOf made this quadratic (#1042)
+      d.under_represented.forEach(function (l) { under[l] = true; });
       d.groups.forEach(function (g) {
         var folded = foldKeyCase(g.label.replace(KEY_TRIM, ''));
         if (Object.prototype.hasOwnProperty.call(foldedLabels, folded)) {
@@ -1769,7 +1771,7 @@
         } else {
           foldedLabels[folded] = g.label;
         }
-        if (d.under_represented.indexOf(g.label) !== -1) {
+        if (under[g.label] === true) {
           flags.push(d.name + ": '" + g.label + "' is under-represented (" +
                      (g.share * 100).toFixed(1) + '%)');
         }

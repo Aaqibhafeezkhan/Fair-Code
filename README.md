@@ -1111,6 +1111,13 @@ CSV layout in [section 12](faircode/SPEC.md#12-csv-export)):
 | `exact_permutations` / `exact_max_rows` | `compare_datasets`, `proxy_hints` | Shuffle count (at most 1,000,000, default 1000) and row cap (default 20000) for `exact` (CLI `--proxy-exact-permutations` / `--proxy-exact-max-rows`) |
 | `max_categorical_card` / `max_dimension_groups` | `profile_dataset`, `compare_datasets`, `proxy_hints` | Caps on categorical cardinality (default 20) and groups per dimension (default 50) (CLI `--max-categorical-card` / `--max-dimension-groups`) |
 | `renames` | `compare_datasets` | `{"race": "ethnicity"}` compares a renamed dimension as one (CLI `--rename`) |
+| `kind` | `get_benchmark_results` | Result type: `"fairness"` (default) or `"performance"`. Fairness results include protected-attribute metrics; performance results include model-performance metrics. |
+| `source` | `get_benchmark_results` | Results to read: `"frozen"` (default), the earlier reference snapshot in `paper/results-frozen/`, or `"current"`, the live results in `results/`. The returned `source` identifies which set was used. |
+| `audit` | `get_benchmark_results` | Optional exact-match filter for the audit, e.g. `"compas"`. |
+| `model` | `get_benchmark_results` | Optional exact-match filter for the model, e.g. `"logistic_regression"`. |
+| `strategy` | `get_benchmark_results` | Optional exact-match filter for the strategy, e.g. `"baseline"`. |
+| `metric` | `get_benchmark_results` | Optional exact-match filter for the metric. |
+| `protected_attribute` | `get_benchmark_results` | Optional exact-match filter for the protected attribute; applies to fairness results, not performance results. |
 
 The engine is domain-agnostic - it works on any tabular CSV (health, hiring, lending, justice),
 auto-detecting demographic columns (sex, race, age, geography) by name. Beyond the single-dataset

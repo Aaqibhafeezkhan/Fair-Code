@@ -37,8 +37,9 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 - Current release: **v2.3.0**
 - The next major version can now bundle a re-run benchmark and new audits without waiting on a
-  publication gate - Phase 6 below reflects the earlier plan and will be revisited alongside next
-  year's real paper submission.
+  publication gate. Phase 6 below lists the prerequisites for next year's real paper submission
+  that can start now (a fresh full run, a snapshot diff, a venue decision, and the next freeze
+  trigger).
 
 ---
 
@@ -210,11 +211,22 @@ a fresh run of results.
 
 - [x] Freeze benchmark results at tag `v1.0-paper` (commit `bbef2ba`) - kept as a reference snapshot
 - [x] `CLAUDE.md` paper-freeze policy for the benchmark and audits - lifted; will be re-established for next year's real submission
-- [ ] Submit manuscript to peer review (next year, with fresh results)
+- [x] Development reopened: `results/`, audits, and the analysis core are unfrozen; `paper/results-frozen/` stays untouched as the historical reference for this earlier snapshot
+
+**Prerequisites that can start now** (nothing below waits for the submission date):
+
+- [ ] **Fresh full benchmark run on the current lockfile** - rerun `faircode benchmark` on `requirements-lock.txt` and refresh `results/` (tracked in [#1068](https://github.com/yakew7/Fair-Code/issues/1068)). This is the run the paper will be built on, so doing it early shows what moved.
+- [x] **Compare it with the earlier snapshot** - `python3 scripts/diff_results.py` lists every row that moved against `paper/results-frozen/`; explain each flagged row before it goes into a manuscript.
+- [x] **Decide how library bumps are handled** - Dependabot groups the harmless updates and keeps `numpy`, `pandas`, `scikit-learn`, `scipy`, `fairlearn` and `matplotlib` as one PR each, with a benchmark diff before merging (see [CONTRIBUTING.md](CONTRIBUTING.md#dependency-updates)).
+- [ ] **Choose the target venue** - a maintainer decision, to be written here. It sets the page limit, the artifact and reproducibility requirements, and the submission window, so it comes before any manuscript writing. Candidates to weigh are a fairness-and-accountability conference, a datasets-and-benchmarks track, or a journal.
+- [ ] **Define the next freeze trigger** - the freeze starts when all of these hold: the venue is chosen, the full run above is merged, the `audit.yaml` manifests and the seven audits are final for the paper, and a maintainer has tagged the snapshot. Until then the repo stays fully open; when it starts, `CLAUDE.md` and `CONTRIBUTING.md` are updated in the same PR.
+
+**Gated on the submission date** (next year):
+
+- [ ] Submit manuscript to peer review (with the fresh results)
 - [ ] Address reviewer feedback
 - [ ] Paper accepted and published
 - [ ] Add citation and DOI to [README.md](README.md) and [CITATION.cff](CITATION.cff)
-- [x] Development reopened: `results/`, audits, and the analysis core are unfrozen; `paper/results-frozen/` stays untouched as the historical reference for this earlier snapshot
 
 ---
 

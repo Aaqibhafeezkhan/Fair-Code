@@ -596,6 +596,16 @@ three Phase 2 tools instead read a package-internal, generated mirror under `fai
 `scripts/freeze_paper_results.py`'s `mirror_for_mcp()` and `mirror_current_for_mcp()`), declared as real `package-data` so it ships in the wheel. See
 issue #388, verified by building an actual wheel and installing it in a clean venv.
 
+### Comparing `results/` with the reference snapshot
+
+`scripts/diff_results.py` (#1065) joins `results/results_{fairness,performance}.csv` with
+`paper/results-frozen/` on the columns that identify a row (fairness: `audit`, `strategy`,
+`model`, `protected_attribute`, `metric`; performance: `audit`, `strategy`, `model`, `metric`) and
+reports each row as `moved` (|current − reference| greater than `--threshold`, default 0.01, or a
+value empty on one side only), `unchanged`, `only_current` or `only_reference`. Rows present on one
+side only are always flagged. `--json` prints the structured diff, `--all` lists unchanged rows, and
+`--fail-on-change` exits 1 when anything is flagged. It only reads both directories.
+
 ---
 
 ## 12. CSV export

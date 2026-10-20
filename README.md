@@ -194,7 +194,8 @@ Fair-Code/
 │   ├── mcp_server.py                    #   `faircode-mcp` entry point - 6 MCP tools (SPEC.md section 11)
 │   ├── provenance.py                    #   dataset SHA-256 + resolved-params block for --json/--html exports
 │   ├── _explainers/                     #   generated mirror of explainers/*.md, for the MCP tools
-│   └── _results_frozen/                 #   generated mirror of paper/results-frozen/*.csv, for the MCP tools
+│   ├── _results_frozen/                 #   generated mirror of paper/results-frozen/*.csv, for the MCP tools
+│   └── _results_current/                #   generated mirror of results/*.csv, for get_benchmark_results(source="current")
 ├── tests/
 │   ├── fixtures/                        #   sample datasets for loader/edge-case tests
 │   ├── test_benchmark.py                # end-to-end benchmark harness tests
@@ -208,6 +209,7 @@ Fair-Code/
 │   ├── test_dependency_versions.py      #   requirements-lock.txt pins meet pyproject.toml floors
 │   ├── test_figures.py                  #   results_fairness.csv -> figures/*.png rendering
 │   ├── test_freeze_paper_results.py     #   results/ -> paper/results-frozen/ snapshot script
+│   ├── test_diff_results.py             #   results/ vs snapshot diff script
 │   ├── test_generate_images.py          #   favicon / OG-image generation
 │   ├── test_js_category_keys.py         #   JS/Python dimension-category key parity
 │   ├── test_js_parity_*.py              #   JS profiler engine mirrors the Python one (profile, proxy, held-out, provenance, exports, compare, keywords, CLI command); js_helpers.py is shared
@@ -250,6 +252,7 @@ Fair-Code/
 │   ├── check_generated_files_current.py #   verifies build_explainers.py output is up to date
 │   ├── engine-js.js                     #   Node harness for the JS profiler parity tests
 │   ├── freeze_paper_results.py          #   snapshots results/ -> paper/results-frozen/
+│   ├── diff_results.py                  #   diffs results/ against the paper/results-frozen/ snapshot
 │   ├── generate_favicons.py
 │   ├── generate_og_images.py            #   renders the 1200x630 OG share images
 │   ├── parse-json-js.js
@@ -1174,6 +1177,8 @@ pip install -r requirements-lock.txt
 **A results snapshot can be frozen for later comparison.** `results/` at the repo root is live - it changes every time someone reruns the harness or a new audit lands. `paper/results-frozen/` is a kept snapshot from an earlier analysis pass, useful as a point of comparison while the repo keeps moving.
 
 **For new audits and reruns:** Update `results/` as usual. Do not regenerate `paper/results-frozen/` or move the `v1.0-paper` tag as part of an ordinary audit. Run `scripts/freeze_paper_results.py` only when deliberately creating a new reference snapshot; it replaces the existing frozen snapshot and mirrors its CSV files into `faircode/_results_frozen/`.
+
+To see how far `results/` has moved from that snapshot, run `python3 scripts/diff_results.py`. It joins the two tables per audit, strategy, model, protected attribute and metric and prints the per-row change, flagging rows that moved by more than `--threshold` (default 0.01) or exist on one side only (`--json`, `--all`, `--kind` and `--fail-on-change` are also available; it only reads).
 
 To deliberately create a new reference snapshot, run:
 

@@ -604,12 +604,38 @@
   // union-of-columns table builder as parseJSON. SheetJS isn't bundled into
   // this file since it's a large third-party library with its own license -
   // profiler.html loads it from a pinned CDN URL only when needed.
+  // A workbook date cell is a datetime to pandas, so its label is "2020-01-01 00:00:00"; SheetJS
+  // with raw: true returned the Excel serial number (43831) instead (#1039). Date cells are
+  // rewritten to that text before sheet_to_json, from the serial's own calendar parts rather than
+  // a JS Date, so the label does not depend on the machine's time zone. A time-only cell prints
+  // as "HH:MM:SS", like Python's datetime.time.
+  function formatXlsxDateCell(serial) {
+    var c = global.XLSX.SSF.parse_date_code(serial);
+    if (!c) return null;
+    function p(n, w) { n = String(n); while (n.length < (w || 2)) n = '0' + n; return n; }
+    var time = p(c.H) + ':' + p(c.M) + ':' + p(Math.floor(c.S));
+    if (serial < 1) return time;
+    return p(c.y, 4) + '-' + p(c.m) + '-' + p(c.d) + ' ' + time;
+  }
+
+  function stringifyXlsxDateCells(sheet) {
+    Object.keys(sheet).forEach(function (addr) {
+      if (addr.charAt(0) === '!') return;
+      var cell = sheet[addr];
+      if (cell && cell.t === 'n' && typeof cell.v === 'number' && cell.z &&
+          global.XLSX.SSF.is_date(cell.z)) {
+        var text = formatXlsxDateCell(cell.v);
+        if (text !== null) sheet[addr] = { t: 's', v: text, w: text };
+      }
+    });
+  }
+
   async function parseXLSX(arrayBuffer) {
     await loadSheetJS();
 
     var workbook;
     try {
-      workbook = global.XLSX.read(arrayBuffer, { type: "array" });
+      workbook = global.XLSX.read(arrayBuffer, { type: "array", cellNF: true });
     } catch (readErr) {
       throw new Error("Unsupported .xlsx file (" + readErr.message + ").");
     }
@@ -618,6 +644,7 @@
     if (!sheetName) return { table: { columns: [], rows: [] }, ignoredSheets: [], sheetName: null };
 
     var sheet = workbook.Sheets[sheetName];
+    stringifyXlsxDateCells(sheet);
     var records = global.XLSX.utils.sheet_to_json(sheet, { defval: null, raw: true });
 
     if (records.length === 0) {

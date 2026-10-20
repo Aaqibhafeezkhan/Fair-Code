@@ -160,3 +160,39 @@ def test_hidden_first_sheet_python(tmp_path):
     df = read_table(str(path))
 
     assert df.empty
+
+
+def _date_workbook():
+    import datetime
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["sex", "race", "ethnicity"])
+    for i in range(60):
+        ws.append([
+            "m" if i % 2 else "f",
+            [datetime.datetime(2020, 1, 1), datetime.datetime(2021, 6, 15, 10, 30, 15)][i % 2],
+            datetime.time(9, 5, 0),
+        ])
+    return wb
+
+
+@requires_openpyxl
+@pytest.mark.parametrize("tz", ["UTC", "America/New_York", "Asia/Kolkata"])
+def test_xlsx_date_cells_get_the_same_labels_in_both_engines(tmp_path, tz):
+    """#1039: a date cell is '2020-01-01 00:00:00' in pandas; the web engine used the Excel serial (43831)."""
+    import os
+
+    path = _save_workbook(tmp_path, _date_workbook(), "dates.xlsx")
+    py = {d["name"]: sorted(g["label"] for g in d["groups"])
+          for d in __import__("faircode").profile(read_table(str(path)))["dimensions"]}
+    result = subprocess.run(
+        ["node", "scripts/engine-js.js", "profile-xlsx", str(path)],
+        cwd=REPO_ROOT, capture_output=True, text=True, encoding="utf-8", check=False,
+        env={**os.environ, "TZ": tz},
+    )
+    assert result.returncode == 0, result.stderr
+    js = {d["name"]: sorted(g["label"] for g in d["groups"]) for d in json.loads(result.stdout)["dimensions"]}
+    assert py["race"] == ["2020-01-01 00:00:00", "2021-06-15 10:30:15"]
+    assert py["ethnicity"] == ["09:05:00"]
+    assert js == py

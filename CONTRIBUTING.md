@@ -314,6 +314,8 @@ Explainers live in `explainers/` and should make one fairness concept easy to un
 
 ### Existing explainers
 
+A short sample, not a full list. README.md and llms.txt list every explainer, and `scripts/check_explainer_count.py` fails if either leaves one out.
+
 | File | Concept |
 |------|---------|
 | `proxy-variables.md` | Why AI stays biased after protected attributes are removed |

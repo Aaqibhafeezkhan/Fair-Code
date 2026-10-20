@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Checks (and, with --fix, corrects) "current explainer count" mentions in
 README.md, CONTRIBUTORS.md, METRICS.md, and ROADMAP.md against the real
-count of explainers/*.md.
+count of explainers/*.md, and checks that README.md and llms.txt list every
+explainers/*.md by slug (a missing listing is reported by name; --fix does
+not add it).
 
 CHECKS below is a small, explicit list of exact regexes, one per mention -
 not a fuzzy "N explainers" scan across each file. METRICS.md in particular
@@ -43,6 +45,27 @@ CHECKS = [
     ("ROADMAP.md", re.compile(r"(\d+) explainers published")),
 ]
 
+# Places that must list every explainer by slug (relative path, regex whose
+# sole capture group is a listed slug). CONTRIBUTING.md's "Existing explainers"
+# table is a short sample, not a full list, so it is not checked here.
+LISTINGS = [
+    ("README.md", re.compile(r"explainers/([a-z0-9-]+)\.(?:md|html)")),
+    ("llms.txt", re.compile(r"/explainers/([a-z0-9-]+)\.html")),
+]
+
+
+def missing_listings(root: Path | None = None) -> list[tuple[str, list[str]]]:
+    """(file, sorted missing slugs) for each listing that leaves out an explainer."""
+    root = ROOT if root is None else root
+    slugs = {path.stem for path in (root / "explainers").glob("*.md")}
+    problems = []
+    for rel_path, pattern in LISTINGS:
+        listed = set(pattern.findall((root / rel_path).read_text(encoding="utf-8")))
+        missing = sorted(slugs - listed)
+        if missing:
+            problems.append((rel_path, missing))
+    return problems
+
 
 def main() -> int:
     fix = "--fix" in sys.argv[1:]
@@ -67,6 +90,9 @@ def main() -> int:
         path.write_text(text[:start] + str(actual) + text[end:], encoding="utf-8")
         fixed.append((rel_path, f"{claimed} -> {actual}"))
 
+    for rel_path, missing in missing_listings():
+        unresolved.append((rel_path, "does not list " + ", ".join(missing)))
+
     if fixed:
         print(f"Corrected {len(fixed)} explainer-count mention(s) (explainers/*.md has {actual} files):")
         for rel_path, change in fixed:
@@ -78,12 +104,14 @@ def main() -> int:
         for rel_path, reason in unresolved:
             print(f"  {rel_path}: {reason}", file=sys.stderr)
         if not fix:
-            print("\nRun 'python3 scripts/check_explainer_count.py --fix' to correct this "
-                  "automatically.", file=sys.stderr)
+            print("\nRun 'python3 scripts/check_explainer_count.py --fix' to correct count "
+                  "mentions automatically. A missing listing has to be added by hand.",
+                  file=sys.stderr)
         return 1
 
     if not fixed:
-        print(f"OK: all {len(CHECKS)} explainer-count mentions match explainers/*.md ({actual} files).")
+        print(f"OK: all {len(CHECKS)} explainer-count mentions match explainers/*.md ({actual} files), "
+              f"and {len(LISTINGS)} listings name every explainer.")
     return 0
 
 

@@ -639,5 +639,15 @@ window.FAIR_CODE_EXPLAINERS = [
     "tags": [
       "metrics"
     ]
+  },
+  {
+    "slug": "distributionally-robust-optimization",
+    "title": "Distributionally Robust Optimization (DRO) for Fairness",
+    "subtitle": "Hedge against the worst group instead of constraining one metric.",
+    "summary": "Learn how group DRO trains against an adversary that shifts weight onto whichever group the model currently fails, and how it differs from a parity-constrained method like ExponentiatedGradient. See the real worst-group gain on Benefits Denial, the cost to the other groups, and how the step size over-hedges.",
+    "tags": [
+      "metrics",
+      "data"
+    ]
   }
 ];

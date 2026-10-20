@@ -439,5 +439,12 @@
     "subtitle": "Make the worst-off group as well off as possible, even if groups end up unequal.",
     "summary": "Learn why parity metrics and Rawls' difference principle can disagree: a model can lift the worst-off group and still widen a parity gap. See a worst-group reweighting loop on Benefits Denial, what it does to every other group, and why a minimum group size is not optional.",
     "tags": ["metrics"]
+  },
+  {
+    "slug": "distributionally-robust-optimization",
+    "title": "Distributionally Robust Optimization (DRO) for Fairness",
+    "subtitle": "Hedge against the worst group instead of constraining one metric.",
+    "summary": "Learn how group DRO trains against an adversary that shifts weight onto whichever group the model currently fails, and how it differs from a parity-constrained method like ExponentiatedGradient. See the real worst-group gain on Benefits Denial, the cost to the other groups, and how the step size over-hedges.",
+    "tags": ["metrics", "data"]
   }
 ]

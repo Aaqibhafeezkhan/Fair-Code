@@ -262,5 +262,9 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/maxmin-fairness.html</loc>
+    <lastmod>2026-10-20</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/distributionally-robust-optimization.html</loc>
   </url>
 </urlset>

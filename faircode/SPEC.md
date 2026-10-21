@@ -606,7 +606,11 @@ value empty on one side only), `unchanged`, `only_current` or `only_reference`. 
 side only are always flagged. `--json` prints the structured diff, `--all` lists unchanged rows, and
 `--fail-on-change` exits 1 when anything is flagged. `--audit NAME` (repeatable) restricts the
 join to those audits, and `--summary` prints one line per audit and kind instead (rows compared,
-rows flagged, largest absolute delta); both work with `--json`. It only reads both directories.
+rows flagged, rows on different test sets, largest absolute delta); both work with `--json`. Each row also
+has a `sample` field: `same` when both files report the same group sizes (fairness: `n_disadvantaged` and
+`n_advantaged`; performance: `n`), `different` when they differ (the two runs were scored on different test
+rows, so the delta mixes a model change with a change in who was tested; `sample_sizes` holds both), and
+`unknown` when a size is missing or the row is on one side only. It only reads both directories.
 
 ### Loading an audit in code
 

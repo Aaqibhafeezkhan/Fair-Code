@@ -13,6 +13,12 @@ and prints the per-row change, so nobody has to diff two CSVs by hand:
     python3 scripts/diff_results.py --audit COMPAS        # only these audits (repeatable)
     python3 scripts/diff_results.py --summary             # one line per audit and kind
 
+Each row also carries a `sample` field: `same` when both sides report the same group sizes
+(fairness: n_disadvantaged and n_advantaged; performance: n), `different` when they differ (the two
+runs were scored on different test rows, so the delta mixes a model change with a change in who was
+tested; the sizes are in `sample_sizes`), and `unknown` when a side has no size columns or the row is
+on one side only. `different` rows are marked `~` in the text output and counted in `--summary`.
+
 Join keys: fairness = audit, strategy, model, protected_attribute, metric; performance = audit,
 strategy, model, metric. A row present on one side only is reported as `only_current` or
 `only_reference` (a new audit, strategy or metric, or one that was dropped) and always counts as
@@ -35,28 +41,56 @@ CURRENT_DIR = REPO_ROOT / "results"
 REFERENCE_DIR = REPO_ROOT / "paper" / "results-frozen"
 DEFAULT_THRESHOLD = 0.01
 
+SIZE_COLUMNS = {
+    "fairness": ["n_disadvantaged", "n_advantaged"],
+    "performance": ["n"],
+}
+
 KINDS = {
     "fairness": ("results_fairness.csv", ["audit", "strategy", "model", "protected_attribute", "metric"]),
     "performance": ("results_performance.csv", ["audit", "strategy", "model", "metric"]),
 }
 
 
-def diff_table(current: pd.DataFrame, reference: pd.DataFrame, keys: list[str],
-               threshold: float = DEFAULT_THRESHOLD) -> list[dict]:
-    """One dict per row on either side: the key columns plus status, reference, current, delta."""
-    def index(df):
-        out = {}
-        for _, row in df.iterrows():
-            out[tuple(str(row[k]) for k in keys)] = row["value"]
-        return out
+def _sizes(row, size_columns):
+    """The row's group sizes as a list of ints, or None if a size column is missing or empty."""
+    values = []
+    for column in size_columns:
+        if column not in row.index or pd.isna(row[column]):
+            return None
+        values.append(int(row[column]))
+    return values
 
-    cur, ref = index(current), index(reference)
+
+def diff_table(current: pd.DataFrame, reference: pd.DataFrame, keys: list[str],
+               threshold: float = DEFAULT_THRESHOLD, size_columns: list[str] | None = None) -> list[dict]:
+    """One dict per row on either side: the key columns plus status, reference, current, delta, sample.
+
+    `size_columns` names the columns holding the test-set sizes; when both sides have them for a row,
+    `sample` is `same` or `different` (with `sample_sizes` giving both), otherwise `unknown`.
+    """
+    def index(df):
+        out, sizes = {}, {}
+        for _, row in df.iterrows():
+            key = tuple(str(row[k]) for k in keys)
+            out[key] = row["value"]
+            sizes[key] = _sizes(row, size_columns or [])
+        return out, sizes
+
+    (cur, cur_sizes), (ref, ref_sizes) = index(current), index(reference)
     rows = []
     for key in sorted(set(cur) | set(ref)):
         entry = dict(zip(keys, key))
         c, r = cur.get(key), ref.get(key)
         entry["reference"] = None if r is None or pd.isna(r) else float(r)
         entry["current"] = None if c is None or pd.isna(c) else float(c)
+        c_size, r_size = cur_sizes.get(key), ref_sizes.get(key)
+        if key not in cur or key not in ref or c_size is None or r_size is None:
+            entry["sample"] = "unknown"
+        else:
+            entry["sample"] = "same" if c_size == r_size else "different"
+            if c_size != r_size:
+                entry["sample_sizes"] = {"current": c_size, "reference": r_size}
         if key not in ref:
             entry["status"], entry["delta"] = "only_current", None
         elif key not in cur:
@@ -88,7 +122,7 @@ def diff_dirs(current_dir: Path, reference_dir: Path, kinds=("fairness", "perfor
             wanted = set(audits)
             current = current[current["audit"].astype(str).isin(wanted)]
             reference = reference[reference["audit"].astype(str).isin(wanted)]
-        out[kind] = diff_table(current, reference, keys, threshold)
+        out[kind] = diff_table(current, reference, keys, threshold, SIZE_COLUMNS[kind])
     return out
 
 
@@ -111,9 +145,10 @@ def summarize(diff: dict) -> dict:
         per_audit = {}
         for r in rows:
             s = per_audit.setdefault(r["audit"], {"audit": r["audit"], "compared": 0, "flagged": 0,
-                                                  "max_abs_delta": None})
+                                                  "max_abs_delta": None, "different_sample": 0})
             s["compared"] += 1
             s["flagged"] += _flagged(r)
+            s["different_sample"] += r.get("sample") == "different"
             if r["delta"] is not None and (s["max_abs_delta"] is None or abs(r["delta"]) > s["max_abs_delta"]):
                 s["max_abs_delta"] = abs(r["delta"])
         out[kind] = [per_audit[a] for a in sorted(per_audit)]
@@ -126,7 +161,8 @@ def render_summary(summary: dict) -> str:
         lines.append(f"{kind}:")
         for s in audits:
             largest = "n/a" if s["max_abs_delta"] is None else f"{s['max_abs_delta']:.4f}"
-            lines.append(f"  {s['audit']}: {s['compared']} compared, {s['flagged']} flagged, largest |delta| {largest}")
+            lines.append(f"  {s['audit']}: {s['compared']} compared, {s['flagged']} flagged, "
+                         f"{s['different_sample']} on different test sets, largest |delta| {largest}")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
@@ -140,8 +176,10 @@ def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESH
     for kind, rows in diff.items():
         keys = KINDS[kind][1]
         flagged = [r for r in rows if _flagged(r)]
+        different = sum(r.get("sample") == "different" for r in rows)
         lines.append(f"{kind}: {len(rows)} rows compared, {len(flagged)} flagged "
-                     f"(moved by more than {threshold:g}, or present on one side only)")
+                     f"(moved by more than {threshold:g}, or present on one side only), "
+                     f"{different} measured on different test sets")
         for r in rows if show_all else flagged:
             label = " / ".join(r[k] for k in keys)
             if r["status"] == "only_current":
@@ -155,6 +193,10 @@ def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESH
                 delta = "n/a" if r["delta"] is None else f"{r['delta']:+.4f}"
                 detail = f"{ref} -> {cur} ({delta})"
             mark = "!" if _flagged(r) else " "
+            if r.get("sample") == "different":
+                sizes = r["sample_sizes"]
+                detail += f" [different test set: reference {sizes['reference']}, current {sizes['current']}]"
+                mark = "~" if mark == " " else mark
             lines.append(f"  {mark} {label}: {detail}")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"

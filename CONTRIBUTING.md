@@ -74,8 +74,25 @@ make build-explainers  # regenerate explainer pages, sitemap, and OG images (dar
 make fix-explainer-count  # correct any stale "N explainers" mention in README/CONTRIBUTORS/METRICS/ROADMAP after adding/removing an explainer
 make key-fold         # regenerate the JS case-folding table (assets/profiler-engine.js KEY_FOLD) after a Unicode upgrade
 make favicons          # regenerate favicon.ico, apple-touch-icon.png, icon-{192,512}.png after editing logo.svg
-make lint              # em-dash-free check + broken internal doc link check + ruff (unused imports, undefined names)
+make lint              # em-dash-free check + broken internal doc link check + issue-number check + explainer counts + traction figures + ruff
 ```
+
+Prerequisites for the full `make check`: Python 3.9 or newer (3.10+ for the `mcp` extra), Node 18 or newer (`key-fold-check` and the JavaScript parity tests run the browser engines under `node`), and the GitHub CLI `gh` signed in (`scripts/check_issue_refs.py` asks GitHub whether an issue or PR number cited in the docs exists; it is skipped offline, and the lint workflow runs it as informational only).
+
+### Checks you may meet
+
+| If this fails | What it means | How to fix it |
+|---|---|---|
+| `check_em_dash.py` | A tracked file contains an em dash | Replace it with a hyphen, comma or colon |
+| `check_broken_links.py` | A relative link in the docs points at a missing file or heading | Fix the path or heading |
+| `check_issue_refs.py` | A `#NNN` in ROADMAP, CHANGELOG, CONTRIBUTORS or METRICS is not a real issue or PR | Correct the number |
+| `check_explainer_count.py` | An "N explainers" figure, or an explainer listing in the README or `llms.txt`, is stale | `make fix-explainer-count` (a missing listing has to be added by hand) |
+| `check_traction.py` | Stars, forks, contributors, watching, social reach, countries or audits differ between README, ROADMAP and METRICS, or the README's "Show N completed items" differs from its `- [x]` lines | Edit the figure in the file(s) the message names so they agree; the README's "External Contributors" is one below the total |
+| `key-fold-check` | The JavaScript case-folding table `KEY_FOLD` no longer matches Python | `make key-fold`, then commit `assets/profiler-engine.js` |
+| A test that runs a README command | Every `faircode ...` line in the README, CONTRIBUTING and SPEC code blocks is checked against the CLI's argument parser; one of them uses a flag or value that no longer exists | Fix the example or the CLI |
+| `check_generated_files_current.py` (CI) | Generated explainer pages, sitemap, OG images or `llms-full.txt` are out of date | `make build-explainers`, then commit the result |
+
+The tests run in any pytest import mode, including `--import-mode=importlib`: `pyproject.toml` puts the repo root and `tests/` on `pythonpath`. The helpers shared by the JavaScript parity tests (`tests/test_js_parity_*.py`) live in `tests/js_helpers.py`.
 
 Optionally install the git hooks so the checks run automatically:
 

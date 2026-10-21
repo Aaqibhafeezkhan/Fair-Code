@@ -115,16 +115,53 @@ def test_summary_counts_rows_and_largest_delta_per_audit(tmp_path, capsys):
     assert dr.main([*args, "--summary", "--json"]) == 0
     summary = json.loads(capsys.readouterr().out)["fairness"]
     assert [s["audit"] for s in summary] == ["a", "b"]
-    assert summary[0] == {"audit": "a", "compared": 1, "flagged": 0, "max_abs_delta": 0.0}
+    assert summary[0] == {"audit": "a", "compared": 1, "flagged": 0, "max_abs_delta": 0.0, "different_sample": 0}
     assert (summary[1]["compared"], summary[1]["flagged"]) == (2, 2)
     assert summary[1]["max_abs_delta"] == pytest.approx(0.2)
 
     assert dr.main([*args, "--summary", "--audit", "b"]) == 0
     out = capsys.readouterr().out
-    assert "b: 2 compared, 2 flagged, largest |delta| 0.2000" in out
+    assert "b: 2 compared, 2 flagged, 0 on different test sets, largest |delta| 0.2000" in out
     assert "a:" not in out
 
 
 def test_summary_largest_delta_is_none_without_numeric_deltas():
     diff = {"fairness": [{"audit": "a", "status": "only_current", "delta": None}]}
-    assert dr.summarize(diff) == {"fairness": [{"audit": "a", "compared": 1, "flagged": 1, "max_abs_delta": None}]}
+    assert dr.summarize(diff) == {"fairness": [{"audit": "a", "compared": 1, "flagged": 1, "max_abs_delta": None, "different_sample": 0}]}
+
+
+SIZE_FAIR_COLS = FAIR_COLS + ["n_disadvantaged", "n_advantaged"]
+
+
+def test_rows_measured_on_different_test_sets_are_marked():
+    # #1095: same value change, but the second row was scored on different people.
+    ref = pd.DataFrame([["a", "b", "lr", "sex", "dp", 0.10, 100, 200], ["a", "b", "lr", "sex", "eo", 0.10, 100, 200]],
+                       columns=SIZE_FAIR_COLS)
+    cur = pd.DataFrame([["a", "b", "lr", "sex", "dp", 0.20, 100, 200], ["a", "b", "lr", "sex", "eo", 0.20, 90, 210]],
+                       columns=SIZE_FAIR_COLS)
+    rows = {r["metric"]: r for r in dr.diff_table(cur, ref, dr.KINDS["fairness"][1], size_columns=dr.SIZE_COLUMNS["fairness"])}
+    assert rows["dp"]["sample"] == "same" and "sample_sizes" not in rows["dp"]
+    assert rows["eo"]["sample"] == "different"
+    assert rows["eo"]["sample_sizes"] == {"current": [90, 210], "reference": [100, 200]}
+
+
+def test_sample_is_unknown_without_size_columns_or_for_one_sided_rows():
+    ref = _fair([["a", "b", "lr", "sex", "dp", 0.1], ["a", "b", "lr", "sex", "gone", 0.3]])
+    cur = _fair([["a", "b", "lr", "sex", "dp", 0.2]])
+    rows = {r["metric"]: r for r in dr.diff_table(cur, ref, dr.KINDS["fairness"][1], size_columns=dr.SIZE_COLUMNS["fairness"])}
+    assert rows["dp"]["sample"] == "unknown" and rows["gone"]["sample"] == "unknown"
+
+
+def test_different_test_sets_show_in_the_text_json_and_summary(tmp_path):
+    perf_cols = ["audit", "strategy", "model", "metric", "value", "n"]
+    for name, n in (("ref", 1000), ("cur", 950)):
+        _write(tmp_path / name, _fair([["a", "b", "lr", "sex", "dp", 0.1]]),
+               pd.DataFrame([["a", "b", "lr", "accuracy", 0.7, n]], columns=perf_cols))
+    diff = dr.diff_dirs(tmp_path / "cur", tmp_path / "ref")
+    assert diff["performance"][0]["sample"] == "different"
+    assert diff["performance"][0]["sample_sizes"] == {"current": [950], "reference": [1000]}
+    text = dr.render(diff, show_all=True)
+    assert "1 measured on different test sets" in text and "[different test set: reference [1000], current [950]]" in text
+    assert dr.summarize(diff)["performance"][0]["different_sample"] == 1
+    assert "1 on different test sets" in dr.render_summary(dr.summarize(diff))
+    assert json.loads(json.dumps(diff))["performance"][0]["sample"] == "different"

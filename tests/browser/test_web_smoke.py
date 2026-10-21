@@ -197,3 +197,32 @@ def test_the_exact_inputs_follow_the_checkbox_and_report_a_bad_value_inline(page
     page.wait_for_selector("#proxyExactError:not([hidden])")
     assert "Shuffles" in page.inner_text("#proxyExactError")
     _clean(page)
+
+
+# ── High-cardinality columns keep the flag lists capped in the real DOM (#1080) ──────────────
+
+def _zip_csv(seed, n=20000, labels=18000):
+    import random
+    rng = random.Random(seed)
+    return "sex,zip\n" + "".join(f"{rng.choice(['m', 'f'])},{10000 + rng.randrange(labels)}\n" for _ in range(n))
+
+
+def test_a_high_cardinality_column_keeps_the_profile_flag_list_capped(page, site, tmp_path):
+    page.goto(f"{site}/profiler.html")
+    _upload(page, tmp_path, text=_zip_csv(1), name="zips.csv")
+    page.wait_for_selector("#results:not([hidden])", timeout=120000)
+    items = page.locator("#flagsList li").count()
+    assert 1 <= items <= 51, items        # 50 flags plus the "and N more" line; it used to be 71,633
+    _clean(page)
+
+
+def test_a_high_cardinality_column_keeps_the_compare_flag_list_capped(page, site, tmp_path):
+    page.goto(f"{site}/profiler.html")
+    (tmp_path / "a.csv").write_text(_zip_csv(2), encoding="utf-8")
+    (tmp_path / "b.csv").write_text(_zip_csv(3), encoding="utf-8")
+    page.set_input_files("#fileA", str(tmp_path / "a.csv"))
+    page.set_input_files("#fileB", str(tmp_path / "b.csv"))
+    page.wait_for_selector("#compareResults:not([hidden])", timeout=120000)
+    items = page.locator("#compareResults .flags-block li").count()
+    assert 1 <= items <= 51, items        # it used to list one line per appeared or disappeared zip code
+    _clean(page)

@@ -688,5 +688,34 @@ window.FAIR_CODE_EXPLAINERS = [
       "detection",
       "metrics"
     ]
+  },
+  {
+    "slug": "adversarial-debiasing",
+    "title": "Adversarial Debiasing",
+    "subtitle": "Train a predictor against a second model that tries to read the group from its output.",
+    "summary": "Learn how a predictor and an adversary are trained together so the scores carry no usable group information. See it on Tenant Screening, where raising the adversarial weight cuts the parity gap from +0.1136 to +0.0296 for about one point of accuracy, and why a stronger reader can still find what a weak one cannot.",
+    "tags": [
+      "metrics",
+      "detection"
+    ]
+  },
+  {
+    "slug": "fairness-regularization",
+    "title": "Fairness Regularization",
+    "subtitle": "Put a price on the parity gap and read the trade-off off a curve.",
+    "summary": "Learn how a penalty on the group gap is added to the training loss with one weight, and why a smooth gap on probabilities is not the gap on decisions. See the weight scan on Benefits Denial: nothing at small values, a closed gap at a cost of four points of accuracy at large ones.",
+    "tags": [
+      "metrics"
+    ]
+  },
+  {
+    "slug": "fair-representation-learning",
+    "title": "Fair Representation Learning",
+    "subtitle": "A representation that hides the group from one reader can still leak to another.",
+    "summary": "Learn how projecting out the directions that predict a protected attribute cleans a representation, and why the claim is only as strong as the reader you tested. See iterative nullspace projection on Benefits Denial: a linear reader drops to chance while a random forest still recovers sex at 0.859 AUC.",
+    "tags": [
+      "data",
+      "metrics"
+    ]
   }
 ];

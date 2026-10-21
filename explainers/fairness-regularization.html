@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fairness Regularization · Fair Code</title>
+<meta name="description" content="Learn how a penalty on the group gap is added to the training loss with one weight, and why a smooth gap on probabilities is not the gap on decisions. See the weight scan on Benefits Denial: nothing at small values, a closed gap at a cost of four points of accuracy at large ones.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/fairness-regularization.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Fairness Regularization · Fair Code">
+<meta property="og:description" content="Learn how a penalty on the group gap is added to the training loss with one weight, and why a smooth gap on probabilities is not the gap on decisions. See the weight scan on Benefits Denial: nothing at small values, a closed gap at a cost of four points of accuracy at large ones.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/fairness-regularization.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/fairness-regularization.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness Regularization · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/fairness-regularization.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness Regularization · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fairness Regularization · Fair Code">
+<meta name="twitter:description" content="Learn how a penalty on the group gap is added to the training loss with one weight, and why a smooth gap on probabilities is not the gap on decisions. See the weight scan on Benefits Denial: nothing at small values, a closed gap at a cost of four points of accuracy at large ones.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/fairness-regularization.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Fairness Regularization",
+      "description": "Learn how a penalty on the group gap is added to the training loss with one weight, and why a smooth gap on probabilities is not the gap on decisions. See the weight scan on Benefits Denial: nothing at small values, a closed gap at a cost of four points of accuracy at large ones.",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-regularization.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-regularization.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Fairness Regularization?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A fairness regularizer is a penalty term for a fairness gap that is added to the training loss and weighted against accuracy by one number, so a single model fit trades the two off directly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Constraint-based methods such as the benchmark's S3 (ExponentiatedGradient) enforce a gap limit. A regularizer is the soft version: no hard limit, just a price. That makes the trade-off visible as a curve you can read before choosing a point on it, and it works with any model you can train with gradients."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Fairness Regularization",
+          "item": "https://www.thefaircode.xyz/explainers/fairness-regularization.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/fairness-regularization.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Fairness Regularization</h1>
+      <p class="explainer-lede">Put a price on the parity gap and read the trade-off off a curve.</p>
+      <p class="explainer-lede">Learn how a penalty on the group gap is added to the training loss with one weight, and why a smooth gap on probabilities is not the gap on decisions. See the weight scan on Benefits Denial: nothing at small values, a closed gap at a cost of four points of accuracy at large ones.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Add the parity gap to the loss with a weight. The gap on probabilities is easy to shrink; the gap on decisions is the one that counts.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>fairness regularizer</strong> is a penalty term for a fairness gap that is added to the training loss and weighted against accuracy by one number, so a single model fit trades the two off directly.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Constraint-based methods such as the benchmark&#x27;s S3 (<code>ExponentiatedGradient</code>) enforce a gap limit. A regularizer is the soft version: no hard limit, just a price. That makes the trade-off visible as a curve you can read before choosing a point on it, and it works with any model you can train with gradients.</p>
+<p>The catch is that decisions are thresholded, and a threshold is not differentiable. The penalty has to be written on something smooth, usually the predicted probabilities. A smooth gap and the real gap are different numbers, and the difference decides whether the method works.</p>
+<h3 id="core-concept-loss-plus-a-weighted-gap">Core Concept: Loss Plus a Weighted Gap</h3>
+<pre><code>total loss  =  log-loss  +  lambda * (soft gap)^2
+
+soft gap    =  mean predicted probability for the disadvantaged group
+               - mean predicted probability for the advantaged group</code></pre>
+<p>Squaring the gap makes it differentiable and treats a positive gap and a negative one alike. <code>lambda</code> is the price: at 0 you get the ordinary model, and as it grows the optimizer is willing to give up more accuracy to shrink the gap. The idea is the &quot;prejudice remover&quot; regularizer of Kamishima and colleagues, applied here to demographic parity.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: predicted above $50K income is the &quot;ineligible&quot; flag, women are the disadvantaged group, logistic regression on the audit&#x27;s core features, the benchmark&#x27;s split. Implemented with plain NumPy gradient descent.</p>
+<pre><code>  lambda  accuracy  soft gap  thresholded gap
+       0     0.811   -0.0340          -0.0509
+       1     0.811   -0.0332          -0.0516
+      10     0.810   -0.0272          -0.0454
+     100     0.794   -0.0090          -0.0212
+    1000     0.770   +0.0043          +0.0010
+   10000     0.759   +0.0013          +0.0000</code></pre>
+<p>The <code>lambda = 0</code> row is the benchmark&#x27;s S2 baseline in <code>results/</code> (the current results): 0.811 accuracy and a thresholded gap of -0.0509. The in-processing strategy S3, a hard constraint, reaches -0.0219 at 0.784 accuracy.</p>
+<p>Three things to read off the table:</p>
+<ul><li><strong>Small penalties do nothing.</strong> At <code>lambda = 1</code> the thresholded gap is -0.0516, no better than the baseline.</li><li><strong>The two gaps differ.</strong> At <code>lambda = 0</code> the soft gap is -0.0340 and the thresholded gap is -0.0509. The penalty shrinks the first one directly and the second one only through it.</li><li><strong>Equalizing costs accuracy, and it accelerates.</strong> The thresholded gap reaches +0.0010 at <code>lambda = 1000</code>, at 0.770 accuracy, 4.1 points below the baseline, and past that the gap does not move while accuracy keeps falling.</li></ul>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 fairness-regularization.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Benefits Denial&quot;)             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+y = data.y.to_numpy(dtype=float)
+s = data.masks[&quot;sex&quot;].to_numpy(dtype=float)      # 1 = women, the disadvantaged group
+sigmoid = lambda z: 1 / (1 + np.exp(-np.clip(z, -30, 30)))
+
+def fit(lam, steps=3000, lr=0.5):
+    &quot;&quot;&quot;Minimise  log-loss + lam * (soft parity gap)^2, where the soft gap is the difference in the
+    group means of the predicted PROBABILITY (differentiable), not of the thresholded decision.&quot;&quot;&quot;
+    Xtr, ytr, str_ = X[train], y[train], s[train]
+    w, b = np.zeros(X.shape[1]), 0.0
+    g1, g0 = str_ == 1, str_ == 0
+    for _ in range(steps):
+        p = sigmoid(Xtr @ w + b)
+        soft_gap = p[g1].mean() - p[g0].mean()
+        dp = (p - ytr) / len(ytr)                                  # d log-loss / d z
+        dgap = np.where(g1, 1 / g1.sum(), -1 / g0.sum()) * p * (1 - p)   # d soft_gap / d z
+        dz = dp + lam * 2 * soft_gap * dgap
+        w -= lr * Xtr.T @ dz
+        b -= lr * dz.sum()
+    return w, b
+
+print(f&quot;{&#x27;lambda&#x27;:&gt;8} {&#x27;accuracy&#x27;:&gt;9} {&#x27;soft gap&#x27;:&gt;9} {&#x27;thresholded gap&#x27;:&gt;16}&quot;)
+for lam in (0, 1, 10, 100, 1000, 10000):
+    w, b = fit(lam)
+    p = sigmoid(X[test] @ w + b)
+    pred = (p &gt;= 0.5).astype(int)
+    s_te = s[test]
+    print(f&quot;{lam:8d} {(pred == y[test]).mean():9.3f} {p[s_te == 1].mean() - p[s_te == 0].mean():+9.4f} &quot;
+          f&quot;{pred[s_te == 1].mean() - pred[s_te == 0].mean():+16.4f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The penalty is a stand-in for the real gap.</strong> The soft gap and the thresholded gap move together but are not the same, so always report the thresholded gap on held-out data.</li><li><strong>The useful range of <code>lambda</code> is narrow and data-dependent.</strong> Little happens until about 10, the gap closes between 100 and 1000, and nothing further is gained after. Scan it on a log scale.</li><li><strong>It targets one metric.</strong> This penalty is for demographic parity. Equalized odds needs a different term, and the two conflict, see <a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a>.</li><li><strong>It needs group labels while training.</strong> The penalty is computed from group membership.</li><li><strong>You pick the point on the curve.</strong> The method does not say which <code>lambda</code> is right. That is a policy choice about how much accuracy a smaller gap is worth.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - S3 as a hard constraint, in contrast to this soft penalty</li><li><a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a> - the curve this method draws</li><li><a href="demographic-parity.html">Demographic Parity</a> - the gap being penalized</li><li><a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a> - why one penalty cannot cover every metric</li><li><a href="adversarial-debiasing.html">Adversarial Debiasing</a> - another soft, objective-level in-processing method</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li><li><a href="../results/"><code>results/</code></a> - the benchmark rows quoted for S2 and S3</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Kamishima, T., Akaho, S., Asoh, H., Sakuma, J. (2012). Fairness-Aware Classifier with Prejudice Remover Regularizer. ECML PKDD - the regularizer approach to a discrimination-aware classifier.</li><li><a href="https://arxiv.org/abs/1507.05259" target="_blank" rel="noreferrer noopener">Zafar, M. B. et al. (2017): Fairness Constraints: Mechanisms for Fair Classification</a> - AISTATS 2017; a covariance-based constraint that makes the same relaxation precise.</li><li><a href="https://arxiv.org/abs/1803.02453" target="_blank" rel="noreferrer noopener">Agarwal, A. et al. (2018): A Reductions Approach to Fair Classification</a> - ICML 2018; the hard-constraint counterpart used by the benchmark&#x27;s S3 strategy.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

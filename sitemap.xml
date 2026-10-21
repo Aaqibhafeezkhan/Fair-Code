@@ -274,7 +274,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/reweighing.html</loc>
-    <lastmod>2026-10-20</lastmod>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/group-specific-thresholds.html</loc>
@@ -283,5 +283,14 @@
   <url>
     <loc>https://www.thefaircode.xyz/explainers/permutation-test-fairness-gaps.html</loc>
     <lastmod>2026-10-20</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/adversarial-debiasing.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/fairness-regularization.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/fair-representation-learning.html</loc>
   </url>
 </urlset>

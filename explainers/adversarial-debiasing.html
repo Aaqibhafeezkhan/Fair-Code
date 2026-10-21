@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adversarial Debiasing · Fair Code</title>
+<meta name="description" content="Learn how a predictor and an adversary are trained together so the scores carry no usable group information. See it on Tenant Screening, where raising the adversarial weight cuts the parity gap from +0.1136 to +0.0296 for about one point of accuracy, and why a stronger reader can still find what a weak one cannot.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/adversarial-debiasing.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Adversarial Debiasing · Fair Code">
+<meta property="og:description" content="Learn how a predictor and an adversary are trained together so the scores carry no usable group information. See it on Tenant Screening, where raising the adversarial weight cuts the parity gap from +0.1136 to +0.0296 for about one point of accuracy, and why a stronger reader can still find what a weak one cannot.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/adversarial-debiasing.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/adversarial-debiasing.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Adversarial Debiasing · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/adversarial-debiasing.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Adversarial Debiasing · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Adversarial Debiasing · Fair Code">
+<meta name="twitter:description" content="Learn how a predictor and an adversary are trained together so the scores carry no usable group information. See it on Tenant Screening, where raising the adversarial weight cuts the parity gap from +0.1136 to +0.0296 for about one point of accuracy, and why a stronger reader can still find what a weak one cannot.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/adversarial-debiasing.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Adversarial Debiasing",
+      "description": "Learn how a predictor and an adversary are trained together so the scores carry no usable group information. See it on Tenant Screening, where raising the adversarial weight cuts the parity gap from +0.1136 to +0.0296 for about one point of accuracy, and why a stronger reader can still find what a weak one cannot.",
+      "url": "https://www.thefaircode.xyz/explainers/adversarial-debiasing.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/adversarial-debiasing.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Adversarial Debiasing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Adversarial debiasing is an in-processing mitigation that trains a predictor together with an adversary that tries to recover the protected attribute from the predictor's output, and updates the predictor to fit the label while making the adversary fail."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The repo's in-processing strategy, S3, hands Fairlearn a fairness constraint and asks it to find the most accurate model that satisfies it. That needs the constraint written down in advance. Adversarial debiasing states the goal differently: the model's scores should carry no usable information about the protected attribute. If the adversary cannot tell which group a score came from, the scores cannot be producing group-dependent decisions."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Adversarial Debiasing",
+          "item": "https://www.thefaircode.xyz/explainers/adversarial-debiasing.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/adversarial-debiasing.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Adversarial Debiasing</h1>
+      <p class="explainer-lede">Train a predictor against a second model that tries to read the group from its output.</p>
+      <p class="explainer-lede">Learn how a predictor and an adversary are trained together so the scores carry no usable group information. See it on Tenant Screening, where raising the adversarial weight cuts the parity gap from +0.1136 to +0.0296 for about one point of accuracy, and why a stronger reader can still find what a weak one cannot.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Train a predictor while a second model tries to read race off its output, and punish the predictor whenever the second model succeeds.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Adversarial debiasing</strong> is an in-processing mitigation that trains a predictor together with an adversary that tries to recover the protected attribute from the predictor&#x27;s output, and updates the predictor to fit the label while making the adversary fail.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>The repo&#x27;s in-processing strategy, S3, hands Fairlearn a fairness constraint and asks it to find the most accurate model that satisfies it. That needs the constraint written down in advance. Adversarial debiasing states the goal differently: the model&#x27;s scores should carry no usable information about the protected attribute. If the adversary cannot tell which group a score came from, the scores cannot be producing group-dependent decisions.</p>
+<p>It also generalizes. The adversary can read a score, a hidden layer or a whole representation, which is why the idea is the basis of many neural-network fairness methods.</p>
+<h3 id="core-concept-a-two-player-game">Core Concept: A Two-Player Game</h3>
+<p>There are two models.</p>
+<pre><code>predictor:  p = sigmoid(w . x + b)          trained to predict the label y
+adversary:  a = sigmoid(u * z + c)          trained to predict the group s from the predictor&#x27;s logit z</code></pre>
+<p>The adversary minimizes its own loss. The predictor minimizes its task loss minus <code>alpha</code> times the adversary&#x27;s loss:</p>
+<pre><code>predictor step:   d(task loss) / dz   -   alpha * d(adversary loss) / dz</code></pre>
+<p><code>alpha</code> is the single dial. At <code>alpha = 0</code> it is ordinary logistic regression. As <code>alpha</code> grows, the predictor is pushed harder to produce scores the adversary cannot use. For demographic parity the adversary sees only the score. For equalized odds Zhang, Lemoine and Mitchell also feed it the true label.</p>
+<h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
+<p><a href="../index.html#project-tenant">Tenant Screening</a>: the model flags an applicant as likely to reoffend within three years, the disadvantaged group is Black applicants, the features are the audit&#x27;s core columns, and the split is the benchmark&#x27;s. Everything is plain NumPy: a predictor and an adversary updated in turn by gradient descent.</p>
+<pre><code>alpha  0.0: accuracy 0.639 | parity gap +0.1136 | race recoverable from the score, AUC 0.598
+alpha  0.5: accuracy 0.639 | parity gap +0.0927 | race recoverable from the score, AUC 0.580
+alpha  1.0: accuracy 0.637 | parity gap +0.0739 | race recoverable from the score, AUC 0.566
+alpha  2.0: accuracy 0.637 | parity gap +0.0469 | race recoverable from the score, AUC 0.547
+alpha  4.0: accuracy 0.628 | parity gap +0.0296 | race recoverable from the score, AUC 0.529</code></pre>
+<p>The <code>alpha = 0</code> row is the benchmark&#x27;s S2 baseline in <code>results/</code> (the current results): 0.639 accuracy and a parity gap of +0.1139 (this run: +0.1136, because it is trained by gradient descent rather than scikit-learn&#x27;s solver). Raising <code>alpha</code> to 4.0 cuts the gap to +0.0296 for 1.1 points of accuracy, and the adversary&#x27;s ability to recover race from the score falls from an AUC of 0.598 toward chance (0.5). For comparison, the benchmark&#x27;s S3 row (Fairlearn&#x27;s <code>ExponentiatedGradient</code>) has a gap of +0.0172 at 0.626 accuracy, and its S4 row (<code>ThresholdOptimizer</code>) has -0.0054 at 0.639.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 adversarial-debiasing.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Tenant Screening&quot;)            # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+mean, std = X[train].mean(axis=0), X[train].std(axis=0) + 1e-9
+X = (X - mean) / std
+y = data.y.to_numpy(dtype=float)
+s = data.masks[&quot;race&quot;].to_numpy(dtype=float)      # 1 = Black applicants, the disadvantaged group
+sigmoid = lambda z: 1 / (1 + np.exp(-np.clip(z, -30, 30)))
+
+def train_predictor(alpha, steps=1500, lr=0.5):
+    &quot;&quot;&quot;Predictor p = sigmoid(X w + b). Adversary a = sigmoid(u * z + c) tries to read race from the
+    predictor&#x27;s own logit z. The predictor minimises task loss - alpha * adversary loss.&quot;&quot;&quot;
+    Xtr, ytr, str_ = X[train], y[train], s[train]
+    w, b, u, c = np.zeros(X.shape[1]), 0.0, 0.1, 0.0
+    for _ in range(steps):
+        z = Xtr @ w + b
+        p, a = sigmoid(z), sigmoid(u * z + c)
+        # adversary step: get better at predicting race from z
+        u -= lr * np.mean((a - str_) * z)
+        c -= lr * np.mean(a - str_)
+        # predictor step: fit the label, and push the adversary&#x27;s loss UP
+        dz = (p - ytr) - alpha * (a - str_) * u
+        w -= lr * Xtr.T @ dz / len(ytr)
+        b -= lr * dz.mean()
+    return w, b
+
+def report(alpha):
+    w, b = train_predictor(alpha)
+    z = X[test] @ w + b
+    pred = (sigmoid(z) &gt;= 0.5).astype(int)
+    s_te, y_te = s[test], y[test]
+    gap = pred[s_te == 1].mean() - pred[s_te == 0].mean()
+    leak = roc_auc_score(s_te, z)                 # how well a threshold-free reader recovers race from the score
+    print(f&quot;alpha {alpha:4.1f}: accuracy {(pred == y_te).mean():.3f} | parity gap {gap:+.4f} | race recoverable from the score, AUC {leak:.3f}&quot;)
+
+for alpha in (0.0, 0.5, 1.0, 2.0, 4.0):
+    report(alpha)</code></pre>
+<p>The last column is the audit of the method itself: after training, a fresh reader tries to recover the attribute from the score. If its AUC is still high, the adversary lost.</p>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It is hard to train.</strong> Two models chasing each other can oscillate. Step sizes, the number of steps and the initial adversary all matter, and a result at one setting says little about another.</li><li><strong>The adversary only removes what it can find.</strong> Here it is a one-parameter logistic reader of the score. A stronger reader of the same score, or a reader of the inputs, may still find group information. Test with a different, stronger model.</li><li><strong>No guarantee for any single metric.</strong> The gap fell steadily with <code>alpha</code>, but no <code>alpha</code> is &quot;the one that satisfies parity&quot;. You pick a point on a curve.</li><li><strong>It costs accuracy, gradually.</strong> 0.639 to 0.628 here, and the cost accelerates at larger <code>alpha</code>. See <a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a>.</li><li><strong>It needs the protected attribute during training</strong>, even though the final model does not use it as an input.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - where this sits among pre-, in- and post-processing</li><li><a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a> - the cost curve every <code>alpha</code> traces</li><li><a href="fairness-through-unawareness.html">Fairness Through Unawareness</a> - why not feeding the attribute in is not enough</li><li><a href="proxy-variables.html">Proxy Variables</a> - the leakage the adversary is trying to find</li><li><a href="demographic-parity.html">Demographic Parity</a> - the criterion the adversary above is built for</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-tenant"><code>Tenant Screening/</code></a> - the audit used for the example above</li><li><a href="../results/"><code>results/</code></a> - the benchmark rows quoted for S2, S3 and S4</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1801.07593" target="_blank" rel="noreferrer noopener">Zhang, B. H., Lemoine, B., Mitchell, M. (2018): Mitigating Unwanted Biases with Adversarial Learning</a> - AIES 2018; the predictor-adversary game and its gradient update.</li><li><a href="https://arxiv.org/abs/1511.05897" target="_blank" rel="noreferrer noopener">Edwards, H., Storkey, A. (2016): Censoring Representations with an Adversary</a> - ICLR 2016; the earlier adversarial formulation for hiding an attribute.</li><li><a href="https://arxiv.org/abs/1707.00075" target="_blank" rel="noreferrer noopener">Beutel, A. et al. (2017): Data Decisions and Theoretical Implications when Adversarially Learning Fair Representations</a> - practical notes on what the adversary needs to see.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

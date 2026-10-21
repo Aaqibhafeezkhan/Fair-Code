@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choosing a Fairness Metric · Fair Code</title>
+<meta name="description" content="Learn a decision path from the harm you worry about to the metric that measures it. See the benchmark&#x27;s own results: in 9 of 13 audit and attribute pairs some fairness metrics are significant and others are not, so the choice changes the verdict.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Choosing a Fairness Metric · Fair Code">
+<meta property="og:description" content="Learn a decision path from the harm you worry about to the metric that measures it. See the benchmark&#x27;s own results: in 9 of 13 audit and attribute pairs some fairness metrics are significant and others are not, so the choice changes the verdict.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/choosing-a-fairness-metric.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Choosing a Fairness Metric · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/choosing-a-fairness-metric.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Choosing a Fairness Metric · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Choosing a Fairness Metric · Fair Code">
+<meta name="twitter:description" content="Learn a decision path from the harm you worry about to the metric that measures it. See the benchmark&#x27;s own results: in 9 of 13 audit and attribute pairs some fairness metrics are significant and others are not, so the choice changes the verdict.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/choosing-a-fairness-metric.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Choosing a Fairness Metric",
+      "description": "Learn a decision path from the harm you worry about to the metric that measures it. See the benchmark's own results: in 9 of 13 audit and attribute pairs some fairness metrics are significant and others are not, so the choice changes the verdict.",
+      "url": "https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Choosing a Fairness Metric?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Choosing a fairness metric is deciding which group-level comparison matches the harm at stake and the standard you are held to, before looking at any numbers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The metrics in this repo answer different questions: Demographic Parity asks whether groups are selected at the same rate, Equal Opportunity whether qualified people are accepted at the same rate, Predictive Parity whether a positive means the same thing for everyone. They are not interchangeable and, outside special cases, they cannot all hold at once (Fairness Metric Conflicts)."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Choosing a Fairness Metric",
+          "item": "https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/choosing-a-fairness-metric.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Choosing a Fairness Metric</h1>
+      <p class="explainer-lede">Start from the harm, not from the formula.</p>
+      <p class="explainer-lede">Learn a decision path from the harm you worry about to the metric that measures it. See the benchmark&#x27;s own results: in 9 of 13 audit and attribute pairs some fairness metrics are significant and others are not, so the choice changes the verdict.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>There is no best fairness metric. There is the metric that measures the harm you are trying to prevent, and the others that will disagree with it.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Choosing a fairness metric</strong> is deciding which group-level comparison matches the harm at stake and the standard you are held to, before looking at any numbers.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>The metrics in this repo answer different questions: <a href="demographic-parity.html">Demographic Parity</a> asks whether groups are selected at the same rate, <a href="equal-opportunity.html">Equal Opportunity</a> whether qualified people are accepted at the same rate, <a href="predictive-parity.html">Predictive Parity</a> whether a positive means the same thing for everyone. They are not interchangeable and, outside special cases, they cannot all hold at once (<a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a>).</p>
+<p>That makes the choice consequential. Pick afterwards and you can find a metric that says what you hoped. The benchmark&#x27;s own results show how often they diverge.</p>
+<h3 id="core-concept-start-from-the-harm">Core Concept: Start From the Harm</h3>
+<p>Work backwards from what goes wrong for a person:</p>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>The harm</th><th>Who it hits</th><th>The question</th><th>Start with</th></tr></thead><tbody><tr><td>Not selected when you should have been</td><td>Qualified people in one group</td><td>Are qualified people accepted at the same rate?</td><td><a href="equal-opportunity.html">Equal Opportunity</a></td></tr><tr><td>Wrongly flagged or denied</td><td>People who would have been fine</td><td>Are false flags equally common?</td><td>False positive rate, in <a href="equalized-odds.html">Equalized Odds</a></td></tr><tr><td>Unequal access to a benefit</td><td>Everyone in a group</td><td>Are groups selected at the same rate?</td><td><a href="demographic-parity.html">Demographic Parity</a> and <a href="disparate-impact.html">Disparate Impact</a></td></tr><tr><td>A score that means different things</td><td>People relying on the score</td><td>Does a positive predict the outcome equally?</td><td><a href="predictive-parity.html">Predictive Parity</a> and <a href="calibration.html">Calibration</a></td></tr><tr><td>One group is simply worse served</td><td>The worst-off group</td><td>How well off is the worst group?</td><td><a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a></td></tr></tbody></table></div>
+<p>Then check the standard you are held to (a legal threshold such as the 80% rule, a regulator&#x27;s named metric), and what the label means: if the label is itself biased (<a href="label-bias.html">Label Bias</a>), the error-rate metrics inherit it and demographic parity may be the safer reading.</p>
+<h3 id="concrete-example-the-benchmark-s-own-results">Concrete Example: The Benchmark&#x27;s Own Results</h3>
+<p>For every audit and protected attribute, take the benchmark&#x27;s S2 model (logistic regression, no protected column, no proxies) in <code>results/</code> (the current results) and list which of the six metrics are significant. If the metrics agreed, each row would be all or nothing.</p>
+<pre><code>audit                    attribute        flagged  which metrics are significant
+ai_fair_recruitment      gender           1/6     accuracy_equality
+benefits_denial          age              3/6     accuracy_equality, demographic_parity, disparate_impact_ratio
+benefits_denial          national_origin  1/6     accuracy_equality
+benefits_denial          race             3/6     accuracy_equality, demographic_parity, disparate_impact_ratio
+benefits_denial          sex              4/6     accuracy_equality, demographic_parity, disparate_impact_ratio, predictive_parity
+compas                   race             6/6     accuracy_equality, demographic_parity, disparate_impact_ratio, equal_opportunity, equalized_odds, predictive_parity
+german_credit_lending    age              0/6     -
+healthcare_readmission   age              3/6     accuracy_equality, demographic_parity, disparate_impact_ratio
+healthcare_readmission   gender           3/6     accuracy_equality, demographic_parity, disparate_impact_ratio
+healthcare_readmission   race             1/6     accuracy_equality
+insurance_denial         age              0/6     -
+insurance_denial         gender           0/6     -
+tenant_screening         race             4/6     demographic_parity, disparate_impact_ratio, equal_opportunity, equalized_odds
+
+9 of 13 audit/attribute pairs have some metrics significant and others not.</code></pre>
+<p>They mostly do not agree. COMPAS fails all six. German Credit and Insurance Denial fail none. The other 9 of 13 pairs fail some and pass others: Benefits Denial by sex fails demographic parity, disparate impact, accuracy equality and predictive parity but not equal opportunity or equalized odds, while Tenant Screening by race is the reverse for predictive parity and accuracy equality. The same model, the same audit, and the verdict depends on the metric.</p>
+<p>Three worked paths from the repo&#x27;s audits:</p>
+<ul><li><strong>Tenant Screening (a flag leads to refusal):</strong> the harm is a wrongful flag, so start with the false positive rate and equalized odds, then check demographic parity.</li><li><strong>Benefits Denial (a means test):</strong> the harm is wrongly excluding eligible people, so start with equal opportunity.</li><li><strong>COMPAS (a risk score shown to a judge):</strong> the harm is a score that means different things by group, so start with predictive parity and calibration, then accept that error-rate parity cannot also hold when base rates differ.</li></ul>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>python3 choosing-a-fairness-metric.py</code>). It reads the benchmark&#x27;s current results; change <code>strategy</code> or <code>model</code> to look at another.</p>
+<pre><code class="language-python">import pandas as pd
+
+results = pd.read_csv(&quot;results/results_fairness.csv&quot;)      # the benchmark&#x27;s current results
+base = results[(results.strategy == &quot;unawareness_proxy_removal&quot;) &amp; (results.model == &quot;logistic_regression&quot;)
+               &amp; ~results.protected_attribute.str.contains(&quot;_x_&quot;)]
+rows = []
+for (audit, attribute), group in base.groupby([&quot;audit&quot;, &quot;protected_attribute&quot;]):
+    flagged = sorted(group[group.significant == True].metric)    # noqa: E712 - a boolean column
+    rows.append((audit, attribute, len(flagged), len(group), &quot;, &quot;.join(m.replace(&quot;_diff&quot;, &quot;&quot;) for m in flagged)))
+
+print(f&quot;{&#x27;audit&#x27;:24s} {&#x27;attribute&#x27;:16s} flagged  which metrics are significant&quot;)
+for audit, attribute, n_flagged, n_total, which in rows:
+    print(f&quot;{audit:24s} {attribute:16s} {n_flagged}/{n_total}     {which or &#x27;-&#x27;}&quot;)
+
+split = [r for r in rows if 0 &lt; r[2] &lt; r[3]]
+print(f&quot;\n{len(split)} of {len(rows)} audit/attribute pairs have some metrics significant and others not.&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>&quot;Significant&quot; depends on sample size.</strong> A metric can look fine because the group is small, see <a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a>.</li><li><strong>The table assumes the label is right.</strong> If the label is biased, every error-rate row inherits it.</li><li><strong>One metric is rarely enough.</strong> Reporting the chosen metric plus the ones that disagree is more honest than reporting one.</li><li><strong>Legal standards decide some choices.</strong> Where a regulator names a metric, the choice is made for you.</li><li><strong>The conflicts are mathematical.</strong> When base rates differ, no model can satisfy calibration and equal error rates together, see <a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a> - why you must choose</li><li><a href="demographic-parity.html">Demographic Parity</a>, <a href="equal-opportunity.html">Equal Opportunity</a>, <a href="equalized-odds.html">Equalized Odds</a> - the main candidates</li><li><a href="predictive-parity.html">Predictive Parity</a> and <a href="calibration.html">Calibration</a> - the score-meaning family</li><li><a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a> - a different kind of answer</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - look at the per-group numbers before choosing</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../results/"><code>results/</code></a> - the benchmark rows used above</li><li><a href="../benchmark.html">Benchmark Results Dashboard</a> - filter the same table interactively</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1610.07524" target="_blank" rel="noreferrer noopener">Chouldechova, A. (2017): Fair Prediction with Disparate Impact</a> - Big Data 5(2); why equal error rates and equal predictive value conflict when base rates differ.</li><li><a href="https://arxiv.org/abs/1609.05807" target="_blank" rel="noreferrer noopener">Kleinberg, J., Mullainathan, S., Raghavan, M. (2016): Inherent Trade-Offs in the Fair Determination of Risk Scores</a> - ITCS 2017; the impossibility result for calibration and balance.</li><li><a href="https://fairware.cs.umass.edu/papers/Verma.pdf" target="_blank" rel="noreferrer noopener">Verma, S., Rubin, J. (2018): Fairness Definitions Explained</a> - FairWare 2018; a catalogue of the definitions with a worked example for each.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

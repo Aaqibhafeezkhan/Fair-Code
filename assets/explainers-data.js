@@ -746,5 +746,34 @@ window.FAIR_CODE_EXPLAINERS = [
       "data",
       "detection"
     ]
+  },
+  {
+    "slug": "disaggregated-evaluation",
+    "title": "Disaggregated Evaluation",
+    "subtitle": "One overall number hides who the model fails.",
+    "summary": "Learn how to report every metric per group and per intersection with an interval, and how fast the intervals widen as groups shrink. See Insurance Denial: a 0.644 overall accuracy, and 95% intervals that grow from 0.116 wide overall to 0.333 for the smallest intersection.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "leave-one-group-out-evaluation",
+    "title": "Leave-One-Group-Out Evaluation",
+    "subtitle": "How does the model do on a group it never saw?",
+    "summary": "Learn how holding out one group at a time tests generalization to people the training data left out. See Benefits Denial with a random forest: most held-out groups change by a point or less, one 67-row group loses 4.5, and the test sizes say which of those to trust.",
+    "tags": [
+      "detection",
+      "data"
+    ]
+  },
+  {
+    "slug": "choosing-a-fairness-metric",
+    "title": "Choosing a Fairness Metric",
+    "subtitle": "Start from the harm, not from the formula.",
+    "summary": "Learn a decision path from the harm you worry about to the metric that measures it. See the benchmark's own results: in 9 of 13 audit and attribute pairs some fairness metrics are significant and others are not, so the choice changes the verdict.",
+    "tags": [
+      "metrics"
+    ]
   }
 ];

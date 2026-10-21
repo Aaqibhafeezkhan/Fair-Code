@@ -298,11 +298,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/measurement-bias.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/aggregation-bias.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/survivorship-bias.html</loc>
+    <lastmod>2026-10-21</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html</loc>
   </url>
 </urlset>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disaggregated Evaluation · Fair Code</title>
+<meta name="description" content="Learn how to report every metric per group and per intersection with an interval, and how fast the intervals widen as groups shrink. See Insurance Denial: a 0.644 overall accuracy, and 95% intervals that grow from 0.116 wide overall to 0.333 for the smallest intersection.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Disaggregated Evaluation · Fair Code">
+<meta property="og:description" content="Learn how to report every metric per group and per intersection with an interval, and how fast the intervals widen as groups shrink. See Insurance Denial: a 0.644 overall accuracy, and 95% intervals that grow from 0.116 wide overall to 0.333 for the smallest intersection.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/disaggregated-evaluation.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Disaggregated Evaluation · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/disaggregated-evaluation.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Disaggregated Evaluation · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Disaggregated Evaluation · Fair Code">
+<meta name="twitter:description" content="Learn how to report every metric per group and per intersection with an interval, and how fast the intervals widen as groups shrink. See Insurance Denial: a 0.644 overall accuracy, and 95% intervals that grow from 0.116 wide overall to 0.333 for the smallest intersection.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/disaggregated-evaluation.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Disaggregated Evaluation",
+      "description": "Learn how to report every metric per group and per intersection with an interval, and how fast the intervals widen as groups shrink. See Insurance Denial: a 0.644 overall accuracy, and 95% intervals that grow from 0.116 wide overall to 0.333 for the smallest intersection.",
+      "url": "https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Disaggregated Evaluation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Disaggregated evaluation reports every performance metric separately for each group, and for each intersection of groups, with an interval, instead of one number for the whole population."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A model can have a good headline number and fail one group badly, because the groups it fails are small. The Gender Shades study made this concrete: commercial face classifiers with high overall accuracy had error rates for darker-skinned women many times those for lighter-skinned men. Every fairness metric in this repo is a comparison of per-group numbers, so the discipline underneath them is simply to look at the per-group numbers first."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Disaggregated Evaluation",
+          "item": "https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/disaggregated-evaluation.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Disaggregated Evaluation</h1>
+      <p class="explainer-lede">One overall number hides who the model fails.</p>
+      <p class="explainer-lede">Learn how to report every metric per group and per intersection with an interval, and how fast the intervals widen as groups shrink. See Insurance Denial: a 0.644 overall accuracy, and 95% intervals that grow from 0.116 wide overall to 0.333 for the smallest intersection.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>An overall accuracy is an average over people. It tells you nothing about who is in the tail.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Disaggregated evaluation</strong> reports every performance metric separately for each group, and for each intersection of groups, with an interval, instead of one number for the whole population.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>A model can have a good headline number and fail one group badly, because the groups it fails are small. The Gender Shades study made this concrete: commercial face classifiers with high overall accuracy had error rates for darker-skinned women many times those for lighter-skinned men. Every fairness metric in this repo is a comparison of per-group numbers, so the discipline underneath them is simply to look at the per-group numbers first.</p>
+<p>It has a cost that is easy to miss: small groups give wide intervals. A reported difference between two groups of 33 and 73 people can be pure chance, and an apparent absence of a gap in a tiny group can be the same.</p>
+<h3 id="core-concept-slice-then-put-an-interval-on-every-slice">Core Concept: Slice, Then Put an Interval on Every Slice</h3>
+<ol><li><strong>Pick the slices.</strong> The protected attributes one at a time, and the intersections of them (<a href="intersectional-bias.html">Intersectional Bias</a>, <a href="subgroup-fairness.html">Subgroup Fairness</a>).</li><li><strong>Compute each metric per slice</strong>, not just accuracy: error rates, selection rate, calibration.</li><li><strong>Attach an interval</strong> to each, by bootstrap (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>), and state a minimum group size below which you only report the interval, not the point estimate.</li><li><strong>Compare slices to the whole, and to each other,</strong> using the interval, not the gap alone (<a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a>).</li></ol>
+<h3 id="concrete-example-insurance-denial">Concrete Example: Insurance Denial</h3>
+<p><a href="../index.html#project-insurance">Insurance Denial</a>: logistic regression on the audit&#x27;s core features, the benchmark&#x27;s split (267 test rows), groups by age and gender and their four intersections. Each row has a bootstrap 95% interval from 2,000 resamples.</p>
+<pre><code>overall accuracy 0.644
+
+everyone                     n= 267  accuracy 0.644  95% CI [0.584, 0.700]  width 0.116
+age: advantaged              n= 161  accuracy 0.671  95% CI [0.596, 0.745]  width 0.149
+age: disadvantaged           n= 106  accuracy 0.604  95% CI [0.509, 0.698]  width 0.189
+gender: advantaged           n= 133  accuracy 0.602  95% CI [0.519, 0.684]  width 0.165
+gender: disadvantaged        n= 134  accuracy 0.687  95% CI [0.604, 0.761]  width 0.157
+age 0 x gender 0             n=  60  accuracy 0.633  95% CI [0.500, 0.750]  width 0.250
+age 0 x gender 1             n= 101  accuracy 0.693  95% CI [0.604, 0.782]  width 0.178
+age 1 x gender 0             n=  73  accuracy 0.575  95% CI [0.466, 0.699]  width 0.233
+age 1 x gender 1             n=  33  accuracy 0.667  95% CI [0.485, 0.818]  width 0.333</code></pre>
+<p>The overall figure, 0.644 with an interval 0.116 wide, hides the spread: age-disadvantaged is 0.604 against 0.671 for the advantaged group, gender-disadvantaged is 0.687 against 0.602 for the advantaged. The intersections are more extreme in both directions, and their intervals are far wider: 0.250 for 60 people and 0.333 for 33. Every one of those intervals contains the overall accuracy, so this test set cannot establish a gap between any two of them. That is the lesson, not a failing of the method: with 267 rows the audit cannot say much about any intersection.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 disaggregated-evaluation.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;Insurance Denial&quot;)            # S2 feature set; groups are age x gender
+train, test = data.idx_train, data.idx_test
+model = build_model(&quot;logistic_regression&quot;, data.random_state).fit(data.X.iloc[train], data.y.iloc[train])
+pred = model.predict(data.X.iloc[test])
+y_te = data.y.iloc[test].to_numpy()
+older = data.masks[&quot;age&quot;].to_numpy()[test]       # 1 = the disadvantaged age group
+female = data.masks[&quot;gender&quot;].to_numpy()[test]   # 1 = the disadvantaged gender group
+rng = np.random.default_rng(0)
+
+def row(label, mask):
+    correct = (pred == y_te)[mask]
+    boots = [rng.choice(correct, len(correct)).mean() for _ in range(2000)]
+    lo, hi = np.percentile(boots, [2.5, 97.5])
+    print(f&quot;{label:28s} n={mask.sum():4d}  accuracy {correct.mean():.3f}  95% CI [{lo:.3f}, {hi:.3f}]  width {hi - lo:.3f}&quot;)
+
+print(f&quot;overall accuracy {(pred == y_te).mean():.3f}\n&quot;)
+row(&quot;everyone&quot;, np.ones(len(y_te), dtype=bool))
+for a, an in ((0, &quot;age: advantaged&quot;), (1, &quot;age: disadvantaged&quot;)):
+    row(an, older == a)
+for g, gn in ((0, &quot;gender: advantaged&quot;), (1, &quot;gender: disadvantaged&quot;)):
+    row(gn, female == g)
+for a in (0, 1):
+    for g in (0, 1):
+        row(f&quot;age {a} x gender {g}&quot;, (older == a) &amp; (female == g))</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>More slices mean more chances for an alarming number.</strong> Twenty slices will throw up a bad-looking one by chance. See <a href="multiple-comparisons.html">Multiple Comparisons</a>.</li><li><strong>Small slices cannot be evaluated.</strong> The honest output for a 33-row slice is &quot;unknown, wide interval&quot;, and a minimum group size makes that rule explicit.</li><li><strong>Intersections explode.</strong> Three attributes with four values each is 64 cells, and most will be too small to report.</li><li><strong>The slices must match the harm.</strong> Slicing on a column that does not correspond to anyone&#x27;s real group membership produces tidy tables and no insight.</li><li><strong>Per-group accuracy is one metric.</strong> Equal accuracy can coexist with very different error types, see <a href="accuracy-equality.html">Accuracy Equality</a> and <a href="treatment-equality.html">Treatment Equality</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="subgroup-fairness.html">Subgroup Fairness</a> - why group-level checks need group-level data</li><li><a href="intersectional-bias.html">Intersectional Bias</a> - the slices that cross attributes</li><li><a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a> - the interval on each slice</li><li><a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a> - the test for a gap between two slices</li><li><a href="multiple-comparisons.html">Multiple Comparisons</a> - what to do when you report many slices</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-insurance"><code>Insurance Denial/</code></a> - the audit used for the example above</li><li><a href="../profiler.html">Open Dataset Profiler</a> - reports group sizes and warns on small groups before you model</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/2103.06076" target="_blank" rel="noreferrer noopener">Barocas, S. et al. (2021): Designing Disaggregated Evaluations of AI Systems: Choices, Considerations, and Tradeoffs</a> - AIES 2021; the design decisions in a disaggregated evaluation.</li><li><a href="https://proceedings.mlr.press/v81/buolamwini18a.html" target="_blank" rel="noreferrer noopener">Buolamwini, J., Gebru, T. (2018): Gender Shades: Intersectional Accuracy Disparities in Commercial Gender Classification</a> - FAT* 2018; the study that made per-group reporting standard.</li><li><a href="https://fairmlbook.org" target="_blank" rel="noreferrer noopener">Barocas, S., Hardt, M., Narayanan, A. (2023): Fairness and Machine Learning</a> - MIT Press; the chapter on evaluation and the case for looking at group-level error.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

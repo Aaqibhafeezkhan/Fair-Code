@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leave-One-Group-Out Evaluation · Fair Code</title>
+<meta name="description" content="Learn how holding out one group at a time tests generalization to people the training data left out. See Benefits Denial with a random forest: most held-out groups change by a point or less, one 67-row group loses 4.5, and the test sizes say which of those to trust.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Leave-One-Group-Out Evaluation · Fair Code">
+<meta property="og:description" content="Learn how holding out one group at a time tests generalization to people the training data left out. See Benefits Denial with a random forest: most held-out groups change by a point or less, one 67-row group loses 4.5, and the test sizes say which of those to trust.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/leave-one-group-out-evaluation.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Leave-One-Group-Out Evaluation · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/leave-one-group-out-evaluation.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Leave-One-Group-Out Evaluation · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Leave-One-Group-Out Evaluation · Fair Code">
+<meta name="twitter:description" content="Learn how holding out one group at a time tests generalization to people the training data left out. See Benefits Denial with a random forest: most held-out groups change by a point or less, one 67-row group loses 4.5, and the test sizes say which of those to trust.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/leave-one-group-out-evaluation.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Leave-One-Group-Out Evaluation",
+      "description": "Learn how holding out one group at a time tests generalization to people the training data left out. See Benefits Denial with a random forest: most held-out groups change by a point or less, one 67-row group loses 4.5, and the test sizes say which of those to trust.",
+      "url": "https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Leave-One-Group-Out Evaluation?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Leave-one-group-out evaluation trains the model with one group removed from the training data and tests it on that group, to measure how well it generalizes to people the training data never contained."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A random test split is drawn from the same population as the training data, so every group is represented in both. Real deployments are not so tidy: a model built in one region gets used in another, a model trained before a policy change meets applicants after it, a group that was rare in training turns out to be common in use."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Leave-One-Group-Out Evaluation",
+          "item": "https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/leave-one-group-out-evaluation.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Leave-One-Group-Out Evaluation</h1>
+      <p class="explainer-lede">How does the model do on a group it never saw?</p>
+      <p class="explainer-lede">Learn how holding out one group at a time tests generalization to people the training data left out. See Benefits Denial with a random forest: most held-out groups change by a point or less, one 67-row group loses 4.5, and the test sizes say which of those to trust.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Cross-validation asks whether the model works on new rows. Leave-one-group-out asks whether it works on new kinds of people.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Leave-one-group-out evaluation</strong> trains the model with one group removed from the training data and tests it on that group, to measure how well it generalizes to people the training data never contained.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>A random test split is drawn from the same population as the training data, so every group is represented in both. Real deployments are not so tidy: a model built in one region gets used in another, a model trained before a policy change meets applicants after it, a group that was rare in training turns out to be common in use.</p>
+<p>Holding a group out simulates that. It is a close relative of the <a href="distribution-shift.html">distribution shifts</a> that wreck models in production, and of the worst-group evaluations behind benchmarks like WILDS. It is also an honest check on a quiet assumption: that the groups you did see are enough to cover the groups you did not.</p>
+<h3 id="core-concept-hold-out-the-group-not-random-rows">Core Concept: Hold Out the Group, Not Random Rows</h3>
+<pre><code>for each group g:
+    train on everyone except g
+    test on g, and compare with the model trained on everyone</code></pre>
+<p>The comparison that matters is the drop in accuracy on <code>g</code>: the cost of never having seen it. A large drop means the model leans on the group&#x27;s presence. A drop near zero means either that other groups cover it, or that the model barely depends on whatever distinguishes it. The groups should be real axes of variation (a region, a site, a time period), not an arbitrary label.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: a random forest on every column of the audit (race and native country included, so the model can use the group), the benchmark&#x27;s split, with each race and each of the four most common native countries held out in turn.</p>
+<pre><code>race (random_forest)
+  held-out group       test rows  with it  without it   change
+  Amer-Indian-Eskimo          67    0.910       0.866   -0.045
+  Asian-Pac-Islander         196    0.847       0.837   -0.010
+  Black                      579    0.924       0.927   +0.003
+  Other                       44    0.955       0.955   +0.000
+  White                     5627    0.843       0.837   -0.006
+
+native.country (random_forest)
+  held-out group       test rows  with it  without it   change
+  ?                          136    0.875       0.868   -0.007
+  Mexico                     144    0.944       0.938   -0.007
+  Philippines                 30    0.800       0.767   -0.033
+  United-States             5825    0.848       0.828   -0.020</code></pre>
+<p>For most groups, removing them from training changes accuracy on them by a point or less. The largest drops are 4.5 points for the 67 American Indian or Eskimo test rows, 3.3 points for the 30 Philippines rows, and 2.0 for United States, the largest group. The two largest drops are in groups of 67 and 30 rows, where one or two rows move accuracy by more than a point, so treat them as a prompt to check, not a result.</p>
+<p>The overall reading: on this data a forest generalizes to a held-out group about as well as it does to a random sample. That is a finding worth stating, because it supports the assumption that groups seen cover groups unseen. On an audit whose groups differ more, it would not.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 leave-one-group-out-evaluation.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;Benefits Denial&quot;, strategy=&quot;baseline&quot;)     # baseline: every feature, race and native.country included
+train, test = data.idx_train, data.idx_test
+X, y = data.X, data.y.to_numpy()
+
+def leave_one_group_out(column, labels, model_name=&quot;random_forest&quot;, min_rows=30):
+    &quot;&quot;&quot;For each group: accuracy on its test rows from a model trained with everyone, and from a model
+    trained on every group EXCEPT that one.&quot;&quot;&quot;
+    codes = data.X_all[column].to_numpy()
+    everyone = build_model(model_name, data.random_state).fit(X.iloc[train], y[train])
+    print(f&quot;{column} ({model_name})&quot;)
+    print(f&quot;  {&#x27;held-out group&#x27;:20s} {&#x27;test rows&#x27;:&gt;9} {&#x27;with it&#x27;:&gt;8} {&#x27;without it&#x27;:&gt;11} {&#x27;change&#x27;:&gt;8}&quot;)
+    for code, label in labels.items():
+        held = test[codes[test] == code]
+        if len(held) &lt; min_rows:
+            continue
+        kept = train[codes[train] != code]
+        without = build_model(model_name, data.random_state).fit(X.iloc[kept], y[kept])
+        a, b = everyone.score(X.iloc[held], y[held]), without.score(X.iloc[held], y[held])
+        print(f&quot;  {label:20s} {len(held):9d} {a:8.3f} {b:11.3f} {b - a:+8.3f}&quot;)
+
+raw = pd.read_csv(&quot;Benefits Denial/adult.csv&quot;, usecols=[&quot;race&quot;, &quot;native.country&quot;])
+race_names = dict(enumerate(sorted(raw[&quot;race&quot;].unique())))          # the harness codes text columns alphabetically
+leave_one_group_out(&quot;race&quot;, race_names)
+print()
+country_names = dict(enumerate(sorted(raw[&quot;native.country&quot;].unique())))
+common = raw[&quot;native.country&quot;].value_counts().index[:4]
+leave_one_group_out(&quot;native.country&quot;, {c: n for c, n in country_names.items() if n in set(common)})</code></pre>
+<p>Change the column and the label dictionary to hold out something else, such as a region or an age band.</p>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>Small held-out groups are noisy.</strong> A drop measured on 30 rows can be chance. Report the group size and an interval (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>).</li><li><strong>It measures dependence on the group, not unfairness.</strong> A model can generalize perfectly and still be unfair to the group. It is a robustness check next to <a href="disaggregated-evaluation.html">Disaggregated Evaluation</a>, not a replacement.</li><li><strong>A simple model may not care.</strong> When we held out whole age bands, weekly-hours bands and education levels from a logistic regression on the same data, accuracy on the held-out group changed by at most 1.4 points, because other groups covered the same feature values. The check is most informative for flexible models.</li><li><strong>The groups must be meaningful.</strong> Holding out a random label tests nothing.</li><li><strong>It trains the model many times.</strong> One fit per group, which is costly for large models.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="distribution-shift.html">Distribution Shift</a> - the real-world version of an unseen group</li><li><a href="subgroup-fairness.html">Subgroup Fairness</a> - why group-level behaviour needs group-level checks</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - the companion check on groups the model did see</li><li><a href="sampling-bias.html">Sampling Bias</a> - when a group is missing from training by accident</li><li><a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a> - an objective that targets the worst group</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/2012.07421" target="_blank" rel="noreferrer noopener">Koh, P. W. et al. (2021): WILDS: A Benchmark of in-the-Wild Distribution Shifts</a> - ICML 2021; benchmarks built around held-out groups and worst-group accuracy.</li><li><a href="https://arxiv.org/abs/1911.08731" target="_blank" rel="noreferrer noopener">Sagawa, S., Koh, P. W., Hashimoto, T., Liang, P. (2020): Distributionally Robust Neural Networks for Group Shifts</a> - ICLR 2020; the worst-group objective that this evaluation motivates.</li><li>Quinonero-Candela, J. et al. (eds.) (2009). Dataset Shift in Machine Learning. MIT Press - the standard reference on how and why test data differs from training data.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

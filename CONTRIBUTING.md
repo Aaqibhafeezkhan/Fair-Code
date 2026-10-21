@@ -476,7 +476,7 @@ faircode benchmark --out /tmp/bump-results
 python3 scripts/diff_results.py --current /tmp/bump-results --reference results --threshold 0.001
 ```
 
-If rows moved, say so in the PR and refresh `results/` in the same PR or an immediate follow-up; if nothing moved, say that. Do not touch `paper/results-frozen/`. A benchmark rerun is not an automatic CI check because it is slow; the reviewer asks for the diff above.
+If rows moved, say so in the PR and refresh `results/` in the same PR or an immediate follow-up; if nothing moved, say that. Do not touch `paper/results-frozen/`. The rerun is slow, so it is not an automatic check. Add the `rerun-benchmark` label to the PR (or run the *Benchmark diff* workflow from the Actions tab with the PR number) and `.github/workflows/benchmark-diff.yml` reruns the full benchmark on that PR's lockfile and comments the diff, with no commit and no change to `paper/results-frozen/`.
 
 ---
 

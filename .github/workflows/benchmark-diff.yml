@@ -1,0 +1,80 @@
+name: Benchmark diff
+
+# Opt-in: reruns the full benchmark on a pull request's requirements-lock.txt and posts how far the
+# results moved from the committed results/ as a PR comment (#1079). A bump of numpy, pandas,
+# scikit-learn, scipy, fairlearn or matplotlib can change a benchmark number without changing a line
+# of code (see "Dependency updates" in CONTRIBUTING.md); this makes the check one click.
+#
+# Start it by adding the `rerun-benchmark` label to the PR, or run it from the Actions tab with the PR
+# number. It is slow (the full benchmark), so it never runs on its own and is not a required check.
+# It only reads: nothing is committed, and paper/results-frozen/ is not touched.
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to rerun the benchmark for
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark-diff:
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'rerun-benchmark'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v7
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number || inputs.pr }}/merge
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install the locked versions
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-lock.txt
+          pip install -e ".[benchmark]" --no-deps
+
+      - name: Rerun the full benchmark
+        run: faircode benchmark --no-plots --out "$RUNNER_TEMP/bump-results"
+
+      - name: Diff against the committed results
+        run: |
+          set -euo pipefail
+          {
+            echo "### Benchmark rerun on this PR's lockfile"
+            echo
+            echo "Compared with the committed \`results/\` (rows that moved by more than 0.001, or exist on one side only)."
+            echo
+            echo '```'
+            python3 scripts/diff_results.py --current "$RUNNER_TEMP/bump-results" --reference results --threshold 0.001 --summary
+            echo '```'
+            echo
+            echo "<details><summary>Moved rows</summary>"
+            echo
+            echo '```'
+            python3 scripts/diff_results.py --current "$RUNNER_TEMP/bump-results" --reference results --threshold 0.001 | head -n 200
+            echo '```'
+            echo "</details>"
+            echo
+            echo "If rows moved, refresh \`results/\` in this PR or an immediate follow-up and say so; if nothing moved, say that. Run id: ${{ github.run_id }}."
+          } > "$RUNNER_TEMP/comment.md"
+
+      - name: Post the diff on the pull request
+        run: gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/comment.md"

@@ -141,7 +141,6 @@ Fair-Code/
 │       ├── codeql.yml                   # CodeQL static analysis
 │       ├── favicons.yml                 # regenerates favicons from logo.svg, checks they're current
 │       ├── first.interaction.yml        # Greets first-time issue/PR contributors
-│       ├── frozen-files.yml             # no-op (paper freeze lifted) - kept as a required status check
 │       ├── lint.yml                     # em-dash / broken-links / ruff checks
 │       ├── pr-review-ping.yml           # comments @-mentioning CODEOWNERS on every new PR
 │       └── validate-workflow.yml        # YAML-lints every file in this workflows/ folder

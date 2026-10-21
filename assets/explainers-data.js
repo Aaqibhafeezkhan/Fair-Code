@@ -717,5 +717,34 @@ window.FAIR_CODE_EXPLAINERS = [
       "data",
       "metrics"
     ]
+  },
+  {
+    "slug": "measurement-bias",
+    "title": "Measurement Bias",
+    "subtitle": "When the feature or label measures one group worse than another.",
+    "summary": "Learn how a feature that is recorded differently for one group creates a gap the true values do not have. See injected mis-measurement on Benefits Denial: crediting women 15% less schooling doubles the parity gap while accuracy goes up, and noise instead of bias shrinks it.",
+    "tags": [
+      "data"
+    ]
+  },
+  {
+    "slug": "aggregation-bias",
+    "title": "Aggregation Bias",
+    "subtitle": "One model for everyone assumes one relationship.",
+    "summary": "Learn why a pooled model can fit every group worse than a model fitted to that group alone, and when separate models are not allowed. See COMPAS: separate models lift accuracy by 11 points for White defendants and 5.6 for Black defendants, with a coefficient that flips sign.",
+    "tags": [
+      "data",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "survivorship-bias",
+    "title": "Survivorship Bias",
+    "subtitle": "You only see the people who passed an earlier filter.",
+    "summary": "Learn how training on the people who passed a gate shrinks the effect of the feature that made the gate. See AI Fair Recruitment: restricting to candidates with a test score of 70 or more nearly doubles the hire rate and attenuates the score coefficient from 0.97 to 0.83.",
+    "tags": [
+      "data",
+      "detection"
+    ]
   }
 ];

@@ -286,11 +286,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/adversarial-debiasing.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fairness-regularization.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fair-representation-learning.html</loc>
+    <lastmod>2026-10-21</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/measurement-bias.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/aggregation-bias.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/survivorship-bias.html</loc>
   </url>
 </urlset>

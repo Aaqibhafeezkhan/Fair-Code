@@ -386,6 +386,20 @@ A short sample, not a full list. README.md and llms.txt list every explainer, an
 | `reweighing.md` | A pre-processing mitigation that weights each (group, label) cell as if group and label were independent |
 | `group-specific-thresholds.md` | A post-processing mitigation that keeps the model and moves the score cutoff per group |
 | `permutation-test-fairness-gaps.md` | Shuffling group labels to tell a real gap from sampling noise, and why the same gap can be significant or not by sample size |
+| `adversarial-debiasing.md` | Training a predictor against an adversary that tries to read the protected attribute from its output |
+| `fairness-regularization.md` | Putting a price on the parity gap in the training loss, and why the soft gap is not the gap on decisions |
+| `fair-representation-learning.md` | Removing the directions that predict the group, and why a representation clean to a linear reader can leak to a forest |
+| `measurement-bias.md` | When a feature or label is recorded worse for one group, creating a gap the true values do not have |
+| `aggregation-bias.md` | Why one pooled model can fit every group worse than a model fitted to that group alone |
+| `survivorship-bias.md` | How training only on the people who passed an earlier filter shifts base rates and shrinks the gating feature's effect |
+| `disaggregated-evaluation.md` | Reporting every metric per group and intersection with an interval, and how fast intervals widen as groups shrink |
+| `leave-one-group-out-evaluation.md` | Holding out one group at a time to test generalization to people the training data left out |
+| `choosing-a-fairness-metric.md` | A decision path from the harm you worry about to the metric that measures it |
+| `model-cards.md` | A short standard disclosure of what a model is for, how it performs for each group, and where it should not be used |
+| `datasheets-for-datasets.md` | The questions about where data came from, answered in writing so an unknown is visible as an unknown |
+| `algorithmic-impact-assessment.md` | A structured review of who a decision system affects, with the fairness audit as its measurement section |
+| `inferring-protected-attributes.md` | Estimating group membership from other fields and what that does to a measured gap |
+| `fairness-without-demographics.md` | Improving the worst-off groups with no group labels by upweighting the rows the model gets wrong |
 
 ### A good explainer should include
 
@@ -398,6 +412,8 @@ A short sample, not a full list. README.md and llms.txt list every explainer, an
 | 5 | Limitations | Honest trade-offs and edge cases |
 | 6 | Related concepts | Links to other explainers or audits |
 | 7 | Further reading | 2-3 primary sources, not link farms |
+
+Explainers with code should run against a real audit. `faircode.benchmark.load_audit("Benefits Denial")` loads an audit with the same loader, encoding and train/test split as the benchmark harness, so a baseline in your explainer matches `results/`.
 
 File naming:
 

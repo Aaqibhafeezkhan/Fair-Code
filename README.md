@@ -135,6 +135,7 @@ Fair-Code/
 │   │   └── new_explainer.yml
 │   └── workflows/
 │       ├── audits.yml                   # CI: runs all audit scripts on every push/PR
+│       ├── benchmark-diff.yml           # opt-in: reruns the benchmark on a lockfile-bump PR and comments the diff
 │       ├── build-explainers.yml         # rebuilds explainer HTML/JS/OG images, checks they're current
 │       ├── citation.yml                 # validates CITATION.cff
 │       ├── codeowners-access.yml        # weekly: catches a CODEOWNER whose repo access has lapsed
@@ -326,7 +327,21 @@ Fair-Code/
 │   ├── fairness-in-ranking.md
 │   ├── reweighing.md
 │   ├── group-specific-thresholds.md
-│   └── permutation-test-fairness-gaps.md
+│   ├── permutation-test-fairness-gaps.md
+│   ├── adversarial-debiasing.md
+│   ├── fairness-regularization.md
+│   ├── fair-representation-learning.md
+│   ├── measurement-bias.md
+│   ├── aggregation-bias.md
+│   ├── survivorship-bias.md
+│   ├── disaggregated-evaluation.md
+│   ├── leave-one-group-out-evaluation.md
+│   ├── choosing-a-fairness-metric.md
+│   ├── model-cards.md
+│   ├── datasheets-for-datasets.md
+│   ├── algorithmic-impact-assessment.md
+│   ├── inferring-protected-attributes.md
+│   └── fairness-without-demographics.md
 │
 ├── .pre-commit-config.yaml              # em-dash/broken-links/ruff + build-explainers pre-push hooks
 ├── CHANGELOG.md
@@ -817,10 +832,10 @@ features = [
 
 ## Explainers
 
-68 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
+82 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
 
 <details>
-<summary><strong>Show all 68 explainers →</strong></summary>
+<summary><strong>Show all 82 explainers →</strong></summary>
 
 | Explainer | What it covers |
 |-----------|----------------|
@@ -892,6 +907,20 @@ features = [
 | [What Is Reweighing?](explainers/reweighing.md) | A pre-processing mitigation that weights each (group, label) cell as if group and label were independent |
 | [What Are Group-Specific Thresholds?](explainers/group-specific-thresholds.md) | A post-processing mitigation that keeps the model and moves the score cutoff per group |
 | [What Is a Permutation Test for a Fairness Gap?](explainers/permutation-test-fairness-gaps.md) | Shuffling group labels to tell a real gap from sampling noise, and why the same gap can be significant or not by sample size |
+| [What Is Adversarial Debiasing?](explainers/adversarial-debiasing.md) | Training a predictor against an adversary that tries to read the protected attribute from its output |
+| [What Is a Fairness Regularizer?](explainers/fairness-regularization.md) | Putting a price on the parity gap in the training loss, and why the soft gap is not the gap on decisions |
+| [What Is Fair Representation Learning?](explainers/fair-representation-learning.md) | Removing the directions that predict the group, and why a representation clean to a linear reader can leak to a forest |
+| [What Is Measurement Bias?](explainers/measurement-bias.md) | When a feature or label is recorded worse for one group, creating a gap the true values do not have |
+| [What Is Aggregation Bias?](explainers/aggregation-bias.md) | Why one pooled model can fit every group worse than a model fitted to that group alone |
+| [What Is Survivorship Bias?](explainers/survivorship-bias.md) | How training only on the people who passed an earlier filter shifts base rates and shrinks the gating feature's effect |
+| [What Is Disaggregated Evaluation?](explainers/disaggregated-evaluation.md) | Reporting every metric per group and intersection with an interval, and how fast intervals widen as groups shrink |
+| [What Is Leave-One-Group-Out Evaluation?](explainers/leave-one-group-out-evaluation.md) | Holding out one group at a time to test generalization to people the training data left out |
+| [How Do You Choose a Fairness Metric?](explainers/choosing-a-fairness-metric.md) | A decision path from the harm you worry about to the metric that measures it |
+| [What Is a Model Card?](explainers/model-cards.md) | A short standard disclosure of what a model is for, how it performs for each group, and where it should not be used |
+| [What Is a Datasheet for a Dataset?](explainers/datasheets-for-datasets.md) | The questions about where data came from, answered in writing so an unknown is visible as an unknown |
+| [What Is an Algorithmic Impact Assessment?](explainers/algorithmic-impact-assessment.md) | A structured review of who a decision system affects, with the fairness audit as its measurement section |
+| [How Do You Measure Fairness When the Protected Attribute Is Missing?](explainers/inferring-protected-attributes.md) | Estimating group membership from other fields and what that does to a measured gap |
+| [What Is Fairness Without Demographics?](explainers/fairness-without-demographics.md) | Improving the worst-off groups with no group labels by upweighting the rows the model gets wrong |
 
 </details>
 
@@ -1264,7 +1293,7 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [ ] LLM bias audit
 
 <details>
-<summary><strong>Show 71 completed items →</strong></summary>
+<summary><strong>Show 85 completed items →</strong></summary>
 
 - [x] COMPAS Criminal Justice Bias
 - [x] AI Fair Recruitment Bias
@@ -1335,6 +1364,20 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [x] Explainer: Reweighing
 - [x] Explainer: Group-Specific Thresholds
 - [x] Explainer: Permutation Tests for Fairness Gaps
+- [x] Explainer: Adversarial Debiasing
+- [x] Explainer: Fairness Regularization
+- [x] Explainer: Fair Representation Learning
+- [x] Explainer: Measurement Bias
+- [x] Explainer: Aggregation Bias
+- [x] Explainer: Survivorship Bias
+- [x] Explainer: Disaggregated Evaluation
+- [x] Explainer: Leave-One-Group-Out Evaluation
+- [x] Explainer: Choosing a Fairness Metric
+- [x] Explainer: Model Cards
+- [x] Explainer: Datasheets for Datasets
+- [x] Explainer: Algorithmic Impact Assessments
+- [x] Explainer: Inferring Missing Protected Attributes
+- [x] Explainer: Fairness Without Demographics
 - [x] Fairness audit web dashboard - [Open Dataset Profiler](#open-dataset-profiler)
 - [x] Bias detection utility library (`faircode/` module)
 
@@ -1355,13 +1398,13 @@ The full public roadmap - with phases, completion status, and content schedule -
 | Metric | Count |
 |--------|------:|
 | GitHub Stars | 51 |
-| External Contributors | 52 |
-| Forks | 62 |
+| External Contributors | 53 |
+| Forks | 63 |
 | Watching | 8 |
 | Combined Social Reach (Instagram + LinkedIn) | 30K+ |
 | Countries Reached (Website Visitors) | 20 |
 | Code Audits Published | 7 |
-| Explainers Published | 68 |
+| Explainers Published | 82 |
 
 Tracked weekly in [METRICS.md](METRICS.md).
 

@@ -21,6 +21,13 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Added
 
+- Fourteen more explainers, each run against a real audit with the benchmark's current `results/` rows as the baseline where one exists: [Adversarial Debiasing](explainers/adversarial-debiasing.md), [Fairness Regularization](explainers/fairness-regularization.md) and [Fair Representation Learning](explainers/fair-representation-learning.md) (close #1083); [Measurement Bias](explainers/measurement-bias.md), [Aggregation Bias](explainers/aggregation-bias.md) and [Survivorship Bias](explainers/survivorship-bias.md) (close #1084); [Disaggregated Evaluation](explainers/disaggregated-evaluation.md), [Leave-One-Group-Out Evaluation](explainers/leave-one-group-out-evaluation.md) and [Choosing a Fairness Metric](explainers/choosing-a-fairness-metric.md) (close #1085); [Model Cards](explainers/model-cards.md), [Datasheets for Datasets](explainers/datasheets-for-datasets.md) and [Algorithmic Impact Assessments](explainers/algorithmic-impact-assessment.md) (close #1086); [Inferring Missing Protected Attributes](explainers/inferring-protected-attributes.md) and [Fairness Without Demographics](explainers/fairness-without-demographics.md) (close #1087). The explainer count goes from 68 to 82, with generated pages, OG images, sitemap entries, `llms.txt`, `llms-full.txt` and the MCP mirror.
+- `faircode.benchmark.load_audit(folder, strategy=None, random_state=None)` returns an `AuditData` prepared by the same `prepare_audit()` that `run_audit` uses, so explainers, notebooks and tests reproduce `results/` rows without copying the loader, encoding and split (closes #1078, SPEC section 11).
+- Browser tests (Chromium) that a 20,000-row file with about 18,000 distinct labels keeps the profile and compare flag lists at 51 items or fewer (closes #1080).
+- `.github/workflows/benchmark-diff.yml`: add the `rerun-benchmark` label to a PR, or run it from the Actions tab, to rerun the full benchmark on that PR's lockfile and comment the `scripts/diff_results.py` summary; it only reads and is not a required check (closes #1079).
+
+### Added (earlier in this release)
+
 - Six explainers, each run against a real audit and quoting the benchmark's current `results/` rows:
   [Max-Min (Rawlsian) Fairness](explainers/maxmin-fairness.md) (closes #543),
   [Distributionally Robust Optimization (DRO) for Fairness](explainers/distributionally-robust-optimization.md) (closes #544),
@@ -33,6 +40,8 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Changed
 
+- The no-op `frozen-files.yml` workflow is removed; the repo ruleset no longer requires it (closes #1061).
+- The profile scaling test compares growth when the number of distinct labels quadruples instead of a wall-clock limit, so it no longer fails on a slow CI runner.
 - Per-group profile flags past 10 of the same kind in one dimension (or intersection) collapse into one summary flag, and the terminal, HTML and web views list at most 50 flags and then "and N more"; the full per-group detail stays in `--json` and the CSV (closes #1043, SPEC section 6).
 - `compare` summarises more than 10 appeared or disappeared groups in one dimension as one flag, like the profile side (closes #1052, SPEC section 8).
 - `.github/dependabot.yml` groups minor and patch updates into one weekly pip PR and one Actions PR, and keeps `numpy`, `pandas`, `scikit-learn`, `scipy`, `fairlearn` and `matplotlib` as one PR each; CONTRIBUTING.md has a "Dependency updates" section on rerunning the benchmark and running `scripts/diff_results.py` before merging one (closes #1069).

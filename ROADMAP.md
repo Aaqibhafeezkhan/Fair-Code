@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 51 | 53 | 58 | 8 | 30K+ | 20 | 7 | 62 | ✅ every push/PR |
+| 51 | 54 | 63 | 8 | 30K+ | 20 | 7 | 82 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -45,7 +45,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 ## Phase 1 - Bias Glossary and Beginner Explainers ✅
 
-**Status: Foundational library complete - 68 explainers published, past the original 60+ target and the 65+ goal, working toward 75+**
+**Status: Foundational library complete - 82 explainers published, past the original 60+ target and the 75+ goal, working toward 90+**
 
 Build the foundational vocabulary and explain core fairness concepts clearly enough for a non-technical reader.
 
@@ -94,6 +94,20 @@ Build the foundational vocabulary and explain core fairness concepts clearly eno
 - [x] What Is Reweighing?
 - [x] What Are Group-Specific Thresholds?
 - [x] What Is a Permutation Test for a Fairness Gap?
+- [x] What Is Adversarial Debiasing?
+- [x] What Is a Fairness Regularizer?
+- [x] What Is Fair Representation Learning?
+- [x] What Is Measurement Bias?
+- [x] What Is Aggregation Bias?
+- [x] What Is Survivorship Bias?
+- [x] What Is Disaggregated Evaluation?
+- [x] What Is Leave-One-Group-Out Evaluation?
+- [x] How Do You Choose a Fairness Metric?
+- [x] What Is a Model Card?
+- [x] What Is a Datasheet for a Dataset?
+- [x] What Is an Algorithmic Impact Assessment?
+- [x] How Do You Measure Fairness When the Protected Attribute Is Missing?
+- [x] What Is Fairness Without Demographics?
 
 ---
 
@@ -202,8 +216,10 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Input handling: `.xls` (#1018), binary files, JSON Lines, ragged rows, unterminated quotes, NUL bytes and JSON `NaN` (#1019, #1023-#1027)
 - [x] Reports and gates: `compare --fail-on-drift` with nothing to compare (#1017), long group labels (#1021), an empty proxy-hint result (#1022), blank reference shares (#1028), the em-dash check's file types (#1020) and labels that differ only in case (#1009)
 - [ ] Engine parity follow-ups: JSON strings `NA` and empty (#1036), XLSX dates (#1039), numeric and blank headers (#1045, #1046), long labels that still collide (#1038)
-- [ ] Scale and flags: quadratic flag building and tens of thousands of flags for a high-cardinality column in the profile and compare views (#1042, #1043, #1052)
+- [x] Scale and flags: quadratic flag building and tens of thousands of flags for a high-cardinality column in the profile and compare views (#1042, #1043, #1052)
 - [ ] MCP, CLI and docs follow-ups: `--fail-under` range (#1037), undocumented benchmark flags (#1040), unknown benchmark filters (#1041), proxy hints on one dimension (#1044), the citation version (#1047), stale benchmark and snapshot wording (#1048, #1049), workflow timeouts (#1050), the leaked workbook handle (#1051), subprocess coverage (#986) and the contributor notes for the new checks (#989)
+- [x] Tooling and tests for the results workflow: `scripts/diff_results.py` (#1065) with `--audit` and `--summary` (#1081), `get_benchmark_results` with a `source` argument (#1049) and its README parameters (#1082), a public `load_audit()` helper (#1078), browser tests for the flag caps (#1080), an opt-in `benchmark-diff` workflow for lockfile bumps (#1079), grouped Dependabot updates (#1069), a check that README and `llms.txt` list every explainer (#1077), 1904-system XLSX dates (#1076), and the no-op `frozen-files` workflow removed (#1061)
+
 ---
 
 ## Phase 6 - Research Paper and Publication - Paused, Retargeted for Next Year

@@ -13425,24 +13425,12 @@ The second block in the output is the same method on [Benefits Denial](../Benefi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 reweighing.py`).
+Run from the repo root (`PYTHONPATH=. python3 reweighing.py`). `load_audit` gives the same loader, encoding and train/test split the benchmark harness uses, so the baseline row matches `results/`.
 
 ```python
 import numpy as np
-from sklearn.model_selection import train_test_split
-from faircode.manifest import load_manifest
-from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses
-from faircode.strategies import encode_features
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model
-
-def load_audit(folder):
-    manifest = load_manifest(f"{folder}/audit.yaml")
-    df, y, masks = _load_dataset(manifest)        # masks[name] is 1 for the disadvantaged group
-    columns = list(dict.fromkeys(manifest.core_features))   # S2 feature set: no protected columns, no proxies
-    X = encode_features(df, columns)
-    train, test = train_test_split(np.arange(len(df)), test_size=manifest.test_size,
-                                   random_state=manifest.random_state, stratify=y)
-    return manifest, X, y, {k: v.to_numpy() for k, v in masks.items()}, train, test
 
 def reweighing_weights(s, y):
     """Kamiran and Calders: weight = P(group) * P(label) / P(group, label), per (group, label) cell."""
@@ -13454,15 +13442,17 @@ def reweighing_weights(s, y):
     return w
 
 def run(folder, attribute):
-    manifest, X, y, masks, train, test = load_audit(folder)
-    s_tr, s_te = masks[attribute][train], masks[attribute][test]
-    y_tr, y_te = y.iloc[train].to_numpy(), y.iloc[test].to_numpy()
+    data = load_audit(folder)                     # S2 feature set: core features, no protected columns
+    train, test = data.idx_train, data.idx_test
+    s = data.masks[attribute].to_numpy()          # 1 = disadvantaged group
+    s_tr, s_te = s[train], s[test]
+    y_tr, y_te = data.y.iloc[train].to_numpy(), data.y.iloc[test].to_numpy()
     w = reweighing_weights(s_tr, y_tr)
     print(folder, "-", attribute)
     print("  weights per (group, label):", {(g, l): round(float(w[(s_tr == g) & (y_tr == l)][0]), 3) for g in (0, 1) for l in (0, 1)})
     for name, weight in (("baseline", None), ("reweighing", w)):
-        model = build_model("logistic_regression", manifest.random_state).fit(X.iloc[train], y_tr, sample_weight=weight)
-        pred = model.predict(X.iloc[test])
+        model = build_model("logistic_regression", data.random_state).fit(data.X.iloc[train], y_tr, sample_weight=weight)
+        pred = model.predict(data.X.iloc[test])
         print(f"  {name:10s} accuracy {(pred == y_te).mean():.3f} | positive rate disadvantaged {pred[s_te == 1].mean():.3f} "
               f"advantaged {pred[s_te == 0].mean():.3f} | parity gap {pred[s_te == 1].mean() - pred[s_te == 0].mean():+.4f}")
 

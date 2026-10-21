@@ -30,6 +30,7 @@ History" in README.md before regenerating results/ for a citation.
 from __future__ import annotations
 
 import itertools
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -112,15 +113,30 @@ def _run_strategy(strategy, model_name, manifest, X_all, y, protected_masks, idx
     return y_test, y_pred, y_proba
 
 
-def run_audit(manifest, n_resamples=2000, n_permutations=2000, random_state=None):
-    """Run the full strategy x model x metric grid for one manifest.
+@dataclass
+class AuditData:
+    """One audit prepared exactly the way `run_audit` prepares it (#1078).
 
-    Returns (fairness_rows, performance_rows). fairness_rows has one dict per
-    (strategy, model, protected attribute, metric), plus one per (strategy,
-    model, attribute pair) for the intersectional gap when two or more
-    protected attributes are declared. performance_rows has one dict per
-    (strategy, model, performance metric).
+    `X_all` holds every encoded column (core, proxy and protected); `X` is the
+    subset a strategy trains on (see `faircode.strategies.strategy_features`).
+    `masks` maps each protected attribute name to a 0/1 Series that is 1 for the
+    disadvantaged group, aligned with `X_all` and `y`. `idx_train`/`idx_test` are
+    the manifest's stratified split, so a row computed from them matches `results/`.
     """
+    manifest: object
+    X_all: pd.DataFrame
+    X: pd.DataFrame
+    y: pd.Series
+    masks: dict
+    idx_train: np.ndarray
+    idx_test: np.ndarray
+    random_state: int
+
+
+def prepare_audit(manifest, strategy=None, random_state=None) -> AuditData:
+    """Load, encode and split one manifest. `run_audit` and `load_audit` both call this,
+    so the two cannot drift apart. `strategy` picks the columns of `X`; None keeps the
+    S2 feature set (core features only: no protected columns, no proxies)."""
     rs = manifest.random_state if random_state is None else random_state
     df, y, protected_masks = _load_dataset(manifest)
 
@@ -132,6 +148,38 @@ def run_audit(manifest, n_resamples=2000, n_permutations=2000, random_state=None
         np.arange(len(df)), test_size=manifest.test_size, random_state=rs,
         stratify=y if y.nunique() > 1 else None,
     )
+    feature_cols = strategy_features(
+        strategy or "unawareness_proxy_removal", manifest.core_features, manifest.proxy_features, protected_cols)
+    return AuditData(manifest, X_all, X_all[feature_cols], y, protected_masks, idx_train, idx_test, rs)
+
+
+def load_audit(folder, strategy=None, random_state=None) -> AuditData:
+    """Public helper for explainers, notebooks and tests: load the audit in `folder`
+    (a directory holding `audit.yaml`, or the manifest path itself) with the same
+    loader, encoding, feature selection and split the benchmark harness uses.
+
+        data = load_audit("Benefits Denial")
+        model = build_model("logistic_regression", data.random_state)
+        model.fit(data.X.iloc[data.idx_train], data.y.iloc[data.idx_train])
+    """
+    path = Path(folder)
+    if path.is_dir():
+        path = path / "audit.yaml"
+    return prepare_audit(load_manifest(path), strategy, random_state)
+
+
+def run_audit(manifest, n_resamples=2000, n_permutations=2000, random_state=None):
+    """Run the full strategy x model x metric grid for one manifest.
+
+    Returns (fairness_rows, performance_rows). fairness_rows has one dict per
+    (strategy, model, protected attribute, metric), plus one per (strategy,
+    model, attribute pair) for the intersectional gap when two or more
+    protected attributes are declared. performance_rows has one dict per
+    (strategy, model, performance metric).
+    """
+    data = prepare_audit(manifest, random_state=random_state)
+    rs, X_all, y, protected_masks = data.random_state, data.X_all, data.y, data.masks
+    idx_train, idx_test = data.idx_train, data.idx_test
 
     fairness_rows = []
     performance_rows = []

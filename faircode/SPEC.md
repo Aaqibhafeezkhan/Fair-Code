@@ -608,6 +608,18 @@ side only are always flagged. `--json` prints the structured diff, `--all` lists
 join to those audits, and `--summary` prints one line per audit and kind instead (rows compared,
 rows flagged, largest absolute delta); both work with `--json`. It only reads both directories.
 
+### Loading an audit in code
+
+`faircode.benchmark.load_audit(folder, strategy=None, random_state=None)` (#1078) loads the audit in
+`folder` (a directory holding `audit.yaml`, or the manifest path) with the code path
+`run_audit` uses: the manifest's row filters and target, the protected-attribute masks, ordinal
+encoding of every core, proxy and protected column, and the manifest's stratified train/test split.
+It returns an `AuditData` with `manifest`, `X_all` (every encoded column), `X` (the columns the chosen
+`strategy` trains on; the S2 core-feature set when `strategy` is None), `y`, `masks` (attribute name to a
+0/1 Series, 1 for the disadvantaged group), `idx_train`, `idx_test` and `random_state`. `run_audit`
+calls the same `prepare_audit()`, so explainers, notebooks and tests that use the helper cannot drift
+from `results/`.
+
 ---
 
 ## 12. CSV export

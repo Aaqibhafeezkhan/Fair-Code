@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fairness Without Demographics · Fair Code</title>
+<meta name="description" content="Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/fairness-without-demographics.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Fairness Without Demographics · Fair Code">
+<meta property="og:description" content="Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/fairness-without-demographics.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/fairness-without-demographics.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness Without Demographics · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/fairness-without-demographics.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness Without Demographics · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fairness Without Demographics · Fair Code">
+<meta name="twitter:description" content="Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/fairness-without-demographics.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Fairness Without Demographics",
+      "description": "Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-without-demographics.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-without-demographics.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Fairness Without Demographics?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Fairness without demographics is a family of training methods that improve the accuracy of the worst-off groups without ever using group labels, usually by putting more weight on the examples the model finds hardest."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Distributionally Robust Optimization and Max-Min (Rawlsian) Fairness both need group labels during training, which many teams do not have, are not allowed to use, or do not trust. They also only protect the groups you thought to define."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Fairness Without Demographics",
+          "item": "https://www.thefaircode.xyz/explainers/fairness-without-demographics.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/fairness-without-demographics.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Fairness Without Demographics</h1>
+      <p class="explainer-lede">Help the worst-off group when you do not know who they are.</p>
+      <p class="explainer-lede">Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>If you do not know who the worst-off group is, you can still train against the people the model is already getting wrong.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Fairness without demographics</strong> is a family of training methods that improve the accuracy of the worst-off groups without ever using group labels, usually by putting more weight on the examples the model finds hardest.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p><a href="distributionally-robust-optimization.html">Distributionally Robust Optimization</a> and <a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a> both need group labels during training, which many teams do not have, are not allowed to use, or do not trust. They also only protect the groups you thought to define.</p>
+<p>The label-free idea is that groups a model fails are usually groups with high loss, so high loss stands in for membership. Hashimoto and colleagues showed a worst-case objective can be optimized without labels, and Liu and colleagues made it practical with a two-step recipe: train once, find the rows it got wrong, train again with those rows weighted up.</p>
+<h3 id="core-concept-upweight-the-errors">Core Concept: Upweight the Errors</h3>
+<pre><code>1. train a first model
+2. find the training rows it misclassifies
+3. train a second model, giving those rows a weight greater than 1</code></pre>
+<p>No group appears anywhere. Group labels are used only afterwards, to <em>evaluate</em> whether the worst group improved. The weight is the dial: a modest value shifts attention toward hard rows, a large one makes the model chase noise and the rare errors of a class, and the model degrades.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: logistic regression on the core columns, the benchmark&#x27;s split. The four evaluation groups are sex crossed with age 55 and over, and they are used only to report results.</p>
+<pre><code>baseline                           overall 0.811 | male &lt;55 0.776 male 55+ 0.712 female &lt;55 0.900 female 55+ 0.901 | worst group 0.712
+upweight the errors x1.5           overall 0.811 | male &lt;55 0.778 male 55+ 0.717 female &lt;55 0.898 female 55+ 0.891 | worst group 0.717
+upweight the errors x2             overall 0.815 | male &lt;55 0.789 male 55+ 0.725 female &lt;55 0.889 female 55+ 0.874 | worst group 0.725
+upweight the errors x3             overall 0.773 | male &lt;55 0.765 male 55+ 0.742 female &lt;55 0.792 female 55+ 0.816 | worst group 0.742
+upweight the errors x5             overall 0.607 | male &lt;55 0.626 male 55+ 0.702 female &lt;55 0.526 female 55+ 0.670 | worst group 0.526</code></pre>
+<p>The baseline is the benchmark&#x27;s S2 row in <code>results/</code> (the current results): 0.811 accuracy, with the worst group, men 55 and over, at 0.712.</p>
+<ul><li><strong>A small upweight helps.</strong> At 2x the worst group improves to 0.725 and overall accuracy to 0.815.</li><li><strong>A larger one helps the worst group more and costs the rest.</strong> At 3x the worst group is at 0.742, but overall accuracy is down to 0.773 and women under 55 drop from 0.900 to 0.792.</li><li><strong>Past that it breaks.</strong> At 5x the model collapses to 0.607 overall and the worst group, now women under 55, to 0.526.</li></ul>
+<p>The &quot;worst group&quot; can change identity: at 5x it is a different group from the baseline&#x27;s. A label-free method has no way to prefer one group&#x27;s accuracy over another&#x27;s; it moves all of them.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 fairness-without-demographics.py</code>). Group labels appear only in the evaluation lines.</p>
+<pre><code class="language-python">import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;Benefits Denial&quot;)             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X, y = data.X, data.y.to_numpy()
+sex, aged = data.masks[&quot;sex&quot;].to_numpy(), data.masks[&quot;age&quot;].to_numpy()
+group = sex * 2 + aged                           # used ONLY to evaluate, never to train
+labels = [&quot;male &lt;55&quot;, &quot;male 55+&quot;, &quot;female &lt;55&quot;, &quot;female 55+&quot;]
+
+def fit(weights=None):
+    return build_model(&quot;logistic_regression&quot;, data.random_state).fit(X.iloc[train], y[train], sample_weight=weights)
+
+def report(name, model):
+    correct = model.predict(X.iloc[test]) == y[test]
+    per_group = [correct[group[test] == k].mean() for k in range(4)]
+    print(f&quot;{name:34s} overall {correct.mean():.3f} | &quot; + &quot; &quot;.join(f&quot;{l} {a:.3f}&quot; for l, a in zip(labels, per_group))
+          + f&quot; | worst group {min(per_group):.3f}&quot;)
+
+baseline = fit()
+report(&quot;baseline&quot;, baseline)
+
+# Just Train Twice: upweight the training rows the first model got wrong. No group labels are used.
+wrong = baseline.predict(X.iloc[train]) != y[train]
+for upweight in (1.5, 2, 3, 5):
+    report(f&quot;upweight the errors x{upweight}&quot;, fit(np.where(wrong, upweight, 1.0)))</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The weight is a free parameter, and the cliff is steep.</strong> 2x helped, 3x traded accuracy for the worst group, 5x broke the model. Choose it on held-out data with group labels, which defeats part of the point.</li><li><strong>You still need labels to know it worked.</strong> The method trains without them, but evaluation needs them, see <a href="disaggregated-evaluation.html">Disaggregated Evaluation</a>.</li><li><strong>High loss is not the same as a protected group.</strong> The rows a model gets wrong may be label noise or outliers, which upweighting amplifies. See <a href="label-bias.html">Label Bias</a>.</li><li><strong>It cannot target a legal standard.</strong> Nothing in it aims at demographic parity or equalized odds.</li><li><strong>The gains are modest.</strong> Here the best worst-group change was 3 points, at a cost elsewhere. A method with labels, like <a href="distributionally-robust-optimization.html">Distributionally Robust Optimization</a>, can do more when labels are available.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="distributionally-robust-optimization.html">Distributionally Robust Optimization</a> - the worst-group objective that needs labels</li><li><a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a> - the hard-error version, also needing labels</li><li><a href="inferring-protected-attributes.html">Inferring Protected Attributes</a> - estimating the groups instead of avoiding them</li><li><a href="class-imbalance.html">Class Imbalance</a> - the same weighting mechanics</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - how to check the worst group afterwards</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li><li><a href="../results/"><code>results/</code></a> - the benchmark row quoted for S2</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1806.08010" target="_blank" rel="noreferrer noopener">Hashimoto, T., Srivastava, M., Namkoong, H., Liang, P. (2018): Fairness Without Demographics in Repeated Loss Minimization</a> - ICML 2018; a worst-case objective optimized without group labels.</li><li><a href="https://arxiv.org/abs/2107.09044" target="_blank" rel="noreferrer noopener">Liu, E. Z. et al. (2021): Just Train Twice: Improving Group Robustness without Training Group Information</a> - ICML 2021; the two-step upweighting recipe used above.</li><li><a href="https://arxiv.org/abs/2006.13114" target="_blank" rel="noreferrer noopener">Lahoti, P. et al. (2020): Fairness without Demographics through Adversarially Reweighted Learning</a> - NeurIPS 2020; learns the weights with an adversary instead of fixing them.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

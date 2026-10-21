@@ -322,11 +322,20 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/model-cards.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html</loc>
+    <lastmod>2026-10-21</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/inferring-protected-attributes.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/fairness-without-demographics.html</loc>
   </url>
 </urlset>

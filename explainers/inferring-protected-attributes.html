@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inferring Protected Attributes · Fair Code</title>
+<meta name="description" content="Learn how group membership is estimated from other fields and what that does to a measured gap. See Benefits Denial with sex hidden: inferred from 5% labelled rows at 0.823 accuracy, the gap reads -0.092 (hard) or -0.0885 (weighted) against a true -0.1003.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/inferring-protected-attributes.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Inferring Protected Attributes · Fair Code">
+<meta property="og:description" content="Learn how group membership is estimated from other fields and what that does to a measured gap. See Benefits Denial with sex hidden: inferred from 5% labelled rows at 0.823 accuracy, the gap reads -0.092 (hard) or -0.0885 (weighted) against a true -0.1003.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/inferring-protected-attributes.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/inferring-protected-attributes.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Inferring Protected Attributes · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/inferring-protected-attributes.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Inferring Protected Attributes · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Inferring Protected Attributes · Fair Code">
+<meta name="twitter:description" content="Learn how group membership is estimated from other fields and what that does to a measured gap. See Benefits Denial with sex hidden: inferred from 5% labelled rows at 0.823 accuracy, the gap reads -0.092 (hard) or -0.0885 (weighted) against a true -0.1003.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/inferring-protected-attributes.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Inferring Protected Attributes",
+      "description": "Learn how group membership is estimated from other fields and what that does to a measured gap. See Benefits Denial with sex hidden: inferred from 5% labelled rows at 0.823 accuracy, the gap reads -0.092 (hard) or -0.0885 (weighted) against a true -0.1003.",
+      "url": "https://www.thefaircode.xyz/explainers/inferring-protected-attributes.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/inferring-protected-attributes.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Inferring Protected Attributes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Inferring protected attributes means estimating each person's group membership from other fields (a surname and address, a name list, a trained classifier) so a fairness gap can be measured when the true attribute was never collected."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Many organizations are not allowed to collect race, or never did: lenders in the United States are generally barred from asking about race on most consumer credit applications, and many datasets simply do not have the column. They still need to know whether a model treats groups differently. The usual answer is to estimate the attribute, which is how regulators and lenders have measured disparity in practice."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Inferring Protected Attributes",
+          "item": "https://www.thefaircode.xyz/explainers/inferring-protected-attributes.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/inferring-protected-attributes.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Inferring Protected Attributes</h1>
+      <p class="explainer-lede">Measuring a gap when the group is not in the data.</p>
+      <p class="explainer-lede">Learn how group membership is estimated from other fields and what that does to a measured gap. See Benefits Denial with sex hidden: inferred from 5% labelled rows at 0.823 accuracy, the gap reads -0.092 (hard) or -0.0885 (weighted) against a true -0.1003.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>You cannot audit a gap you cannot see. When the group is missing, you estimate it, and the estimate has its own error.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Inferring protected attributes</strong> means estimating each person&#x27;s group membership from other fields (a surname and address, a name list, a trained classifier) so a fairness gap can be measured when the true attribute was never collected.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Many organizations are not allowed to collect race, or never did: lenders in the United States are generally barred from asking about race on most consumer credit applications, and many datasets simply do not have the column. They still need to know whether a model treats groups differently. The usual answer is to estimate the attribute, which is how regulators and lenders have measured disparity in practice.</p>
+<p>That swaps one problem for another. The estimate is wrong for some people, and the errors are not random: they follow the same correlations the proxies do. How wrong the measured gap becomes is the question.</p>
+<h3 id="core-concept-hard-labels-or-probabilities">Core Concept: Hard Labels or Probabilities</h3>
+<p>Given an estimated probability <code>p</code> that each person is in the disadvantaged group, there are two ways to compute a group gap in the model&#x27;s decisions <code>d</code>:</p>
+<pre><code>hard label:           assign each person to their most likely group, then compare group means of d
+probability-weighted: gap = sum(p * d) / sum(p)  -  sum((1 - p) * d) / sum(1 - p)</code></pre>
+<p>The weighted version uses every person&#x27;s uncertainty instead of rounding it away. Both are biased toward zero when the estimate is noisy, because mislabelled people blur the two groups together. That attenuation is the thing to measure.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: the audited model is logistic regression on the core and proxy columns, with sex removed. We pretend sex was never recorded, train a reader on sex labels for only 5% of the training rows (1,302 rows), and use it to estimate sex for the test rows. The truth is known, so the error of each estimate is visible.</p>
+<pre><code>true sex available: parity gap -0.1003  (women 0.052, men 0.152)
+inferred from 1302 labelled rows: accuracy 0.823, AUC 0.916
+most likely group (hard label): parity gap -0.0920
+probability-weighted:           parity gap -0.0885</code></pre>
+<p>With the true sex available the gap is -0.1003 (women flagged 5.2%, men 15.2%), which is the benchmark&#x27;s S1 row in <code>results/</code> (the current results). The reader is decent, with 0.823 accuracy and 0.916 AUC, and the estimates of the gap are:</p>
+<ul><li><strong>Hard labels:</strong> -0.0920, about 8% smaller in size than the truth.</li><li><strong>Probability-weighted:</strong> -0.0885, about 12% smaller.</li></ul>
+<p>Both point the right way and are the right order of magnitude, and both understate the gap. In this run the hard labels happened to do slightly better than the weighted estimate; that is one dataset and one reader, not a rule.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 inferring-protected-attributes.py</code>). The true attribute is used only to score the result.</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;Benefits Denial&quot;, strategy=&quot;unawareness&quot;)   # core + proxy columns, no sex column
+train, test = data.idx_train, data.idx_test
+women = data.masks[&quot;sex&quot;].to_numpy()                          # the true group, which we pretend is missing
+y = data.y.to_numpy()
+rng = np.random.default_rng(0)
+
+# 1. The audited model (the same S1 model whose gap we want to measure).
+audited = build_model(&quot;logistic_regression&quot;, data.random_state).fit(data.X.iloc[train], y[train])
+pred = audited.predict(data.X.iloc[test])
+truth = women[test]
+true_gap = pred[truth == 1].mean() - pred[truth == 0].mean()
+print(f&quot;true sex available: parity gap {true_gap:+.4f}  (women {pred[truth == 1].mean():.3f}, men {pred[truth == 0].mean():.3f})&quot;)
+
+# 2. Infer sex from the other columns, using sex labels for only 5% of the TRAINING rows.
+labelled = rng.choice(train, size=int(0.05 * len(train)), replace=False)
+reader = RandomForestClassifier(n_estimators=200, min_samples_leaf=5, random_state=data.random_state, n_jobs=-1)
+reader.fit(data.X.iloc[labelled], women[labelled])
+p_woman = reader.predict_proba(data.X.iloc[test])[:, 1]
+print(f&quot;inferred from {len(labelled)} labelled rows: accuracy {((p_woman &gt;= 0.5) == truth).mean():.3f}, AUC {roc_auc_score(truth, p_woman):.3f}&quot;)
+
+# 3. Two ways to use the inferred group to estimate the gap.
+hard = p_woman &gt;= 0.5
+hard_gap = pred[hard].mean() - pred[~hard].mean()
+soft_gap = (p_woman * pred).sum() / p_woman.sum() - ((1 - p_woman) * pred).sum() / (1 - p_woman).sum()
+print(f&quot;most likely group (hard label): parity gap {hard_gap:+.4f}&quot;)
+print(f&quot;probability-weighted:           parity gap {soft_gap:+.4f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The estimate understates the gap.</strong> Misclassification blurs the groups, so the measured gap is usually smaller than the true one. Treat it as a lower bound unless corrected.</li><li><strong>Errors are not random.</strong> The reader is wrong in structured ways, often for the same people the model is wrong for, which can bias the estimate in either direction.</li><li><strong>It needs some labels, or a trustworthy external source.</strong> Here 5% of rows had the attribute. With none, you rely on a name list or a census join, which carry their own error rates.</li><li><strong>Inferring a protected attribute is itself sensitive.</strong> It creates a record that did not exist. Check what law and policy allow, and keep the inferred column out of the decision system.</li><li><strong>Do not use the inferred attribute in the model.</strong> It is a measurement tool for the audit, not an input, see <a href="fairness-through-unawareness.html">Fairness Through Unawareness</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="protected-attribute.html">Protected Attribute</a> - what is being estimated</li><li><a href="proxy-variables.html">Proxy Variables</a> - the same correlations the estimate relies on</li><li><a href="fairness-through-unawareness.html">Fairness Through Unawareness</a> - why not having the attribute does not make a model fair</li><li><a href="fairness-without-demographics.html">Fairness Without Demographics</a> - improving the model when you cannot measure the groups at all</li><li><a href="measurement-bias.html">Measurement Bias</a> - how an error in measuring a group blurs a gap</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li><li><a href="../results/"><code>results/</code></a> - the benchmark row quoted for S1</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Elliott, M. N. et al. (2009). Using the Census Bureau&#x27;s Surname List to Improve Estimates of Race/Ethnicity and Associated Disparities. Health Services and Outcomes Research Methodology 9(2) - the method behind Bayesian Improved Surname Geocoding.</li><li><a href="https://arxiv.org/abs/1811.11154" target="_blank" rel="noreferrer noopener">Chen, J., Kallus, N., Mao, X., Svacha, G., Udell, M. (2019): Fairness Under Unawareness: Assessing Disparity When Protected Class Is Unobserved</a> - FAT* 2019; when a proxy-based estimate of disparity is and is not reliable.</li><li><a href="https://arxiv.org/abs/1906.00285" target="_blank" rel="noreferrer noopener">Kallus, N., Mao, X., Zhou, A. (2022): Assessing Algorithmic Fairness with Unobserved Protected Class Using Data Combination</a> - Management Science; bounds on disparity when the attribute and the outcome sit in different datasets.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

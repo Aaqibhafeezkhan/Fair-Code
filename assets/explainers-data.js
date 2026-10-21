@@ -803,5 +803,25 @@ window.FAIR_CODE_EXPLAINERS = [
     "tags": [
       "detection"
     ]
+  },
+  {
+    "slug": "inferring-protected-attributes",
+    "title": "Inferring Protected Attributes",
+    "subtitle": "Measuring a gap when the group is not in the data.",
+    "summary": "Learn how group membership is estimated from other fields and what that does to a measured gap. See Benefits Denial with sex hidden: inferred from 5% labelled rows at 0.823 accuracy, the gap reads -0.092 (hard) or -0.0885 (weighted) against a true -0.1003.",
+    "tags": [
+      "data",
+      "detection"
+    ]
+  },
+  {
+    "slug": "fairness-without-demographics",
+    "title": "Fairness Without Demographics",
+    "subtitle": "Help the worst-off group when you do not know who they are.",
+    "summary": "Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.",
+    "tags": [
+      "metrics",
+      "data"
+    ]
   }
 ];

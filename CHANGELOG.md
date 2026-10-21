@@ -21,6 +21,10 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Added
 
+- `scripts/check_traction.py` (#1097), run by `make lint`: fails, naming the files and values, when the stars, forks, contributors, watching, social reach, countries or audits figures differ between the README, ROADMAP and METRICS, or when the README's "Show N completed items" differs from its `- [x]` lines. It compares the files with each other, so it works offline.
+- `scripts/diff_results.py` marks rows measured on different test sets (#1095): each row has a `sample` field (`same`, `different` or `unknown`, with `sample_sizes` when different), different rows are marked `~` in the text output and counted in `--summary`.
+- CONTRIBUTING.md lists the prerequisites for `make check` and a "Checks you may meet" table saying what each failing check means and how to fix it (#989).
+- CI runs the fast suite on Python 3.10 and 3.13 (#848).
 - Fourteen more explainers, each run against a real audit with the benchmark's current `results/` rows as the baseline where one exists: [Adversarial Debiasing](explainers/adversarial-debiasing.md), [Fairness Regularization](explainers/fairness-regularization.md) and [Fair Representation Learning](explainers/fair-representation-learning.md) (close #1083); [Measurement Bias](explainers/measurement-bias.md), [Aggregation Bias](explainers/aggregation-bias.md) and [Survivorship Bias](explainers/survivorship-bias.md) (close #1084); [Disaggregated Evaluation](explainers/disaggregated-evaluation.md), [Leave-One-Group-Out Evaluation](explainers/leave-one-group-out-evaluation.md) and [Choosing a Fairness Metric](explainers/choosing-a-fairness-metric.md) (close #1085); [Model Cards](explainers/model-cards.md), [Datasheets for Datasets](explainers/datasheets-for-datasets.md) and [Algorithmic Impact Assessments](explainers/algorithmic-impact-assessment.md) (close #1086); [Inferring Missing Protected Attributes](explainers/inferring-protected-attributes.md) and [Fairness Without Demographics](explainers/fairness-without-demographics.md) (close #1087). The explainer count goes from 68 to 82, with generated pages, OG images, sitemap entries, `llms.txt`, `llms-full.txt` and the MCP mirror.
 - `faircode.benchmark.load_audit(folder, strategy=None, random_state=None)` returns an `AuditData` prepared by the same `prepare_audit()` that `run_audit` uses, so explainers, notebooks and tests reproduce `results/` rows without copying the loader, encoding and split (closes #1078, SPEC section 11).
 - Browser tests (Chromium) that a 20,000-row file with about 18,000 distinct labels keeps the profile and compare flag lists at 51 items or fewer (closes #1080).
@@ -40,6 +44,7 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Changed
 
+- `requires-python` is now `>=3.10` and ruff targets `py310` (#848). A Python 3.9 CI run found real breakages (`X | None` evaluated at runtime, `Path.write_text(newline=)`), and the `mcp` extra needs 3.10 anyway.
 - The no-op `frozen-files.yml` workflow is removed; the repo ruleset no longer requires it (closes #1061).
 - The profile scaling test compares growth when the number of distinct labels quadruples instead of a wall-clock limit, so it no longer fails on a slow CI runner.
 - Per-group profile flags past 10 of the same kind in one dimension (or intersection) collapse into one summary flag, and the terminal, HTML and web views list at most 50 flags and then "and N more"; the full per-group detail stays in `--json` and the CSV (closes #1043, SPEC section 6).
@@ -50,7 +55,8 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Fixed
 
-- Profiling a file with a high-cardinality geography column was quadratic in `_build_flags` (a list membership test per group); it now uses a set, in Python and JavaScript. 60,000 rows with 45,000 zip codes profile in about 1.6 s instead of about 10 s (closes #1042).
+- `test_python_dash_m_faircode_runs_the_cli` only runs a `faircode` console script that sits next to the running interpreter, so a stray script on `PATH` installed for another Python no longer fails it (#1096).
+- `faircode/__main__.py` is marked `# pragma: no cover` with a pointer to the subprocess test, so the coverage figure no longer reports it as 0 percent - Profiling a file with a high-cardinality geography column was quadratic in `_build_flags` (a list membership test per group); it now uses a set, in Python and JavaScript. 60,000 rows with 45,000 zip codes profile in about 1.6 s instead of about 10 s (closes #1042).
 - The web engine labelled XLSX date cells with their Excel serial number (`43831`); they now read `2020-01-01 00:00:00` like pandas, computed from the serial so the label does not depend on the time zone, and time-only cells read `HH:MM:SS` (closes #1039).
 
 - `get_xlsx_sheet_info` now closes the workbook it opens to list sheet names, rather than leaking the file handle. The unclosed handle raised a `ResourceWarning` on garbage collection and, on Windows, kept the `.xlsx` locked against deletion or overwrite ([#1051](https://github.com/yakew7/Fair-Code/issues/1051)).

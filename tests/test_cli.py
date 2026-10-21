@@ -1472,10 +1472,16 @@ def test_python_dash_m_faircode_runs_the_cli():
     assert json.loads(done.stdout)["n_rows"] > 0
     bad = subprocess.run([sys.executable, "-m", "faircode", "profile", "--no-such-flag"], capture_output=True, text=True, cwd=root)
     assert bad.returncode == 2
+    # #1096: only the console script that belongs to this interpreter counts; a stray `faircode` on PATH
+    # may be installed for another Python and cannot import this checkout.
+    import os
     import shutil
-    script = shutil.which("faircode")
+    exe_dir = Path(sys.executable).parent   # bin/ in a venv, the install root (with Scripts/) for a Windows system Python
+    script = shutil.which("faircode", path=os.pathsep.join([str(exe_dir), str(exe_dir / "Scripts")]))
     if script:   # the installed console script behaves the same
         assert subprocess.run([script, "--version"], capture_output=True, text=True).returncode == 0
+    else:
+        print(f"no faircode console script next to {sys.executable}; skipping the console-script check")
 
 
 @pytest.mark.parametrize("flags,message", [

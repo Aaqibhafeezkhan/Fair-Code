@@ -1022,8 +1022,8 @@ orientation" error pointing you at `split`, which round-trips
 unambiguously. `.xlsx` needs the optional `excel` extra, `.parquet` needs
 the optional `parquet` extra.
 
-Python 3.9 or newer is required (Pillow 11.1, a core dependency, does not support 3.8), and the `mcp` extra
-needs Python 3.10 or newer. CI runs the suite on 3.9, 3.10, 3.12 and 3.13.
+Python 3.10 or newer is required (the code uses 3.10 features such as `X | None` annotations and
+`Path.write_text(newline=...)`, and the `mcp` extra needs 3.10 too). CI runs the suite on 3.10, 3.12 and 3.13.
 
 ```bash
 pip install -e .                                   # installs the faircode console script

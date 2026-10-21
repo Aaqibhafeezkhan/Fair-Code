@@ -77,7 +77,7 @@ make favicons          # regenerate favicon.ico, apple-touch-icon.png, icon-{192
 make lint              # em-dash-free check + broken internal doc link check + issue-number check + explainer counts + traction figures + ruff
 ```
 
-Prerequisites for the full `make check`: Python 3.9 or newer (3.10+ for the `mcp` extra), Node 18 or newer (`key-fold-check` and the JavaScript parity tests run the browser engines under `node`), and the GitHub CLI `gh` signed in (`scripts/check_issue_refs.py` asks GitHub whether an issue or PR number cited in the docs exists; it is skipped offline, and the lint workflow runs it as informational only).
+Prerequisites for the full `make check`: Python 3.10 or newer, Node 18 or newer (`key-fold-check` and the JavaScript parity tests run the browser engines under `node`), and the GitHub CLI `gh` signed in (`scripts/check_issue_refs.py` asks GitHub whether an issue or PR number cited in the docs exists; it is skipped offline, and the lint workflow runs it as informational only).
 
 ### Checks you may meet
 

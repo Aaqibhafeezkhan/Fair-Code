@@ -5,6 +5,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+pytest.importorskip("sklearn", reason="the benchmark harness needs the optional benchmark extra")
+pytest.importorskip("fairlearn", reason="the benchmark harness needs the optional benchmark extra")
+pytest.importorskip("yaml", reason="the benchmark harness needs the optional benchmark extra")
+
 from faircode import benchmark
 from faircode.benchmark import AuditData, load_audit, run_audit
 from faircode.manifest import load_manifest

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datasheets for Datasets · Fair Code</title>
+<meta name="description" content="Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Datasheets for Datasets · Fair Code">
+<meta property="og:description" content="Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/datasheets-for-datasets.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Datasheets for Datasets · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/datasheets-for-datasets.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Datasheets for Datasets · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Datasheets for Datasets · Fair Code">
+<meta name="twitter:description" content="Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/datasheets-for-datasets.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Datasheets for Datasets",
+      "description": "Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.",
+      "url": "https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Datasheets for Datasets?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A datasheet for a dataset is a short list of standard questions, covering why the data was made, what is in it, how it was collected and processed, and what it should and should not be used for, answered in writing so a user can judge whether it fits their purpose."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The audits in this repo each start with a CSV downloaded from somewhere, and almost every bias in the explainers can be traced to a gap in what is known about that file: who was sampled (Sampling Bias), who is missing (Missing Data as Bias in EHRs), how the label was produced (Label Bias), which people were filtered out first (Survivorship Bias)."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Datasheets for Datasets",
+          "item": "https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/datasheets-for-datasets.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Datasheets for Datasets</h1>
+      <p class="explainer-lede">Ask the questions about a dataset that nobody wrote down.</p>
+      <p class="explainer-lede">Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Most dataset problems are not in the data. They are in the questions nobody asked about where it came from.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>datasheet for a dataset</strong> is a short list of standard questions, covering why the data was made, what is in it, how it was collected and processed, and what it should and should not be used for, answered in writing so a user can judge whether it fits their purpose.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>The audits in this repo each start with a CSV downloaded from somewhere, and almost every bias in the explainers can be traced to a gap in what is known about that file: who was sampled (<a href="sampling-bias.html">Sampling Bias</a>), who is missing (<a href="missing-data-bias-ehr.html">Missing Data as Bias in EHRs</a>), how the label was produced (<a href="label-bias.html">Label Bias</a>), which people were filtered out first (<a href="survivorship-bias.html">Survivorship Bias</a>).</p>
+<p>Electronics ship with a datasheet describing what each component can and cannot do. Datasets usually ship with nothing. The proposal by Gebru and colleagues is to answer the same questions every time, so that an unknown is visible as an unknown.</p>
+<h3 id="core-concept-five-question-groups">Core Concept: Five Question Groups</h3>
+<ol><li><strong>Motivation:</strong> why was it created, by whom, with whose money?</li><li><strong>Composition:</strong> what is an instance, how many are there, what is the label, who is in it, what is missing, is anything sensitive?</li><li><strong>Collection:</strong> how was it acquired, over what period, did people consent?</li><li><strong>Preprocessing:</strong> what was cleaned, filtered or relabelled, and is the raw data kept?</li><li><strong>Uses:</strong> what has it been used for, and what should it not be used for?</li></ol>
+<p>Half of the composition answers can be computed from the file. The other half cannot, and an honest datasheet says so instead of guessing.</p>
+<h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
+<p>This datasheet is generated for the <a href="../index.html#project-readmission">Healthcare Readmission</a> audit data (the 130-hospital diabetes dataset). Everything computable is read from the file and the audit manifest; the questions the repo cannot answer are printed as UNKNOWN.</p>
+<pre><code>Datasheet: Healthcare Readmission - Clinical Bias
+
+MOTIVATION
+  Why was the dataset created, by whom, who funded it?    UNKNOWN: not recorded in this repo
+
+COMPOSITION
+  Instances in the file                                   101,766 rows, 50 columns
+  Instances after the audit&#x27;s row filters                 99,492 (2 filters)
+  Positive rate of the target (readmitted)                11.2%
+  Largest groups of gender                                Female 53.8%, Male 46.2%, Unknown/Invalid 0.0%
+  Largest groups of race                                  Caucasian 74.8%, AfricanAmerican 18.9%, ? 2.2%, Hispanic 2.0%
+  Largest groups of age                                   [70-80) 25.6%, [60-70) 22.1%, [50-60) 17.0%, [80-90) 16.9%
+  Missing values in weight                                96.9%
+  Missing values in max_glu_serum                         94.7%
+  Missing values in A1Cresult                             83.3%
+  Does it contain sensitive attributes?                   yes: race, gender, age
+
+COLLECTION
+  How was the data acquired, over what period?            UNKNOWN: not recorded in this repo
+  Did the people in it consent to this use?               UNKNOWN: not recorded in this repo
+
+USES
+  Used for                                                the Healthcare Readmission audit and the benchmark harness
+  Should it be used for clinical decisions?               no: one health system, one coding scheme
+
+3 of the questions above cannot be answered from the repo.</code></pre>
+<p>The computable answers already matter. After the audit&#x27;s two row filters 99,492 of 101,766 rows remain and the positive rate is 11.2%. Race is 74.8% Caucasian and 18.9% African American, with 2.2% recorded as <code>?</code>. The missingness table is the sharper finding: <code>weight</code> is missing for 96.9% of rows, <code>max_glu_serum</code> for 94.7% and <code>A1Cresult</code> for 83.3%, so any model that uses them is learning from the few rows where a test happened to be ordered, which is exactly the pattern <a href="missing-data-bias-ehr.html">Missing Data as Bias in EHRs</a> describes.</p>
+<p>Three questions cannot be answered from the repo: why the data was created, how it was acquired, and whether the patients consented to this use. Those unknowns are part of the dataset&#x27;s description.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 datasheets-for-datasets.py</code>). Change the folder name to produce one for another audit.</p>
+<pre><code class="language-python">import pandas as pd
+from faircode.benchmark import load_audit
+
+data = load_audit(&quot;Healthcare Readmission&quot;)                  # applies the manifest&#x27;s row filters and target
+manifest = data.manifest
+raw = pd.read_csv(manifest.dataset_path, low_memory=False)
+missing = raw.replace(&quot;?&quot;, pd.NA).isna().mean().sort_values(ascending=False)
+unknown = []
+
+def ask(question, answer=None):
+    if answer is None:
+        unknown.append(question)
+        answer = &quot;UNKNOWN: not recorded in this repo&quot;
+    print(f&quot;  {question:55s} {answer}&quot;)
+
+print(f&quot;Datasheet: {manifest.title}\n&quot;)
+print(&quot;MOTIVATION&quot;)
+ask(&quot;Why was the dataset created, by whom, who funded it?&quot;)
+print(&quot;\nCOMPOSITION&quot;)
+ask(&quot;Instances in the file&quot;, f&quot;{len(raw):,} rows, {raw.shape[1]} columns&quot;)
+ask(&quot;Instances after the audit&#x27;s row filters&quot;, f&quot;{len(data.y):,} ({len(manifest.row_filters)} filters)&quot;)
+ask(f&quot;Positive rate of the target ({manifest.target.column})&quot;, f&quot;{data.y.mean():.1%}&quot;)
+for pa in manifest.protected_attributes:
+    shares = raw[pa.column].value_counts(normalize=True).head(4)
+    ask(f&quot;Largest groups of {pa.column}&quot;, &quot;, &quot;.join(f&quot;{k} {v:.1%}&quot; for k, v in shares.items()))
+for col, share in missing.head(3).items():
+    ask(f&quot;Missing values in {col}&quot;, f&quot;{share:.1%}&quot;)
+ask(&quot;Does it contain sensitive attributes?&quot;, &quot;yes: race, gender, age&quot;)
+print(&quot;\nCOLLECTION&quot;)
+ask(&quot;How was the data acquired, over what period?&quot;)
+ask(&quot;Did the people in it consent to this use?&quot;)
+print(&quot;\nUSES&quot;)
+ask(&quot;Used for&quot;, &quot;the Healthcare Readmission audit and the benchmark harness&quot;)
+ask(&quot;Should it be used for clinical decisions?&quot;, &quot;no: one health system, one coding scheme&quot;)
+print(f&quot;\n{len(unknown)} of the questions above cannot be answered from the repo.&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It documents; it does not fix.</strong> A datasheet makes a problem visible and leaves the problem in place.</li><li><strong>The unanswerable questions need a person.</strong> Motivation, consent and collection come from the data&#x27;s authors, not from the file.</li><li><strong>Computed answers can mislead.</strong> A <code>?</code> counted as missing is a convention. The same file coded differently would give a different missingness figure.</li><li><strong>Datasheets go stale.</strong> A dataset that is updated or re-filtered needs a new sheet.</li><li><strong>It is not a licence to use.</strong> A complete datasheet can say the data is unsuitable, and that is its best outcome.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="model-cards.html">Model Cards</a> - the matching document for the model trained on the data</li><li><a href="sampling-bias.html">Sampling Bias</a> - the composition questions are how you spot it</li><li><a href="missing-data-bias-ehr.html">Missing Data as Bias in EHRs</a> - what the missingness numbers above mean</li><li><a href="label-bias.html">Label Bias</a> - the collection and preprocessing questions expose it</li><li><a href="protected-attribute.html">Protected Attribute</a> - the sensitive columns the composition section must name</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-readmission"><code>Healthcare Readmission/</code></a> - the audit data described above</li><li><a href="../profiler.html">Open Dataset Profiler</a> - computes the composition answers for any file</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1803.09010" target="_blank" rel="noreferrer noopener">Gebru, T. et al. (2021): Datasheets for Datasets</a> - Communications of the ACM 64(12); the question list and the motivation.</li><li><a href="https://aclanthology.org/Q18-1041/" target="_blank" rel="noreferrer noopener">Bender, E. M., Friedman, B. (2018): Data Statements for Natural Language Processing</a> - TACL 6; the same idea for language data.</li><li><a href="https://arxiv.org/abs/1805.03677" target="_blank" rel="noreferrer noopener">Holland, S. et al. (2018): The Dataset Nutrition Label</a> - a related, more quantitative proposal for summarizing a dataset.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

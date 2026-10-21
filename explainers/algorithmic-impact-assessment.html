@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algorithmic Impact Assessment · Fair Code</title>
+<meta name="description" content="Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Algorithmic Impact Assessment · Fair Code">
+<meta property="og:description" content="Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/algorithmic-impact-assessment.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Algorithmic Impact Assessment · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/algorithmic-impact-assessment.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Algorithmic Impact Assessment · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Algorithmic Impact Assessment · Fair Code">
+<meta name="twitter:description" content="Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/algorithmic-impact-assessment.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Algorithmic Impact Assessment",
+      "description": "Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.",
+      "url": "https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Algorithmic Impact Assessment?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "An algorithmic impact assessment is a structured review, done before an automated decision system is deployed and repeated afterwards, of who the system affects, what can go wrong for them, how that was measured, and what will be done about it."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Everything else in this repo is measurement: a gap, an interval, a p-value. A decision to deploy needs more than measurement. It needs a statement of who is affected, what the alternatives are, who can appeal, and who is accountable. Without a structure, the measurement gets handed over as a number and the judgement around it is skipped."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Algorithmic Impact Assessment",
+          "item": "https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/algorithmic-impact-assessment.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Algorithmic Impact Assessment</h1>
+      <p class="explainer-lede">Who does the decision affect, and how do you know?</p>
+      <p class="explainer-lede">Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>An audit tells you how big the gap is. An impact assessment asks who is on the other side of it, and what happens to them.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>An <strong>algorithmic impact assessment</strong> is a structured review, done before an automated decision system is deployed and repeated afterwards, of who the system affects, what can go wrong for them, how that was measured, and what will be done about it.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Everything else in this repo is measurement: a gap, an interval, a p-value. A decision to deploy needs more than measurement. It needs a statement of who is affected, what the alternatives are, who can appeal, and who is accountable. Without a structure, the measurement gets handed over as a number and the judgement around it is skipped.</p>
+<p>Impact assessments are that structure. Public bodies have used them for automated decisions, and several jurisdictions require some form of one for high-risk systems. The exact obligations differ by place and change quickly, so rely on the primary text for your own jurisdiction instead of a summary.</p>
+<h3 id="core-concept-the-measurement-is-one-section">Core Concept: The Measurement Is One Section</h3>
+<p>A typical assessment has parts that no audit script can supply:</p>
+<ol><li><strong>Purpose and alternatives:</strong> what decision, why automate it, what was the non-automated process.</li><li><strong>Who is affected:</strong> the people the decision touches, including those who never interact with the system.</li><li><strong>Measured disparity:</strong> the audit results, with intervals and the metrics chosen and why (<a href="choosing-a-fairness-metric.html">Choosing a Fairness Metric</a>).</li><li><strong>Mitigation:</strong> what was tried and what it cost.</li><li><strong>Safeguards:</strong> human review, appeal, notice, logging.</li><li><strong>Monitoring:</strong> what is re-measured after deployment and when it triggers a review.</li></ol>
+<p>Section 3 is exactly what the benchmark produces, so it can be generated.</p>
+<h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
+<p>This is the measurement section of an assessment for the <a href="../index.html#project-tenant">Tenant Screening</a> audit, generated from the benchmark&#x27;s <code>results/</code> (the current results) for the S2 logistic regression. Sections 1, 2 and 6 are written by a person; the script prints what it can compute and says what it cannot.</p>
+<pre><code>Impact assessment, measurement section: tenant_screening (logistic_regression, unawareness_proxy_removal)
+
+1. Who is affected: rental applicants, grouped here by race (Black vs White). Intersections: not measured by this audit.
+2. Decision: the model flags an applicant as likely to reoffend within three years; a flag leads to refusal in the framing of the audit.
+
+3. Disparity measured on the held-out test split:
+   demographic_parity_diff    +0.114  95% CI [+0.088, +0.138]  p=0.000  SIGNIFICANT
+   disparate_impact_ratio     +1.186  95% CI [+1.140, +1.232]  p=0.000  SIGNIFICANT
+   equal_opportunity_diff     +0.084  95% CI [+0.053, +0.116]  p=0.000  SIGNIFICANT
+   equalized_odds_diff        +0.149  95% CI [+0.109, +0.193]  p=0.000  SIGNIFICANT
+   predictive_parity_diff     -0.029  95% CI [-0.061, +0.002]  p=0.072  not significant
+   accuracy_equality_diff     -0.012  95% CI [-0.039, +0.015]  p=0.399  not significant
+
+4. Finding: 4 of 6 metrics are significant at 0.05: demographic_parity_diff, disparate_impact_ratio, equal_opportunity_diff, equalized_odds_diff.
+5. Mitigation options measured by the benchmark (same audit, same model):
+   baseline                     demographic parity gap +0.054  p=0.000
+   in_processing                demographic parity gap +0.017  p=0.178
+   post_processing              demographic parity gap -0.005  p=0.689
+   unawareness                  demographic parity gap +0.119  p=0.000
+   unawareness_proxy_removal    demographic parity gap +0.114  p=0.000
+
+6. Not measured here, and needed before deployment: who reviews flags, an appeal route, the legal basis for using
+   this data, and a repeat of this measurement after deployment.</code></pre>
+<p>Reading it as an assessor: four of the six metrics are significant, the flagged-rate gap is +0.114 with an interval of +0.088 to +0.138, and the mitigation table shows what the benchmark&#x27;s strategies leave behind. Both in-processing (+0.017, p = 0.178) and post-processing (-0.005, p = 0.689) get the demographic parity gap to a level the test cannot distinguish from zero; removing the race column and the proxies alone does not (+0.114).</p>
+<p>The last paragraph matters most: who reviews a flag, whether there is an appeal, the legal basis for using this data and when the measurement is repeated are not in any results file, and an assessment that leaves them blank has not been completed.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>python3 algorithmic-impact-assessment.py</code>). It reads the benchmark&#x27;s current results; change the three constants at the top to assess another audit.</p>
+<pre><code class="language-python">import pandas as pd
+
+AUDIT, STRATEGY, MODEL = &quot;tenant_screening&quot;, &quot;unawareness_proxy_removal&quot;, &quot;logistic_regression&quot;
+fair = pd.read_csv(&quot;results/results_fairness.csv&quot;)          # the benchmark&#x27;s current results
+g = fair[(fair.audit == AUDIT) &amp; (fair.strategy == STRATEGY) &amp; (fair.model == MODEL) &amp; (fair.protected_attribute == &quot;race&quot;)]
+
+print(f&quot;Impact assessment, measurement section: {AUDIT} ({MODEL}, {STRATEGY})\n&quot;)
+print(&quot;1. Who is affected: rental applicants, grouped here by race (Black vs White). Intersections: not measured by this audit.&quot;)
+print(&quot;2. Decision: the model flags an applicant as likely to reoffend within three years; a flag leads to refusal in the framing of the audit.\n&quot;)
+print(&quot;3. Disparity measured on the held-out test split:&quot;)
+for r in g.itertuples():
+    verdict = &quot;SIGNIFICANT&quot; if r.significant else &quot;not significant&quot;
+    print(f&quot;   {r.metric:26s} {r.value:+.3f}  95% CI [{r.ci_low:+.3f}, {r.ci_high:+.3f}]  p={r.p_value:.3f}  {verdict}&quot;)
+flagged = g[g.significant == True]                                   # noqa: E712 - a boolean column
+print(f&quot;\n4. Finding: {len(flagged)} of {len(g)} metrics are significant at 0.05: &quot; + &quot;, &quot;.join(sorted(flagged.metric)) + &quot;.&quot;)
+print(&quot;5. Mitigation options measured by the benchmark (same audit, same model):&quot;)
+for strategy, rows in fair[(fair.audit == AUDIT) &amp; (fair.model == MODEL) &amp; (fair.protected_attribute == &quot;race&quot;)
+                           &amp; (fair.metric == &quot;demographic_parity_diff&quot;)].groupby(&quot;strategy&quot;):
+    r = rows.iloc[0]
+    print(f&quot;   {strategy:28s} demographic parity gap {r.value:+.3f}  p={r.p_value:.3f}&quot;)
+print(&quot;\n6. Not measured here, and needed before deployment: who reviews flags, an appeal route, the legal basis for using&quot;)
+print(&quot;   this data, and a repeat of this measurement after deployment.&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It documents risk; it does not remove it.</strong> A complete assessment can conclude that a system should not be deployed.</li><li><strong>Measurement is only one part.</strong> A good fairness number can sit beside an unfair process with no appeal.</li><li><strong>The legal landscape moves.</strong> Required content and trigger conditions change, so use the current primary source for your jurisdiction.</li><li><strong>It is a snapshot.</strong> Without the monitoring step, the numbers describe the day of the audit, see <a href="model-drift.html">Model Drift</a>.</li><li><strong>Affected people are rarely in the room.</strong> An assessment written only by the builders tends to miss harms they would not think of. Involving affected groups is a design choice, not a script.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="model-cards.html">Model Cards</a> - the model-level document an assessment can cite</li><li><a href="datasheets-for-datasets.html">Datasheets for Datasets</a> - the data-level document it can cite</li><li><a href="choosing-a-fairness-metric.html">Choosing a Fairness Metric</a> - how section 3&#x27;s metrics are picked</li><li><a href="disparate-impact.html">Disparate Impact</a> - a legal test an assessment often has to address</li><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - the options for section 4</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-tenant"><code>Tenant Screening/</code></a> - the audit the assessment above is about</li><li><a href="../results/"><code>results/</code></a> - the numbers in its measurement section</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Reisman, D., Schultz, J., Crawford, K., Whittaker, M. (2018). Algorithmic Impact Assessments: A Practical Framework for Public Agency Accountability. AI Now Institute - the framework for public agencies.</li><li>Moss, E., Watkins, E. A., Singh, R., Elish, M. C., Metcalf, J. (2021). Assembling Accountability: Algorithmic Impact Assessment for the Public Interest. Data and Society - a comparison of impact-assessment regimes.</li><li><a href="https://arxiv.org/abs/2001.00973" target="_blank" rel="noreferrer noopener">Raji, I. D. et al. (2020): Closing the AI Accountability Gap</a> - FAT* 2020; an end-to-end internal auditing framework.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

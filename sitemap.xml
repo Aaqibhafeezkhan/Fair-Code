@@ -310,11 +310,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/disaggregated-evaluation.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/leave-one-group-out-evaluation.html</loc>
+    <lastmod>2026-10-21</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/choosing-a-fairness-metric.html</loc>
+    <lastmod>2026-10-21</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/model-cards.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html</loc>
   </url>
 </urlset>

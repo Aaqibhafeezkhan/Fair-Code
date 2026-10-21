@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Cards · Fair Code</title>
+<meta name="description" content="Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark&#x27;s results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/model-cards.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Model Cards · Fair Code">
+<meta property="og:description" content="Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark&#x27;s results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/model-cards.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/model-cards.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Model Cards · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/model-cards.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Model Cards · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Model Cards · Fair Code">
+<meta name="twitter:description" content="Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark&#x27;s results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/model-cards.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Model Cards",
+      "description": "Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark's results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.",
+      "url": "https://www.thefaircode.xyz/explainers/model-cards.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/model-cards.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Model Cards?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A model card is a short, standard document that states what a model is for, what data it was trained on, how it performs overall and for each group, and where it should not be used."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A fairness audit produces numbers, and numbers that live in a notebook do not reach the person deciding whether to deploy. A model card is the container that carries them: the same headings every time, so a reader can compare two models, and an explicit place for the uncomfortable results."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Model Cards",
+          "item": "https://www.thefaircode.xyz/explainers/model-cards.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/model-cards.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Model Cards</h1>
+      <p class="explainer-lede">A short, standard disclosure of what a model is for and who it fails.</p>
+      <p class="explainer-lede">Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark&#x27;s results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A model card does not make a model fair. It makes it possible to see, before anyone relies on it, who it was built for and who it fails.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>model card</strong> is a short, standard document that states what a model is for, what data it was trained on, how it performs overall and for each group, and where it should not be used.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>A fairness audit produces numbers, and numbers that live in a notebook do not reach the person deciding whether to deploy. A model card is the container that carries them: the same headings every time, so a reader can compare two models, and an explicit place for the uncomfortable results.</p>
+<p>It also changes what gets measured. If the card has a per-group table, someone has to fill it in, and an empty row is visible. The card is a disclosure, not a guarantee, and a card that is only a list of reassurances is worse than none.</p>
+<h3 id="core-concept-fixed-headings-per-group-numbers">Core Concept: Fixed Headings, Per-Group Numbers</h3>
+<p>The usual sections, from Mitchell and colleagues (2019):</p>
+<ol><li><strong>Model details:</strong> what it is, who built it, which version.</li><li><strong>Intended use:</strong> the tasks it is for, and the ones it is explicitly not for.</li><li><strong>Factors:</strong> the groups and conditions performance was reported across.</li><li><strong>Metrics:</strong> what was measured and why.</li><li><strong>Evaluation and training data:</strong> where they came from and how they were split.</li><li><strong>Quantitative analyses:</strong> the results, <strong>disaggregated</strong> by the factors above (<a href="disaggregated-evaluation.html">Disaggregated Evaluation</a>).</li><li><strong>Ethical considerations and caveats:</strong> what is known to be wrong or unmeasured.</li></ol>
+<p>The strongest habit is generating the numeric sections from the audit&#x27;s output instead of typing them, so the card cannot disagree with the results.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p>This card is generated, not hand-written: the numbers are read straight from the benchmark&#x27;s <code>results/</code> (the current results) for the S2 logistic regression on <a href="../index.html#project-benefits">Benefits Denial</a>.</p>
+<pre><code># Model card: logistic_regression on benefits_denial (strategy unawareness_proxy_removal)
+
+## Intended use
+A benchmark model that predicts whether income is above $50K, framed as a means-test proxy for benefits
+eligibility. It is a teaching and audit artefact, not for deciding real applications.
+
+## Training data
+UCI Adult Census Income, features: the audit&#x27;s core columns only (no protected attribute, no proxy columns).
+
+## Overall performance (test split, 95% bootstrap interval)
+- accuracy: 0.811 [0.802, 0.820]
+- auc: 0.772
+- f1: 0.433 [0.406, 0.459]
+
+## Per-group results (gap = disadvantaged minus advantaged)
+- age: demographic parity gap +0.028 (significant, n=944 vs 5569), equal opportunity gap +0.013
+- national_origin: demographic parity gap +0.005 (not significant, n=688 vs 5825), equal opportunity gap +0.061
+- race: demographic parity gap -0.042 (significant, n=690 vs 5823), equal opportunity gap +0.031
+- sex: demographic parity gap -0.051 (significant, n=2153 vs 4360), equal opportunity gap +0.018
+
+## Known limits
+- Gaps are measured on one test split; see the intervals and p-values in results/results_fairness.csv.
+- Groups smaller than 30 test rows carry small_sample_warning in the results file.</code></pre>
+<p>Everything under &quot;Overall performance&quot; and &quot;Per-group results&quot; is read from the CSV, including the intervals and the significance flags. The narrative sections (intended use, training data, limits) are the part a person has to write, and they matter as much: the first line of &quot;Intended use&quot; says this is an audit artefact, not for real decisions.</p>
+<p>What the card shows that the accuracy alone does not: accuracy is 0.811, but sex and race have significant parity gaps (-0.051 and -0.042), the age gap (+0.028) is significant in the other direction, and national origin is not significant at all.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>python3 model-cards.py</code>). It reads the benchmark&#x27;s current results; change the three constants at the top to document another model.</p>
+<pre><code class="language-python">import pandas as pd
+
+AUDIT, STRATEGY, MODEL = &quot;benefits_denial&quot;, &quot;unawareness_proxy_removal&quot;, &quot;logistic_regression&quot;
+fair = pd.read_csv(&quot;results/results_fairness.csv&quot;)          # the benchmark&#x27;s current results
+perf = pd.read_csv(&quot;results/results_performance.csv&quot;)
+f = fair[(fair.audit == AUDIT) &amp; (fair.strategy == STRATEGY) &amp; (fair.model == MODEL)]
+p = perf[(perf.audit == AUDIT) &amp; (perf.strategy == STRATEGY) &amp; (perf.model == MODEL)].set_index(&quot;metric&quot;)
+
+print(f&quot;# Model card: {MODEL} on {AUDIT} (strategy {STRATEGY})\n&quot;)
+print(&quot;## Intended use\nA benchmark model that predicts whether income is above $50K, framed as a means-test proxy for benefits&quot;)
+print(&quot;eligibility. It is a teaching and audit artefact, not for deciding real applications.\n&quot;)
+print(&quot;## Training data\nUCI Adult Census Income, features: the audit&#x27;s core columns only (no protected attribute, no proxy columns).\n&quot;)
+print(&quot;## Overall performance (test split, 95% bootstrap interval)&quot;)
+for metric in (&quot;accuracy&quot;, &quot;auc&quot;, &quot;f1&quot;):
+    r = p.loc[metric]
+    ci = &quot;&quot; if pd.isna(r.ci_low) else f&quot; [{r.ci_low:.3f}, {r.ci_high:.3f}]&quot;
+    print(f&quot;- {metric}: {r.value:.3f}{ci}&quot;)
+print(&quot;\n## Per-group results (gap = disadvantaged minus advantaged)&quot;)
+for attribute, g in f[~f.protected_attribute.str.contains(&quot;_x_&quot;)].groupby(&quot;protected_attribute&quot;):
+    parity = g[g.metric == &quot;demographic_parity_diff&quot;].iloc[0]
+    equal_opp = g[g.metric == &quot;equal_opportunity_diff&quot;].iloc[0]
+    flag = &quot;significant&quot; if parity.significant else &quot;not significant&quot;
+    print(f&quot;- {attribute}: demographic parity gap {parity.value:+.3f} ({flag}, n={int(parity.n_disadvantaged)} vs {int(parity.n_advantaged)}), &quot;
+          f&quot;equal opportunity gap {equal_opp.value:+.3f}&quot;)
+print(&quot;\n## Known limits\n- Gaps are measured on one test split; see the intervals and p-values in results/results_fairness.csv.&quot;)
+print(&quot;- Groups smaller than 30 test rows carry small_sample_warning in the results file.&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>A card is a disclosure, not a guarantee.</strong> It tells readers what was measured. It does not make the model safe to use.</li><li><strong>It is only as good as its evaluation.</strong> A card built on a small or unrepresentative test set looks authoritative and is not. See <a href="sampling-bias.html">Sampling Bias</a>.</li><li><strong>It goes stale.</strong> A model retrained on new data, or a population that has shifted (<a href="model-drift.html">Model Drift</a>), makes the numbers wrong without changing the card.</li><li><strong>Missing groups are invisible.</strong> The card reports only the groups someone chose to evaluate. A group nobody measured has no row.</li><li><strong>The caveats are the hard part.</strong> Intended use and known limits need judgement that no script can generate.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - the per-group tables a card is built around</li><li><a href="datasheets-for-datasets.html">Datasheets for Datasets</a> - the matching document for the training data</li><li><a href="ml-bias.html">ML Bias</a> - the sources of bias the caveats section should name</li><li><a href="accuracy-not-enough-healthcare-ai.html">Accuracy Is Not Enough in Healthcare AI</a> - why a headline number is not a safety claim</li><li><a href="model-drift.html">Model Drift</a> - why a card needs a date and a review</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit the card describes</li><li><a href="../results/"><code>results/</code></a> - where every number on the card comes from</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1810.03993" target="_blank" rel="noreferrer noopener">Mitchell, M. et al. (2019): Model Cards for Model Reporting</a> - FAT* 2019; the proposal and the section list.</li><li><a href="https://arxiv.org/abs/2001.00973" target="_blank" rel="noreferrer noopener">Raji, I. D. et al. (2020): Closing the AI Accountability Gap</a> - FAT* 2020; where documentation fits in an end-to-end audit.</li><li><a href="https://fairmlbook.org" target="_blank" rel="noreferrer noopener">Barocas, S., Hardt, M., Narayanan, A. (2023): Fairness and Machine Learning</a> - MIT Press; on reporting and documenting model behaviour.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

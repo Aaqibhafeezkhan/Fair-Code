@@ -775,5 +775,33 @@ window.FAIR_CODE_EXPLAINERS = [
     "tags": [
       "metrics"
     ]
+  },
+  {
+    "slug": "model-cards",
+    "title": "Model Cards",
+    "subtitle": "A short, standard disclosure of what a model is for and who it fails.",
+    "summary": "Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark's results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.",
+    "tags": [
+      "detection",
+      "explainability"
+    ]
+  },
+  {
+    "slug": "datasheets-for-datasets",
+    "title": "Datasheets for Datasets",
+    "subtitle": "Ask the questions about a dataset that nobody wrote down.",
+    "summary": "Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.",
+    "tags": [
+      "data"
+    ]
+  },
+  {
+    "slug": "algorithmic-impact-assessment",
+    "title": "Algorithmic Impact Assessment",
+    "subtitle": "Who does the decision affect, and how do you know?",
+    "summary": "Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.",
+    "tags": [
+      "detection"
+    ]
   }
 ];

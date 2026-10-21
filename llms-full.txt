@@ -14810,3 +14810,393 @@ print(f"\n{len(split)} of {len(rows)} audit/attribute pairs have some metrics si
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 
+---
+
+# Model Cards
+URL: https://www.thefaircode.xyz/explainers/model-cards.html
+Summary: Learn what belongs on a model card: intended use, data, per-group performance and known limits. See one generated from the benchmark's results for Benefits Denial, with every number read straight from results/, and what a card cannot promise.
+
+> *A model card does not make a model fair. It makes it possible to see, before anyone relies on it, who it was built for and who it fails.*
+
+## The One-Sentence Definition
+
+A **model card** is a short, standard document that states what a model is for, what data it was trained on, how it performs overall and for each group, and where it should not be used.
+
+## Why It Matters
+
+A fairness audit produces numbers, and numbers that live in a notebook do not reach the person deciding whether to deploy. A model card is the container that carries them: the same headings every time, so a reader can compare two models, and an explicit place for the uncomfortable results.
+
+It also changes what gets measured. If the card has a per-group table, someone has to fill it in, and an empty row is visible. The card is a disclosure, not a guarantee, and a card that is only a list of reassurances is worse than none.
+
+## Core Concept: Fixed Headings, Per-Group Numbers
+
+The usual sections, from Mitchell and colleagues (2019):
+
+1. **Model details:** what it is, who built it, which version.
+2. **Intended use:** the tasks it is for, and the ones it is explicitly not for.
+3. **Factors:** the groups and conditions performance was reported across.
+4. **Metrics:** what was measured and why.
+5. **Evaluation and training data:** where they came from and how they were split.
+6. **Quantitative analyses:** the results, **disaggregated** by the factors above ([Disaggregated Evaluation](disaggregated-evaluation.md)).
+7. **Ethical considerations and caveats:** what is known to be wrong or unmeasured.
+
+The strongest habit is generating the numeric sections from the audit's output instead of typing them, so the card cannot disagree with the results.
+
+## Concrete Example: Benefits Denial
+
+This card is generated, not hand-written: the numbers are read straight from the benchmark's `results/` (the current results) for the S2 logistic regression on [Benefits Denial](../Benefits%20Denial/).
+
+```
+# Model card: logistic_regression on benefits_denial (strategy unawareness_proxy_removal)
+
+## Intended use
+A benchmark model that predicts whether income is above $50K, framed as a means-test proxy for benefits
+eligibility. It is a teaching and audit artefact, not for deciding real applications.
+
+## Training data
+UCI Adult Census Income, features: the audit's core columns only (no protected attribute, no proxy columns).
+
+## Overall performance (test split, 95% bootstrap interval)
+- accuracy: 0.811 [0.802, 0.820]
+- auc: 0.772
+- f1: 0.433 [0.406, 0.459]
+
+## Per-group results (gap = disadvantaged minus advantaged)
+- age: demographic parity gap +0.028 (significant, n=944 vs 5569), equal opportunity gap +0.013
+- national_origin: demographic parity gap +0.005 (not significant, n=688 vs 5825), equal opportunity gap +0.061
+- race: demographic parity gap -0.042 (significant, n=690 vs 5823), equal opportunity gap +0.031
+- sex: demographic parity gap -0.051 (significant, n=2153 vs 4360), equal opportunity gap +0.018
+
+## Known limits
+- Gaps are measured on one test split; see the intervals and p-values in results/results_fairness.csv.
+- Groups smaller than 30 test rows carry small_sample_warning in the results file.
+```
+
+Everything under "Overall performance" and "Per-group results" is read from the CSV, including the intervals and the significance flags. The narrative sections (intended use, training data, limits) are the part a person has to write, and they matter as much: the first line of "Intended use" says this is an audit artefact, not for real decisions.
+
+What the card shows that the accuracy alone does not: accuracy is 0.811, but sex and race have significant parity gaps (-0.051 and -0.042), the age gap (+0.028) is significant in the other direction, and national origin is not significant at all.
+
+## Detection/Implementation Code
+
+Run from the repo root (`python3 model-cards.py`). It reads the benchmark's current results; change the three constants at the top to document another model.
+
+```python
+import pandas as pd
+
+AUDIT, STRATEGY, MODEL = "benefits_denial", "unawareness_proxy_removal", "logistic_regression"
+fair = pd.read_csv("results/results_fairness.csv")          # the benchmark's current results
+perf = pd.read_csv("results/results_performance.csv")
+f = fair[(fair.audit == AUDIT) & (fair.strategy == STRATEGY) & (fair.model == MODEL)]
+p = perf[(perf.audit == AUDIT) & (perf.strategy == STRATEGY) & (perf.model == MODEL)].set_index("metric")
+
+print(f"# Model card: {MODEL} on {AUDIT} (strategy {STRATEGY})\n")
+print("## Intended use\nA benchmark model that predicts whether income is above $50K, framed as a means-test proxy for benefits")
+print("eligibility. It is a teaching and audit artefact, not for deciding real applications.\n")
+print("## Training data\nUCI Adult Census Income, features: the audit's core columns only (no protected attribute, no proxy columns).\n")
+print("## Overall performance (test split, 95% bootstrap interval)")
+for metric in ("accuracy", "auc", "f1"):
+    r = p.loc[metric]
+    ci = "" if pd.isna(r.ci_low) else f" [{r.ci_low:.3f}, {r.ci_high:.3f}]"
+    print(f"- {metric}: {r.value:.3f}{ci}")
+print("\n## Per-group results (gap = disadvantaged minus advantaged)")
+for attribute, g in f[~f.protected_attribute.str.contains("_x_")].groupby("protected_attribute"):
+    parity = g[g.metric == "demographic_parity_diff"].iloc[0]
+    equal_opp = g[g.metric == "equal_opportunity_diff"].iloc[0]
+    flag = "significant" if parity.significant else "not significant"
+    print(f"- {attribute}: demographic parity gap {parity.value:+.3f} ({flag}, n={int(parity.n_disadvantaged)} vs {int(parity.n_advantaged)}), "
+          f"equal opportunity gap {equal_opp.value:+.3f}")
+print("\n## Known limits\n- Gaps are measured on one test split; see the intervals and p-values in results/results_fairness.csv.")
+print("- Groups smaller than 30 test rows carry small_sample_warning in the results file.")
+```
+
+## Limitations
+
+1. **A card is a disclosure, not a guarantee.** It tells readers what was measured. It does not make the model safe to use.
+2. **It is only as good as its evaluation.** A card built on a small or unrepresentative test set looks authoritative and is not. See [Sampling Bias](sampling-bias.md).
+3. **It goes stale.** A model retrained on new data, or a population that has shifted ([Model Drift](model-drift.md)), makes the numbers wrong without changing the card.
+4. **Missing groups are invisible.** The card reports only the groups someone chose to evaluate. A group nobody measured has no row.
+5. **The caveats are the hard part.** Intended use and known limits need judgement that no script can generate.
+
+## Related Concepts
+
+* [Disaggregated Evaluation](disaggregated-evaluation.md) - the per-group tables a card is built around
+* [Datasheets for Datasets](datasheets-for-datasets.md) - the matching document for the training data
+* [ML Bias](ml-bias.md) - the sources of bias the caveats section should name
+* [Accuracy Is Not Enough in Healthcare AI](accuracy-not-enough-healthcare-ai.md) - why a headline number is not a safety claim
+* [Model Drift](model-drift.md) - why a card needs a date and a review
+
+## Related Projects in This Repo
+
+* [`Benefits Denial/`](../Benefits%20Denial/) - the audit the card describes
+* [`results/`](../results/) - where every number on the card comes from
+
+## Further Reading
+
+* [Mitchell, M. et al. (2019): Model Cards for Model Reporting](https://arxiv.org/abs/1810.03993) - FAT* 2019; the proposal and the section list.
+* [Raji, I. D. et al. (2020): Closing the AI Accountability Gap](https://arxiv.org/abs/2001.00973) - FAT* 2020; where documentation fits in an end-to-end audit.
+* [Barocas, S., Hardt, M., Narayanan, A. (2023): Fairness and Machine Learning](https://fairmlbook.org) - MIT Press; on reporting and documenting model behaviour.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Datasheets for Datasets
+URL: https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html
+Summary: Learn the datasheet questions and how each unanswered one maps to a bias. See a datasheet for the Healthcare Readmission data filled from the file itself: 101,766 rows, 96.9% of weight values missing, and three questions the repo cannot answer.
+
+> *Most dataset problems are not in the data. They are in the questions nobody asked about where it came from.*
+
+## The One-Sentence Definition
+
+A **datasheet for a dataset** is a short list of standard questions, covering why the data was made, what is in it, how it was collected and processed, and what it should and should not be used for, answered in writing so a user can judge whether it fits their purpose.
+
+## Why It Matters
+
+The audits in this repo each start with a CSV downloaded from somewhere, and almost every bias in the explainers can be traced to a gap in what is known about that file: who was sampled ([Sampling Bias](sampling-bias.md)), who is missing ([Missing Data as Bias in EHRs](missing-data-bias-ehr.md)), how the label was produced ([Label Bias](label-bias.md)), which people were filtered out first ([Survivorship Bias](survivorship-bias.md)).
+
+Electronics ship with a datasheet describing what each component can and cannot do. Datasets usually ship with nothing. The proposal by Gebru and colleagues is to answer the same questions every time, so that an unknown is visible as an unknown.
+
+## Core Concept: Five Question Groups
+
+1. **Motivation:** why was it created, by whom, with whose money?
+2. **Composition:** what is an instance, how many are there, what is the label, who is in it, what is missing, is anything sensitive?
+3. **Collection:** how was it acquired, over what period, did people consent?
+4. **Preprocessing:** what was cleaned, filtered or relabelled, and is the raw data kept?
+5. **Uses:** what has it been used for, and what should it not be used for?
+
+Half of the composition answers can be computed from the file. The other half cannot, and an honest datasheet says so instead of guessing.
+
+## Concrete Example: Healthcare Readmission
+
+This datasheet is generated for the [Healthcare Readmission](../Healthcare%20Readmission/) audit data (the 130-hospital diabetes dataset). Everything computable is read from the file and the audit manifest; the questions the repo cannot answer are printed as UNKNOWN.
+
+```
+Datasheet: Healthcare Readmission - Clinical Bias
+
+MOTIVATION
+  Why was the dataset created, by whom, who funded it?    UNKNOWN: not recorded in this repo
+
+COMPOSITION
+  Instances in the file                                   101,766 rows, 50 columns
+  Instances after the audit's row filters                 99,492 (2 filters)
+  Positive rate of the target (readmitted)                11.2%
+  Largest groups of gender                                Female 53.8%, Male 46.2%, Unknown/Invalid 0.0%
+  Largest groups of race                                  Caucasian 74.8%, AfricanAmerican 18.9%, ? 2.2%, Hispanic 2.0%
+  Largest groups of age                                   [70-80) 25.6%, [60-70) 22.1%, [50-60) 17.0%, [80-90) 16.9%
+  Missing values in weight                                96.9%
+  Missing values in max_glu_serum                         94.7%
+  Missing values in A1Cresult                             83.3%
+  Does it contain sensitive attributes?                   yes: race, gender, age
+
+COLLECTION
+  How was the data acquired, over what period?            UNKNOWN: not recorded in this repo
+  Did the people in it consent to this use?               UNKNOWN: not recorded in this repo
+
+USES
+  Used for                                                the Healthcare Readmission audit and the benchmark harness
+  Should it be used for clinical decisions?               no: one health system, one coding scheme
+
+3 of the questions above cannot be answered from the repo.
+```
+
+The computable answers already matter. After the audit's two row filters 99,492 of 101,766 rows remain and the positive rate is 11.2%. Race is 74.8% Caucasian and 18.9% African American, with 2.2% recorded as `?`. The missingness table is the sharper finding: `weight` is missing for 96.9% of rows, `max_glu_serum` for 94.7% and `A1Cresult` for 83.3%, so any model that uses them is learning from the few rows where a test happened to be ordered, which is exactly the pattern [Missing Data as Bias in EHRs](missing-data-bias-ehr.md) describes.
+
+Three questions cannot be answered from the repo: why the data was created, how it was acquired, and whether the patients consented to this use. Those unknowns are part of the dataset's description.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 datasheets-for-datasets.py`). Change the folder name to produce one for another audit.
+
+```python
+import pandas as pd
+from faircode.benchmark import load_audit
+
+data = load_audit("Healthcare Readmission")                  # applies the manifest's row filters and target
+manifest = data.manifest
+raw = pd.read_csv(manifest.dataset_path, low_memory=False)
+missing = raw.replace("?", pd.NA).isna().mean().sort_values(ascending=False)
+unknown = []
+
+def ask(question, answer=None):
+    if answer is None:
+        unknown.append(question)
+        answer = "UNKNOWN: not recorded in this repo"
+    print(f"  {question:55s} {answer}")
+
+print(f"Datasheet: {manifest.title}\n")
+print("MOTIVATION")
+ask("Why was the dataset created, by whom, who funded it?")
+print("\nCOMPOSITION")
+ask("Instances in the file", f"{len(raw):,} rows, {raw.shape[1]} columns")
+ask("Instances after the audit's row filters", f"{len(data.y):,} ({len(manifest.row_filters)} filters)")
+ask(f"Positive rate of the target ({manifest.target.column})", f"{data.y.mean():.1%}")
+for pa in manifest.protected_attributes:
+    shares = raw[pa.column].value_counts(normalize=True).head(4)
+    ask(f"Largest groups of {pa.column}", ", ".join(f"{k} {v:.1%}" for k, v in shares.items()))
+for col, share in missing.head(3).items():
+    ask(f"Missing values in {col}", f"{share:.1%}")
+ask("Does it contain sensitive attributes?", "yes: race, gender, age")
+print("\nCOLLECTION")
+ask("How was the data acquired, over what period?")
+ask("Did the people in it consent to this use?")
+print("\nUSES")
+ask("Used for", "the Healthcare Readmission audit and the benchmark harness")
+ask("Should it be used for clinical decisions?", "no: one health system, one coding scheme")
+print(f"\n{len(unknown)} of the questions above cannot be answered from the repo.")
+```
+
+## Limitations
+
+1. **It documents; it does not fix.** A datasheet makes a problem visible and leaves the problem in place.
+2. **The unanswerable questions need a person.** Motivation, consent and collection come from the data's authors, not from the file.
+3. **Computed answers can mislead.** A `?` counted as missing is a convention. The same file coded differently would give a different missingness figure.
+4. **Datasheets go stale.** A dataset that is updated or re-filtered needs a new sheet.
+5. **It is not a licence to use.** A complete datasheet can say the data is unsuitable, and that is its best outcome.
+
+## Related Concepts
+
+* [Model Cards](model-cards.md) - the matching document for the model trained on the data
+* [Sampling Bias](sampling-bias.md) - the composition questions are how you spot it
+* [Missing Data as Bias in EHRs](missing-data-bias-ehr.md) - what the missingness numbers above mean
+* [Label Bias](label-bias.md) - the collection and preprocessing questions expose it
+* [Protected Attribute](protected-attribute.md) - the sensitive columns the composition section must name
+
+## Related Projects in This Repo
+
+* [`Healthcare Readmission/`](../Healthcare%20Readmission/) - the audit data described above
+* [Open Dataset Profiler](../profiler.html) - computes the composition answers for any file
+
+## Further Reading
+
+* [Gebru, T. et al. (2021): Datasheets for Datasets](https://arxiv.org/abs/1803.09010) - Communications of the ACM 64(12); the question list and the motivation.
+* [Bender, E. M., Friedman, B. (2018): Data Statements for Natural Language Processing](https://aclanthology.org/Q18-1041/) - TACL 6; the same idea for language data.
+* [Holland, S. et al. (2018): The Dataset Nutrition Label](https://arxiv.org/abs/1805.03677) - a related, more quantitative proposal for summarizing a dataset.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Algorithmic Impact Assessment
+URL: https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html
+Summary: Learn what an impact assessment asks and how a fairness audit is its measurement step. See the measurement section for Tenant Screening written from results/: four of six metrics significant, and the mitigation options with their gaps.
+
+> *An audit tells you how big the gap is. An impact assessment asks who is on the other side of it, and what happens to them.*
+
+## The One-Sentence Definition
+
+An **algorithmic impact assessment** is a structured review, done before an automated decision system is deployed and repeated afterwards, of who the system affects, what can go wrong for them, how that was measured, and what will be done about it.
+
+## Why It Matters
+
+Everything else in this repo is measurement: a gap, an interval, a p-value. A decision to deploy needs more than measurement. It needs a statement of who is affected, what the alternatives are, who can appeal, and who is accountable. Without a structure, the measurement gets handed over as a number and the judgement around it is skipped.
+
+Impact assessments are that structure. Public bodies have used them for automated decisions, and several jurisdictions require some form of one for high-risk systems. The exact obligations differ by place and change quickly, so rely on the primary text for your own jurisdiction instead of a summary.
+
+## Core Concept: The Measurement Is One Section
+
+A typical assessment has parts that no audit script can supply:
+
+1. **Purpose and alternatives:** what decision, why automate it, what was the non-automated process.
+2. **Who is affected:** the people the decision touches, including those who never interact with the system.
+3. **Measured disparity:** the audit results, with intervals and the metrics chosen and why ([Choosing a Fairness Metric](choosing-a-fairness-metric.md)).
+4. **Mitigation:** what was tried and what it cost.
+5. **Safeguards:** human review, appeal, notice, logging.
+6. **Monitoring:** what is re-measured after deployment and when it triggers a review.
+
+Section 3 is exactly what the benchmark produces, so it can be generated.
+
+## Concrete Example: Tenant Screening
+
+This is the measurement section of an assessment for the [Tenant Screening](../Tenant%20Screening/) audit, generated from the benchmark's `results/` (the current results) for the S2 logistic regression. Sections 1, 2 and 6 are written by a person; the script prints what it can compute and says what it cannot.
+
+```
+Impact assessment, measurement section: tenant_screening (logistic_regression, unawareness_proxy_removal)
+
+1. Who is affected: rental applicants, grouped here by race (Black vs White). Intersections: not measured by this audit.
+2. Decision: the model flags an applicant as likely to reoffend within three years; a flag leads to refusal in the framing of the audit.
+
+3. Disparity measured on the held-out test split:
+   demographic_parity_diff    +0.114  95% CI [+0.088, +0.138]  p=0.000  SIGNIFICANT
+   disparate_impact_ratio     +1.186  95% CI [+1.140, +1.232]  p=0.000  SIGNIFICANT
+   equal_opportunity_diff     +0.084  95% CI [+0.053, +0.116]  p=0.000  SIGNIFICANT
+   equalized_odds_diff        +0.149  95% CI [+0.109, +0.193]  p=0.000  SIGNIFICANT
+   predictive_parity_diff     -0.029  95% CI [-0.061, +0.002]  p=0.072  not significant
+   accuracy_equality_diff     -0.012  95% CI [-0.039, +0.015]  p=0.399  not significant
+
+4. Finding: 4 of 6 metrics are significant at 0.05: demographic_parity_diff, disparate_impact_ratio, equal_opportunity_diff, equalized_odds_diff.
+5. Mitigation options measured by the benchmark (same audit, same model):
+   baseline                     demographic parity gap +0.054  p=0.000
+   in_processing                demographic parity gap +0.017  p=0.178
+   post_processing              demographic parity gap -0.005  p=0.689
+   unawareness                  demographic parity gap +0.119  p=0.000
+   unawareness_proxy_removal    demographic parity gap +0.114  p=0.000
+
+6. Not measured here, and needed before deployment: who reviews flags, an appeal route, the legal basis for using
+   this data, and a repeat of this measurement after deployment.
+```
+
+Reading it as an assessor: four of the six metrics are significant, the flagged-rate gap is +0.114 with an interval of +0.088 to +0.138, and the mitigation table shows what the benchmark's strategies leave behind. Both in-processing (+0.017, p = 0.178) and post-processing (-0.005, p = 0.689) get the demographic parity gap to a level the test cannot distinguish from zero; removing the race column and the proxies alone does not (+0.114).
+
+The last paragraph matters most: who reviews a flag, whether there is an appeal, the legal basis for using this data and when the measurement is repeated are not in any results file, and an assessment that leaves them blank has not been completed.
+
+## Detection/Implementation Code
+
+Run from the repo root (`python3 algorithmic-impact-assessment.py`). It reads the benchmark's current results; change the three constants at the top to assess another audit.
+
+```python
+import pandas as pd
+
+AUDIT, STRATEGY, MODEL = "tenant_screening", "unawareness_proxy_removal", "logistic_regression"
+fair = pd.read_csv("results/results_fairness.csv")          # the benchmark's current results
+g = fair[(fair.audit == AUDIT) & (fair.strategy == STRATEGY) & (fair.model == MODEL) & (fair.protected_attribute == "race")]
+
+print(f"Impact assessment, measurement section: {AUDIT} ({MODEL}, {STRATEGY})\n")
+print("1. Who is affected: rental applicants, grouped here by race (Black vs White). Intersections: not measured by this audit.")
+print("2. Decision: the model flags an applicant as likely to reoffend within three years; a flag leads to refusal in the framing of the audit.\n")
+print("3. Disparity measured on the held-out test split:")
+for r in g.itertuples():
+    verdict = "SIGNIFICANT" if r.significant else "not significant"
+    print(f"   {r.metric:26s} {r.value:+.3f}  95% CI [{r.ci_low:+.3f}, {r.ci_high:+.3f}]  p={r.p_value:.3f}  {verdict}")
+flagged = g[g.significant == True]                                   # noqa: E712 - a boolean column
+print(f"\n4. Finding: {len(flagged)} of {len(g)} metrics are significant at 0.05: " + ", ".join(sorted(flagged.metric)) + ".")
+print("5. Mitigation options measured by the benchmark (same audit, same model):")
+for strategy, rows in fair[(fair.audit == AUDIT) & (fair.model == MODEL) & (fair.protected_attribute == "race")
+                           & (fair.metric == "demographic_parity_diff")].groupby("strategy"):
+    r = rows.iloc[0]
+    print(f"   {strategy:28s} demographic parity gap {r.value:+.3f}  p={r.p_value:.3f}")
+print("\n6. Not measured here, and needed before deployment: who reviews flags, an appeal route, the legal basis for using")
+print("   this data, and a repeat of this measurement after deployment.")
+```
+
+## Limitations
+
+1. **It documents risk; it does not remove it.** A complete assessment can conclude that a system should not be deployed.
+2. **Measurement is only one part.** A good fairness number can sit beside an unfair process with no appeal.
+3. **The legal landscape moves.** Required content and trigger conditions change, so use the current primary source for your jurisdiction.
+4. **It is a snapshot.** Without the monitoring step, the numbers describe the day of the audit, see [Model Drift](model-drift.md).
+5. **Affected people are rarely in the room.** An assessment written only by the builders tends to miss harms they would not think of. Involving affected groups is a design choice, not a script.
+
+## Related Concepts
+
+* [Model Cards](model-cards.md) - the model-level document an assessment can cite
+* [Datasheets for Datasets](datasheets-for-datasets.md) - the data-level document it can cite
+* [Choosing a Fairness Metric](choosing-a-fairness-metric.md) - how section 3's metrics are picked
+* [Disparate Impact](disparate-impact.md) - a legal test an assessment often has to address
+* [Mitigation Strategies](mitigation-strategies.md) - the options for section 4
+
+## Related Projects in This Repo
+
+* [`Tenant Screening/`](../Tenant%20Screening/) - the audit the assessment above is about
+* [`results/`](../results/) - the numbers in its measurement section
+
+## Further Reading
+
+* Reisman, D., Schultz, J., Crawford, K., Whittaker, M. (2018). Algorithmic Impact Assessments: A Practical Framework for Public Agency Accountability. AI Now Institute - the framework for public agencies.
+* Moss, E., Watkins, E. A., Singh, R., Elish, M. C., Metcalf, J. (2021). Assembling Accountability: Algorithmic Impact Assessment for the Public Interest. Data and Society - a comparison of impact-assessment regimes.
+* [Raji, I. D. et al. (2020): Closing the AI Accountability Gap](https://arxiv.org/abs/2001.00973) - FAT* 2020; an end-to-end internal auditing framework.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+

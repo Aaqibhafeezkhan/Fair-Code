@@ -1831,14 +1831,16 @@
         if (g.small_group) {
           entries.push({kind: 'small', count: g.count, text:
             d.name + ": '" + g.label + "' has only " +
-            g.count + " rows; fairness metrics may be unreliable"});
+            g.count + (g.count === 1 ? " row" : " rows") +
+            "; fairness metrics may be unreliable"});
         }
       });
       flags = flags.concat(summariseGroupFlags(entries, {
         'case': function (n) { return d.name + ': ' + n + ' pairs of labels differ only in case or spacing'; },
         under: function (n) { return d.name + ': ' + n + ' groups are under-represented'; },
         small: function (n, c) {
-          return d.name + ': ' + n + ' groups have only ' + c + ' rows or fewer; fairness metrics may be unreliable';
+          return d.name + ': ' + n + ' groups have only ' + c +
+                 (c === 1 ? ' row' : ' rows') + ' or fewer; fairness metrics may be unreliable';
         }
       }));
       if (d.imbalance_ratio !== null && d.imbalance_ratio >= imbalanceFlag) {
@@ -1866,13 +1868,17 @@
     inters.forEach(function (inter) {
       var a = inter.dims[0], b = inter.dims[1];
       var entries = inter.cells.map(function (cell) {
-        var kind = cell.count === 0 ? 'absent' : 'only ' + cell.count + ' rows';
+        var kind = cell.count === 0 ? 'absent' : 'only ' + cell.count +
+                   (cell.count === 1 ? ' row' : ' rows');
         return {kind: cell.count === 0 ? 'absent' : 'thin', count: cell.count,
                 text: a + "='" + cell.a + "' × " + b + "='" + cell.b + "' is " + kind};
       });
       flags = flags.concat(summariseGroupFlags(entries, {
         absent: function (n) { return a + ' × ' + b + ': ' + n + ' combinations are absent'; },
-        thin: function (n, c) { return a + ' × ' + b + ': ' + n + ' combinations have only ' + c + ' rows or fewer'; }
+        thin: function (n, c) {
+          return a + ' × ' + b + ': ' + n + ' combinations have only ' + c +
+                 (c === 1 ? ' row' : ' rows') + ' or fewer';
+        }
       }));
     });
     return flags;

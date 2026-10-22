@@ -206,6 +206,16 @@ def test_min_group_size_tunable():
     assert not any("fairness metrics may be unreliable" in f for f in flags)
 
 
+def test_single_row_flags_use_singular_row():
+    df = pd.DataFrame({"sex": ["M", "F", "F"], "race": ["A", "B", "B"]})
+
+    result = profile(df, opts={"min_group_size": 3, "intersection_floor": 0.34})
+
+    assert "sex: 'M' has only 1 row; fairness metrics may be unreliable" in result["flags"]
+    assert "sex: 'F' has only 2 rows; fairness metrics may be unreliable" in result["flags"]
+    assert "sex='M' × race='A' is only 1 row" in result["flags"]
+
+
 def test_max_categorical_card_tunable():
     # 30 distinct values - outside the default [2, 20] generic-categorical window.
     df = pd.DataFrame({"occupation_code": [f"occ_{i % 30}" for i in range(300)]})

@@ -257,6 +257,9 @@ one intersection. The per-group detail is not lost: every group stays in `dimens
 (`--json`) and the CSV rows. The terminal, HTML and web views list at most `MAX_DISPLAYED_FLAGS`
 (**50**) flags, then "and N more flags".
 
+Flag text uses `row` when the reported count is 1 and `rows` for every other count, including
+individual small-group and intersection-cell flags and capped summaries.
+
 ---
 
 ## 7. Defaults (single place to tune)

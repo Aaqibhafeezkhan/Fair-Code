@@ -493,14 +493,16 @@ def _build_flags(dimensions: list[dict], intersections: list[dict],
                     f"({g['share'] * 100:.1f}%)"), 0))
             if g.get("small_group"):
                 entries.append(("small", (
-                    f"{d['name']}: '{g['label']}' has only {g['count']} rows; "
+                    f"{d['name']}: '{g['label']}' has only {g['count']} "
+                    f"{'row' if g['count'] == 1 else 'rows'}; "
                     f"fairness metrics may be unreliable"), g["count"]))
         name = d["name"]
         flags.extend(_summarise_group_flags(entries, {
             "case": lambda n, _c, name=name: f"{name}: {n} pairs of labels differ only in case or spacing",
             "under": lambda n, _c, name=name: f"{name}: {n} groups are under-represented",
             "small": lambda n, c, name=name: (
-                f"{name}: {n} groups have only {c} rows or fewer; fairness metrics may be unreliable"),
+                f"{name}: {n} groups have only {c} "
+                f"{'row' if c == 1 else 'rows'} or fewer; fairness metrics may be unreliable"),
         }))
         if d["imbalance_ratio"] is not None and d["imbalance_ratio"] >= imbalance_flag:
             flags.append(
@@ -530,12 +532,15 @@ def _build_flags(dimensions: list[dict], intersections: list[dict],
         a, b = inter["dims"]
         entries = []
         for cell in inter["cells"]:
-            kind = "absent" if cell["count"] == 0 else f"only {cell['count']} rows"
+            kind = ("absent" if cell["count"] == 0 else
+                    f"only {cell['count']} {'row' if cell['count'] == 1 else 'rows'}")
             entries.append(("absent" if cell["count"] == 0 else "thin", (
                 f"{a}='{cell['a']}' × {b}='{cell['b']}' is {kind}"), cell["count"]))
         flags.extend(_summarise_group_flags(entries, {
             "absent": lambda n, _c, a=a, b=b: f"{a} × {b}: {n} combinations are absent",
-            "thin": lambda n, c, a=a, b=b: f"{a} × {b}: {n} combinations have only {c} rows or fewer",
+            "thin": lambda n, c, a=a, b=b: (
+                f"{a} × {b}: {n} combinations have only {c} "
+                f"{'row' if c == 1 else 'rows'} or fewer"),
         }))
     return flags
 

@@ -41,6 +41,30 @@ def test_python_js_profiler_parity(csv_name):
     assert javascript_result == python_result
 
 
+def test_python_js_parity_for_singular_row_flags(tmp_path):
+    """One-row group and intersection flags use singular wording in both engines."""
+    csv = tmp_path / "one-row-groups.csv"
+    csv.write_text("sex,race\nM,A\nF,B\nF,B\n", encoding="utf-8")
+    opts_path = tmp_path / "opts.json"
+    opts = {"opts": {"min_group_size": 3, "intersection_floor": 0.34}}
+    opts_path.write_text(json.dumps(opts), encoding="utf-8")
+
+    python_result = profile(pd.read_csv(csv), opts=opts["opts"])
+    completed = subprocess.run(
+        ["node", "scripts/engine-js.js", "profile", str(csv), str(opts_path)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=True,
+    )
+    javascript_result = json.loads(completed.stdout)
+
+    assert javascript_result["flags"] == python_result["flags"]
+    assert "sex: 'M' has only 1 row; fairness metrics may be unreliable" in python_result["flags"]
+    assert "sex: 'F' has only 2 rows; fairness metrics may be unreliable" in python_result["flags"]
+    assert "sex='M' × race='A' is only 1 row" in python_result["flags"]
+
+
 def test_python_js_parity_for_non_english_column_names(tmp_path):
     """#847: accent-stripped, multilingual keyword detection agrees between engines,
     including the no-kind-detected --map hint."""

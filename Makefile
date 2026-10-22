@@ -45,11 +45,12 @@ favicons:  ## Regenerate favicon.ico/PNGs and apple-touch-icon.png from logo.svg
 fix-explainer-count:  ## Correct stale "N explainers" mentions in README/CONTRIBUTORS/METRICS/ROADMAP
 	$(PY) scripts/check_explainer_count.py --fix
 
-lint:  ## Enforce the em-dash-free rule + check for broken doc links + issue numbers in docs (needs gh, skipped offline) + explainer counts and listings + traction figures agreeing across README/ROADMAP/METRICS + ruff (mirrors the lint workflow)
+lint:  ## Enforce the em-dash-free rule + check for broken doc links + issue numbers in docs (needs gh, skipped offline) + explainer counts and listings + explainer structure + traction figures agreeing across README/ROADMAP/METRICS + ruff (mirrors the lint workflow)
 	$(PY) scripts/check_em_dash.py
 	$(PY) scripts/check_broken_links.py
 	$(PY) scripts/check_issue_refs.py
 	$(PY) scripts/check_explainer_count.py
+	$(PY) scripts/check_explainer_structure.py
 	$(PY) scripts/check_traction.py
 	ruff check faircode scripts tests
 

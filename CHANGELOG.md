@@ -21,6 +21,8 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Added
 
+- `scripts/check_explainer_structure.py` (#1118), run by `make lint` and pre-commit: every explainer must have the sections CONTRIBUTING.md lists (accepting the usual heading variants, in order), a `python` block, two Further Reading entries and the footer. Ten pages with existing gaps are listed in `KNOWN_EXCEPTIONS`, and an exception that is no longer needed fails the check so the list only shrinks.
+- Tests for `scripts/check_broken_links.py` (#1109, 96% coverage) and for the whole `freeze()` flow in `scripts/freeze_paper_results.py` (#1111, 99% coverage), run against temporary directories.
 - `scripts/check_traction.py` (#1097), run by `make lint`: fails, naming the files and values, when the stars, forks, contributors, watching, social reach, countries or audits figures differ between the README, ROADMAP and METRICS, or when the README's "Show N completed items" differs from its `- [x]` lines. It compares the files with each other, so it works offline.
 - `scripts/diff_results.py` marks rows measured on different test sets (#1095): each row has a `sample` field (`same`, `different` or `unknown`, with `sample_sizes` when different), different rows are marked `~` in the text output and counted in `--summary`.
 - CONTRIBUTING.md lists the prerequisites for `make check` and a "Checks you may meet" table saying what each failing check means and how to fix it (#989).

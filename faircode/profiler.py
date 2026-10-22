@@ -636,6 +636,11 @@ def profile(df: pd.DataFrame, overrides=None, opts=None) -> dict:
     and a `reference` baseline {column: {group: expected_share}} (SPEC 8).
 
     """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(
+            f"profile() expected a pandas.DataFrame, got {type(df).__name__}; "
+            "if loading a file, use faircode.loaders.read_table() first"
+        )
     overrides = overrides or {}
     o = _resolve_opts(opts)
     detected = detect_columns(df, overrides, max_categorical_card=o["max_categorical_card"],

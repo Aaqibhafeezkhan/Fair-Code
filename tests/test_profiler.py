@@ -22,6 +22,15 @@ from faircode.profiler import (
 ROOT = Path(__file__).resolve().parent.parent
 
 
+@pytest.mark.parametrize("value", ["data.csv", ["M", "F"]])
+def test_profile_rejects_non_dataframes_with_a_clear_type_error(value):
+    with pytest.raises(TypeError) as error:
+        profile(value)
+
+    assert "profile() expected a pandas.DataFrame" in str(error.value)
+    assert type(value).__name__ in str(error.value)
+
+
 # ── Column detection ────────────────────────────────────────────────────────
 def test_classify_keyword_columns():
     assert classify_name("gender") == "sex"

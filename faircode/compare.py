@@ -404,10 +404,31 @@ def apply_renames(result_a: dict, result_b: dict, renames: dict) -> dict:
     return dict(result_b, dimensions=dims)
 
 
+_PROFILE_RESULT_REQUIRED_KEYS = frozenset({
+    "dimensions", "overall_score", "n_rows", "grade", "dimensions_detected", "note",
+})
+
+
+def _validate_profile_result(result: dict, name: str) -> None:
+    if not isinstance(result, dict):
+        raise TypeError(
+            f"compare() expected {name} to be a dict returned by profile(), "
+            f"got {type(result).__name__}"
+        )
+    missing = _PROFILE_RESULT_REQUIRED_KEYS.difference(result)
+    if missing:
+        raise TypeError(
+            f"compare() expected {name} to be a dict returned by profile(), "
+            f"got dict missing required keys: {', '.join(sorted(missing))}"
+        )
+
+
 def compare(result_a: dict, result_b: dict, name_a="A", name_b="B", renames=None) -> dict:
     """Compare two profile() results for representation drift. See SPEC section 8.
 
     `renames` ({a_name: b_name}) compares the named B dimension as the A one (#913)."""
+    _validate_profile_result(result_a, "result_a")
+    _validate_profile_result(result_b, "result_b")
     renamed_b = dict(renames or {})
     if renamed_b:
         result_b = apply_renames(result_a, result_b, renamed_b)

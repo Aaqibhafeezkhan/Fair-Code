@@ -4,6 +4,7 @@ Run from the repo root:  pytest tests/ -q
 """
 
 import pandas as pd
+import pytest
 
 from faircode import compare, profile
 from faircode.compare import _drift_level, _name_tokens, _psi_term
@@ -16,6 +17,29 @@ def _find(dims, name):
 
 def _group(groups, label):
     return next(g for g in groups if g["label"] == label)
+
+
+@pytest.mark.parametrize(
+    ("bad_result", "argument", "received"),
+    [
+        (pd.DataFrame({"sex": ["M", "F"]}), "result_a", "DataFrame"),
+        (pd.DataFrame({"sex": ["M", "F"]}), "result_b", "DataFrame"),
+        ({}, "result_a", "dict missing required keys"),
+        ({}, "result_b", "dict missing required keys"),
+    ],
+)
+def test_compare_rejects_values_that_are_not_profile_results(bad_result, argument, received):
+    valid_result = profile(pd.DataFrame({"sex": ["M", "F"] * 10}))
+    results = [valid_result, valid_result]
+    results[0 if argument == "result_a" else 1] = bad_result
+
+    with pytest.raises(TypeError) as error:
+        compare(*results)
+
+    message = str(error.value)
+    assert f"compare() expected {argument}" in message
+    assert "dict returned by profile()" in message
+    assert received in message
 
 
 # ── PSI internals ─────────────────────────────────────────────────────────────

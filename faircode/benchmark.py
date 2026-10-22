@@ -29,6 +29,7 @@ History" in README.md before regenerating results/ for a citation.
 
 from __future__ import annotations
 
+import difflib
 import itertools
 from dataclasses import dataclass
 from pathlib import Path
@@ -163,9 +164,26 @@ def load_audit(folder, strategy=None, random_state=None) -> AuditData:
         model.fit(data.X.iloc[data.idx_train], data.y.iloc[data.idx_train])
     """
     path = Path(folder)
-    if path.is_dir():
-        path = path / "audit.yaml"
-    return prepare_audit(load_manifest(path), strategy, random_state)
+    is_manifest = path.is_file() or path.suffix.lower() in {".yaml", ".yml"}
+    manifest_path = path if is_manifest else path / "audit.yaml"
+    try:
+        manifest = load_manifest(manifest_path)
+    except FileNotFoundError as error:
+        audit_folder = path.parent if is_manifest else path
+        message = (
+            f"Could not find audit manifest at {manifest_path}. "
+            "`folder` must be an audit folder or a manifest path."
+        )
+        if not audit_folder.exists():
+            manifests = discover_manifests(audit_folder.parent)
+            audit_folders = [manifest.parent.name for manifest in manifests]
+            if audit_folders:
+                message += f" Audit folders next to it: {', '.join(audit_folders)}."
+                matches = difflib.get_close_matches(audit_folder.name, audit_folders, n=1)
+                if matches:
+                    message += f" Did you mean {matches[0]!r}?"
+        raise FileNotFoundError(message) from error
+    return prepare_audit(manifest, strategy, random_state)
 
 
 def run_audit(manifest, n_resamples=2000, n_permutations=2000, random_state=None):

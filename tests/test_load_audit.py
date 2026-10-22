@@ -25,6 +25,46 @@ def test_load_audit_accepts_a_folder_or_a_manifest_path():
     assert np.array_equal(by_folder.idx_test, by_file.idx_test)
 
 
+def test_load_audit_missing_folder_lists_available_audits(tmp_path):
+    audit = tmp_path / "German Credit Lending"
+    audit.mkdir()
+    (audit / "audit.yaml").touch()
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_audit(tmp_path / "Nope")
+
+    message = str(exc_info.value)
+    assert str(tmp_path / "Nope" / "audit.yaml") in message
+    assert "audit folder or a manifest path" in message
+    assert "German Credit Lending" in message
+
+
+def test_load_audit_folder_without_manifest_names_attempted_file(tmp_path):
+    audit = tmp_path / "Incomplete Audit"
+    audit.mkdir()
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_audit(audit)
+
+    message = str(exc_info.value)
+    assert str(audit / "audit.yaml") in message
+    assert "audit folder or a manifest path" in message
+
+
+def test_load_audit_close_misspelling_suggests_audit_folder(tmp_path):
+    audit = tmp_path / "Benefits Denial"
+    audit.mkdir()
+    (audit / "audit.yaml").touch()
+
+    with pytest.raises(FileNotFoundError) as exc_info:
+        load_audit(tmp_path / "Benefits Denia")
+
+    message = str(exc_info.value)
+    assert str(tmp_path / "Benefits Denia" / "audit.yaml") in message
+    assert "Benefits Denial" in message
+    assert "Did you mean 'Benefits Denial'?" in message
+
+
 def test_split_features_and_masks_equal_what_run_audit_uses(monkeypatch):
     seen = {}
 

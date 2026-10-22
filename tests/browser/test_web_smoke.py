@@ -10,7 +10,7 @@ Needs the optional Playwright package and a browser, so it is skipped when they 
     make setup-browser   # pip install -e ".[browser]" and python -m playwright install chromium
     make test-browser    # python -m pytest tests/browser -q
 
-CI runs it in its own, non-required workflow (.github/workflows/browser-smoke.yml).
+CI does not run it (the browser-smoke workflow was removed); run `make test-browser` before changing the web pages.
 """
 
 import functools

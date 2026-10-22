@@ -81,7 +81,7 @@ run going. Policy for every workflow in `.github/workflows/`:
 
 - **Every job sets `timeout-minutes`.** Recent runs finish in under five minutes end to end,
   so the limits leave a wide margin: 5 for the small check jobs, 10 for lint, favicons,
-  explainers and browser smoke, 15 for the audit matrix, 20 for the profiler tests, 30 for
+  and explainers, 15 for the audit matrix, 20 for the profiler tests, 30 for
   the benchmark harness and CodeQL. Raise a limit in the same PR that makes a job slower.
 - **Workflows that run on `pull_request` set `concurrency`**, grouped by workflow and pull
   request number (or ref for pushes). `cancel-in-progress` is on only for `pull_request`

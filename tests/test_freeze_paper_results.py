@@ -252,6 +252,7 @@ def test_run_returns_stripped_stdout():
 
 
 def test_discover_manifests_lists_the_real_audits_sorted():
+    pytest.importorskip("yaml", reason="manifest discovery needs the optional benchmark extra")
     script = importlib.import_module("scripts.freeze_paper_results")
     found = script._discover_manifests()
     assert found == sorted(found)

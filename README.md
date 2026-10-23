@@ -341,7 +341,33 @@ Fair-Code/
 │   ├── datasheets-for-datasets.md
 │   ├── algorithmic-impact-assessment.md
 │   ├── inferring-protected-attributes.md
-│   └── fairness-without-demographics.md
+│   ├── fairness-without-demographics.md
+│   ├── adverse-action-notices.md
+│   ├── geographic-proxies-and-redlining.md
+│   ├── risk-based-pricing-gaps.md
+│   ├── race-in-clinical-models.md
+│   ├── utilization-as-a-label.md
+│   ├── discharge-leakage-in-readmission-models.md
+│   ├── seed-and-split-sensitivity.md
+│   ├── cross-validation-for-fairness.md
+│   ├── stratified-test-sets-for-fairness.md
+│   ├── feature-importance-by-group.md
+│   ├── partial-dependence-by-group.md
+│   ├── explanation-disagreement.md
+│   ├── hiring-pipeline-adverse-impact.md
+│   ├── compounding-disparities.md
+│   ├── differential-validity.md
+│   ├── minimum-detectable-gap.md
+│   ├── small-group-shrinkage.md
+│   ├── confidence-intervals-for-ratios.md
+│   ├── monitoring-fairness-in-production.md
+│   ├── label-shift-and-fairness.md
+│   ├── delayed-feedback.md
+│   ├── causal-graphs-for-fairness.md
+│   ├── path-specific-effects.md
+│   ├── randomized-post-processing.md
+│   ├── fairness-accuracy-pareto-frontier.md
+│   └── choosing-a-mitigation-strategy.md
 │
 ├── .pre-commit-config.yaml              # em-dash/broken-links/ruff + build-explainers pre-push hooks
 ├── CHANGELOG.md
@@ -832,10 +858,10 @@ features = [
 
 ## Explainers
 
-82 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
+108 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
 
 <details>
-<summary><strong>Show all 82 explainers →</strong></summary>
+<summary><strong>Show all 108 explainers →</strong></summary>
 
 | Explainer | What it covers |
 |-----------|----------------|
@@ -921,6 +947,32 @@ features = [
 | [What Is an Algorithmic Impact Assessment?](explainers/algorithmic-impact-assessment.md) | A structured review of who a decision system affects, with the fairness audit as its measurement section |
 | [How Do You Measure Fairness When the Protected Attribute Is Missing?](explainers/inferring-protected-attributes.md) | Estimating group membership from other fields and what that does to a measured gap |
 | [What Is Fairness Without Demographics?](explainers/fairness-without-demographics.md) | Improving the worst-off groups with no group labels by upweighting the rows the model gets wrong |
+| [Adverse Action Notices](explainers/adverse-action-notices.md) | How reason codes on a credit decline are derived from a model, and how they can expose a proxy: personal_status shows up 15 points more for under-30s. |
+| [Geographic Proxies and Redlining](explainers/geographic-proxies-and-redlining.md) | How a location feature can reveal race, and why proxy strength and effect on the parity gap are separate measurements, shown on Tenant Screening. |
+| [Risk-Based Pricing Gaps](explainers/risk-based-pricing-gaps.md) | How to measure a group gap in a quoted amount or price when everyone is approved, with a bootstrap interval, shown on German Credit Lending. |
+| [Race in Clinical Models](explainers/race-in-clinical-models.md) | Comparing a hospital readmission model with and without race on accuracy, calibration and who gets a limited place: the effect is small either way. |
+| [Utilization as a Label](explainers/utilization-as-a-label.md) | How to test whether a utilization label records access, by comparing groups at the same illness burden, shown on Healthcare Readmission. |
+| [Discharge Leakage in Readmission Models](explainers/discharge-leakage-in-readmission-models.md) | How discharge disposition can leak the outcome in a readmission model, and what end-of-life rows do to the base rate, shown on 99,492 patients. |
+| [Seed and Split Sensitivity](explainers/seed-and-split-sensitivity.md) | How much a fairness gap changes with the random split seed: on 1,000 German Credit rows the spread is as large as the effect; on 32,561 rows it is tiny. |
+| [Cross-Validation for Fairness](explainers/cross-validation-for-fairness.md) | Cross-validating a fairness gap with folds stratified by group and label, so every row is tested once and no fold lacks the small cells. |
+| [Stratified Test Sets for Fairness](explainers/stratified-test-sets-for-fairness.md) | Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number. |
+| [Feature Importance by Group](explainers/feature-importance-by-group.md) | Running permutation importance per group to see whether a model relies on different features for different people, shown on Benefits Denial. |
+| [Partial Dependence by Group](explainers/partial-dependence-by-group.md) | Partial dependence drawn per group, with method brute so each curve averages over its own rows, and the row counts behind each point. |
+| [Explanation Disagreement](explainers/explanation-disagreement.md) | Comparing permutation importance, SHAP and logistic coefficients on one model, and why a fairness claim should say which method it rests on. |
+| [Hiring Pipeline Adverse Impact](explainers/hiring-pipeline-adverse-impact.md) | Computing the four-fifths ratio with intervals at each hiring stage and for the whole funnel, shown on AI Fair Recruitment where the gap enters at the decision. |
+| [Compounding Disparities](explainers/compounding-disparities.md) | Why stage ratios multiply: four stages at 0.90 each pass the four-fifths check and give 0.666 end to end, shown in a simulation with correlated stages too. |
+| [Differential Validity](explainers/differential-validity.md) | Equal validity does not mean equal prediction: on AI Fair Recruitment each score has the same AUC for women and men, but women are hired less at the same score. |
+| [Minimum Detectable Gap](explainers/minimum-detectable-gap.md) | How large a fairness gap must be for an audit to detect it at 80% power, checked with the permutation test and applied to the benchmark's groups. |
+| [Small-Group Shrinkage](explainers/small-group-shrinkage.md) | Empirical-Bayes shrinkage cuts the error of small-group rates by two thirds on Healthcare Readmission, and can hide a real gap in the smallest cell. |
+| [Confidence Intervals for Ratios](explainers/confidence-intervals-for-ratios.md) | Intervals for a disparate impact ratio by percentile bootstrap and the log-ratio delta method, and why a near-zero denominator has no honest interval. |
+| [Monitoring Fairness in Production](explainers/monitoring-fairness-in-production.md) | Control-charting a fairness gap after deployment: how batch size and window change detection delay and false alarms, simulated on Benefits Denial. |
+| [Label Shift and Fairness](explainers/label-shift-and-fairness.md) | Which fairness metrics change under label shift: TPR and FPR gaps stay fixed while parity and precision gaps swing, shown on Benefits Denial. |
+| [Delayed Feedback](explainers/delayed-feedback.md) | How late outcomes bias a monitored group gap, and counting only mature cases as the fix, simulated on 99,492 hospital discharges. |
+| [Causal Graphs for Fairness](explainers/causal-graphs-for-fairness.md) | How the assumed causal graph decides which variables to adjust for: the same sex gap is -0.196, -0.157 or -0.034 depending on the adjustment set. |
+| [Path-Specific Effects](explainers/path-specific-effects.md) | Splitting the sex gap in income into direct and mediated paths with bootstrap intervals, and what must be assumed for the split to mean anything. |
+| [Randomized Post-Processing](explainers/randomized-post-processing.md) | The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows. |
+| [Fairness-Accuracy Pareto Frontier](explainers/fairness-accuracy-pareto-frontier.md) | A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark's five strategies sit against it. |
+| [Choosing a Mitigation Strategy](explainers/choosing-a-mitigation-strategy.md) | Choosing among the five mitigation strategies from the benchmark's results: what each needs, the median accuracy cost and the gap left, over 13 pairs. |
 
 </details>
 
@@ -1296,7 +1348,7 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [ ] LLM bias audit
 
 <details>
-<summary><strong>Show 85 completed items →</strong></summary>
+<summary><strong>Show 111 completed items →</strong></summary>
 
 - [x] COMPAS Criminal Justice Bias
 - [x] AI Fair Recruitment Bias
@@ -1381,6 +1433,32 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [x] Explainer: Algorithmic Impact Assessments
 - [x] Explainer: Inferring Missing Protected Attributes
 - [x] Explainer: Fairness Without Demographics
+- [x] Explainer: Adverse Action Notices
+- [x] Explainer: Geographic Proxies and Redlining
+- [x] Explainer: Risk-Based Pricing Gaps
+- [x] Explainer: Race in Clinical Models
+- [x] Explainer: Utilization as a Label
+- [x] Explainer: Discharge Leakage in Readmission Models
+- [x] Explainer: Seed and Split Sensitivity
+- [x] Explainer: Cross-Validation for Fairness
+- [x] Explainer: Stratified Test Sets for Fairness
+- [x] Explainer: Feature Importance by Group
+- [x] Explainer: Partial Dependence by Group
+- [x] Explainer: Explanation Disagreement
+- [x] Explainer: Hiring Pipeline Adverse Impact
+- [x] Explainer: Compounding Disparities
+- [x] Explainer: Differential Validity
+- [x] Explainer: Minimum Detectable Gap
+- [x] Explainer: Small-Group Shrinkage
+- [x] Explainer: Confidence Intervals for Ratios
+- [x] Explainer: Monitoring Fairness in Production
+- [x] Explainer: Label Shift and Fairness
+- [x] Explainer: Delayed Feedback
+- [x] Explainer: Causal Graphs for Fairness
+- [x] Explainer: Path-Specific Effects
+- [x] Explainer: Randomized Post-Processing
+- [x] Explainer: Fairness-Accuracy Pareto Frontier
+- [x] Explainer: Choosing a Mitigation Strategy
 - [x] Fairness audit web dashboard - [Open Dataset Profiler](#open-dataset-profiler)
 - [x] Bias detection utility library (`faircode/` module)
 
@@ -1400,14 +1478,14 @@ The full public roadmap - with phases, completion status, and content schedule -
 
 | Metric | Count |
 |--------|------:|
-| GitHub Stars | 51 |
-| External Contributors | 53 |
-| Forks | 63 |
+| GitHub Stars | 52 |
+| External Contributors | 54 |
+| Forks | 64 |
 | Watching | 8 |
 | Combined Social Reach (Instagram + LinkedIn) | 30K+ |
 | Countries Reached (Website Visitors) | 20 |
 | Code Audits Published | 7 |
-| Explainers Published | 82 |
+| Explainers Published | 108 |
 
 Tracked weekly in [METRICS.md](METRICS.md).
 

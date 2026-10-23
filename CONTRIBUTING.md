@@ -418,6 +418,32 @@ A short sample, not a full list. README.md and llms.txt list every explainer, an
 | `algorithmic-impact-assessment.md` | A structured review of who a decision system affects, with the fairness audit as its measurement section |
 | `inferring-protected-attributes.md` | Estimating group membership from other fields and what that does to a measured gap |
 | `fairness-without-demographics.md` | Improving the worst-off groups with no group labels by upweighting the rows the model gets wrong |
+| `adverse-action-notices.md` | How reason codes on a credit decline are derived from a model, and how they can expose a proxy: personal_status shows up 15 points more for under-30s. |
+| `geographic-proxies-and-redlining.md` | How a location feature can reveal race, and why proxy strength and effect on the parity gap are separate measurements, shown on Tenant Screening. |
+| `risk-based-pricing-gaps.md` | How to measure a group gap in a quoted amount or price when everyone is approved, with a bootstrap interval, shown on German Credit Lending. |
+| `race-in-clinical-models.md` | Comparing a hospital readmission model with and without race on accuracy, calibration and who gets a limited place: the effect is small either way. |
+| `utilization-as-a-label.md` | How to test whether a utilization label records access, by comparing groups at the same illness burden, shown on Healthcare Readmission. |
+| `discharge-leakage-in-readmission-models.md` | How discharge disposition can leak the outcome in a readmission model, and what end-of-life rows do to the base rate, shown on 99,492 patients. |
+| `seed-and-split-sensitivity.md` | How much a fairness gap changes with the random split seed: on 1,000 German Credit rows the spread is as large as the effect; on 32,561 rows it is tiny. |
+| `cross-validation-for-fairness.md` | Cross-validating a fairness gap with folds stratified by group and label, so every row is tested once and no fold lacks the small cells. |
+| `stratified-test-sets-for-fairness.md` | Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number. |
+| `feature-importance-by-group.md` | Running permutation importance per group to see whether a model relies on different features for different people, shown on Benefits Denial. |
+| `partial-dependence-by-group.md` | Partial dependence drawn per group, with method brute so each curve averages over its own rows, and the row counts behind each point. |
+| `explanation-disagreement.md` | Comparing permutation importance, SHAP and logistic coefficients on one model, and why a fairness claim should say which method it rests on. |
+| `hiring-pipeline-adverse-impact.md` | Computing the four-fifths ratio with intervals at each hiring stage and for the whole funnel, shown on AI Fair Recruitment where the gap enters at the decision. |
+| `compounding-disparities.md` | Why stage ratios multiply: four stages at 0.90 each pass the four-fifths check and give 0.666 end to end, shown in a simulation with correlated stages too. |
+| `differential-validity.md` | Equal validity does not mean equal prediction: on AI Fair Recruitment each score has the same AUC for women and men, but women are hired less at the same score. |
+| `minimum-detectable-gap.md` | How large a fairness gap must be for an audit to detect it at 80% power, checked with the permutation test and applied to the benchmark's groups. |
+| `small-group-shrinkage.md` | Empirical-Bayes shrinkage cuts the error of small-group rates by two thirds on Healthcare Readmission, and can hide a real gap in the smallest cell. |
+| `confidence-intervals-for-ratios.md` | Intervals for a disparate impact ratio by percentile bootstrap and the log-ratio delta method, and why a near-zero denominator has no honest interval. |
+| `monitoring-fairness-in-production.md` | Control-charting a fairness gap after deployment: how batch size and window change detection delay and false alarms, simulated on Benefits Denial. |
+| `label-shift-and-fairness.md` | Which fairness metrics change under label shift: TPR and FPR gaps stay fixed while parity and precision gaps swing, shown on Benefits Denial. |
+| `delayed-feedback.md` | How late outcomes bias a monitored group gap, and counting only mature cases as the fix, simulated on 99,492 hospital discharges. |
+| `causal-graphs-for-fairness.md` | How the assumed causal graph decides which variables to adjust for: the same sex gap is -0.196, -0.157 or -0.034 depending on the adjustment set. |
+| `path-specific-effects.md` | Splitting the sex gap in income into direct and mediated paths with bootstrap intervals, and what must be assumed for the split to mean anything. |
+| `randomized-post-processing.md` | The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows. |
+| `fairness-accuracy-pareto-frontier.md` | A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark's five strategies sit against it. |
+| `choosing-a-mitigation-strategy.md` | Choosing among the five mitigation strategies from the benchmark's results: what each needs, the median accuracy cost and the gap left, over 13 pairs. |
 
 ### A good explainer should include
 
@@ -430,6 +456,8 @@ A short sample, not a full list. README.md and llms.txt list every explainer, an
 | 5 | Limitations | Honest trade-offs and edge cases |
 | 6 | Related concepts | Links to other explainers or audits |
 | 7 | Further reading | 2-3 primary sources, not link farms |
+
+The `assets/explainers-data.json` entry has `slug`, `title`, `subtitle`, `summary` and `tags`, and two optional fields the build checks: `description` (the meta description, 70 to 160 characters; when it is missing the summary is cut at the last sentence that fits, and a summary that cannot be shortened sensibly fails the build) and `seo_title` (a shorter page title when `title` plus the site name would pass 65 characters, so at most 53).
 
 Explainers with code should run against a real audit. `faircode.benchmark.load_audit("Benefits Denial")` loads an audit with the same loader, encoding and train/test split as the benchmark harness, so a baseline in your explainer matches `results/`.
 

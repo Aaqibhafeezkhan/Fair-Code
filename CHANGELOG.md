@@ -21,6 +21,18 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Added
 
+- Twenty-six more explainers, each run against a real audit with the benchmark's current `results/` rows as the baseline where one exists: [Minimum Detectable Gap](explainers/minimum-detectable-gap.md), [Small-Group Shrinkage](explainers/small-group-shrinkage.md) and [Confidence Intervals for Ratios](explainers/confidence-intervals-for-ratios.md) (close #1099); [Monitoring Fairness in Production](explainers/monitoring-fairness-in-production.md), [Label Shift and Fairness](explainers/label-shift-and-fairness.md) and [Delayed Feedback](explainers/delayed-feedback.md) (close #1100); [Causal Graphs for Fairness](explainers/causal-graphs-for-fairness.md) and [Path-Specific Effects](explainers/path-specific-effects.md) (close #1101); [Randomized Post-Processing](explainers/randomized-post-processing.md), [Fairness-Accuracy Pareto Frontier](explainers/fairness-accuracy-pareto-frontier.md) and [Choosing a Mitigation Strategy](explainers/choosing-a-mitigation-strategy.md) (close #1102); [Adverse Action Notices](explainers/adverse-action-notices.md), [Geographic Proxies and Redlining](explainers/geographic-proxies-and-redlining.md) and [Risk-Based Pricing Gaps](explainers/risk-based-pricing-gaps.md) (close #1114); [Race in Clinical Models](explainers/race-in-clinical-models.md), [Utilization as a Label](explainers/utilization-as-a-label.md) and [Discharge Leakage in Readmission Models](explainers/discharge-leakage-in-readmission-models.md) (close #1115); [Seed and Split Sensitivity](explainers/seed-and-split-sensitivity.md), [Cross-Validation for Fairness](explainers/cross-validation-for-fairness.md) and [Stratified Test Sets for Fairness](explainers/stratified-test-sets-for-fairness.md) (close #1116); [Feature Importance by Group](explainers/feature-importance-by-group.md), [Partial Dependence by Group](explainers/partial-dependence-by-group.md) and [Explanation Disagreement](explainers/explanation-disagreement.md) (close #1117); [Hiring Pipeline Adverse Impact](explainers/hiring-pipeline-adverse-impact.md), [Compounding Disparities](explainers/compounding-disparities.md) and [Differential Validity](explainers/differential-validity.md) (close #1119). The explainer count goes from 82 to 108, with generated pages, OG images, sitemap entries, `llms.txt`, `llms-full.txt` and the MCP mirror.
+- `AuditData.df` holds the filtered raw rows in the same order as the encoded features, so an explainer or notebook using `load_audit()` can read a column the harness does not encode.
+- The explainer build tests: the whole build on a two-entry fixture (page head, JSON-LD, sitemap, `llms-full.txt`, MCP mirror, refusals), taking `scripts/build_explainers.py` from 38% to 84% line coverage (closes #1110).
+
+### Changed
+
+- Every explainer page has a meta description of 70 to 160 characters and a page title of at most 65 characters, from an optional `description` and `seo_title` in the data file with a sentence-boundary fallback, and the build fails outside those limits (closes #1104 and #1105).
+- `proxy-variables`, `sampling-bias`, `neural-networks` and `automation-bias` have a Limitations section, and every explainer is linked from at least two others through fifty new Related Concepts entries (closes #1107 and #1108).
+- `disparate_impact_ratio` is reported as None with the note `advantaged_selection_too_rare` when the model selects fewer than 30 advantaged rows (`min_selected_for_ratio`), instead of a ratio set by a handful of rows or by the 1e-6 epsilon. COMPAS and Healthcare Readmission were rerun: every other row reproduced exactly, and 37 of the 195 ratio rows now carry the note. `results/`, `summary.csv` and the MCP mirror are updated; `paper/results-frozen/` is untouched (closes #1094).
+
+### Added (previous sweep)
+
 - `scripts/check_explainer_structure.py` (#1118), run by `make lint` and pre-commit: every explainer must have the sections CONTRIBUTING.md lists (accepting the usual heading variants, in order), a `python` block, two Further Reading entries and the footer. Ten pages with existing gaps are listed in `KNOWN_EXCEPTIONS`, and an exception that is no longer needed fails the check so the list only shrinks.
 - Tests for `scripts/check_broken_links.py` (#1109, 96% coverage) and for the whole `freeze()` flow in `scripts/freeze_paper_results.py` (#1111, 99% coverage), run against temporary directories.
 - `scripts/check_traction.py` (#1097), run by `make lint`: fails, naming the files and values, when the stars, forks, contributors, watching, social reach, countries or audits figures differ between the README, ROADMAP and METRICS, or when the README's "Show N completed items" differs from its `- [x]` lines. It compares the files with each other, so it works offline.
@@ -32,7 +44,7 @@ All notable changes to Fair Code are documented here, newest first.
 - Browser tests (Chromium) that a 20,000-row file with about 18,000 distinct labels keeps the profile and compare flag lists at 51 items or fewer (closes #1080).
 - `.github/workflows/benchmark-diff.yml`: add the `rerun-benchmark` label to a PR, or run it from the Actions tab, to rerun the full benchmark on that PR's lockfile and comment the `scripts/diff_results.py` summary; it only reads and is not a required check (closes #1079).
 
-### Added (earlier in this release)
+### Added (earlier sweeps)
 
 - Six explainers, each run against a real audit and quoting the benchmark's current `results/` rows:
   [Max-Min (Rawlsian) Fairness](explainers/maxmin-fairness.md) (closes #543),
@@ -44,7 +56,7 @@ All notable changes to Fair Code are documented here, newest first.
 - `scripts/diff_results.py` joins `results/` and `paper/results-frozen/` on audit, strategy, model, protected attribute and metric, prints per-row deltas, and flags rows that moved by more than `--threshold` or exist on one side only; `--json`, `--all`, `--kind` and `--fail-on-change` are available (closes #1065).
 - `get_benchmark_results` takes `source` (`"frozen"` by default, or `"current"` for the live `results/`) and names it in the result, backed by a new `faircode/_results_current/` mirror built by `mirror_current_for_mcp()` and checked by the generated-files job; the tool docstring and SPEC now call `paper/results-frozen/` an earlier reference snapshot (closes #1049).
 
-### Changed
+### Changed (earlier sweeps)
 
 - `requires-python` is now `>=3.10` and ruff targets `py310` (#848). A Python 3.9 CI run found real breakages (`X | None` evaluated at runtime, `Path.write_text(newline=)`), and the `mcp` extra needs 3.10 anyway.
 - The no-op `frozen-files.yml` workflow is removed; the repo ruleset no longer requires it (closes #1061).

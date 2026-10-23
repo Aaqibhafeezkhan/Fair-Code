@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Differential Validity · Fair Code</title>
+<meta name="description" content="Equal validity does not mean equal prediction: on AI Fair Recruitment each score has the same AUC for women and men, but women are hired less at the same score.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/differential-validity.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Differential Validity · Fair Code">
+<meta property="og:description" content="Equal validity does not mean equal prediction: on AI Fair Recruitment each score has the same AUC for women and men, but women are hired less at the same score.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/differential-validity.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/differential-validity.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Differential Validity · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/differential-validity.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Differential Validity · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Differential Validity · Fair Code">
+<meta name="twitter:description" content="Equal validity does not mean equal prediction: on AI Fair Recruitment each score has the same AUC for women and men, but women are hired less at the same score.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/differential-validity.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Differential Validity",
+      "description": "Learn the difference between validity (how well a score ranks people in each group) and prediction (the expected outcome at the same score). See AI Fair Recruitment: AUC is 0.74 to 0.75 for both genders, but women are hired 0.9 to 4.0 points less often at the same technical score.",
+      "url": "https://www.thefaircode.xyz/explainers/differential-validity.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/differential-validity.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Differential Validity?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Differential validity is a difference between groups in how well a score predicts an outcome (for example, the strength of the link between a test score and a hiring or performance outcome), and differential prediction is a difference in the level of the outcome at the same score."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Employment testing has asked for sixty years whether a selection test is \"fair\" in a statistical sense, and the standard answers (Cleary, 1968) are about prediction, not outcome rates. A test is predictively fair if the same score means the same expected outcome for each group, so a single regression line fits both. If one group's line is lower, a single cut-off treats the groups differently at the same score, even if the test is equally good at ranking people within each."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Differential Validity",
+          "item": "https://www.thefaircode.xyz/explainers/differential-validity.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/differential-validity.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Differential Validity</h1>
+      <p class="explainer-lede">A score can predict equally well and still be set too high for one group.</p>
+      <p class="explainer-lede">Learn the difference between validity (how well a score ranks people in each group) and prediction (the expected outcome at the same score). See AI Fair Recruitment: AUC is 0.74 to 0.75 for both genders, but women are hired 0.9 to 4.0 points less often at the same technical score.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A score can predict equally well for two groups and still be set too high for one of them. Validity and prediction are different questions.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Differential validity</strong> is a difference between groups in how well a score predicts an outcome (for example, the strength of the link between a test score and a hiring or performance outcome), and <strong>differential prediction</strong> is a difference in the level of the outcome at the same score.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Employment testing has asked for sixty years whether a selection test is &quot;fair&quot; in a statistical sense, and the standard answers (Cleary, 1968) are about prediction, not outcome rates. A test is predictively fair if the same score means the same expected outcome for each group, so a single regression line fits both. If one group&#x27;s line is lower, a single cut-off treats the groups differently at the same score, even if the test is equally good at ranking people within each.</p>
+<p>Two separate checks follow. How well does the score rank people within each group (validity)? And at the same score, does one group have a lower expected outcome (prediction)? A test can pass the first and fail the second, which is what the example shows.</p>
+<h3 id="core-concept-two-checks">Core Concept: Two Checks</h3>
+<ol><li><strong>Validity by group:</strong> the AUC (or correlation) between the score and the outcome, computed per group, with an interval.</li><li><strong>Prediction by group:</strong> the expected outcome at each score band, per group; a gap at the same score is differential prediction. In regression form, a group term (intercept difference) or a group-by-score term (slope difference).</li></ol>
+<p>Here the outcome is the audit&#x27;s hiring decision, which is a decision, not a measure of job performance. That makes the second check a measure of how the decision treats equal scores, not of whether the score is a good predictor of work.</p>
+<h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
+<p><a href="../index.html#project-hiring">AI Fair Recruitment</a>: 115,309 candidates, women against men, with the audit&#x27;s hiring decision as the outcome and four score columns.</p>
+<pre><code>does each score predict being hired equally well for women and for men? (AUC of the score alone)
+  Technical_Test_Score   men 0.743 | women 0.748 (95% interval 0.743-0.753)
+  Interview_Score        men 0.746 | women 0.747 (95% interval 0.742-0.752)
+  Skill_Score            men 0.744 | women 0.747 (95% interval 0.742-0.752)
+  Aptitude_Test_Score    men 0.744 | women 0.750 (95% interval 0.744-0.756)
+
+differential prediction: hire rate at the same technical test score (bands of 20 points)
+   0-19: men 0.066 | women 0.057 | women minus men -0.009 (n = 14538, 8516)
+  20-39: men 0.138 | women 0.107 | women minus men -0.031 (n = 14549, 8489)
+  40-59: men 0.245 | women 0.214 | women minus men -0.030 (n = 14463, 8556)
+  60-79: men 0.376 | women 0.340 | women minus men -0.036 (n = 14570, 8599)
+  80-99: men 0.522 | women 0.482 | women minus men -0.040 (n = 14544, 8485)
+
+one model for everyone (no Gender input), test rows: predicted hire probability women 0.265, men 0.254; observed 0.246 and 0.266</code></pre>
+<ul><li><strong>Validity is equal.</strong> Each score has an AUC of about 0.74 to 0.75 for both groups: for example technical test 0.743 for men and 0.748 for women (interval 0.743 to 0.753). The scores rank candidates equally well within each group.</li><li><strong>Prediction is not.</strong> At the same technical score band, women are hired 0.9 to 4.0 points less often: 0.107 against 0.138 at 20 to 39, 0.340 against 0.376 at 60 to 79, 0.482 against 0.522 at 80 to 99, with 8,000 or more women in every band, so these are not noise.</li><li><strong>A model that ignores gender inherits the mismatch.</strong> Trained on all candidates without a gender input, it predicts a hire probability of 0.265 for women and 0.254 for men on the test rows, while the observed rates are 0.246 and 0.266: it over-predicts for women by about 2 points and under-predicts for men by about 1, the signature of one regression line that does not fit both groups.</li></ul>
+<p>So the scores are fine as predictors and the decision is not consistent with them across groups. The outcome here is the audit&#x27;s historical hiring decision, so this is evidence about the decision, not about job performance.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 differential-validity.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;AI Fair Recruitment&quot;, strategy=&quot;baseline&quot;)      # every column of the audit, Gender included
+df = data.df
+women = data.masks[&quot;gender&quot;].to_numpy().astype(int)
+hired = data.y.to_numpy()
+rng = np.random.default_rng(0)
+
+def interval(values, group, fn, n=300):
+    a = np.flatnonzero(group)
+    boots = [fn(values, rng.choice(a, len(a))) for _ in range(n)]
+    return np.percentile(boots, [2.5, 97.5])
+
+print(&quot;does each score predict being hired equally well for women and for men? (AUC of the score alone)&quot;)
+for column in (&quot;Technical_Test_Score&quot;, &quot;Interview_Score&quot;, &quot;Skill_Score&quot;, &quot;Aptitude_Test_Score&quot;):
+    score = df[column].to_numpy(dtype=float)
+    f = lambda v, rows: roc_auc_score(hired[rows], v[rows])
+    aucs = {g: f(score, np.flatnonzero(women == g)) for g in (0, 1)}
+    lo, hi = interval(score, women == 1, f)
+    print(f&quot;  {column:22s} men {aucs[0]:.3f} | women {aucs[1]:.3f} (95% interval {lo:.3f}-{hi:.3f})&quot;)
+
+print(&quot;\ndifferential prediction: hire rate at the same technical test score (bands of 20 points)&quot;)
+band = (df[&quot;Technical_Test_Score&quot;].to_numpy() // 20).astype(int)
+for b in range(5):
+    rows = band == b
+    m, w = hired[rows &amp; (women == 0)].mean(), hired[rows &amp; (women == 1)].mean()
+    print(f&quot;  {b * 20:2d}-{b * 20 + 19:2d}: men {m:.3f} | women {w:.3f} | women minus men {w - m:+.3f} (n = {(rows &amp; (women == 0)).sum()}, {(rows &amp; (women == 1)).sum()})&quot;)
+
+# One regression for everyone, then look at the gap that remains at the same predicted score.
+features = [&quot;Technical_Test_Score&quot;, &quot;Interview_Score&quot;, &quot;Skill_Score&quot;, &quot;Aptitude_Test_Score&quot;, &quot;Experience_Years&quot;]
+X = df[features].to_numpy(dtype=float)
+pooled = LogisticRegression(max_iter=2000).fit(X[data.idx_train], hired[data.idx_train])
+p = pooled.predict_proba(X[data.idx_test])[:, 1]
+w_test, y_test = women[data.idx_test], hired[data.idx_test]
+print(f&quot;\none model for everyone (no Gender input), test rows: predicted hire probability women {p[w_test == 1].mean():.3f}, men {p[w_test == 0].mean():.3f}; &quot;
+      f&quot;observed {y_test[w_test == 1].mean():.3f} and {y_test[w_test == 0].mean():.3f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The outcome matters.</strong> With a hiring decision as the outcome, differential prediction says the decision treats equal scores differently. With a measure of job performance it would say the test over- or under-predicts for a group. Name which you have.</li><li><strong>A criterion can itself be biased.</strong> If the outcome (performance ratings, promotions) carries bias, equal prediction against it is not evidence of fairness, see <a href="label-bias.html">Label Bias</a>.</li><li><strong>Range restriction hides validity.</strong> If you only see people who were hired, the correlation is attenuated, see <a href="survivorship-bias.html">Survivorship Bias</a>.</li><li><strong>Equal validity does not mean equal selection.</strong> Groups can have equal AUC and different pass rates at any single cut-off.</li><li><strong>Small subgroups have wide intervals.</strong> The comparison needs enough rows in each band and group, see <a href="disaggregated-evaluation.html">Disaggregated Evaluation</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="predictive-parity.html">Predictive Parity</a> - the classification-metric cousin of equal prediction at the same score</li><li><a href="calibration.html">Calibration</a> - the same idea for a probability score</li><li><a href="aggregation-bias.html">Aggregation Bias</a> - one line for groups whose lines differ</li><li><a href="hiring-pipeline-adverse-impact.html">Hiring Pipeline Adverse Impact</a> - the selection-rate view of the same data</li><li><a href="label-bias.html">Label Bias</a> - when the outcome used for validation is biased</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-hiring"><code>AI Fair Recruitment/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Cleary, T. A. (1968). Test Bias: Prediction of Grades of Negro and White Students in Integrated Colleges. Journal of Educational Measurement 5(2) - the regression definition of a fair test.</li><li>Society for Industrial and Organizational Psychology (2018). Principles for the Validation and Use of Personnel Selection Procedures (5th ed.) - the professional standard for validity and differential prediction in selection.</li><li><a href="https://arxiv.org/abs/1610.02413" target="_blank" rel="noreferrer noopener">Hardt, M., Price, E., Srebro, N. (2016): Equality of Opportunity in Supervised Learning</a> - NeurIPS 2016; fairness criteria defined on predictions and outcomes.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

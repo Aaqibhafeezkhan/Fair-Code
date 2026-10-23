@@ -378,11 +378,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/feature-importance-by-group.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/partial-dependence-by-group.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/explanation-disagreement.html</loc>
+    <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/hiring-pipeline-adverse-impact.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/compounding-disparities.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/differential-validity.html</loc>
   </url>
 </urlset>

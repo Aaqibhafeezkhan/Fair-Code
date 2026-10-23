@@ -16945,3 +16945,381 @@ for name in ("men", "women"):
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 
+---
+
+# Hiring Pipeline Adverse Impact
+URL: https://www.thefaircode.xyz/explainers/hiring-pipeline-adverse-impact.html
+Summary: Learn to compute the four-fifths ratio with a bootstrap interval at each stage of a hiring funnel and for the whole funnel. See AI Fair Recruitment: four score stages are balanced to within 0.4%, and the gap enters at the hiring decision (ratio 0.942, interval 0.927 to 0.958).
+
+> *Adverse impact is usually computed on the last decision. A hiring process is four or five decisions in a row, and the ratio at each one tells you where the gap enters.*
+
+## The One-Sentence Definition
+
+**Pipeline adverse impact** is the selection-rate ratio (the four-fifths ratio) computed at each stage of a multi-stage hiring process, among the people who reached that stage, together with the ratio for the whole funnel.
+
+## Why It Matters
+
+The four-fifths rule in the US Uniform Guidelines on Employee Selection Procedures (29 CFR 1607) compares the selection rate of a group with the rate of the group with the highest rate. It is applied to a selection procedure, and employers often have several: a résumé screen, a test, an interview, an offer. A single end-to-end ratio tells you whether the whole process has an adverse impact but not which step produced it, and a step that does nothing wrong can sit next to one that does.
+
+Stage by stage numbers show where to look. They also keep an audit honest about which step the model in question is. The [AI Fair Recruitment](../AI%20Fair%20Recruitment/) audit models the last decision, and the stages before it, as the next example shows, may be perfectly balanced.
+
+## Core Concept: Conditional Ratios, One Per Stage
+
+```
+for each stage, among the people who reached it:
+    rate_women = share of women who pass,  rate_others = share of others who pass
+    ratio = rate_women / rate_others,  with a bootstrap interval
+```
+
+The ratio is conditional on reaching the stage, so a stage's number is not changed by what happened before it, except through who is left. The whole-funnel ratio is the product of the conditional ratios, which is why small stage gaps matter: see [Compounding Disparities](compounding-disparities.md). A statistical test or an interval belongs next to each ratio ([Bootstrap Confidence Intervals](bootstrap-confidence-intervals.md)); a ratio computed on a few hundred people can move a lot.
+
+## Concrete Example: AI Fair Recruitment
+
+[AI Fair Recruitment](../AI%20Fair%20Recruitment/): 115,309 candidates (men and women). The funnel is illustrative: four stages built from the audit's own score columns with a cut-off of 30 at each (skill screen, aptitude test, technical test, interview), each passing about 70% of the people who reach it, then the audit's actual hiring decision among those who passed all four. Women are the disadvantaged group; "others" are men.
+
+```
+stage              reached  women pass  others pass     four-fifths ratio (95% interval)
+skill screen        115309       0.700        0.701              0.999 [0.990, 1.007]
+aptitude test        80767       0.699        0.696              1.004 [0.995, 1.013]
+technical test       56325       0.697        0.699              0.997 [0.987, 1.009]
+interview            39313       0.699        0.700              0.999 [0.984, 1.012]
+hiring decision      27504       0.677        0.718              0.942 [0.927, 0.958]
+
+whole funnel, everyone who applied: 19330 hired; women's rate over others' rate 0.941
+hires in the data overall: 29816 (10486 of them would not have passed all four cut-offs above)
+```
+
+- **The four score stages are balanced.** Women pass at 0.700, 0.699, 0.697 and 0.699 against 0.701, 0.696, 0.699 and 0.700 for men; every ratio is within 0.4% of 1 and every interval includes 1. The score distributions do not differ by gender in this data.
+- **The gap enters at the decision.** Among the 27,504 people who passed all four, women are hired at 0.677 and men at 0.718, a ratio of 0.942 with an interval of 0.927 to 0.958. At the same qualifications the hire rate differs by 4 points.
+- **The funnel is a stand-in, not the data's rule.** 10,486 of the 29,816 hires in the data would not have passed all four cut-offs, so the recorded hiring decision does not follow these thresholds. The stage view is a way to look at the audit, not a description of how those hires were made.
+
+The overall ratio for the audit's hire rate is lower than the decision-stage ratio (women 0.240, men 0.269 across all 115,309 candidates, a ratio of 0.891), so the final decision is where the audit's gap sits, and a check that only looked at tests would have found nothing.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 hiring-pipeline-adverse-impact.py`).
+
+```python
+import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("AI Fair Recruitment")
+df = data.df
+women = data.masks["gender"].to_numpy().astype(int)       # 1 = female candidates, the audit's disadvantaged group
+hired = data.y.to_numpy()
+rng = np.random.default_rng(0)
+
+# An illustrative four-stage funnel built from the audit's own score columns. Each cut-off passes about 70%.
+stages = [("skill screen", "Skill_Score", 30), ("aptitude test", "Aptitude_Test_Score", 30),
+          ("technical test", "Technical_Test_Score", 30), ("interview", "Interview_Score", 30)]
+alive = np.ones(len(df), dtype=bool)
+
+def ratio_with_interval(passed, reached, n_boot=500):
+    """Women's selection rate divided by everyone else's, among the people who reached the stage, with a bootstrap interval."""
+    w, m = reached & (women == 1), reached & (women == 0)
+    rate = lambda mask, rows: passed[rows][mask[rows]].mean()
+    point = passed[w].mean() / passed[m].mean()
+    idx_w, idx_m = np.flatnonzero(w), np.flatnonzero(m)
+    boots = [passed[rng.choice(idx_w, len(idx_w))].mean() / passed[rng.choice(idx_m, len(idx_m))].mean() for _ in range(n_boot)]
+    return point, np.percentile(boots, [2.5, 97.5])
+
+print(f"{'stage':16s} {'reached':>9} {'women pass':>11} {'others pass':>12} {'four-fifths ratio (95% interval)':>36}")
+cumulative = np.ones(len(df), dtype=bool)
+for name, column, cut in stages:
+    passed = (df[column].to_numpy() >= cut)
+    reached = cumulative.copy()
+    ratio, (lo, hi) = ratio_with_interval(passed.astype(float), reached)
+    w, m = reached & (women == 1), reached & (women == 0)
+    print(f"{name:16s} {reached.sum():9d} {passed[w].mean():11.3f} {passed[m].mean():12.3f} {ratio:18.3f} [{lo:.3f}, {hi:.3f}]")
+    cumulative &= passed
+
+reached = cumulative.copy()
+ratio, (lo, hi) = ratio_with_interval(hired.astype(float), reached)
+w, m = reached & (women == 1), reached & (women == 0)
+print(f"{'hiring decision':16s} {reached.sum():9d} {hired[w].mean():11.3f} {hired[m].mean():12.3f} {ratio:18.3f} [{lo:.3f}, {hi:.3f}]")
+
+everyone = np.ones(len(df), dtype=bool)
+end_to_end, _ = ratio_with_interval((cumulative & (hired == 1)).astype(float), everyone, n_boot=10)
+print(f"\nwhole funnel, everyone who applied: {(cumulative & (hired == 1)).sum()} hired; women's rate over others' rate {end_to_end:.3f}")
+print(f"hires in the data overall: {hired.sum()} ({(hired == 1).sum() - (cumulative & (hired == 1)).sum()} of them would not have passed all four cut-offs above)")
+```
+
+## Limitations
+
+1. **The stages here are invented.** Real pipelines have their own stages, cut-offs and orderings. The point is the method, not these thresholds.
+2. **A stage ratio is conditional on who is left.** If an earlier stage removed more of one group, the people who reach the next stage are not comparable between groups.
+3. **Four-fifths is a rule of thumb, not a test.** The ratio above 0.8 can still be significant, and below 0.8 can be noise. See [Permutation Tests for Fairness Gaps](permutation-test-fairness-gaps.md).
+4. **Stage definitions are choices.** Whether "applied" means opened the application or completed it changes the first ratio.
+5. **Legal tests need legal sources.** What counts as adverse impact, and what an employer must show in response, comes from the guidelines and case law for your jurisdiction.
+
+## Related Concepts
+
+* [Disparate Impact](disparate-impact.md) - the four-fifths ratio and its legal background
+* [Compounding Disparities](compounding-disparities.md) - how stage ratios multiply
+* [Differential Validity](differential-validity.md) - whether the scores used at each stage predict equally well
+* [Bootstrap Confidence Intervals](bootstrap-confidence-intervals.md) - the interval beside each ratio
+* [Intersectional Bias](intersectional-bias.md) - stages can differ for intersections the single-attribute view misses
+
+## Related Projects in This Repo
+
+* [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - the audit used for the example above
+
+## Further Reading
+
+* The Uniform Guidelines on Employee Selection Procedures (1978), 29 CFR Part 1607 - the four-fifths rule and the definition of adverse impact.
+* [Bogen, M., Rieke, A. (2018): Help Wanted: An Examination of Hiring Algorithms, Equity, and Bias](https://www.upturn.org/work/help-wanted/) - Upturn; how algorithms enter each stage of a hiring pipeline.
+* [Raghavan, M., Barocas, S., Kleinberg, J., Levy, K. (2020): Mitigating Bias in Algorithmic Hiring: Evaluating Claims and Practices](https://arxiv.org/abs/1906.09208) - FAT* 2020; what vendors claim about bias at each stage and how to evaluate it.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Compounding Disparities
+URL: https://www.thefaircode.xyz/explainers/compounding-disparities.html
+Summary: Learn why a funnel's ratio is the product of its stage ratios, so stages that each pass the four-fifths check can fail it together. A simulation: 0.95 at each of four stages gives 0.813, 0.90 gives 0.666, 0.85 gives 0.521, and correlated stages behave almost the same.
+
+> *A ratio of 0.9 at each of four stages looks like four small problems. End to end it is 0.66, which fails the four-fifths rule that none of the stages did.*
+
+## The One-Sentence Definition
+
+**Compounding disparities** are the multiplication of stage-level selection ratios across a sequence of decisions, so that small gaps at each stage produce a much larger gap in the final outcome.
+
+## Why It Matters
+
+The arithmetic is simple and still surprising. If women's chance of passing a stage is 90% of men's, and the stages are independent, women are 90% as likely to pass the first, 81% as likely to pass the first two, 73% to pass three and 66% to pass four. Each stage on its own clears a 0.8 four-fifths check, and the funnel does not.
+
+This is why [Hiring Pipeline Adverse Impact](hiring-pipeline-adverse-impact.md) reports every stage and the whole funnel. It is also why an audit of one stage can be accurate and misleading: it tells you the stage's own ratio and nothing about what the other stages add.
+
+## Core Concept: The Funnel Ratio Is the Product of the Conditional Ratios
+
+For stages `1..k`, where `r_i` is the ratio of women's pass rate to men's among those who reached stage `i`:
+
+```
+whole-funnel ratio  =  r_1 * r_2 * ... * r_k
+```
+
+This holds exactly for the conditional ratios, whatever the correlation between stages. The unconditional ratios (each computed over everyone, not just those who reached the stage) multiply only if the stages are independent, and the two can differ when they are not.
+
+## Concrete Example: A Simulated Four-Stage Funnel
+
+This is a simulation, because the benchmark's hiring audit has no gap at its score stages (see the previous explainer). We put a known ratio into each of four stages with a base pass rate of 70%, run 200,000 applicants through, and measure.
+
+```
+ratio put in at each of 4 stages           measured at each stage  product of the four  whole funnel
+                              1.00        1.000 1.001 0.991 1.008                0.999         0.999
+                              0.95        0.953 0.943 0.950 0.952                0.813         0.813
+                              0.90        0.897 0.904 0.904 0.907                0.666         0.666
+                              0.85        0.846 0.851 0.850 0.852                0.521         0.521
+
+correlated stages, 0.95 at each: unconditional stage ratios 0.948 0.952 0.948 0.944, their product 0.808, whole funnel 0.811
+```
+
+- **The measured stage ratios match what was put in** (0.953, 0.943, 0.950, 0.952 for an input of 0.95) within sampling noise.
+- **The product of the four equals the whole-funnel ratio.** 0.95 per stage gives 0.813; 0.90 gives 0.666; 0.85 gives 0.521. Any input of 0.95 or below keeps every stage above 0.9 and still leaves the funnel near or below the threshold.
+- **Correlated stages behave the same here.** When the pass decision at each stage depends on a shared underlying ability, the unconditional stage ratios multiply to 0.808 and the funnel ratio is 0.811, close but not identical, which is the case where the product of unconditional ratios is only an approximation.
+
+## Detection/Implementation Code
+
+Run from the repo root (`python3 compounding-disparities.py`). It needs only NumPy.
+
+```python
+import numpy as np
+
+rng = np.random.default_rng(0)
+N = 200_000                                      # applicants per run, half of them women
+women = np.arange(N) < N // 2
+
+def funnel(stage_ratios, base_pass=0.7):
+    """Four independent stages. Everyone passes a stage with probability base_pass, except that women's chance is
+    multiplied by that stage's ratio. Returns each stage's ratio among the people who reached it, and the whole-funnel ratio."""
+    alive = np.ones(N, dtype=bool)
+    seen = []
+    for ratio in stage_ratios:
+        p = np.where(women, base_pass * ratio, base_pass)
+        passed = rng.random(N) < p
+        reached_w, reached_m = alive & women, alive & ~women
+        seen.append(passed[reached_w].mean() / passed[reached_m].mean())
+        alive &= passed
+    whole = alive[women].mean() / alive[~women].mean()
+    return seen, whole
+
+print(f"{'ratio put in at each of 4 stages':34s} {'measured at each stage':>30} {'product of the four':>20} {'whole funnel':>13}")
+for r in (1.0, 0.95, 0.90, 0.85):
+    seen, whole = funnel([r] * 4)
+    print(f"{r:34.2f} {' '.join(f'{s:.3f}' for s in seen):>30} {np.prod(seen):20.3f} {whole:13.3f}")
+
+# The stages are independent above. When they are correlated, the whole-funnel ratio is NOT the product of the unconditional
+# stage ratios: someone who passed the first stage is more likely to pass the second.
+skill = rng.normal(size=N)
+def correlated(ratios, noise=0.5):
+    alive = np.ones(N, dtype=bool); unconditional = []
+    for ratio in ratios:
+        score = skill + noise * rng.normal(size=N)
+        cut = np.quantile(score, 0.3)
+        passed = score >= cut
+        passed = passed & ~(women & (rng.random(N) > ratio))
+        unconditional.append(passed[women].mean() / passed[~women].mean())
+        alive &= passed
+    return unconditional, alive[women].mean() / alive[~women].mean()
+unconditional, whole = correlated([0.95] * 4)
+print(f"\ncorrelated stages, 0.95 at each: unconditional stage ratios {' '.join(f'{u:.3f}' for u in unconditional)}, "
+      f"their product {np.prod(unconditional):.3f}, whole funnel {whole:.3f}")
+```
+
+## Limitations
+
+1. **It is a simulation.** The real stage gaps, and whether they are independent, have to come from your own data.
+2. **The multiplication assumes the same people are compared.** If one group is screened out more at stage one, those who reach stage two are a different mix, and a stage-two ratio is conditional on that.
+3. **Equal stage ratios are a special case.** Real funnels have a larger gap at one stage, and the interesting question is which.
+4. **A threshold at each stage is not a rule at the end.** Four stages above 0.8 and a funnel below it is a reason to look at the funnel, not a legal conclusion.
+5. **Compounding works in both directions.** A mitigation that nudges each stage by a little closes the funnel gap by the same multiplication.
+
+## Related Concepts
+
+* [Hiring Pipeline Adverse Impact](hiring-pipeline-adverse-impact.md) - measuring the ratio at each stage of real data
+* [Disparate Impact](disparate-impact.md) - the four-fifths rule
+* [Intersectional Bias](intersectional-bias.md) - compounding across attributes instead of stages
+* [Feedback Loop Bias](feedback-loop-bias.md) - compounding across rounds of retraining
+* [Subgroup Fairness](subgroup-fairness.md) - small gaps that add up inside a subgroup
+
+## Related Projects in This Repo
+
+* [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - the audit whose stages are examined in the companion explainer
+
+## Further Reading
+
+* The Uniform Guidelines on Employee Selection Procedures (1978), 29 CFR Part 1607 - the four-fifths rule and how it is applied to a selection process.
+* [Bohnet, I., van Geen, A., Bazerman, M. (2016): When Performance Trumps Gender Bias: Joint Versus Separate Evaluation](https://doi.org/10.1287/mnsc.2015.2186) - Management Science 62(5); how small evaluation effects shape who advances.
+* [Kleinberg, J., Raghavan, M. (2021): Algorithmic Monoculture and Social Welfare](https://arxiv.org/abs/2101.05853) - PNAS 118; how repeating the same selection algorithm across stages and employers compounds outcomes.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Differential Validity
+URL: https://www.thefaircode.xyz/explainers/differential-validity.html
+Summary: Learn the difference between validity (how well a score ranks people in each group) and prediction (the expected outcome at the same score). See AI Fair Recruitment: AUC is 0.74 to 0.75 for both genders, but women are hired 0.9 to 4.0 points less often at the same technical score.
+
+> *A score can predict equally well for two groups and still be set too high for one of them. Validity and prediction are different questions.*
+
+## The One-Sentence Definition
+
+**Differential validity** is a difference between groups in how well a score predicts an outcome (for example, the strength of the link between a test score and a hiring or performance outcome), and **differential prediction** is a difference in the level of the outcome at the same score.
+
+## Why It Matters
+
+Employment testing has asked for sixty years whether a selection test is "fair" in a statistical sense, and the standard answers (Cleary, 1968) are about prediction, not outcome rates. A test is predictively fair if the same score means the same expected outcome for each group, so a single regression line fits both. If one group's line is lower, a single cut-off treats the groups differently at the same score, even if the test is equally good at ranking people within each.
+
+Two separate checks follow. How well does the score rank people within each group (validity)? And at the same score, does one group have a lower expected outcome (prediction)? A test can pass the first and fail the second, which is what the example shows.
+
+## Core Concept: Two Checks
+
+1. **Validity by group:** the AUC (or correlation) between the score and the outcome, computed per group, with an interval.
+2. **Prediction by group:** the expected outcome at each score band, per group; a gap at the same score is differential prediction. In regression form, a group term (intercept difference) or a group-by-score term (slope difference).
+
+Here the outcome is the audit's hiring decision, which is a decision, not a measure of job performance. That makes the second check a measure of how the decision treats equal scores, not of whether the score is a good predictor of work.
+
+## Concrete Example: AI Fair Recruitment
+
+[AI Fair Recruitment](../AI%20Fair%20Recruitment/): 115,309 candidates, women against men, with the audit's hiring decision as the outcome and four score columns.
+
+```
+does each score predict being hired equally well for women and for men? (AUC of the score alone)
+  Technical_Test_Score   men 0.743 | women 0.748 (95% interval 0.743-0.753)
+  Interview_Score        men 0.746 | women 0.747 (95% interval 0.742-0.752)
+  Skill_Score            men 0.744 | women 0.747 (95% interval 0.742-0.752)
+  Aptitude_Test_Score    men 0.744 | women 0.750 (95% interval 0.744-0.756)
+
+differential prediction: hire rate at the same technical test score (bands of 20 points)
+   0-19: men 0.066 | women 0.057 | women minus men -0.009 (n = 14538, 8516)
+  20-39: men 0.138 | women 0.107 | women minus men -0.031 (n = 14549, 8489)
+  40-59: men 0.245 | women 0.214 | women minus men -0.030 (n = 14463, 8556)
+  60-79: men 0.376 | women 0.340 | women minus men -0.036 (n = 14570, 8599)
+  80-99: men 0.522 | women 0.482 | women minus men -0.040 (n = 14544, 8485)
+
+one model for everyone (no Gender input), test rows: predicted hire probability women 0.265, men 0.254; observed 0.246 and 0.266
+```
+
+- **Validity is equal.** Each score has an AUC of about 0.74 to 0.75 for both groups: for example technical test 0.743 for men and 0.748 for women (interval 0.743 to 0.753). The scores rank candidates equally well within each group.
+- **Prediction is not.** At the same technical score band, women are hired 0.9 to 4.0 points less often: 0.107 against 0.138 at 20 to 39, 0.340 against 0.376 at 60 to 79, 0.482 against 0.522 at 80 to 99, with 8,000 or more women in every band, so these are not noise.
+- **A model that ignores gender inherits the mismatch.** Trained on all candidates without a gender input, it predicts a hire probability of 0.265 for women and 0.254 for men on the test rows, while the observed rates are 0.246 and 0.266: it over-predicts for women by about 2 points and under-predicts for men by about 1, the signature of one regression line that does not fit both groups.
+
+So the scores are fine as predictors and the decision is not consistent with them across groups. The outcome here is the audit's historical hiring decision, so this is evidence about the decision, not about job performance.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 differential-validity.py`).
+
+```python
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("AI Fair Recruitment", strategy="baseline")      # every column of the audit, Gender included
+df = data.df
+women = data.masks["gender"].to_numpy().astype(int)
+hired = data.y.to_numpy()
+rng = np.random.default_rng(0)
+
+def interval(values, group, fn, n=300):
+    a = np.flatnonzero(group)
+    boots = [fn(values, rng.choice(a, len(a))) for _ in range(n)]
+    return np.percentile(boots, [2.5, 97.5])
+
+print("does each score predict being hired equally well for women and for men? (AUC of the score alone)")
+for column in ("Technical_Test_Score", "Interview_Score", "Skill_Score", "Aptitude_Test_Score"):
+    score = df[column].to_numpy(dtype=float)
+    f = lambda v, rows: roc_auc_score(hired[rows], v[rows])
+    aucs = {g: f(score, np.flatnonzero(women == g)) for g in (0, 1)}
+    lo, hi = interval(score, women == 1, f)
+    print(f"  {column:22s} men {aucs[0]:.3f} | women {aucs[1]:.3f} (95% interval {lo:.3f}-{hi:.3f})")
+
+print("\ndifferential prediction: hire rate at the same technical test score (bands of 20 points)")
+band = (df["Technical_Test_Score"].to_numpy() // 20).astype(int)
+for b in range(5):
+    rows = band == b
+    m, w = hired[rows & (women == 0)].mean(), hired[rows & (women == 1)].mean()
+    print(f"  {b * 20:2d}-{b * 20 + 19:2d}: men {m:.3f} | women {w:.3f} | women minus men {w - m:+.3f} (n = {(rows & (women == 0)).sum()}, {(rows & (women == 1)).sum()})")
+
+# One regression for everyone, then look at the gap that remains at the same predicted score.
+features = ["Technical_Test_Score", "Interview_Score", "Skill_Score", "Aptitude_Test_Score", "Experience_Years"]
+X = df[features].to_numpy(dtype=float)
+pooled = LogisticRegression(max_iter=2000).fit(X[data.idx_train], hired[data.idx_train])
+p = pooled.predict_proba(X[data.idx_test])[:, 1]
+w_test, y_test = women[data.idx_test], hired[data.idx_test]
+print(f"\none model for everyone (no Gender input), test rows: predicted hire probability women {p[w_test == 1].mean():.3f}, men {p[w_test == 0].mean():.3f}; "
+      f"observed {y_test[w_test == 1].mean():.3f} and {y_test[w_test == 0].mean():.3f}")
+```
+
+## Limitations
+
+1. **The outcome matters.** With a hiring decision as the outcome, differential prediction says the decision treats equal scores differently. With a measure of job performance it would say the test over- or under-predicts for a group. Name which you have.
+2. **A criterion can itself be biased.** If the outcome (performance ratings, promotions) carries bias, equal prediction against it is not evidence of fairness, see [Label Bias](label-bias.md).
+3. **Range restriction hides validity.** If you only see people who were hired, the correlation is attenuated, see [Survivorship Bias](survivorship-bias.md).
+4. **Equal validity does not mean equal selection.** Groups can have equal AUC and different pass rates at any single cut-off.
+5. **Small subgroups have wide intervals.** The comparison needs enough rows in each band and group, see [Disaggregated Evaluation](disaggregated-evaluation.md).
+
+## Related Concepts
+
+* [Predictive Parity](predictive-parity.md) - the classification-metric cousin of equal prediction at the same score
+* [Calibration](calibration.md) - the same idea for a probability score
+* [Aggregation Bias](aggregation-bias.md) - one line for groups whose lines differ
+* [Hiring Pipeline Adverse Impact](hiring-pipeline-adverse-impact.md) - the selection-rate view of the same data
+* [Label Bias](label-bias.md) - when the outcome used for validation is biased
+
+## Related Projects in This Repo
+
+* [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - the audit used for the example above
+
+## Further Reading
+
+* Cleary, T. A. (1968). Test Bias: Prediction of Grades of Negro and White Students in Integrated Colleges. Journal of Educational Measurement 5(2) - the regression definition of a fair test.
+* Society for Industrial and Organizational Psychology (2018). Principles for the Validation and Use of Personnel Selection Procedures (5th ed.) - the professional standard for validity and differential prediction in selection.
+* [Hardt, M., Price, E., Srebro, N. (2016): Equality of Opportunity in Supervised Learning](https://arxiv.org/abs/1610.02413) - NeurIPS 2016; fairness criteria defined on predictions and outcomes.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+

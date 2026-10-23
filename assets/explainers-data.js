@@ -1007,5 +1007,37 @@ window.FAIR_CODE_EXPLAINERS = [
       "explainability",
       "detection"
     ]
+  },
+  {
+    "slug": "hiring-pipeline-adverse-impact",
+    "title": "Hiring Pipeline Adverse Impact",
+    "subtitle": "Adverse impact at each stage, not only the last decision.",
+    "summary": "Learn to compute the four-fifths ratio with a bootstrap interval at each stage of a hiring funnel and for the whole funnel. See AI Fair Recruitment: four score stages are balanced to within 0.4%, and the gap enters at the hiring decision (ratio 0.942, interval 0.927 to 0.958).",
+    "description": "Computing the four-fifths ratio with intervals at each hiring stage and for the whole funnel, shown on AI Fair Recruitment where the gap enters at the decision.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "compounding-disparities",
+    "title": "Compounding Disparities",
+    "subtitle": "Four stages at 0.9 are 0.66 end to end.",
+    "summary": "Learn why a funnel's ratio is the product of its stage ratios, so stages that each pass the four-fifths check can fail it together. A simulation: 0.95 at each of four stages gives 0.813, 0.90 gives 0.666, 0.85 gives 0.521, and correlated stages behave almost the same.",
+    "description": "Why stage ratios multiply: four stages at 0.90 each pass the four-fifths check and give 0.666 end to end, shown in a simulation with correlated stages too.",
+    "tags": [
+      "metrics"
+    ]
+  },
+  {
+    "slug": "differential-validity",
+    "title": "Differential Validity",
+    "subtitle": "A score can predict equally well and still be set too high for one group.",
+    "summary": "Learn the difference between validity (how well a score ranks people in each group) and prediction (the expected outcome at the same score). See AI Fair Recruitment: AUC is 0.74 to 0.75 for both genders, but women are hired 0.9 to 4.0 points less often at the same technical score.",
+    "description": "Equal validity does not mean equal prediction: on AI Fair Recruitment each score has the same AUC for women and men, but women are hired less at the same score.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
   }
 ];

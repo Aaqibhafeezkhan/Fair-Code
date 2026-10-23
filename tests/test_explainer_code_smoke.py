@@ -7,7 +7,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXPLAINERS_DIR = REPO_ROOT / "explainers"
-PYTHON_BLOCK = re.compile(r"^\`\`\`python[^\n]*\n(.*?)^\`\`\`\s*$", re.MULTILINE | re.DOTALL)
+PYTHON_BLOCK = re.compile(r"^```python[^\n]*\n(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
 RUNNABLE_MARKER = "# runnable"
 SLOW_MARKER = "# slow"
 

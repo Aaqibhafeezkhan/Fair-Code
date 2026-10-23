@@ -35,6 +35,7 @@ Chouldechova (2017) proved the mechanism algebraically: if predictive parity hol
 Compute Positive Predictive Value per group, then pair it with a base-rate check, since a small PPV gap next to a large base-rate gap is the signature Chouldechova identified.
 
 ```python
+# runnable
 import pandas as pd
 
 
@@ -84,9 +85,15 @@ def base_rate_gap(df: pd.DataFrame, y_true: str, group_col: str):
     return rates.max() - rates.min()
 
 
-# Usage example
-# predictive_parity_gap(compas_df, y_true="two_year_recid", y_pred="flagged_high_risk", group_col="race")
-# base_rate_gap(compas_df, y_true="two_year_recid", group_col="race")
+sample = pd.DataFrame(
+    {
+        "group": ["A", "A", "B", "B"],
+        "y_true": [1, 0, 1, 0],
+        "y_pred": [1, 1, 1, 0],
+    }
+)
+predictive_parity_gap(sample, y_true="y_true", y_pred="y_pred", group_col="group")
+base_rate_gap(sample, y_true="y_true", group_col="group")
 ```
 
 ## Concrete Example: COMPAS - Audit 01

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Causal Graphs for Fairness · Fair Code</title>
+<meta name="description" content="How the assumed causal graph decides which variables to adjust for: the same sex gap is -0.196, -0.157 or -0.034 depending on the adjustment set.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/causal-graphs-for-fairness.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Causal Graphs for Fairness · Fair Code">
+<meta property="og:description" content="How the assumed causal graph decides which variables to adjust for: the same sex gap is -0.196, -0.157 or -0.034 depending on the adjustment set.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/causal-graphs-for-fairness.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/causal-graphs-for-fairness.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Causal Graphs for Fairness · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/causal-graphs-for-fairness.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Causal Graphs for Fairness · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Causal Graphs for Fairness · Fair Code">
+<meta name="twitter:description" content="How the assumed causal graph decides which variables to adjust for: the same sex gap is -0.196, -0.157 or -0.034 depending on the adjustment set.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/causal-graphs-for-fairness.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Causal Graphs for Fairness",
+      "description": "Learn how common causes, mediators and colliders decide what you may control for. On Benefits Denial the sex coefficient is -0.196 raw, -0.157 adjusting for hours, and -0.034 adjusting for marital status, which removes 83% of the gap if you draw it as a fair mediator.",
+      "url": "https://www.thefaircode.xyz/explainers/causal-graphs-for-fairness.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/causal-graphs-for-fairness.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Causal Graphs for Fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A causal graph for fairness is a diagram of assumptions about what causes what (the protected attribute, the variables it influences, the decision), and it determines which variables you may control for and which you must not when asking whether a gap is fair."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A raw gap (women are 0.109 likely to earn above $50K, men 0.306) says nothing about why. People answer that by \"controlling for\" other variables such as education, hours or occupation, and the choice changes the answer. Whether it should is not a statistical question. Education is plausibly caused by the attribute in part (unequal schooling), and controlling for it removes a path that may be unfair."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Causal Graphs for Fairness",
+          "item": "https://www.thefaircode.xyz/explainers/causal-graphs-for-fairness.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/causal-graphs-for-fairness.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Causal Graphs for Fairness</h1>
+      <p class="explainer-lede">Two analysts, same data, opposite verdicts: the difference is a drawing.</p>
+      <p class="explainer-lede">Learn how common causes, mediators and colliders decide what you may control for. On Benefits Denial the sex coefficient is -0.196 raw, -0.157 adjusting for hours, and -0.034 adjusting for marital status, which removes 83% of the gap if you draw it as a fair mediator.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Two analysts with the same data can reach opposite fairness verdicts. The difference is usually a drawing they did not show: which variables cause which.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>causal graph</strong> for fairness is a diagram of assumptions about what causes what (the protected attribute, the variables it influences, the decision), and it determines which variables you may control for and which you must not when asking whether a gap is fair.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>A raw gap (women are 0.109 likely to earn above $50K, men 0.306) says nothing about why. People answer that by &quot;controlling for&quot; other variables such as education, hours or occupation, and the choice changes the answer. Whether it should is not a statistical question. Education is plausibly caused by the attribute in part (unequal schooling), and controlling for it removes a path that may be unfair. A variable caused by both the attribute and the outcome can create a gap when you condition on it.</p>
+<p><a href="counterfactual-fairness.html">Counterfactual Fairness</a> and <a href="confounding-variable.html">Confounding Variables</a> rely on a graph without showing one. Drawing it down makes the assumptions arguable, which is the point: the data cannot tell two analysts with different graphs who is right.</p>
+<h3 id="core-concept-common-causes-mediators-and-colliders">Core Concept: Common Causes, Mediators and Colliders</h3>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Role of a variable</th><th>In the graph</th><th>Adjusting for it</th></tr></thead><tbody><tr><td>Common cause of attribute and outcome</td><td><code>Z -&gt; sex</code>, <code>Z -&gt; income</code></td><td>Needed, or the gap is confounded</td></tr><tr><td>Mediator</td><td><code>sex -&gt; M -&gt; income</code></td><td>Removes the part of the gap that runs through <code>M</code>. Right if that path is fair, wrong if it is the discrimination</td></tr><tr><td>Collider</td><td><code>sex -&gt; C &lt;- income</code></td><td>Creates a gap that was not there</td></tr></tbody></table></div>
+<p>The assumed graph for the example below is <code>sex -&gt; education, hours, occupation, marital status -&gt; income</code>, <code>sex -&gt; income</code> directly, and <code>age</code> as a common cause. It is an assumption, written down so it can be argued about.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: a linear-probability regression of &quot;income above $50K&quot; on being a woman, with different adjustment sets. The coefficient on sex is the gap that remains after adjusting.</p>
+<pre><code>women 33.1% of the rows; income above $50K: women 0.109, men 0.306
+
+adjusting for                           sex coefficient   what the graph says it is
+nothing                                         -0.1963   the total gap
+age                                             -0.1788   age is a common cause: legitimate to adjust
+education.num                                   -0.1926   a mediator: removes the part of the gap that runs through schooling
+hours.per.week                                  -0.1566   a mediator: removes the part through hours worked
+occupation                                      -0.2017   a mediator, and a contested one
+marital.status                                  -0.0340   a mediator or a proxy; the graph decides
+age, education, hours                           -0.1491   the &#x27;qualifications&#x27; set
+all of them                                     -0.0432   everything we have</code></pre>
+<ul><li><strong>Adjusting for age moves the gap from -0.196 to -0.179.</strong> Age is a common cause, so adjusting is legitimate.</li><li><strong>Adjusting for education barely changes it (-0.193).</strong> The data say that schooling does not carry much of the gap in this sample.</li><li><strong>Adjusting for hours worked moves it to -0.157.</strong> About a fifth of the gap runs through hours.</li><li><strong>Adjusting for marital status moves it to -0.034.</strong> More than 80% of the gap disappears, because marital status in this data is almost a restatement of sex and of being a primary earner. Whether that means &quot;the gap is explained&quot; or &quot;the explanation is the discrimination&quot; depends entirely on whether you draw marital status as a fair mediator or as a proxy for sex.</li><li><strong>Adjusting for occupation makes the gap larger (-0.202).</strong> Occupation is correlated with the attribute and the outcome in a way that opens a path, which is how adjustment can enlarge a gap.</li></ul>
+<p>None of these is the answer. They are the answers under different graphs.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 causal-graphs-for-fairness.py</code>). The label column records the role the graph gives each set; change the graph and the interpretation changes with it.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Benefits Denial&quot;)
+df = data.df
+woman = data.masks[&quot;sex&quot;].to_numpy().astype(float)
+high_income = data.y.to_numpy().astype(float)      # 1 = income above $50K
+
+def sex_coefficient(adjust):
+    &quot;&quot;&quot;Linear-probability regression of high income on being a woman, adjusting for the columns in `adjust`
+    (categorical columns are one-hot encoded). Returns the coefficient on sex: the gap that remains.&quot;&quot;&quot;
+    columns = [np.ones(len(df)), woman]
+    for name in adjust:
+        if not pd.api.types.is_numeric_dtype(df[name]):
+            columns.extend(pd.get_dummies(df[name], drop_first=True).to_numpy(dtype=float).T)
+        else:
+            columns.append(df[name].to_numpy(dtype=float))
+    X = np.column_stack(columns)
+    return np.linalg.lstsq(X, high_income, rcond=None)[0][1]
+
+# Assumed graph (an assumption, not a finding):
+#   sex -&gt; education.num, hours.per.week, occupation, marital.status -&gt; income;  sex -&gt; income (direct);  age -&gt; everything
+print(f&quot;women {woman.mean():.1%} of the rows; income above $50K: women {high_income[woman == 1].mean():.3f}, men {high_income[woman == 0].mean():.3f}&quot;)
+print(f&quot;\n{&#x27;adjusting for&#x27;:38s} {&#x27;sex coefficient&#x27;:&gt;16}   what the graph says it is&quot;)
+for label, adjust, meaning in (
+        (&quot;nothing&quot;, [], &quot;the total gap&quot;),
+        (&quot;age&quot;, [&quot;age&quot;], &quot;age is a common cause: legitimate to adjust&quot;),
+        (&quot;education.num&quot;, [&quot;education.num&quot;], &quot;a mediator: removes the part of the gap that runs through schooling&quot;),
+        (&quot;hours.per.week&quot;, [&quot;hours.per.week&quot;], &quot;a mediator: removes the part through hours worked&quot;),
+        (&quot;occupation&quot;, [&quot;occupation&quot;], &quot;a mediator, and a contested one&quot;),
+        (&quot;marital.status&quot;, [&quot;marital.status&quot;], &quot;a mediator or a proxy; the graph decides&quot;),
+        (&quot;age, education, hours&quot;, [&quot;age&quot;, &quot;education.num&quot;, &quot;hours.per.week&quot;], &quot;the &#x27;qualifications&#x27; set&quot;),
+        (&quot;all of them&quot;, [&quot;age&quot;, &quot;education.num&quot;, &quot;hours.per.week&quot;, &quot;occupation&quot;, &quot;marital.status&quot;], &quot;everything we have&quot;)):
+    print(f&quot;{label:38s} {sex_coefficient(adjust):+16.4f}   {meaning}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The graph is an assumption.</strong> No amount of data confirms that an arrow is absent. Different defensible graphs give different adjusted gaps, as above.</li><li><strong>The model is linear.</strong> A linear-probability regression with one coefficient per variable ignores interactions and non-linearity.</li><li><strong>Unmeasured causes remain.</strong> A cause of both sex-related choices and income that is not in the data cannot be adjusted for.</li><li><strong>The &quot;legitimate&quot; label is a value judgement.</strong> Whether a path counts as fair is for law, policy and the affected community, not for the analyst alone.</li><li><strong>Adjusting is not mitigating.</strong> The adjusted gap tells you about an explanation; it does not change what the model does.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="path-specific-effects.html">Path-Specific Effects</a> - splitting a gap into the paths through it</li><li><a href="counterfactual-fairness.html">Counterfactual Fairness</a> - fairness defined on a causal model</li><li><a href="confounding-variable.html">Confounding Variables</a> - the common-cause case</li><li><a href="simpsons-paradox.html">Simpson&#x27;s Paradox</a> - when adjusting reverses the sign</li><li><a href="proxy-variables.html">Proxy Variables</a> - when a mediator is really a stand-in for the attribute</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1706.02744" target="_blank" rel="noreferrer noopener">Kilbertus, N. et al. (2017): Avoiding Discrimination through Causal Reasoning</a> - NeurIPS 2017; resolving and proxy variables in a causal graph.</li><li><a href="https://arxiv.org/abs/1703.06856" target="_blank" rel="noreferrer noopener">Kusner, M. J., Loftus, J., Russell, C., Silva, R. (2017): Counterfactual Fairness</a> - NeurIPS 2017; fairness defined on a structural causal model.</li><li>Pearl, J. (2009). <em>Causality: Models, Reasoning, and Inference</em> (2nd ed.). Cambridge University Press - graphs, adjustment sets and colliders.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -414,11 +414,20 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/monitoring-fairness-in-production.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/delayed-feedback.html</loc>
+    <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/causal-graphs-for-fairness.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/path-specific-effects.html</loc>
   </url>
 </urlset>

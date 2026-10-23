@@ -1105,5 +1105,27 @@ window.FAIR_CODE_EXPLAINERS = [
       "data",
       "detection"
     ]
+  },
+  {
+    "slug": "causal-graphs-for-fairness",
+    "title": "Causal Graphs for Fairness",
+    "subtitle": "Two analysts, same data, opposite verdicts: the difference is a drawing.",
+    "summary": "Learn how common causes, mediators and colliders decide what you may control for. On Benefits Denial the sex coefficient is -0.196 raw, -0.157 adjusting for hours, and -0.034 adjusting for marital status, which removes 83% of the gap if you draw it as a fair mediator.",
+    "description": "How the assumed causal graph decides which variables to adjust for: the same sex gap is -0.196, -0.157 or -0.034 depending on the adjustment set.",
+    "tags": [
+      "detection",
+      "explainability"
+    ]
+  },
+  {
+    "slug": "path-specific-effects",
+    "title": "Path-Specific Effects",
+    "subtitle": "Split a gap into the paths you accept and the ones you do not.",
+    "summary": "Learn a linear mediation analysis that splits the effect of an attribute into direct and indirect paths with bootstrap intervals. On Benefits Denial the total effect is -0.1788, through hours -0.0272, through schooling -0.0025, and 83% is direct.",
+    "description": "Splitting the sex gap in income into direct and mediated paths with bootstrap intervals, and what must be assumed for the split to mean anything.",
+    "tags": [
+      "metrics",
+      "explainability"
+    ]
   }
 ];

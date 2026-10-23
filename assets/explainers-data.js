@@ -235,6 +235,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "false-positives-vs-false-negatives",
     "title": "False Positives vs. False Negatives in Medical Risk Models",
+    "seo_title": "False Positives vs. False Negatives in Medical AI",
     "subtitle": "When a missed high-risk flag costs more than a false alarm",
     "summary": "Learn why a single accuracy or AUC number can hide two very different kinds of mistakes, and why a missed diagnosis and a false alarm are almost never equally costly. See how one global decision threshold can produce equal overall accuracy while still leaving very different false negative rates across demographic groups.",
     "tags": [
@@ -383,6 +384,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "medical-imaging-representation-gaps",
     "title": "Why Medical Imaging Models Fail on Underrepresented Groups",
+    "seo_title": "Why Medical Imaging Models Fail Some Groups",
     "subtitle": "A model trained mostly on one group's images has barely seen the others.",
     "summary": "Learn why dermatology, radiology, and retinal imaging models underperform on groups thin in the training data, and the more insidious failure mode of shortcut learning, where a model keys off a confounder like scanner type or hospital site instead of the pathology. Covers the difference between a representation gap and shortcut confounding, why internal validation cannot rule out either, and per-group AUC plus proxy-detection code. Anchored to two documented real-world cases: Zech et al. (2018)'s hospital-site shortcut in pneumonia detection and Larrazabal et al. (2020)'s sex-imbalance study in chest X-ray diagnosis.",
     "tags": [
@@ -395,6 +397,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "obermeyer-cost-proxy",
     "title": "The Obermeyer Case: When Cost Becomes a Proxy for Health Need",
+    "seo_title": "The Obermeyer Case: Cost as a Proxy for Health Need",
     "subtitle": "How predicting healthcare spending instead of illness systematically under-refers sicker Black patients.",
     "summary": "Explore the canonical case study of Obermeyer et al. (2019): why using healthcare cost as a target variable creates racial bias, how historical spending disparities corrupt algorithm predictions, and how to audit models for proxy label bias using the Healthcare Readmission audit.",
     "tags": [
@@ -466,6 +469,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "equal-opportunity",
     "title": "What Is Equal Opportunity (and How It Differs From Equalized Odds)?",
+    "seo_title": "Equal Opportunity vs Equalized Odds",
     "subtitle": "Passing the true-positive-rate check doesn't mean passing the false-positive-rate one.",
     "summary": "Learn why Equal Opportunity only requires an equal true positive rate across groups, and how that relaxation can hide a false-positive-rate gap that Equalized Odds would catch. Uses two real frozen results: COMPAS, where the two metrics coincide, and Tenant Screening, where they diverge.",
     "tags": [
@@ -494,6 +498,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "bootstrap-confidence-intervals",
     "title": "What Is a Bootstrap Confidence Interval (and a Permutation Test)?",
+    "seo_title": "Bootstrap Confidence Intervals and Permutation Tests",
     "subtitle": "A fairness gap without an interval attached is a number, not a finding.",
     "summary": "Learn how bootstrap resampling estimates a confidence interval and a permutation test estimates a p-value for any fairness gap, and why both matter most on the small subgroups audits routinely hit. Contrasts two real frozen COMPAS results: a tight, clearly significant Equal Opportunity gap and a wide, inconclusive Predictive Parity gap measured from just 6 rows.",
     "tags": [
@@ -504,6 +509,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "mitigation-strategies",
     "title": "What Are Pre-, In-, and Post-Processing Fairness Mitigations?",
+    "seo_title": "Pre-, In-, and Post-Processing Fairness Mitigations",
     "subtitle": "Where in the pipeline you intervene changes what a fairness fix can and can't do.",
     "summary": "Learn the three families of fairness intervention - pre-processing, in-processing, and post-processing - through this repo's own five-strategy benchmark ladder. Anchored to COMPAS's real frozen progression (85.5% to 17.2% to 11.5% to -1.4% to 2.3% demographic parity gap), showing the three approaches converge rather than compound.",
     "tags": [
@@ -533,6 +539,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "counterfactual-explanation",
     "title": "What Is a Counterfactual Explanation? (And How It Differs From Counterfactual Fairness)",
+    "seo_title": "What Is a Counterfactual Explanation?",
     "subtitle": "One asks what changed the outcome. The other asks whether the outcome should have changed at all.",
     "summary": "Learn what a counterfactual explanation is - the smallest input change that flips one specific decision - and why it's a different concept from Counterfactual Fairness despite the shared name. Covers the basis for real adverse-action notices in lending, with a from-scratch nearest-counterfactual search over German Credit Lending.",
     "tags": [
@@ -542,6 +549,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "multiple-comparisons",
     "title": "What Is a Multiple-Comparisons Correction (Bonferroni, Holm, and False Discovery Rate)?",
+    "seo_title": "Multiple-Comparisons Correction for Fairness Audits",
     "subtitle": "Run enough p-values at 0.05 and some will read \"significant\" by chance alone.",
     "summary": "Learn what Bonferroni, Holm, and Benjamini-Hochberg false discovery rate corrections actually do to a batch of p-values, and why this repo's own benchmark harness - dozens of p-values per audit, 1,320 in total - needs one. Applies all three to COMPAS's real 90-p-value slice from paper/results-frozen/results_fairness.csv, verified against statsmodels, showing exactly which \"significant\" findings survive correction and which don't.",
     "tags": [
@@ -592,6 +600,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "subgroup-fairness",
     "title": "What Is Subgroup Fairness (and Fairness Gerrymandering)?",
+    "seo_title": "Subgroup Fairness and Fairness Gerrymandering",
     "subtitle": "Passing a fairness check on every attribute separately is not the same as passing it on every combination.",
     "summary": "Learn how a model can satisfy a fairness metric on each protected attribute individually yet fail on an algorithmically-discoverable subgroup, and how a brute-force subgroup scan differs from this repo's fixed-pair --cross. Uses the Healthcare Readmission audit: the gender readmission gap is 0.19 pp overall but -5.15 pp inside the Asian patient subgroup.",
     "tags": [
@@ -602,6 +611,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "differential-privacy",
     "title": "What Is Differential Privacy (and Its Tension With Fairness)?",
+    "seo_title": "Differential Privacy and Its Tension With Fairness",
     "subtitle": "The accuracy cost of a privacy guarantee falls hardest on underrepresented groups.",
     "summary": "Learn how DP-SGD's gradient clipping and noise addition disproportionately degrade accuracy for minority subgroups, so adding a privacy guarantee to a bias-mitigation pipeline is not free. Illustrative example from Bagdasaryan, Poursaeed and Shmatikov (NeurIPS 2019), plus a runnable DP-SGD noise-injection toy; this repo trains no DP model, so no frozen numbers are quoted.",
     "tags": [
@@ -643,6 +653,7 @@ window.FAIR_CODE_EXPLAINERS = [
   {
     "slug": "distributionally-robust-optimization",
     "title": "Distributionally Robust Optimization (DRO) for Fairness",
+    "seo_title": "Distributionally Robust Optimization for Fairness",
     "subtitle": "Hedge against the worst group instead of constraining one metric.",
     "summary": "Learn how group DRO trains against an adversary that shifts weight onto whichever group the model currently fails, and how it differs from a parity-constrained method like ExponentiatedGradient. See the real worst-group gain on Benefits Denial, the cost to the other groups, and how the step size over-hedges.",
     "tags": [

@@ -322,14 +322,14 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{title} · Fair Code</title>
-<meta name="description" content="{summary}">
+<meta name="description" content="{meta_description}">
 <link rel="canonical" href="{canonical}">
 <meta name="author" content="Yash Kewlani">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:site_name" content="Fair Code">
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="{title} · Fair Code">
-<meta property="og:description" content="{summary}">
+<meta property="og:description" content="{meta_description}">
 <meta property="og:type" content="article">
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{og_image}">
@@ -344,7 +344,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <meta property="og:image:alt" content="{title} · Fair Code (light)">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{title} · Fair Code">
-<meta name="twitter:description" content="{summary}">
+<meta name="twitter:description" content="{meta_description}">
 <meta name="twitter:image" content="{og_image}">
 
 <link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
@@ -561,6 +561,21 @@ def build_jsonld(entry, canonical, markdown_text="", dates=None):
                        "@graph": [defined_term, faq_page, breadcrumbs]}, indent=2)
 
 
+TITLE_SUFFIX = " · Fair Code"
+TITLE_MAX = 65          # search results cut a <title> after about this many characters (#1105)
+
+
+def seo_title(entry):
+    """The page title text: an optional `seo_title` from the data file, else `title`. Raises when the
+    finished <title> would be cut in search results."""
+    text = entry.get("seo_title") or entry["title"]
+    if len(text + TITLE_SUFFIX) > TITLE_MAX:
+        raise ValueError(
+            f"{entry['slug']}: the page title is {len(text + TITLE_SUFFIX)} characters (limit {TITLE_MAX}); "
+            f"add a shorter `seo_title` of at most {TITLE_MAX - len(TITLE_SUFFIX)} characters to assets/explainers-data.json")
+    return text
+
+
 def build_page(entry, known_slugs):
     slug = entry["slug"]
     md_path = EXPLAINERS_DIR / f"{slug}.md"
@@ -573,8 +588,9 @@ def build_page(entry, known_slugs):
     }
 
     return PAGE_TEMPLATE.format(
-        title=escape_html(entry["title"]),
+        title=escape_html(seo_title(entry)),
         summary=escape_html(entry["summary"]),
+        meta_description=escape_html(entry["summary"]),
         canonical=canonical,
         subtitle=escape_html(entry["subtitle"]),
         content=content_html,

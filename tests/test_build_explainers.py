@@ -134,3 +134,21 @@ def test_render_markdown_offsets_heading_levels_by_one():
     assert '<h2 id="top">Top</h2>' in html
     assert '<h3 id="sub">Sub</h3>' in html
     assert '<h6 id="deep">Deep</h6>' in html   # h6 + 1 stays h6, not h7
+
+
+def test_seo_title_uses_the_short_title_and_rejects_a_long_one():
+    # #1105: a <title> over 65 characters is cut in search results.
+    script = importlib.import_module("scripts.build_explainers")
+    assert script.seo_title({"slug": "x", "title": "Short Title"}) == "Short Title"
+    long_entry = {"slug": "x", "title": "A" * 60, "seo_title": "Shorter Title"}
+    assert script.seo_title(long_entry) == "Shorter Title"
+    import pytest
+    with pytest.raises(ValueError, match="seo_title"):
+        script.seo_title({"slug": "x", "title": "A" * 60})
+
+
+def test_every_explainer_title_fits_the_limit():
+    script = importlib.import_module("scripts.build_explainers")
+    entries = json.loads((REPO_ROOT / "assets" / "explainers-data.json").read_text(encoding="utf-8"))
+    for entry in entries:
+        assert len(script.seo_title(entry) + script.TITLE_SUFFIX) <= script.TITLE_MAX, entry["slug"]

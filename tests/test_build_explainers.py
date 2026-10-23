@@ -175,3 +175,169 @@ def test_every_explainer_description_is_between_70_and_160_characters():
     entries = json.loads((REPO_ROOT / "assets" / "explainers-data.json").read_text(encoding="utf-8"))
     for entry in entries:
         assert script.DESCRIPTION_MIN <= len(script.meta_description(entry)) <= script.DESCRIPTION_MAX, entry["slug"]
+
+
+# ── The whole build, on a two-explainer fixture (#1110) ──────────────────────────────────────
+
+import re  # noqa: E402 - grouped with the fixture that uses it
+
+import pytest  # noqa: E402
+
+SAMPLE_MD = """## The One-Sentence Definition
+
+**Sample topic** is a short, plain definition used to test the generator.
+
+## Why It Matters
+
+It matters because the page needs a body. See [Other Topic](other-topic.md) and [`Benefits Denial/`](../Benefits%20Denial/).
+
+```python
+print("hello")
+```
+
+| a | b |
+|---|---|
+| 1 | 2 |
+
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+"""
+
+
+def _entry(slug, title, summary=None, **extra):
+    return {"slug": slug, "title": title, "subtitle": f"{title} subtitle",
+            "summary": summary or f"A clear one sentence summary of {title} that is long enough to be a good meta description.",
+            "tags": ["metrics"], **extra}
+
+
+@pytest.fixture
+def site(tmp_path, monkeypatch):
+    script = importlib.import_module("scripts.build_explainers")
+    entries = [_entry("sample-topic", "Sample Topic"), _entry("other-topic", "Other Topic")]
+    (tmp_path / "explainers").mkdir()
+    (tmp_path / "assets" / "og").mkdir(parents=True)
+    (tmp_path / "assets" / "og-light").mkdir()
+    (tmp_path / "assets" / "explainers-data.json").write_text(json.dumps(entries), encoding="utf-8")
+    for e in entries:
+        (tmp_path / "explainers" / f"{e['slug']}.md").write_text(SAMPLE_MD, encoding="utf-8")
+        for folder in ("og", "og-light"):
+            (tmp_path / "assets" / folder / f"{e['slug']}.png").write_bytes(b"\x89PNG fixture")
+    for name, value in {
+        "ROOT": tmp_path, "EXPLAINERS_DIR": tmp_path / "explainers",
+        "DATA_JSON": tmp_path / "assets" / "explainers-data.json", "DATA_JS": tmp_path / "assets" / "explainers-data.js",
+        "SITEMAP": tmp_path / "sitemap.xml", "LLMS_FULL": tmp_path / "llms-full.txt",
+        "OG_DIR": tmp_path / "assets" / "og", "OG_LIGHT_DIR": tmp_path / "assets" / "og-light",
+        "PACKAGE_MIRROR_DIR": tmp_path / "faircode" / "_explainers",
+    }.items():
+        monkeypatch.setattr(script, name, value)
+    monkeypatch.setattr(script, "_git_lastmod", lambda relpath: "2026-01-02")
+    monkeypatch.setattr(script, "_git_first_commit", lambda relpath: "2026-01-01")
+    return script, tmp_path, entries
+
+
+def test_the_build_writes_every_output_for_every_entry(site, capsys):
+    script, root, _ = site
+    script.main()
+    assert "Generated 2 explainer pages" in capsys.readouterr().out
+    for slug in ("sample-topic", "other-topic"):
+        assert (root / "explainers" / f"{slug}.html").is_file()
+        assert (root / "faircode" / "_explainers" / f"{slug}.md").is_file()
+    assert (root / "faircode" / "_explainers" / "data.json").is_file()
+    assert (root / "assets" / "explainers-data.js").read_text(encoding="utf-8").startswith("window.FAIR_CODE_EXPLAINERS = [")
+
+
+def test_a_page_has_the_head_tags_search_and_social_need(site):
+    script, root, _ = site
+    script.main()
+    html = (root / "explainers" / "sample-topic.html").read_text(encoding="utf-8")
+    canonical = "https://www.thefaircode.xyz/explainers/sample-topic.html"
+    assert "<title>Sample Topic · Fair Code</title>" in html
+    assert f'<link rel="canonical" href="{canonical}">' in html
+    assert f'<meta property="og:url" content="{canonical}">' in html
+    assert 'og:image" content="https://www.thefaircode.xyz/assets/og/sample-topic.png"' in html
+    assert "assets/og-light/sample-topic.png" in html
+    assert len(re.findall(r"<h1[ >]", html)) == 1
+    description = re.search(r'<meta name="description" content="(.*?)"', html).group(1)
+    assert 'content="%s"' % description in html.split('og:description')[1][:300]
+    assert 70 <= len(description) <= 160
+
+
+def test_a_page_has_parseable_json_ld_with_the_expected_types(site):
+    script, root, _ = site
+    script.main()
+    html = (root / "explainers" / "sample-topic.html").read_text(encoding="utf-8")
+    blocks = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
+    assert blocks
+    graph = json.loads(blocks[0])["@graph"]
+    assert {node["@type"] for node in graph} >= {"DefinedTerm", "BreadcrumbList"}
+    term = next(node for node in graph if node["@type"] == "DefinedTerm")
+    assert term["name"] == "Sample Topic"
+
+
+def test_the_markdown_becomes_html_and_internal_links_resolve(site):
+    script, root, _ = site
+    script.main()
+    html = (root / "explainers" / "sample-topic.html").read_text(encoding="utf-8")
+    assert '<a href="other-topic.html">Other Topic</a>' in html
+    assert "<table" in html and "<pre" in html
+
+
+def test_the_sitemap_lists_the_site_pages_and_each_explainer_with_lastmod(site):
+    script, root, _ = site
+    script.main()
+    xml = (root / "sitemap.xml").read_text(encoding="utf-8")
+    assert xml.startswith('<?xml version="1.0" encoding="UTF-8"?>')
+    urls = re.findall(r"<loc>(.*?)</loc>", xml)
+    assert urls[:3] == ["https://www.thefaircode.xyz/", "https://www.thefaircode.xyz/profiler.html",
+                        "https://www.thefaircode.xyz/benchmark.html"]
+    assert "https://www.thefaircode.xyz/explainers/sample-topic.html" in urls
+    assert xml.count("<lastmod>2026-01-02</lastmod>") == len(urls)
+
+
+def test_llms_full_has_a_section_per_entry(site):
+    script, root, _ = site
+    script.main()
+    text = (root / "llms-full.txt").read_text(encoding="utf-8")
+    assert text.startswith("# Fair Code - Full Text for LLMs")
+    for title in ("Sample Topic", "Other Topic"):
+        assert f"# {title}\nURL: https://www.thefaircode.xyz/explainers/" in text
+    assert text.count("## The One-Sentence Definition") == 2
+
+
+def test_the_build_refuses_a_missing_markdown_file(site):
+    script, root, _ = site
+    (root / "explainers" / "other-topic.md").unlink()
+    with pytest.raises(SystemExit, match="Missing markdown file.*other-topic"):
+        script.main()
+
+
+def test_the_build_refuses_a_missing_or_empty_og_image(site):
+    script, root, _ = site
+    (root / "assets" / "og" / "sample-topic.png").write_bytes(b"")
+    with pytest.raises(SystemExit, match="Open Graph.*sample-topic"):
+        script.main()
+    (root / "assets" / "og" / "sample-topic.png").write_bytes(b"x")
+    (root / "assets" / "og-light" / "other-topic.png").unlink()
+    with pytest.raises(SystemExit, match="Open Graph.*other-topic"):
+        script.main()
+
+
+def test_the_mirror_drops_a_stale_explainer(site):
+    script, root, _ = site
+    stale = root / "faircode" / "_explainers" / "removed-topic.md"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("old", encoding="utf-8")
+    script.main()
+    assert not stale.exists()
+
+
+def test_a_page_title_or_description_out_of_range_stops_the_build(site):
+    script, root, entries = site
+    entries[0]["title"] = "T" * 70
+    (root / "assets" / "explainers-data.json").write_text(json.dumps(entries), encoding="utf-8")
+    with pytest.raises(ValueError, match="page title"):
+        script.main()
+    entries[0]["title"] = "Sample Topic"
+    entries[0]["summary"] = "Too short."
+    (root / "assets" / "explainers-data.json").write_text(json.dumps(entries), encoding="utf-8")
+    with pytest.raises(ValueError, match="meta description"):
+        script.main()

@@ -101,3 +101,10 @@ def test_default_strategy_is_the_core_feature_set():
 
 def test_random_state_override_changes_the_split():
     assert not np.array_equal(load_audit(AUDIT).idx_test, load_audit(AUDIT, random_state=7).idx_test)
+
+
+def test_df_holds_the_filtered_raw_rows_in_the_same_order():
+    data = load_audit(AUDIT)
+    assert len(data.df) == len(data.X_all) == len(data.y)
+    assert {"age", "class"} <= set(data.df.columns)
+    assert (data.df.index == data.X_all.index).all()

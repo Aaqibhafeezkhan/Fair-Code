@@ -26,7 +26,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/shap-values.html</loc>
-    <lastmod>2026-09-19</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/disparate-impact.html</loc>
@@ -38,7 +38,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fairness-metric-conflicts.html</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/calibration.html</loc>
@@ -46,15 +46,15 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/demographic-parity.html</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/feedback-loop-bias.html</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/label-bias.html</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/individual-fairness.html</loc>
@@ -62,7 +62,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/counterfactual-fairness.html</loc>
-    <lastmod>2026-09-19</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/neural-networks.html</loc>
@@ -78,11 +78,11 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/proxy-entanglement.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/ml-bias.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/data-leakage.html</loc>
@@ -90,19 +90,19 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/how-ai-detects-patterns.html</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/distribution-shift.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/ai-objectivity-myth.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/confounding-variable.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/predictive-parity.html</loc>
@@ -114,7 +114,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/supervised-learning.html</loc>
-    <lastmod>2026-09-26</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/unsupervised-learning.html</loc>
@@ -126,7 +126,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/selection-bias.html</loc>
-    <lastmod>2026-07-20</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/automation-bias.html</loc>
@@ -134,15 +134,15 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/roc-curve-auc.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/class-imbalance.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/bias-variance-tradeoff.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/confusion-matrix.html</loc>
@@ -150,7 +150,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/protected-attribute.html</loc>
-    <lastmod>2026-07-28</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/accuracy-not-enough-healthcare-ai.html</loc>
@@ -162,7 +162,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/missing-data-bias-ehr.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/medical-imaging-representation-gaps.html</loc>
@@ -174,7 +174,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/underdiagnosis-bias.html</loc>
-    <lastmod>2026-09-10</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/race-correction-clinical-algorithms.html</loc>
@@ -182,7 +182,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/reject-inference.html</loc>
-    <lastmod>2026-09-10</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/base-rate-fallacy.html</loc>
@@ -194,11 +194,11 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/equal-opportunity.html</loc>
-    <lastmod>2026-08-19</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/intersectional-bias.html</loc>
-    <lastmod>2026-08-19</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/accuracy-equality.html</loc>
@@ -210,11 +210,11 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/mitigation-strategies.html</loc>
-    <lastmod>2026-08-29</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fairness-through-unawareness.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/lime.html</loc>
@@ -222,7 +222,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/counterfactual-explanation.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/multiple-comparisons.html</loc>
@@ -230,7 +230,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fairness-accuracy-tradeoff.html</loc>
-    <lastmod>2026-09-08</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/treatment-equality.html</loc>
@@ -238,7 +238,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/simpsons-paradox.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/conditional-demographic-parity.html</loc>
@@ -246,11 +246,11 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/subgroup-fairness.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/differential-privacy.html</loc>
-    <lastmod>2026-09-09</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/reject-option-classification.html</loc>
@@ -322,11 +322,11 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/model-cards.html</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/datasheets-for-datasets.html</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/algorithmic-impact-assessment.html</loc>
@@ -339,5 +339,14 @@
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fairness-without-demographics.html</loc>
     <lastmod>2026-10-21</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/adverse-action-notices.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/geographic-proxies-and-redlining.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/risk-based-pricing-gaps.html</loc>
   </url>
 </urlset>

@@ -623,7 +623,7 @@ rows, so the delta mixes a model change with a change in who was tested; `sample
 encoding of every core, proxy and protected column, and the manifest's stratified train/test split.
 It returns an `AuditData` with `manifest`, `X_all` (every encoded column), `X` (the columns the chosen
 `strategy` trains on; the S2 core-feature set when `strategy` is None), `y`, `masks` (attribute name to a
-0/1 Series, 1 for the disadvantaged group), `idx_train`, `idx_test` and `random_state`. `run_audit`
+0/1 Series, 1 for the disadvantaged group), `idx_train`, `idx_test`, `random_state` and `df` (the filtered raw rows in the same order, for columns the harness does not encode). `run_audit`
 calls the same `prepare_audit()`, so explainers, notebooks and tests that use the helper cannot drift
 from `results/`.
 

@@ -623,5 +623,29 @@
     "subtitle": "Help the worst-off group when you do not know who they are.",
     "summary": "Learn how upweighting the training rows a model gets wrong improves worst-group accuracy without any group labels. See it on Benefits Denial: a 3x upweight lifts the worst group from 0.712 to 0.742, and a 5x upweight collapses the model.",
     "tags": ["metrics", "data"]
+  },
+  {
+    "slug": "adverse-action-notices",
+    "title": "Adverse Action Notices",
+    "subtitle": "The reasons a lender must give are the one place a model's inputs are forced into the open.",
+    "summary": "Learn what an adverse action notice and its reason codes are, and how to derive them from a model's contributions. See German Credit Lending: the top reason is identical for both age groups, but personal_status appears 15 points more often in the under-30s' top two reasons.",
+    "description": "How reason codes on a credit decline are derived from a model, and how they can expose a proxy: personal_status shows up 15 points more for under-30s.",
+    "tags": ["explainability", "detection"]
+  },
+  {
+    "slug": "geographic-proxies-and-redlining",
+    "title": "Geographic Proxies and Redlining",
+    "subtitle": "Where a person lives is the oldest proxy for who they are.",
+    "summary": "Learn how a location column reconstructs race and how to measure both the proxy and its effect on the gap. See Tenant Screening: the area alone recovers race at 0.719 AUC, yet adding it moves the parity gap from +0.1136 to +0.0812.",
+    "description": "How a location feature can reveal race, and why proxy strength and effect on the parity gap are separate measurements, shown on Tenant Screening.",
+    "tags": ["data", "detection"]
+  },
+  {
+    "slug": "risk-based-pricing-gaps",
+    "title": "Risk-Based Pricing Gaps",
+    "subtitle": "A model can approve everyone and still treat groups differently.",
+    "summary": "Learn how to measure a fairness gap in a continuous quoted amount or rate when no one is declined. See German Credit Lending: models quote 7 to 13 percent less to under-30s, with intervals that still include zero at 200 test rows.",
+    "description": "How to measure a group gap in a quoted amount or price when everyone is approved, with a bootstrap interval, shown on German Credit Lending.",
+    "tags": ["metrics", "detection"]
   }
 ]

@@ -122,7 +122,8 @@ class AuditData:
     subset a strategy trains on (see `faircode.strategies.strategy_features`).
     `masks` maps each protected attribute name to a 0/1 Series that is 1 for the
     disadvantaged group, aligned with `X_all` and `y`. `idx_train`/`idx_test` are
-    the manifest's stratified split, so a row computed from them matches `results/`.
+    the manifest's stratified split, so a row computed from them matches `results/`. `df` holds the filtered
+    raw rows (same order as `X_all`), for columns the harness does not encode.
     """
     manifest: object
     X_all: pd.DataFrame
@@ -132,6 +133,7 @@ class AuditData:
     idx_train: np.ndarray
     idx_test: np.ndarray
     random_state: int
+    df: pd.DataFrame | None = None   # the filtered raw rows, for columns the harness does not encode
 
 
 def prepare_audit(manifest, strategy=None, random_state=None) -> AuditData:
@@ -151,7 +153,7 @@ def prepare_audit(manifest, strategy=None, random_state=None) -> AuditData:
     )
     feature_cols = strategy_features(
         strategy or "unawareness_proxy_removal", manifest.core_features, manifest.proxy_features, protected_cols)
-    return AuditData(manifest, X_all, X_all[feature_cols], y, protected_masks, idx_train, idx_test, rs)
+    return AuditData(manifest, X_all, X_all[feature_cols], y, protected_masks, idx_train, idx_test, rs, df)
 
 
 def load_audit(folder, strategy=None, random_state=None) -> AuditData:

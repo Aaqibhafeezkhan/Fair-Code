@@ -137,6 +137,16 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 
 ---
 
+## Limitations
+
+1. **A small p-value is not a large effect.** The chi-squared test above says a feature and the protected attribute are associated, not how much of the attribute the feature carries. With tens of thousands of rows almost every feature has a p-value near zero, so `is_proxy` is true for trivial associations. Pair it with an effect size such as Cramér's V, as the Open Dataset Profiler's proxy hints do.
+2. **One feature at a time can miss a cluster.** Several weak features can together reconstruct an attribute that none of them reveals alone. See [Proxy Entanglement](proxy-entanglement.md).
+3. **The test needs categories.** A numeric feature has to be binned first, and the bins change the result. Sparse tables with small expected counts make the p-value unreliable.
+4. **Removing a proxy also removes real signal.** A feature can be a proxy and a legitimate predictor at the same time, so dropping it trades accuracy for fairness. See [Fairness-Accuracy Trade-off](fairness-accuracy-tradeoff.md).
+5. **You can only test the attributes you have.** If the protected attribute is not in the data, you cannot run the check. See [Inferring Protected Attributes](inferring-protected-attributes.md).
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - Full COMPAS analysis: biased model → fair model → 82% gap reduction

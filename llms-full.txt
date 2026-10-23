@@ -151,6 +151,16 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 
 ---
 
+## Limitations
+
+1. **A small p-value is not a large effect.** The chi-squared test above says a feature and the protected attribute are associated, not how much of the attribute the feature carries. With tens of thousands of rows almost every feature has a p-value near zero, so `is_proxy` is true for trivial associations. Pair it with an effect size such as Cramér's V, as the Open Dataset Profiler's proxy hints do.
+2. **One feature at a time can miss a cluster.** Several weak features can together reconstruct an attribute that none of them reveals alone. See [Proxy Entanglement](proxy-entanglement.md).
+3. **The test needs categories.** A numeric feature has to be binned first, and the bins change the result. Sparse tables with small expected counts make the p-value unreliable.
+4. **Removing a proxy also removes real signal.** A feature can be a proxy and a legitimate predictor at the same time, so dropping it trades accuracy for fairness. See [Fairness-Accuracy Trade-off](fairness-accuracy-tradeoff.md).
+5. **You can only test the attributes you have.** If the protected attribute is not in the data, you cannot run the check. See [Inferring Protected Attributes](inferring-protected-attributes.md).
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - Full COMPAS analysis: biased model → fair model → 82% gap reduction
@@ -596,6 +606,16 @@ Sampling bias is not a technical accident. It reflects who had access to the sys
 The data you have is a record of the world as it was - including which people were visible, documented, and deemed worth measuring. A model trained on that data will reproduce those visibility decisions at scale.
 
 **You cannot fix a representativeness problem with a better algorithm. You fix it with better data - or you disclose the limitation and restrict deployment accordingly.**
+
+---
+
+## Limitations
+
+1. **You cannot see who is missing from the data alone.** The checks above compare the sample with a known population. Without an outside benchmark (a census table, a registry) a missing group leaves no trace in the rows.
+2. **Reweighting and oversampling cannot recover missing information.** They reuse the few rows you have for an under-represented group, which also amplifies their noise. See [Class Imbalance](class-imbalance.md).
+3. **"Representative" depends on where the model will be used.** A sample that matches today's population can stop matching it later. See [Distribution Shift](distribution-shift.md).
+4. **Measuring representation needs the group labels.** When the attribute was never collected the audit cannot start, see [Inferring Protected Attributes](inferring-protected-attributes.md).
+5. **A better sample does not fix the labels.** Even a perfectly representative sample carries whatever bias the labels have, see [Label Bias](label-bias.md).
 
 ---
 
@@ -3937,6 +3957,16 @@ The architecture is not the problem. The weights are the problem. And the weight
 This is why the work in this repository matters: not to fix the math, but to fix the inputs. Remove the protected attributes. Audit every remaining feature for correlation with those attributes. Retrain. Measure the gap again.
 
 **A neural network will learn exactly what you teach it. The question is whether you're paying attention to what that is.**
+
+---
+
+## Limitations
+
+1. **An attribution is not a reason.** SHAP values show how much each input moved one prediction, computed under assumptions about feature independence. Different attribution methods can rank the same features differently, and none proves the network "used" a feature in a causal sense. See [SHAP Values](shap-values.md).
+2. **The weights say nothing about fairness by themselves.** Whether a network treats groups differently is only visible in its outputs by group, so every claim here needs a per-group evaluation with intervals. See [Disaggregated Evaluation](disaggregated-evaluation.md).
+3. **The audit numbers come from one split and one seed.** A different split moves the gaps, and small groups move them most. See [Permutation Tests for Fairness Gaps](permutation-test-fairness-gaps.md).
+4. **Removing the protected attribute does not stop a network learning it.** Any remaining feature correlated with it can carry the same signal. See [Proxy Variables](proxy-variables.md).
+5. **Small tabular data is not what networks are best at.** The audits here are a few thousand to a hundred thousand rows of mixed columns, where simpler models often match a network and are easier to inspect.
 
 ---
 
@@ -7375,6 +7405,16 @@ Automation bias is not a bug in human cognition - it is a predictable response t
 The same model, two different interfaces. One produces automation bias. The other produces informed human judgment.
 
 **Fixing the model is necessary. Fixing the interface is equally necessary.**
+
+---
+
+## Limitations
+
+1. **Measuring amplification needs paired data.** The audit above compares human decisions with the model's score for the same cases. Most deployments do not log the decision a person would have made without the score, so the baseline for "deference" is missing.
+2. **Agreement is not automation bias.** A reviewer who agrees with a score may simply agree with it. The signal is agreement on the cases where the model is wrong, which needs ground truth that is often delayed or absent.
+3. **Override rates depend on who reviews and how.** Workload, time pressure and interface design change them, so a rate measured in one setting does not transfer. See the interface point above.
+4. **The mitigations are mostly untested at scale.** Friction, blind review and counterfactual display each have costs listed in the table, and the table does not say which works best for a given decision.
+5. **Fixing the human side does not fix the model.** A well-designed review step on a biased score still sits on a biased score, see [Label Bias](label-bias.md).
 
 ---
 

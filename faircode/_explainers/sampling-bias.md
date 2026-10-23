@@ -213,6 +213,16 @@ The data you have is a record of the world as it was - including which people we
 
 ---
 
+## Limitations
+
+1. **You cannot see who is missing from the data alone.** The checks above compare the sample with a known population. Without an outside benchmark (a census table, a registry) a missing group leaves no trace in the rows.
+2. **Reweighting and oversampling cannot recover missing information.** They reuse the few rows you have for an under-represented group, which also amplifies their noise. See [Class Imbalance](class-imbalance.md).
+3. **"Representative" depends on where the model will be used.** A sample that matches today's population can stop matching it later. See [Distribution Shift](distribution-shift.md).
+4. **Measuring representation needs the group labels.** When the attribute was never collected the audit cannot start, see [Inferring Protected Attributes](inferring-protected-attributes.md).
+5. **A better sample does not fix the labels.** Even a perfectly representative sample carries whatever bias the labels have, see [Label Bias](label-bias.md).
+
+---
+
 ## Relationship to Other Concepts
 
 Sampling bias is distinct from - but connected to - other fairness failure modes:

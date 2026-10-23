@@ -43,10 +43,8 @@ FOOTER_PREFIX = "*Part of [The Fair Code Project]"
 # slug -> what that page is allowed to lack for now. "order" excuses a section order that differs
 # from CONTRIBUTING.md. Remove an entry when the page is fixed (the check fails on a stale one).
 KNOWN_EXCEPTIONS: dict[str, set[str]] = {
-    "automation-bias": {"limitations"},
-    "neural-networks": {"limitations", "detection code"},
-    "proxy-variables": {"limitations"},
-    "sampling-bias": {"limitations", "related concepts"},
+    "neural-networks": {"detection code"},
+    "sampling-bias": {"related concepts"},
     "differential-privacy": {"concrete example"},
     "disparate-impact": {"detection code"},
     "fairness-metric-conflicts": {"detection code"},

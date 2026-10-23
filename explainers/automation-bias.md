@@ -188,6 +188,16 @@ The same model, two different interfaces. One produces automation bias. The othe
 
 ---
 
+## Limitations
+
+1. **Measuring amplification needs paired data.** The audit above compares human decisions with the model's score for the same cases. Most deployments do not log the decision a person would have made without the score, so the baseline for "deference" is missing.
+2. **Agreement is not automation bias.** A reviewer who agrees with a score may simply agree with it. The signal is agreement on the cases where the model is wrong, which needs ground truth that is often delayed or absent.
+3. **Override rates depend on who reviews and how.** Workload, time pressure and interface design change them, so a rate measured in one setting does not transfer. See the interface point above.
+4. **The mitigations are mostly untested at scale.** Friction, blind review and counterfactual display each have costs listed in the table, and the table does not say which works best for a given decision.
+5. **Fixing the human side does not fix the model.** A well-designed review step on a biased score still sits on a biased score, see [Label Bias](label-bias.md).
+
+---
+
 ## Related Concepts
 
 - [What Is Machine Learning Bias?](ml-bias.md) - the four entry points through which bias enters a model

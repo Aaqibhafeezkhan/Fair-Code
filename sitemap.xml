@@ -402,11 +402,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/minimum-detectable-gap.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/small-group-shrinkage.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/confidence-intervals-for-ratios.html</loc>
+    <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/monitoring-fairness-in-production.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/delayed-feedback.html</loc>
   </url>
 </urlset>

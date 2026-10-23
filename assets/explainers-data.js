@@ -1072,5 +1072,38 @@ window.FAIR_CODE_EXPLAINERS = [
       "detection",
       "metrics"
     ]
+  },
+  {
+    "slug": "monitoring-fairness-in-production",
+    "title": "Monitoring Fairness in Production",
+    "subtitle": "An audit is a photograph. Monitoring is the film.",
+    "summary": "Learn to put a control chart on a group gap, and how batch size and window trade speed against false alarms. A simulation on Benefits Denial: a 0.06 drift alerts after 2 batches of 1,000, a 0.03 drift takes a median of 11 batches of 200, and the 3-sigma rule false-alarms in 2% to 9% of runs.",
+    "description": "Control-charting a fairness gap after deployment: how batch size and window change detection delay and false alarms, simulated on Benefits Denial.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "label-shift-and-fairness",
+    "title": "Label Shift and Fairness",
+    "subtitle": "When the base rate moves, some metrics swing and some stay put.",
+    "summary": "Learn which fairness metrics survive a change in a group's base rate. On Benefits Denial, true and false positive rate gaps stay at +0.0181 and -0.0004 while the parity gap runs from -0.0683 to +0.0326 and the precision gap from -0.4443 to +0.0594.",
+    "description": "Which fairness metrics change under label shift: TPR and FPR gaps stay fixed while parity and precision gaps swing, shown on Benefits Denial.",
+    "tags": [
+      "metrics",
+      "detection"
+    ]
+  },
+  {
+    "slug": "delayed-feedback",
+    "title": "Delayed Feedback",
+    "subtitle": "Outcomes that have not happened yet look like outcomes that did not happen.",
+    "summary": "Learn how late-arriving outcomes bias a monitored fairness gap, and why counting only mature cases fixes it. A simulation on Healthcare Readmission: the true gap is zero, but unequal delays make the naive monitor read +0.0081 or -0.0057.",
+    "description": "How late outcomes bias a monitored group gap, and counting only mature cases as the fix, simulated on 99,492 hospital discharges.",
+    "tags": [
+      "data",
+      "detection"
+    ]
   }
 ];

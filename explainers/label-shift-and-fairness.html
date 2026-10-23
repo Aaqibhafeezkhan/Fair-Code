@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Shift and Fairness · Fair Code</title>
+<meta name="description" content="Which fairness metrics change under label shift: TPR and FPR gaps stay fixed while parity and precision gaps swing, shown on Benefits Denial.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Label Shift and Fairness · Fair Code">
+<meta property="og:description" content="Which fairness metrics change under label shift: TPR and FPR gaps stay fixed while parity and precision gaps swing, shown on Benefits Denial.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/label-shift-and-fairness.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Label Shift and Fairness · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/label-shift-and-fairness.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Label Shift and Fairness · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Label Shift and Fairness · Fair Code">
+<meta name="twitter:description" content="Which fairness metrics change under label shift: TPR and FPR gaps stay fixed while parity and precision gaps swing, shown on Benefits Denial.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/label-shift-and-fairness.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Label Shift and Fairness",
+      "description": "Learn which fairness metrics survive a change in a group's base rate. On Benefits Denial, true and false positive rate gaps stay at +0.0181 and -0.0004 while the parity gap runs from -0.0683 to +0.0326 and the precision gap from -0.4443 to +0.0594.",
+      "url": "https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Label Shift and Fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Label shift is a change in how common the outcome is in a group (the base rate) while the relationship between the features and the outcome stays the same, and it moves some fairness metrics (selection rate, precision) and leaves others (true and false positive rates) unchanged."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Deployed populations change in how often the outcome occurs: more patients are readmitted in winter, a lender enters a market with a higher default rate, one group's applicants change. If the model's score for a person given their features still means what it did, this is label shift, and it has a clean consequence. The error rates computed within each outcome class, the true and false positive rates, do not change, because they condition on the label."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Label Shift and Fairness",
+          "item": "https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/label-shift-and-fairness.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Label Shift and Fairness</h1>
+      <p class="explainer-lede">When the base rate moves, some metrics swing and some stay put.</p>
+      <p class="explainer-lede">Learn which fairness metrics survive a change in a group&#x27;s base rate. On Benefits Denial, true and false positive rate gaps stay at +0.0181 and -0.0004 while the parity gap runs from -0.0683 to +0.0326 and the precision gap from -0.4443 to +0.0594.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>If the base rate changes and nothing else does, some of your fairness metrics stay put and some swing wildly. Knowing which is half of reading a monitoring chart.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Label shift</strong> is a change in how common the outcome is in a group (the base rate) while the relationship between the features and the outcome stays the same, and it moves some fairness metrics (selection rate, precision) and leaves others (true and false positive rates) unchanged.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Deployed populations change in how often the outcome occurs: more patients are readmitted in winter, a lender enters a market with a higher default rate, one group&#x27;s applicants change. If the model&#x27;s score for a person given their features still means what it did, this is label shift, and it has a clean consequence. The error rates computed within each outcome class, the true and false positive rates, do not change, because they condition on the label. Everything that mixes the classes does: the selection rate, the precision, the calibration.</p>
+<p>So a monitor that sees a parity gap or a precision gap move after a change in base rate does not have evidence that the model got worse. The fairness metric that looks alarming may simply be tracking the base rate. See <a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a> for why metrics that mix classes cannot all hold when base rates differ.</p>
+<h3 id="core-concept-reweight-the-classes-inside-one-group">Core Concept: Reweight the Classes Inside One Group</h3>
+<p>You can see the effect without waiting for new data. Give each positive row in a group the weight <code>new rate / old rate</code> and each negative row <code>(1 - new rate) / (1 - old rate)</code>, which changes the group&#x27;s base rate to the target while keeping the features-given-label distribution. Recompute the metrics on the weighted rows.</p>
+<pre><code>TPR, FPR           unchanged (they are within-class)
+selection rate     moves with the base rate
+precision (PPV)    moves with the base rate</code></pre>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: the S2 logistic regression and its test rows. Women&#x27;s base rate for &quot;income above $50K&quot; is 0.111 in the data and men&#x27;s is 0.305. We change women&#x27;s base rate from 0.05 to 0.40, leaving men alone, and recompute four group gaps.</p>
+<pre><code>women&#x27;s base rate in the test rows 0.111; men&#x27;s 0.305
+
+ women base rate  parity gap   TPR gap   FPR gap  precision gap
+           0.050     -0.0683   +0.0181   -0.0004        -0.4443
+           0.111     -0.0509   +0.0181   -0.0004        -0.2329  &lt;- as measured
+           0.200     -0.0251   +0.0181   -0.0004        -0.0807
+           0.300     +0.0038   +0.0181   -0.0004        +0.0072
+           0.400     +0.0326   +0.0181   -0.0004        +0.0594</code></pre>
+<ul><li><strong>True and false positive rate gaps do not move.</strong> The TPR gap is +0.0181 and the FPR gap -0.0004 at every base rate.</li><li><strong>The parity gap swings.</strong> It runs from -0.0683 at a women&#x27;s base rate of 0.05 through -0.0509 as measured to +0.0038 at 0.30 and +0.0326 at 0.40. The &quot;gap&quot; crosses zero where women&#x27;s base rate gets close to men&#x27;s, because selection follows the base rate.</li><li><strong>The precision gap swings more.</strong> It is -0.4443 at 0.05, -0.2329 as measured and +0.0072 at 0.30. A model that is &quot;fair&quot; on precision at one base rate is badly unfair at another with no change in the model.</li></ul>
+<p>So a model audited on a parity or predictive-parity criterion can fail it after a pure label shift, and one audited on equal opportunity or equalized odds cannot.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 label-shift-and-fairness.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;Benefits Denial&quot;)             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+model = build_model(&quot;logistic_regression&quot;, data.random_state).fit(data.X.iloc[train], data.y.iloc[train])
+pred = model.predict(data.X.iloc[test])
+y = data.y.to_numpy()[test]
+women = data.masks[&quot;sex&quot;].to_numpy()[test].astype(bool)
+observed = y[women].mean()
+print(f&quot;women&#x27;s base rate in the test rows {observed:.3f}; men&#x27;s {y[~women].mean():.3f}&quot;)
+
+def reweighted(target_rate):
+    &quot;&quot;&quot;Label shift for women only: change the share of positives among women to `target_rate`, keeping the
+    features-given-label relationship fixed, by weighting positives and negatives.&quot;&quot;&quot;
+    w = np.ones(len(y))
+    w[women &amp; (y == 1)] = target_rate / observed
+    w[women &amp; (y == 0)] = (1 - target_rate) / (1 - observed)
+    return w
+
+def metrics(w):
+    def rate(mask):
+        return np.average(pred[mask], weights=w[mask])
+    sel_w, sel_m = rate(women), rate(~women)
+    tpr_w, tpr_m = rate(women &amp; (y == 1)), rate(~women &amp; (y == 1))
+    fpr_w, fpr_m = rate(women &amp; (y == 0)), rate(~women &amp; (y == 0))
+    ppv_w = np.average(y[women &amp; (pred == 1)], weights=w[women &amp; (pred == 1)])
+    ppv_m = y[~women &amp; (pred == 1)].mean()
+    return sel_w - sel_m, tpr_w - tpr_m, fpr_w - fpr_m, ppv_w - ppv_m
+
+print(f&quot;\n{&#x27;women base rate&#x27;:&gt;16} {&#x27;parity gap&#x27;:&gt;11} {&#x27;TPR gap&#x27;:&gt;9} {&#x27;FPR gap&#x27;:&gt;9} {&#x27;precision gap&#x27;:&gt;14}&quot;)
+for target in (0.05, observed, 0.20, 0.30, 0.40):
+    sel, tpr, fpr, ppv = metrics(reweighted(target))
+    tag = &quot;  &lt;- as measured&quot; if abs(target - observed) &lt; 1e-9 else &quot;&quot;
+    print(f&quot;{target:16.3f} {sel:+11.4f} {tpr:+9.4f} {fpr:+9.4f} {ppv:+14.4f}{tag}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It assumes the features-given-label relationship is fixed.</strong> Real shifts often move both, and then the error rates move too. Label shift is a special case that is easy to reason about, not a description of all drift.</li><li><strong>The reweighting changes the sample, not the model.</strong> It tells you what the metrics would be under a different base rate, assuming the assumption holds.</li><li><strong>You cannot always see the base rate.</strong> If outcomes arrive late or not at all, the shift is invisible until they do, see <a href="delayed-feedback.html">Delayed Feedback</a>.</li><li><strong>A change in one group&#x27;s rate is only one kind of shift.</strong> Both groups can shift, and in different directions.</li><li><strong>Choosing the &quot;right&quot; metric does not remove the shift.</strong> It decides which changes in a monitor you will treat as alarms.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="distribution-shift.html">Distribution Shift</a> - the general family, of which label shift is one case</li><li><a href="base-rate-fallacy.html">Base Rate Fallacy</a> - why precision follows the base rate</li><li><a href="predictive-parity.html">Predictive Parity</a> - the metric that moves most here</li><li><a href="equalized-odds.html">Equalized Odds</a> - the error-rate criterion that does not</li><li><a href="monitoring-fairness-in-production.html">Monitoring Fairness in Production</a> - reading a gap that moves</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1802.03916" target="_blank" rel="noreferrer noopener">Lipton, Z., Wang, Y.-X., Smola, A. (2018): Detecting and Correcting for Label Shift with Black Box Predictors</a> - ICML 2018; the label-shift assumption and its correction.</li><li><a href="https://arxiv.org/abs/1610.07524" target="_blank" rel="noreferrer noopener">Chouldechova, A. (2017): Fair Prediction with Disparate Impact</a> - Big Data 5(2); how base rates force fairness metrics apart.</li><li><a href="https://mitpress.mit.edu/9780262170055/dataset-shift-in-machine-learning/" target="_blank" rel="noreferrer noopener">Quinonero-Candela, J. et al. (eds.) (2009): Dataset Shift in Machine Learning</a> - MIT Press; covariate, prior (label) and concept shift.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -17725,3 +17725,372 @@ for denominator in (3, 10, 30):
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 
+---
+
+# Monitoring Fairness in Production
+URL: https://www.thefaircode.xyz/explainers/monitoring-fairness-in-production.html
+Summary: Learn to put a control chart on a group gap, and how batch size and window trade speed against false alarms. A simulation on Benefits Denial: a 0.06 drift alerts after 2 batches of 1,000, a 0.03 drift takes a median of 11 batches of 200, and the 3-sigma rule false-alarms in 2% to 9% of runs.
+
+> *An audit is a photograph. Monitoring is the film. The hard part is not computing the gap each week; it is deciding when a change in it is a change.*
+
+## The One-Sentence Definition
+
+**Fairness monitoring** is tracking a fairness metric over time on live data, with a rule for when its movement is large enough, compared with its noise, to trigger a review.
+
+## Why It Matters
+
+[Model Drift](model-drift.md) explains why a gap measured at launch need not hold later: the population shifts, the inputs change, the feedback loop turns. Knowing that is not a monitoring plan. A plan needs three decisions: how much data each reading uses (the batch and window size), what counts as a change (the alert rule), and what happens when it fires.
+
+Two things pull in opposite directions. Small batches react fast and fire false alarms, because a gap computed on 200 rows is noisy. Large batches are steady and slow, because a drift in one group is diluted by everything that did not change. The simulation below puts numbers on that trade.
+
+## Core Concept: A Control Chart on the Gap
+
+1. **Fix a reference:** the gap and its noise at launch.
+2. **Compute the gap on each window** (the last `W` batches pooled) with its standard error.
+3. **Alert when the window's gap is more than `z` standard errors from the reference** (3 is common).
+4. **Choose `W` and batch size by simulation:** how quickly does a real drift of a given size alert, and how often does the rule fire with no drift?
+
+This is the control chart of statistical process control, applied to a group gap. Variants (CUSUM, exponentially weighted averages) detect small steady shifts faster at the same false-alarm rate.
+
+## Concrete Example: Benefits Denial
+
+[Benefits Denial](../Benefits%20Denial/): the S2 logistic regression is fixed at launch and its gap on the test rows is -0.0509 (women are selected less often than men). We then simulate a stream by drawing batches from the real prediction pool, and from batch 20 onwards turn off some of women's positive predictions to move the true gap by a known amount (-0.03 or -0.06). Each setting is repeated 200 times; the table reports the median number of batches after the drift begins until the alert fires.
+
+```
+gap measured on the test rows at launch: -0.0509
+
+alert rule: the gap over the last W batches is more than 3 standard errors from the launch value
+batch size  window  drift   median batches to alert  never alerted   false alarms before the drift
+       200       3   0.03                      11.0             9%                              3%
+       200       3   0.06                       3.0             0%                              4%
+       500       3   0.03                       5.0             0%                              9%
+       500       3   0.06                       2.0             0%                              4%
+      1000       3   0.03                       3.0             0%                              4%
+      1000       3   0.06                       2.0             0%                              6%
+      2000       3   0.03                       3.0             0%                              4%
+      2000       3   0.06                       2.0             0%                              4%
+      1000       1   0.03                       4.0             0%                              7%
+      1000       1   0.06                       1.0             0%                              5%
+      1000       6   0.03                       4.0             0%                              3%
+      1000       6   0.06                       2.0             0%                              2%
+```
+
+- **Bigger drifts alert faster:** with batches of 1,000 and a window of 3, a 0.06 drift alerts after 2 batches and a 0.03 drift after 3.
+- **Small batches are slow for small drifts:** with 200 rows per batch a 0.03 drift takes a median of 11 batches and 9% of runs never alert within the 40 batches afterwards.
+- **The rule raises false alarms:** between 2% and 9% of runs fire during the 20 batches before the drift, which is what a 3 standard error rule gives when it is checked at every batch. A rule that is checked weekly for a year will fire by chance.
+- **A longer window is steadier, not always better:** at 1,000 rows a window of 6 gives fewer false alarms (3% and 2%) than a window of 1 (7% and 5%) and alerts about as fast for the larger drift.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 monitoring-fairness-in-production.py`).
+
+```python
+import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit("Benefits Denial")             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+model = build_model("logistic_regression", data.random_state).fit(data.X.iloc[train], data.y.iloc[train])
+pred = model.predict(data.X.iloc[test])
+women = data.masks["sex"].to_numpy()[test].astype(bool)
+launch_gap = pred[women].mean() - pred[~women].mean()
+print(f"gap measured on the test rows at launch: {launch_gap:+.4f}")
+
+rng = np.random.default_rng(0)
+
+def stream_batches(batch, n_batches, drift_at, drift):
+    """Draw each batch from the real prediction pool. From batch `drift_at` on, women's positive predictions are turned off
+    with probability `drift` / (women's selection rate), which moves the true gap by about -drift."""
+    rows = []
+    for b in range(n_batches):
+        idx = rng.choice(len(pred), batch)
+        p, w = pred[idx].copy(), women[idx]
+        if b >= drift_at and drift:
+            p[w & (p == 1) & (rng.random(len(p)) < drift / pred[women].mean())] = 0
+        rows.append((p, w))
+    return rows
+
+def gap(rows):
+    p = np.concatenate([r[0] for r in rows]); w = np.concatenate([r[1] for r in rows])
+    return p[w].mean() - p[~w].mean(), p[w].mean() * (1 - p[w].mean()) / w.sum() + p[~w].mean() * (1 - p[~w].mean()) / (~w).sum()
+
+def batches_until_alert(batch, window, drift, drift_at=20, n_batches=60, z=3):
+    rows = stream_batches(batch, n_batches, drift_at, drift)
+    for b in range(window - 1, n_batches):
+        g, var = gap(rows[b - window + 1:b + 1])
+        if abs(g - launch_gap) > z * np.sqrt(var):
+            return b - drift_at + 1 if b >= drift_at else -1       # -1 = a false alarm before the drift
+    return None
+
+print(f"\nalert rule: the gap over the last W batches is more than 3 standard errors from the launch value")
+print(f"{'batch size':>10} {'window':>7} {'drift':>6} {'median batches to alert':>25} {'never alerted':>14} {'false alarms before the drift':>31}")
+for batch, window in ((200, 3), (500, 3), (1000, 3), (2000, 3), (1000, 1), (1000, 6)):
+    for drift in (0.03, 0.06):
+        results = [batches_until_alert(batch, window, drift) for _ in range(200)]
+        false = np.mean([r == -1 for r in results])
+        after = [r for r in results if r not in (None, -1)]
+        print(f"{batch:10d} {window:7d} {drift:6.2f} {np.median(after) if after else float('nan'):25.1f} "
+              f"{np.mean([r is None for r in results]):14.0%} {false:31.0%}")
+```
+
+## Limitations
+
+1. **The reference has its own noise.** The launch gap is estimated from the same kind of sample, so it is uncertain too. The code above ignores that, which makes the rule fire a little more often than its nominal rate.
+2. **Repeated looks inflate false alarms.** Checking every batch gives many chances to fire by chance. Raise `z`, use a sequential method, or correct for the number of looks, see [Multiple Comparisons](multiple-comparisons.md).
+3. **The simulated drift is simple.** Real drift moves features, base rates and labels at once, and may hit one intersection and not the whole group.
+4. **Labels may arrive late.** A monitor that needs outcomes has to wait for them, see [Delayed Feedback](delayed-feedback.md). Selection rates need no labels and can be watched immediately.
+5. **An alert is not a verdict.** It says the gap moved. Whether to retrain, roll back or investigate is a decision, and it should be written down before the alert fires.
+
+## Related Concepts
+
+* [Model Drift](model-drift.md) - why the gap moves
+* [Distribution Shift](distribution-shift.md) - the change in inputs behind many drifts
+* [Label Shift and Fairness](label-shift-and-fairness.md) - a change in base rates and which metrics it moves
+* [Delayed Feedback](delayed-feedback.md) - when outcomes arrive late
+* [Minimum Detectable Gap](minimum-detectable-gap.md) - how large a change a batch size can see
+
+## Related Projects in This Repo
+
+* [`Benefits Denial/`](../Benefits%20Denial/) - the audit used for the example above
+
+## Further Reading
+
+* [Gama, J. et al. (2014): A Survey on Concept Drift Adaptation](https://doi.org/10.1145/2523813) - ACM Computing Surveys 46(4); detecting and responding to drift.
+* Montgomery, D. C. (2019). *Introduction to Statistical Quality Control* (8th ed.). Wiley - control charts, CUSUM and EWMA.
+* [Ginart, T., Zhang, M. J., Zou, J. (2022): MLDemon: Deployment Monitoring for Machine Learning Systems](https://arxiv.org/abs/2104.13621) - AISTATS 2022; monitoring when labels are scarce.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Label Shift and Fairness
+URL: https://www.thefaircode.xyz/explainers/label-shift-and-fairness.html
+Summary: Learn which fairness metrics survive a change in a group's base rate. On Benefits Denial, true and false positive rate gaps stay at +0.0181 and -0.0004 while the parity gap runs from -0.0683 to +0.0326 and the precision gap from -0.4443 to +0.0594.
+
+> *If the base rate changes and nothing else does, some of your fairness metrics stay put and some swing wildly. Knowing which is half of reading a monitoring chart.*
+
+## The One-Sentence Definition
+
+**Label shift** is a change in how common the outcome is in a group (the base rate) while the relationship between the features and the outcome stays the same, and it moves some fairness metrics (selection rate, precision) and leaves others (true and false positive rates) unchanged.
+
+## Why It Matters
+
+Deployed populations change in how often the outcome occurs: more patients are readmitted in winter, a lender enters a market with a higher default rate, one group's applicants change. If the model's score for a person given their features still means what it did, this is label shift, and it has a clean consequence. The error rates computed within each outcome class, the true and false positive rates, do not change, because they condition on the label. Everything that mixes the classes does: the selection rate, the precision, the calibration.
+
+So a monitor that sees a parity gap or a precision gap move after a change in base rate does not have evidence that the model got worse. The fairness metric that looks alarming may simply be tracking the base rate. See [Fairness Metric Conflicts](fairness-metric-conflicts.md) for why metrics that mix classes cannot all hold when base rates differ.
+
+## Core Concept: Reweight the Classes Inside One Group
+
+You can see the effect without waiting for new data. Give each positive row in a group the weight `new rate / old rate` and each negative row `(1 - new rate) / (1 - old rate)`, which changes the group's base rate to the target while keeping the features-given-label distribution. Recompute the metrics on the weighted rows.
+
+```
+TPR, FPR           unchanged (they are within-class)
+selection rate     moves with the base rate
+precision (PPV)    moves with the base rate
+```
+
+## Concrete Example: Benefits Denial
+
+[Benefits Denial](../Benefits%20Denial/): the S2 logistic regression and its test rows. Women's base rate for "income above $50K" is 0.111 in the data and men's is 0.305. We change women's base rate from 0.05 to 0.40, leaving men alone, and recompute four group gaps.
+
+```
+women's base rate in the test rows 0.111; men's 0.305
+
+ women base rate  parity gap   TPR gap   FPR gap  precision gap
+           0.050     -0.0683   +0.0181   -0.0004        -0.4443
+           0.111     -0.0509   +0.0181   -0.0004        -0.2329  <- as measured
+           0.200     -0.0251   +0.0181   -0.0004        -0.0807
+           0.300     +0.0038   +0.0181   -0.0004        +0.0072
+           0.400     +0.0326   +0.0181   -0.0004        +0.0594
+```
+
+- **True and false positive rate gaps do not move.** The TPR gap is +0.0181 and the FPR gap -0.0004 at every base rate.
+- **The parity gap swings.** It runs from -0.0683 at a women's base rate of 0.05 through -0.0509 as measured to +0.0038 at 0.30 and +0.0326 at 0.40. The "gap" crosses zero where women's base rate gets close to men's, because selection follows the base rate.
+- **The precision gap swings more.** It is -0.4443 at 0.05, -0.2329 as measured and +0.0072 at 0.30. A model that is "fair" on precision at one base rate is badly unfair at another with no change in the model.
+
+So a model audited on a parity or predictive-parity criterion can fail it after a pure label shift, and one audited on equal opportunity or equalized odds cannot.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 label-shift-and-fairness.py`).
+
+```python
+import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit("Benefits Denial")             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+model = build_model("logistic_regression", data.random_state).fit(data.X.iloc[train], data.y.iloc[train])
+pred = model.predict(data.X.iloc[test])
+y = data.y.to_numpy()[test]
+women = data.masks["sex"].to_numpy()[test].astype(bool)
+observed = y[women].mean()
+print(f"women's base rate in the test rows {observed:.3f}; men's {y[~women].mean():.3f}")
+
+def reweighted(target_rate):
+    """Label shift for women only: change the share of positives among women to `target_rate`, keeping the
+    features-given-label relationship fixed, by weighting positives and negatives."""
+    w = np.ones(len(y))
+    w[women & (y == 1)] = target_rate / observed
+    w[women & (y == 0)] = (1 - target_rate) / (1 - observed)
+    return w
+
+def metrics(w):
+    def rate(mask):
+        return np.average(pred[mask], weights=w[mask])
+    sel_w, sel_m = rate(women), rate(~women)
+    tpr_w, tpr_m = rate(women & (y == 1)), rate(~women & (y == 1))
+    fpr_w, fpr_m = rate(women & (y == 0)), rate(~women & (y == 0))
+    ppv_w = np.average(y[women & (pred == 1)], weights=w[women & (pred == 1)])
+    ppv_m = y[~women & (pred == 1)].mean()
+    return sel_w - sel_m, tpr_w - tpr_m, fpr_w - fpr_m, ppv_w - ppv_m
+
+print(f"\n{'women base rate':>16} {'parity gap':>11} {'TPR gap':>9} {'FPR gap':>9} {'precision gap':>14}")
+for target in (0.05, observed, 0.20, 0.30, 0.40):
+    sel, tpr, fpr, ppv = metrics(reweighted(target))
+    tag = "  <- as measured" if abs(target - observed) < 1e-9 else ""
+    print(f"{target:16.3f} {sel:+11.4f} {tpr:+9.4f} {fpr:+9.4f} {ppv:+14.4f}{tag}")
+```
+
+## Limitations
+
+1. **It assumes the features-given-label relationship is fixed.** Real shifts often move both, and then the error rates move too. Label shift is a special case that is easy to reason about, not a description of all drift.
+2. **The reweighting changes the sample, not the model.** It tells you what the metrics would be under a different base rate, assuming the assumption holds.
+3. **You cannot always see the base rate.** If outcomes arrive late or not at all, the shift is invisible until they do, see [Delayed Feedback](delayed-feedback.md).
+4. **A change in one group's rate is only one kind of shift.** Both groups can shift, and in different directions.
+5. **Choosing the "right" metric does not remove the shift.** It decides which changes in a monitor you will treat as alarms.
+
+## Related Concepts
+
+* [Distribution Shift](distribution-shift.md) - the general family, of which label shift is one case
+* [Base Rate Fallacy](base-rate-fallacy.md) - why precision follows the base rate
+* [Predictive Parity](predictive-parity.md) - the metric that moves most here
+* [Equalized Odds](equalized-odds.md) - the error-rate criterion that does not
+* [Monitoring Fairness in Production](monitoring-fairness-in-production.md) - reading a gap that moves
+
+## Related Projects in This Repo
+
+* [`Benefits Denial/`](../Benefits%20Denial/) - the audit used for the example above
+
+## Further Reading
+
+* [Lipton, Z., Wang, Y.-X., Smola, A. (2018): Detecting and Correcting for Label Shift with Black Box Predictors](https://arxiv.org/abs/1802.03916) - ICML 2018; the label-shift assumption and its correction.
+* [Chouldechova, A. (2017): Fair Prediction with Disparate Impact](https://arxiv.org/abs/1610.07524) - Big Data 5(2); how base rates force fairness metrics apart.
+* [Quinonero-Candela, J. et al. (eds.) (2009): Dataset Shift in Machine Learning](https://mitpress.mit.edu/9780262170055/dataset-shift-in-machine-learning/) - MIT Press; covariate, prior (label) and concept shift.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Delayed Feedback
+URL: https://www.thefaircode.xyz/explainers/delayed-feedback.html
+Summary: Learn how late-arriving outcomes bias a monitored fairness gap, and why counting only mature cases fixes it. A simulation on Healthcare Readmission: the true gap is zero, but unequal delays make the naive monitor read +0.0081 or -0.0057.
+
+> *Outcomes that have not happened yet look like outcomes that did not happen. When one group's outcomes arrive later, the monitor reads that as a difference between groups.*
+
+## The One-Sentence Definition
+
+**Delayed feedback** is the situation in which an outcome (readmission, default, a complaint) is only known some time after the decision, so recent decisions look better than they will turn out to be, and groups whose outcomes arrive at different speeds look different when they are not.
+
+## Why It Matters
+
+A fairness monitor that tracks the outcome rate by group is reading incomplete data. If a readmission can happen up to 30 days after discharge, last week's discharges have mostly not had the chance yet, and every group's rate looks low. If one group's outcomes tend to arrive later (a different follow-up pattern, a slower reporting channel), its rate looks lower still, and the monitored gap moves with no change in the model or the people.
+
+This is a measurement problem in the same family as [Survivorship Bias](survivorship-bias.md) and the selective labels problem: what you see depends on a process that is not the model.
+
+## Core Concept: Count Only Mature Cases, or Model the Delay
+
+1. **Naive:** divide the outcomes seen so far by all decisions so far. Biased low, and by different amounts for groups with different delays.
+2. **Mature-only:** use only decisions old enough that the outcome window has closed (here, discharged more than 30 days ago). Unbiased, but it ignores the most recent data and needs the window to be known.
+3. **Model the delay:** estimate the distribution of the delay and correct the recent counts, as in survival analysis. More complete, and more assumptions.
+
+## Concrete Example: Healthcare Readmission
+
+This is a simulation, because the dataset has no dates. [Healthcare Readmission](../Healthcare%20Readmission/): the real 30-day readmission outcome of every patient, with African American patients and everyone else as the groups. Each patient is given a random discharge day in the last 90, and each readmission a delay in days, drawn from an exponential distribution with a mean we choose per group and capped at 30. "Today" is day 90.
+
+```
+true 30-day readmission rate: African American patients 0.112, others 0.112, gap -0.0001
+
+mean days to readmission (group, others)  naive gap      naive rates  share of positives seen  careful gap
+                                  10, 10    -0.0004    0.101 / 0.101                    90.1%      +0.0032
+                                  10, 20    +0.0081    0.101 / 0.093                    84.1%      +0.0032
+                                  20, 10    -0.0057    0.095 / 0.100                    88.3%      +0.0032
+                                  20, 20    +0.0009    0.094 / 0.093                    83.1%      +0.0032
+```
+
+- **The true gap is zero:** both groups are readmitted at 0.112.
+- **With equal delays the naive monitor reads zero** (-0.0004), but it still sees only 83% to 90% of the positives, so every rate is biased low.
+- **With unequal delays it reads a gap that is not there.** If the others' readmissions take 20 days on average and the group's take 10, the naive gap is +0.0081; reversed, -0.0057. These are the same size as many real gaps in this repo's audits, and they come entirely from timing.
+- **The mature-only monitor is steady** at +0.0032 whatever the delays, because it looks only at patients whose window has closed. That value is also not exactly zero: it is the sampling noise of the mature third of the rows.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 delayed-feedback.py`).
+
+```python
+import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Healthcare Readmission")
+y = data.y.to_numpy()                             # readmitted within 30 days
+group = (data.df["race"] == "AfricanAmerican").to_numpy()
+n = len(y)
+rng = np.random.default_rng(0)
+print(f"true 30-day readmission rate: African American patients {y[group].mean():.3f}, others {y[~group].mean():.3f}, "
+      f"gap {y[group].mean() - y[~group].mean():+.4f}")
+
+# Each patient is discharged on a random day in the last 90 days. A readmission happens some days after discharge.
+# We only know about it once it has happened, and a "no" is only known once the 30-day window has closed.
+discharge = rng.integers(0, 90, n)
+def monitored_gap(mean_delay_group, mean_delay_others, today=90):
+    delay = np.where(group, rng.exponential(mean_delay_group, n), rng.exponential(mean_delay_others, n))
+    delay = np.minimum(delay, 29.9)
+    seen_positive = (y == 1) & (discharge + delay <= today)
+    window_closed = discharge + 30 <= today
+    known_negative = (y == 0) & window_closed
+    # a naive monitor counts every discharged patient and treats every outcome it has not seen as "no"
+    naive = {g: seen_positive[group == g].mean() for g in (True, False)}
+    # a careful monitor only counts patients whose 30-day window is closed
+    mature = window_closed
+    careful = {g: ((y == 1) & mature)[mature & (group == g)].mean() for g in (True, False)}
+    return naive[True] - naive[False], careful[True] - careful[False], naive[True], naive[False], seen_positive.sum() / (y == 1).sum()
+
+print(f"\n{'mean days to readmission (group, others)':>40} {'naive gap':>10} {'naive rates':>16} {'share of positives seen':>24} {'careful gap':>12}")
+for md_g, md_o in ((10, 10), (10, 20), (20, 10), (20, 20)):
+    naive_gap, careful_gap, ng, no, seen = monitored_gap(md_g, md_o)
+    print(f"{f'{md_g}, {md_o}':>40} {naive_gap:+10.4f} {f'{ng:.3f} / {no:.3f}':>16} {seen:24.1%} {careful_gap:+12.4f}")
+```
+
+## Limitations
+
+1. **The delays are invented.** Exponential delays with chosen means are a modelling choice. Real delay distributions are measured from your own history.
+2. **The dataset has no dates.** The discharge days are random, so only the mechanism is demonstrated, not any real timing.
+3. **Mature-only is slow.** It cannot see anything newer than the outcome window, so a problem that started yesterday is invisible to it.
+4. **Censoring can be informative.** If patients who never return are lost to follow-up in a way that depends on the group, even mature counts are biased.
+5. **Negatives are also delayed.** A "no" is only known once the window closes, which is what the mature-only rule uses.
+
+## Related Concepts
+
+* [Monitoring Fairness in Production](monitoring-fairness-in-production.md) - the monitor this biases
+* [Survivorship Bias](survivorship-bias.md) - when the data you see is the data that got through
+* [Label Shift and Fairness](label-shift-and-fairness.md) - a change in base rates, which delay can mimic
+* [Feedback Loop Bias](feedback-loop-bias.md) - decisions that shape the data seen next
+* [Reject Inference](reject-inference.md) - outcomes missing for the people not selected
+
+## Related Projects in This Repo
+
+* [`Healthcare Readmission/`](../Healthcare%20Readmission/) - the audit used for the example above
+
+## Further Reading
+
+* [Chapelle, O. (2014): Modeling Delayed Feedback in Display Advertising](https://dl.acm.org/doi/10.1145/2623330.2623634) - KDD 2014; correcting conversion rates for conversions that have not happened yet.
+* Lakkaraju, H. et al. (2017). The Selective Labels Problem: Evaluating Algorithmic Predictions in the Presence of Unobservables. KDD - outcomes observed only for the people a decision-maker chose.
+* Kleinbaum, D. G., Klein, M. (2012). *Survival Analysis: A Self-Learning Text* (3rd ed.). Springer - censoring and delay models.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+

@@ -354,11 +354,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/race-in-clinical-models.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/utilization-as-a-label.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html</loc>
+    <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/cross-validation-for-fairness.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html</loc>
   </url>
 </urlset>

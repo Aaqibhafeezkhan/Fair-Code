@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seed and Split Sensitivity · Fair Code</title>
+<meta name="description" content="How much a fairness gap changes with the random split seed: on 1,000 German Credit rows the spread is as large as the effect; on 32,561 rows it is tiny.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Seed and Split Sensitivity · Fair Code">
+<meta property="og:description" content="How much a fairness gap changes with the random split seed: on 1,000 German Credit rows the spread is as large as the effect; on 32,561 rows it is tiny.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/seed-and-split-sensitivity.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Seed and Split Sensitivity · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/seed-and-split-sensitivity.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Seed and Split Sensitivity · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Seed and Split Sensitivity · Fair Code">
+<meta name="twitter:description" content="How much a fairness gap changes with the random split seed: on 1,000 German Credit rows the spread is as large as the effect; on 32,561 rows it is tiny.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/seed-and-split-sensitivity.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Seed and Split Sensitivity",
+      "description": "Learn how to rerun a split with many seeds and report the spread of a fairness metric. See German Credit Lending: the gap is -0.0914 for the benchmark seed, averages -0.0637 over 30 seeds with a standard deviation of 0.0498, and is significant in only 13% of splits.",
+      "url": "https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Seed and Split Sensitivity?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Seed and split sensitivity is how much a reported fairness metric changes when the only thing that changes is the random seed that decides which rows land in the training set and which in the test set."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The benchmark reports each metric from a single 80/20 split with randomstate = 42, with a bootstrap interval and a permutation p-value around it (Bootstrap Confidence Intervals). Those quantify the sampling noise of the test set for that split. They do not say what a different split would have given, because the split itself is a random draw."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Seed and Split Sensitivity",
+          "item": "https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/seed-and-split-sensitivity.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Seed and Split Sensitivity</h1>
+      <p class="explainer-lede">Every fairness number here comes from one split. How much of it is the seed?</p>
+      <p class="explainer-lede">Learn how to rerun a split with many seeds and report the spread of a fairness metric. See German Credit Lending: the gap is -0.0914 for the benchmark seed, averages -0.0637 over 30 seeds with a standard deviation of 0.0498, and is significant in only 13% of splits.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Every fairness number in this repo comes from one split with one seed. How much of it is the seed?</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Seed and split sensitivity</strong> is how much a reported fairness metric changes when the only thing that changes is the random seed that decides which rows land in the training set and which in the test set.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>The benchmark reports each metric from a single 80/20 split with <code>random_state = 42</code>, with a bootstrap interval and a permutation p-value around it (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>). Those quantify the sampling noise of the test set for that split. They do not say what a different split would have given, because the split itself is a random draw.</p>
+<p>On a large dataset the two coincide and the question is academic. On a small one it is not: the test set is a few hundred rows, a handful of people can move a gap by points, and the training set changes as well. Anyone quoting a single number from a small audit should know how much it would move.</p>
+<h3 id="core-concept-repeat-the-split-report-the-spread">Core Concept: Repeat the Split, Report the Spread</h3>
+<pre><code>for seed in 30 different seeds:
+    split the audit&#x27;s rows, train the same model, compute the gap, accuracy and p-value
+report the mean, standard deviation and range, and how often the verdict changes</code></pre>
+<p>Compare the spread with the single value in <code>results/</code>. If the standard deviation is a large share of the gap, the single number is one draw from a wide distribution.</p>
+<h3 id="concrete-example-a-small-audit-and-a-large-one">Concrete Example: A Small Audit and a Large One</h3>
+<p>Two audits with the S2 logistic regression and the manifest&#x27;s split, repeated with 30 seeds each. The first row of each block is the benchmark&#x27;s own seed, which matches <code>results/</code> (the current results).</p>
+<pre><code>German Credit Lending - age, 30 different seeds for the split
+  parity gap: seed 42 gives -0.0914; the 30 seeds give mean -0.0637, sd 0.0498, range -0.2029 to +0.0337
+  accuracy:   seed 42 gives 0.700; mean 0.719, sd 0.028
+  the gap is significant (p &lt; 0.05) in 13% of the splits; its sign differs from the seed-42 sign in 7%
+Benefits Denial - sex, 30 different seeds for the split
+  parity gap: seed 42 gives -0.0509; the 30 seeds give mean -0.0542, sd 0.0063, range -0.0686 to -0.0432
+  accuracy:   seed 42 gives 0.811; mean 0.811, sd 0.003
+  the gap is significant (p &lt; 0.05) in 100% of the splits; its sign differs from the seed-42 sign in 0%</code></pre>
+<p><strong>German Credit Lending (1,000 rows, 200 in the test set)</strong> shows the problem:</p>
+<ul><li>The benchmark seed gives a parity gap of -0.0914. Across 30 seeds the mean is -0.0637 and the standard deviation 0.0498, almost as large as the mean. The range runs from -0.2029 to +0.0337, so one seed in the 30 gives a gap of the opposite sign.</li><li>The gap is significant at 0.05 in only 13% of the splits. The <code>results/</code> row has a p-value of 0.17 and is one of the 87% that are not.</li><li>Accuracy moves less (0.719 mean, 0.028 standard deviation) but the benchmark seed is 0.700.</li></ul>
+<p><strong>Benefits Denial (32,561 rows, 6,513 in the test set)</strong> shows the reverse. The gap is -0.0509 for the benchmark seed and -0.0542 on average with a standard deviation of 0.0063, it is significant in all 30 splits, and its sign never changes.</p>
+<p>The takeaway is not that small audits are useless. It is that the size of the sampling noise is itself a result: with 200 test rows the gap&#x27;s seed-to-seed spread is as large as the effect.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 seed-and-split-sensitivity.py</code>). <code>load_audit(folder, random_state=seed)</code> keeps the manifest&#x27;s own split recipe and changes only the seed.</p>
+<pre><code class="language-python">import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+from faircode.significance import permutation_test
+
+def one_split(folder, attribute, seed):
+    data = load_audit(folder, random_state=seed)          # the manifest&#x27;s own split, but with another seed
+    train, test = data.idx_train, data.idx_test
+    model = build_model(&quot;logistic_regression&quot;, seed).fit(data.X.iloc[train], data.y.iloc[train])
+    pred = model.predict(data.X.iloc[test])
+    group = data.masks[attribute].to_numpy()[test]
+    a, b = pred[group == 1].astype(float), pred[group == 0].astype(float)
+    p = permutation_test(a, b, n_permutations=500, random_state=seed)
+    return a.mean() - b.mean(), (pred == data.y.iloc[test].to_numpy()).mean(), p
+
+SEEDS = range(30)
+for folder, attribute, benchmark_seed in ((&quot;German Credit Lending&quot;, &quot;age&quot;, 42), (&quot;Benefits Denial&quot;, &quot;sex&quot;, 42)):
+    rows = np.array([one_split(folder, attribute, s) for s in SEEDS])
+    gap, acc, p = rows[:, 0], rows[:, 1], rows[:, 2]
+    base = one_split(folder, attribute, benchmark_seed)
+    print(f&quot;{folder} - {attribute}, 30 different seeds for the split&quot;)
+    print(f&quot;  parity gap: seed {benchmark_seed} gives {base[0]:+.4f}; the 30 seeds give mean {gap.mean():+.4f}, sd {gap.std(ddof=1):.4f}, &quot;
+          f&quot;range {gap.min():+.4f} to {gap.max():+.4f}&quot;)
+    print(f&quot;  accuracy:   seed {benchmark_seed} gives {base[1]:.3f}; mean {acc.mean():.3f}, sd {acc.std(ddof=1):.3f}&quot;)
+    print(f&quot;  the gap is significant (p &lt; 0.05) in {np.mean(p &lt; 0.05):.0%} of the splits; its sign differs from the seed-{benchmark_seed} sign in &quot;
+          f&quot;{np.mean(np.sign(gap) != np.sign(base[0])):.0%}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>Thirty seeds estimate the spread roughly.</strong> The standard deviation itself has noise, and the range depends on how many draws you take.</li><li><strong>The splits overlap.</strong> Each split reuses the same 1,000 rows, so the thirty results are correlated, and the spread is a lower bound on the uncertainty about the population.</li><li><strong>It measures split noise, not model noise.</strong> The seed also changes the model&#x27;s initialisation here, and a non-linear model has more of it.</li><li><strong>It does not say which seed is right.</strong> Do not pick the seed that gives the gap you prefer. Report the spread, or use cross-validation, see <a href="cross-validation-for-fairness.html">Cross-Validation for Fairness</a>.</li><li><strong>It costs training time.</strong> Thirty fits is cheap for a logistic regression and not for a large model.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="cross-validation-for-fairness.html">Cross-Validation for Fairness</a> - using every row as test data exactly once</li><li><a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a> - the uncertainty inside one split</li><li><a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a> - the p-value that changes verdict across splits here</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - why small groups make every number noisier</li><li><a href="sampling-bias.html">Sampling Bias</a> - the population the rows are a sample of</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-credit"><code>German Credit Lending/</code></a> - the small audit</li><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the large audit</li><li><a href="../results/"><code>results/</code></a> - the single-seed rows these are compared with</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1802.04422" target="_blank" rel="noreferrer noopener">Friedler, S. A. et al. (2019): A Comparative Study of Fairness-Enhancing Interventions in Machine Learning</a> - FAT* 2019; reports how results vary across random train-test splits.</li><li><a href="https://arxiv.org/abs/2103.03098" target="_blank" rel="noreferrer noopener">Bouthillier, X. et al. (2021): Accounting for Variance in Machine Learning Benchmarks</a> - MLSys 2021; the sources of variance in a benchmark and how to account for them.</li><li>Efron, B., Tibshirani, R. (1993). An Introduction to the Bootstrap. Chapman and Hall - resampling to estimate the spread of a statistic.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

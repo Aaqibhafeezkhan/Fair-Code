@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratified Test Sets for Fairness · Fair Code</title>
+<meta name="description" content="Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Stratified Test Sets for Fairness · Fair Code">
+<meta property="og:description" content="Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/stratified-test-sets-for-fairness.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Stratified Test Sets for Fairness · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/stratified-test-sets-for-fairness.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Stratified Test Sets for Fairness · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Stratified Test Sets for Fairness · Fair Code">
+<meta name="twitter:description" content="Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/stratified-test-sets-for-fairness.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Stratified Test Sets for Fairness",
+      "description": "Learn to oversample a small group for evaluation and reweight to recover population rates. See German Credit Lending: a half-under-30 test set narrows the under-30 accuracy interval from 0.213 to 0.183, and the unweighted overall accuracy is biased low until reweighted.",
+      "url": "https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Stratified Test Sets for Fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A stratified test set for fairness is an evaluation set built so that each group (and each group-by-label cell) has enough rows to be measured, usually by sampling small groups at a higher rate and reweighting to recover population rates when an overall number is needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A random test set contains each group in proportion to the population, so the smallest groups get the fewest rows and the widest intervals. The group a fairness audit cares most about is often exactly that one. If you can choose or collect the evaluation data, oversampling the small group buys narrower intervals for the same labelling budget."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Stratified Test Sets for Fairness",
+          "item": "https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/stratified-test-sets-for-fairness.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Stratified Test Sets for Fairness</h1>
+      <p class="explainer-lede">Build an evaluation set that can measure the small group.</p>
+      <p class="explainer-lede">Learn to oversample a small group for evaluation and reweight to recover population rates. See German Credit Lending: a half-under-30 test set narrows the under-30 accuracy interval from 0.213 to 0.183, and the unweighted overall accuracy is biased low until reweighted.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>If the group you most need to measure is a quarter of your test set, you are measuring it with a quarter of your data.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>stratified test set for fairness</strong> is an evaluation set built so that each group (and each group-by-label cell) has enough rows to be measured, usually by sampling small groups at a higher rate and reweighting to recover population rates when an overall number is needed.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>A random test set contains each group in proportion to the population, so the smallest groups get the fewest rows and the widest intervals. The group a fairness audit cares most about is often exactly that one. If you can choose or collect the evaluation data, oversampling the small group buys narrower intervals for the same labelling budget.</p>
+<p>It is also a trap, because an oversampled set no longer reflects the population. An overall accuracy computed on it is biased towards the oversampled group&#x27;s behaviour, and has to be corrected by weighting each row by its group&#x27;s population share divided by its share in the sample.</p>
+<h3 id="core-concept-choose-the-mix-then-weight-back">Core Concept: Choose the Mix, Then Weight Back</h3>
+<ol><li><strong>Choose the target size</strong> for each group (or cell) from how narrow an interval you need (the minimum detectable gap for a given group size).</li><li><strong>Sample the groups at different rates</strong> to hit those sizes.</li><li><strong>Report per-group metrics unweighted:</strong> they are valid inside each group.</li><li><strong>Report any overall metric with weights</strong> <code>population share / sample share</code> per group.</li></ol>
+<h3 id="concrete-example-german-credit-lending">Concrete Example: German Credit Lending</h3>
+<p><a href="../index.html#project-credit">German Credit Lending</a>: the model is logistic regression on the core columns, with out-of-fold predictions for all 1,000 applicants so each has an honest prediction. The disadvantaged group is the 371 applicants under 30. Evaluation sets of 200 rows are drawn 100 times each way: a plain random sample, and a stratified sample that is half under-30s.</p>
+<pre><code>all 1,000 rows: accuracy 0.709 overall, 0.663 for under-30s (371 people)
+
+evaluation sets of 200 rows, 100 draws each
+design                            under-30s in it   width of the under-30 interval    overall accuracy: unweighted / reweighted
+random sample                                  74                            0.213                  0.708 / 0.709
+stratified: half under 30                     100                            0.183                  0.694 / 0.703</code></pre>
+<ul><li><strong>Narrower interval for the group that matters.</strong> The random sample holds 74 under-30s on average and gives a bootstrap interval for their accuracy 0.213 wide. The stratified one holds 100 and gives 0.183, about 14% narrower for the same 200 labels. The gain is modest because 100 is not much more than 74; a more extreme mix would narrow it further at the cost of the other group&#x27;s interval.</li><li><strong>The unweighted overall number is biased.</strong> The stratified sample&#x27;s plain accuracy is 0.694 against a true 0.709 for all 1,000 rows, because under-30s are less accurately predicted (0.663) and are over-represented. Weighting each row by its group&#x27;s population share over its sample share gives 0.703, within sampling noise of the truth.</li></ul>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 stratified-test-sets-for-fairness.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.model_selection import cross_val_predict
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;German Credit Lending&quot;)       # 1,000 applicants; the disadvantaged group is those under 30
+X, y = data.X, data.y.to_numpy()
+young = data.masks[&quot;age&quot;].to_numpy().astype(int)
+# Out-of-fold predictions for everyone, so every row has an honest prediction to evaluate.
+pred = cross_val_predict(build_model(&quot;logistic_regression&quot;, data.random_state), X, y, cv=10)
+correct = (pred == y).astype(float)
+truth = correct[young == 1].mean()
+print(f&quot;all 1,000 rows: accuracy {correct.mean():.3f} overall, {truth:.3f} for under-30s ({(young == 1).sum()} people)&quot;)
+
+rng = np.random.default_rng(1)
+def interval_width(values):
+    boots = [rng.choice(values, len(values)).mean() for _ in range(500)]
+    return np.subtract(*np.percentile(boots, [97.5, 2.5]))
+
+def draw(size, share_young):
+    n_young = int(round(size * share_young))
+    rows = np.concatenate([rng.choice(np.flatnonzero(young == 1), n_young, replace=False),
+                           rng.choice(np.flatnonzero(young == 0), size - n_young, replace=False)])
+    return rows
+
+print(&quot;\nevaluation sets of 200 rows, 100 draws each&quot;)
+print(f&quot;{&#x27;design&#x27;:32s} {&#x27;under-30s in it&#x27;:&gt;16} {&#x27;width of the under-30 interval&#x27;:&gt;32} {&#x27;overall accuracy: unweighted / reweighted&#x27;:&gt;44}&quot;)
+for label, share in ((&quot;random sample&quot;, None), (&quot;stratified: half under 30&quot;, 0.5)):
+    widths, plain, weighted, counts = [], [], [], []
+    for _ in range(100):
+        rows = rng.choice(len(y), 200, replace=False) if share is None else draw(200, share)
+        group = young[rows]
+        counts.append(group.sum())
+        widths.append(interval_width(correct[rows][group == 1]))
+        plain.append(correct[rows].mean())
+        # reweight each row by population share of its group divided by its share in the sample
+        w = np.where(group == 1, (young == 1).mean() / max(group.mean(), 1e-9), (young == 0).mean() / max(1 - group.mean(), 1e-9))
+        weighted.append(np.average(correct[rows], weights=w))
+    print(f&quot;{label:32s} {np.mean(counts):16.0f} {np.mean(widths):32.3f} {np.mean(plain):22.3f} / {np.mean(weighted):.3f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It needs the group labels before sampling.</strong> Stratifying on the protected attribute presupposes you know it for the pool you sample from.</li><li><strong>Weights add variance.</strong> A reweighted overall estimate is unbiased but noisier than an unweighted one from a random sample, and extreme weights make it unstable.</li><li><strong>Stratifying does not fix a biased pool.</strong> If the pool under-represents a subgroup, no sampling rate recovers it, see <a href="sampling-bias.html">Sampling Bias</a>.</li><li><strong>Per-group metrics are valid only inside the group.</strong> Combining groups with unequal rates needs the weights; do not average per-group numbers without them.</li><li><strong>More strata means smaller cells.</strong> Stratifying on three attributes at once leaves few rows per cell, see <a href="disaggregated-evaluation.html">Disaggregated Evaluation</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="cross-validation-for-fairness.html">Cross-Validation for Fairness</a> - using all rows as test data</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - the per-group reporting this makes possible</li><li><a href="sampling-bias.html">Sampling Bias</a> - when the pool itself is not representative</li><li><a href="class-imbalance.html">Class Imbalance</a> - the same rebalancing idea for labels</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-credit"><code>German Credit Lending/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Cochran, W. G. (1977). <em>Sampling Techniques</em> (3rd ed.). Wiley - stratified sampling and the weights that undo it.</li><li><a href="https://arxiv.org/abs/2103.06076" target="_blank" rel="noreferrer noopener">Barocas, S. et al. (2021): Designing Disaggregated Evaluations of AI Systems</a> - AIES 2021; choosing groups and sample sizes for per-group evaluation.</li><li>Lohr, S. L. (2021). Sampling: Design and Analysis (3rd ed.). Chapman and Hall - a modern treatment of weighting and stratification.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

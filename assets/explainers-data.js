@@ -941,5 +941,38 @@ window.FAIR_CODE_EXPLAINERS = [
       "data",
       "healthcare"
     ]
+  },
+  {
+    "slug": "seed-and-split-sensitivity",
+    "title": "Seed and Split Sensitivity",
+    "subtitle": "Every fairness number here comes from one split. How much of it is the seed?",
+    "summary": "Learn how to rerun a split with many seeds and report the spread of a fairness metric. See German Credit Lending: the gap is -0.0914 for the benchmark seed, averages -0.0637 over 30 seeds with a standard deviation of 0.0498, and is significant in only 13% of splits.",
+    "description": "How much a fairness gap changes with the random split seed: on 1,000 German Credit rows the spread is as large as the effect; on 32,561 rows it is tiny.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "cross-validation-for-fairness",
+    "title": "Cross-Validation for Fairness",
+    "subtitle": "Test every row once, and protect the small cells.",
+    "summary": "Learn how to cross-validate a fairness metric with folds stratified by group and label, and pool the held-out predictions. See German Credit Lending: the pooled gap is about -0.06 against -0.0914 on the benchmark split, and stratified folds never fall below 27 rows in the smallest cell.",
+    "description": "Cross-validating a fairness gap with folds stratified by group and label, so every row is tested once and no fold lacks the small cells.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "stratified-test-sets-for-fairness",
+    "title": "Stratified Test Sets for Fairness",
+    "subtitle": "Build an evaluation set that can measure the small group.",
+    "summary": "Learn to oversample a small group for evaluation and reweight to recover population rates. See German Credit Lending: a half-under-30 test set narrows the under-30 accuracy interval from 0.213 to 0.183, and the unweighted overall accuracy is biased low until reweighted.",
+    "description": "Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number.",
+    "tags": [
+      "data",
+      "detection"
+    ]
   }
 ];

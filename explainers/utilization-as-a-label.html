@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Utilization as a Label · Fair Code</title>
+<meta name="description" content="How to test whether a utilization label records access, by comparing groups at the same illness burden, shown on Healthcare Readmission.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/utilization-as-a-label.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Utilization as a Label · Fair Code">
+<meta property="og:description" content="How to test whether a utilization label records access, by comparing groups at the same illness burden, shown on Healthcare Readmission.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/utilization-as-a-label.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/utilization-as-a-label.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Utilization as a Label · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/utilization-as-a-label.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Utilization as a Label · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Utilization as a Label · Fair Code">
+<meta name="twitter:description" content="How to test whether a utilization label records access, by comparing groups at the same illness burden, shown on Healthcare Readmission.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/utilization-as-a-label.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Utilization as a Label",
+      "description": "Learn the same-burden comparison that exposes an access-driven label. See Healthcare Readmission: readmission is 0.112 for both groups and the burden-adjusted gap is +0.0027, so the Obermeyer mechanism is not visible here.",
+      "url": "https://www.thefaircode.xyz/explainers/utilization-as-a-label.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/utilization-as-a-label.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Utilization as a Label?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Utilization as a label means training a model on a target that counts use of the healthcare system (visits, admissions, cost, readmission) as if it measured need, which makes the label depend on access as well as on illness."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The best-known case is cost: The Obermeyer Case found that a widely used algorithm gave Black patients lower risk scores at the same level of illness because it was trained to predict spending, and spending is lower where access is lower. Readmission is a softer version of the same label. A patient with no regular care, no transport or a hospital that is hard to reach is less likely to be recorded as returning, however sick."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Utilization as a Label",
+          "item": "https://www.thefaircode.xyz/explainers/utilization-as-a-label.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/utilization-as-a-label.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Utilization as a Label</h1>
+      <p class="explainer-lede">A label that records who came back records who could come back.</p>
+      <p class="explainer-lede">Learn the same-burden comparison that exposes an access-driven label. See Healthcare Readmission: readmission is 0.112 for both groups and the burden-adjusted gap is +0.0027, so the Obermeyer mechanism is not visible here.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A label that records who came back to the hospital records who could come back. The check is cheap, and on this data it comes out clean.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Utilization as a label</strong> means training a model on a target that counts use of the healthcare system (visits, admissions, cost, readmission) as if it measured need, which makes the label depend on access as well as on illness.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>The best-known case is cost: <a href="obermeyer-cost-proxy.html">The Obermeyer Case</a> found that a widely used algorithm gave Black patients lower risk scores at the same level of illness because it was trained to predict spending, and spending is lower where access is lower. Readmission is a softer version of the same label. A patient with no regular care, no transport or a hospital that is hard to reach is less likely to be recorded as returning, however sick.</p>
+<p>The test for the problem is not complicated. Compare the label across groups at the same measured level of illness. If the label is lower for one group at the same burden, it is recording access. If it is the same, the label may be doing its job. This explainer runs that test on the benchmark&#x27;s hospital data and reports what it finds, including that it finds little.</p>
+<h3 id="core-concept-compare-at-the-same-burden">Core Concept: Compare at the Same Burden</h3>
+<ol><li><strong>Choose a measure of need that does not depend on access to the specific service.</strong> Here, the number of diagnoses recorded for the stay is the closest column, with the caveat that diagnoses are themselves recorded when care happens.</li><li><strong>Stratify on it</strong> and compare the label rate between groups in each stratum.</li><li><strong>Average the gaps</strong> with weights for how common each stratum is.</li><li><strong>Look at the raw use measures</strong> (visits in the previous year) for the same groups, since a gap there is the mechanism.</li></ol>
+<p>A material gap at the same burden is the signature of an access-driven label.</p>
+<h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
+<p><a href="../index.html#project-readmission">Healthcare Readmission</a>: about 99,500 patients with diabetes, the target is readmission within 30 days, the groups are African American patients against everyone else, and the burden is the number of diagnoses recorded for the stay.</p>
+<pre><code>what the label records is a hospital return, which needs access to a hospital
+readmitted within 30 days: African American patients 0.112, others 0.112
+
+readmission rate by recorded diagnoses (columns: others, African American)
+black       0      1
+burden              
+1-5     0.081  0.097
+6-7     0.107  0.106
+8       0.122  0.103
+9       0.124  0.127
+10+     0.152  0.125
+patients per cell
+black       0     1
+burden             
+1-5     14929  5121
+6-7     16058  4143
+8        8573  1867
+9       40623  8071
+10+        99     8
+
+gap at the same burden, weighted by how common each burden is: +0.0027
+
+visits in the year before: African American patients 1.20, others 1.22</code></pre>
+<p>On this data the label does not show an access gap. The overall readmission rate is 0.112 for both groups, the gaps within a burden stratum are small and go both ways (+0.016 at 1 to 5 diagnoses, -0.019 at 8), the weighted gap is +0.0027, and visits in the previous year are close (1.20 against 1.22). The 10 or more diagnoses stratum has only 8 African American patients, so its rate says nothing.</p>
+<p>That is a finding. It says that for this label the Obermeyer mechanism is not visible in the columns available; it does not say the label is a good measure of need, only that the same-burden comparison is clean. A label based on cost or on total visits could still fail, and the check above should be repeated for any label before it is used.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 utilization-as-a-label.py</code>). <code>data.df</code> holds the raw rows, so columns the harness does not encode can still be used to define strata.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Healthcare Readmission&quot;)
+df = data.df.copy()
+df[&quot;readmitted_30&quot;] = data.y.to_numpy()
+df[&quot;black&quot;] = (df[&quot;race&quot;] == &quot;AfricanAmerican&quot;).astype(int)
+
+print(&quot;what the label records is a hospital return, which needs access to a hospital&quot;)
+print(f&quot;readmitted within 30 days: African American patients {df[df.black == 1].readmitted_30.mean():.3f}, &quot;
+      f&quot;others {df[df.black == 0].readmitted_30.mean():.3f}&quot;)
+
+# Compare patients with the same illness burden: the same number of recorded diagnoses.
+df[&quot;burden&quot;] = pd.cut(df[&quot;number_diagnoses&quot;], [0, 5, 7, 8, 9, 20], labels=[&quot;1-5&quot;, &quot;6-7&quot;, &quot;8&quot;, &quot;9&quot;, &quot;10+&quot;])
+table = df.groupby([&quot;burden&quot;, &quot;black&quot;], observed=True).readmitted_30.agg([&quot;mean&quot;, &quot;size&quot;]).unstack(&quot;black&quot;)
+print(&quot;\nreadmission rate by recorded diagnoses (columns: others, African American)&quot;)
+print(table[&quot;mean&quot;].round(3).to_string())
+print(&quot;patients per cell&quot;)
+print(table[&quot;size&quot;].to_string())
+
+weights = df.groupby(&quot;burden&quot;, observed=True).size() / len(df)
+rate = df.groupby([&quot;burden&quot;, &quot;black&quot;], observed=True).readmitted_30.mean().unstack(&quot;black&quot;)
+print(f&quot;\ngap at the same burden, weighted by how common each burden is: {(weights * (rate[1] - rate[0])).sum():+.4f}&quot;)
+
+# What a utilization label would see: visits in the previous year.
+prior = df[&quot;number_outpatient&quot;] + df[&quot;number_emergency&quot;] + df[&quot;number_inpatient&quot;]
+print(f&quot;\nvisits in the year before: African American patients {prior[df.black == 1].mean():.2f}, others {prior[df.black == 0].mean():.2f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The burden measure is itself recorded through care.</strong> A patient with less access may have fewer diagnoses recorded, which would make the strata look healthier than they are and hide a gap.</li><li><strong>Only one label was checked.</strong> Readmission within 30 days is not cost, and the result does not transfer to other labels.</li><li><strong>Strata are coarse.</strong> Number of diagnoses is a blunt proxy for severity. A finer severity measure could show a gap this one does not.</li><li><strong>Small cells.</strong> The top stratum has 8 patients in one group, and the other cells have a few thousand, so differences below a point are within noise. See <a href="disaggregated-evaluation.html">Disaggregated Evaluation</a>.</li><li><strong>A clean check is not a proof.</strong> It rules out one mechanism in one measure.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="obermeyer-cost-proxy.html">The Obermeyer Case</a> - the cost label that failed this test</li><li><a href="label-bias.html">Label Bias</a> - labels that carry historical decisions</li><li><a href="underdiagnosis-bias.html">Underdiagnosis Bias</a> - unequal recorded disease</li><li><a href="missing-data-bias-ehr.html">Missing Data as Bias in EHRs</a> - unequal access showing up as unequal records</li><li><a href="measurement-bias.html">Measurement Bias</a> - a quantity recorded differently by group</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-readmission"><code>Healthcare Readmission/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://www.science.org/doi/10.1126/science.aax2342" target="_blank" rel="noreferrer noopener">Obermeyer, Z. et al. (2019): Dissecting racial bias in an algorithm used to manage the health of populations</a> - Science 366; the cost-as-need label and how the same-illness comparison exposed it.</li><li><a href="https://arxiv.org/abs/1912.05511" target="_blank" rel="noreferrer noopener">Jacobs, A. Z., Wallach, H. (2021): Measurement and Fairness</a> - FAccT 2021; a framework for when a label measures what it claims.</li><li><a href="https://doi.org/10.1155/2014/781670" target="_blank" rel="noreferrer noopener">Strack, B. et al. (2014): Impact of HbA1c Measurement on Hospital Readmission Rates</a> - BioMed Research International; the paper that describes this dataset.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -15889,3 +15889,355 @@ for name, model in (("linear regression", LinearRegression()),
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 
+---
+
+# Race in Clinical Models
+URL: https://www.thefaircode.xyz/explainers/race-in-clinical-models.html
+Summary: Learn how to compare a clinical risk model with and without race on accuracy, calibration by group and who receives a limited resource. See Healthcare Readmission: AUC 0.635 against 0.633, and the same 1.2-point over-prediction for African American patients either way.
+
+> *Whether a clinical model should see a patient's race is argued as if it were a statistical question. On real data it is often a values question with a small statistical effect.*
+
+## The One-Sentence Definition
+
+The **race-in-clinical-models question** is whether a prediction model for care should take race (or an ethnicity field) as an input, given that race is a social category that can stand in for differences in access and exposure but is not itself a biological cause.
+
+## Why It Matters
+
+Several clinical formulas used a race term for years, and [Race Correction in Clinical Algorithms](race-correction-clinical-algorithms.md) describes how that delayed care for some patients. The same question now arises for every machine-learning risk model trained on hospital data: leave race in and the model can be checked for calibration by group and can correct for real differences in data quality; take it out and the model cannot use it, but the information often leaks back through proxies ([Proxy Variables](proxy-variables.md)).
+
+Two arguments are common and both are partly empirical. For including it: a model that ignores a group variable can be systematically off for that group, and you cannot see it without the variable. Against: using race as a predictor can hard-code a historical disparity into a score that allocates care. This explainer runs the comparison on the benchmark's hospital data so the empirical half has numbers.
+
+## Core Concept: Three Things to Compare
+
+1. **Accuracy:** does the model with race predict better overall?
+2. **Calibration by group:** does the predicted risk match the observed rate in each group, with and without race?
+3. **Allocation:** if the score picks who gets a limited resource, how does the share of places and the share of the truly high-risk who get one change?
+
+Only the third is what a patient experiences, and it needs a rule for how many places there are. The example uses the top 10% of scores.
+
+## Concrete Example: Healthcare Readmission
+
+[Healthcare Readmission](../Healthcare%20Readmission/): 30-day readmission after a hospital stay with diabetes, about 99,500 patients, logistic regression on the audit's core and proxy columns, the benchmark's split. One model also receives race, gender and age; the other receives none of them.
+
+```
+with race in the model
+  AUC 0.635
+  African American: mean predicted risk 0.115 vs observed 0.103 | given a place 0.114 | of those who were readmitted, given a place 0.213
+  other patients : mean predicted risk 0.112 vs observed 0.114 | given a place 0.097 | of those who were readmitted, given a place 0.203
+without race (and without gender and age)
+  AUC 0.633
+  African American: mean predicted risk 0.114 vs observed 0.103 | given a place 0.111 | of those who were readmitted, given a place 0.213
+  other patients : mean predicted risk 0.112 vs observed 0.114 | given a place 0.097 | of those who were readmitted, given a place 0.205
+```
+
+- **Accuracy barely moves:** AUC 0.635 with race and 0.633 without. For this model race adds almost no predictive information beyond the clinical columns.
+- **Calibration differs by group either way:** African American patients have a mean predicted risk of 0.115 and an observed rate of 0.103, so the model over-predicts for them by about 1.2 points with race and 1.1 without; for other patients predicted 0.112 against observed 0.114. Removing race does not fix it, because the over-prediction comes from the other columns.
+- **Allocation shifts by under a point:** the share of African American patients given a place is 11.4% with race and 11.1% without, against 9.7% for others. Of the patients who really were readmitted, 21.3% of African American patients and 20.3% of others receive a place with race, 21.3% and 20.5% without.
+
+So on this model the debate is not a trade between accuracy and fairness: the variable carries almost no signal, and the group-level calibration gap exists with or without it. A model where race carried real signal would tell a different story, and the check above is how to find out.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 race-in-clinical-models.py`).
+
+```python
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+with_race = load_audit("Healthcare Readmission", strategy="baseline")      # core + proxy + race, gender and age
+without = load_audit("Healthcare Readmission", strategy="unawareness")     # the same without the protected columns
+train, test = with_race.idx_train, with_race.idx_test
+y = with_race.y.to_numpy()
+black = (with_race.df["race"] == "AfricanAmerican").to_numpy().astype(int)[test]
+
+def fit(data):
+    X = data.X.to_numpy(dtype=float)
+    Z = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+    model = LogisticRegression(max_iter=2000).fit(Z[train], y[train])
+    return model.predict_proba(Z[test])[:, 1]
+
+def report(name, p):
+    y_te = y[test]
+    # Use the score to pick the 10% of patients for a follow-up programme with a fixed number of places.
+    chosen = p >= np.quantile(p, 0.90)
+    print(f"{name}")
+    print(f"  AUC {roc_auc_score(y_te, p):.3f}")
+    for g, label in ((1, "African American"), (0, "other patients ")):
+        rows = black == g
+        print(f"  {label}: mean predicted risk {p[rows].mean():.3f} vs observed {y_te[rows].mean():.3f} "
+              f"| given a place {chosen[rows].mean():.3f} | of those who were readmitted, given a place {chosen[rows & (y_te == 1)].mean():.3f}")
+
+report("with race in the model", fit(with_race))
+report("without race (and without gender and age)", fit(without))
+```
+
+## Limitations
+
+1. **One dataset, one outcome.** Readmission is a weak signal here (AUC about 0.63), which is why race adds little. A model with stronger signal can behave very differently.
+2. **The "other patients" group is mixed.** It combines several groups, and a gap for one group can be hidden inside it. Report each group you have enough rows for.
+3. **A small allocation shift is not a small harm.** At a few thousand patients per percentage point, the number of people affected can still be large.
+4. **Removing race does not remove it.** The model without race still sees the proxy columns, and its calibration gap is unchanged.
+5. **Whether to include it is not settled by this table.** The choice also turns on how the score will be used and on what the clinical and ethical consensus is, see [Race Correction in Clinical Algorithms](race-correction-clinical-algorithms.md).
+
+## Related Concepts
+
+* [Race Correction in Clinical Algorithms](race-correction-clinical-algorithms.md) - formulas that took race as an explicit input
+* [Proxy Variables](proxy-variables.md) - why removing the column does not remove the information
+* [Clinical Score Miscalibration](clinical-score-miscalibration.md) - calibration by group in detail
+* [Underdiagnosis Bias](underdiagnosis-bias.md) - how the labels themselves can differ by group
+* [Fairness Through Unawareness](fairness-through-unawareness.md) - the general case for dropping an attribute
+
+## Related Projects in This Repo
+
+* [`Healthcare Readmission/`](../Healthcare%20Readmission/) - the audit used for the example above
+
+## Further Reading
+
+* [Vyas, D. A., Eisenstein, L. G., Jones, D. S. (2020): Hidden in Plain Sight - Reconsidering the Use of Race Correction in Clinical Algorithms](https://www.nejm.org/doi/full/10.1056/NEJMms2004740) - New England Journal of Medicine 383; the review of race terms across specialities.
+* [Obermeyer, Z. et al. (2019): Dissecting racial bias in an algorithm used to manage the health of populations](https://www.science.org/doi/10.1126/science.aax2342) - Science 366; a score that allocated care and its group-level calibration.
+* Delgado, C. et al. (2022). A Unifying Approach for GFR Estimation: Recommendations of the NKF-ASN Task Force on Reassessing the Inclusion of Race in Diagnosing Kidney Disease. American Journal of Kidney Diseases 79(2) - the recommendation to remove the race term from eGFR.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Utilization as a Label
+URL: https://www.thefaircode.xyz/explainers/utilization-as-a-label.html
+Summary: Learn the same-burden comparison that exposes an access-driven label. See Healthcare Readmission: readmission is 0.112 for both groups and the burden-adjusted gap is +0.0027, so the Obermeyer mechanism is not visible here.
+
+> *A label that records who came back to the hospital records who could come back. The check is cheap, and on this data it comes out clean.*
+
+## The One-Sentence Definition
+
+**Utilization as a label** means training a model on a target that counts use of the healthcare system (visits, admissions, cost, readmission) as if it measured need, which makes the label depend on access as well as on illness.
+
+## Why It Matters
+
+The best-known case is cost: [The Obermeyer Case](obermeyer-cost-proxy.md) found that a widely used algorithm gave Black patients lower risk scores at the same level of illness because it was trained to predict spending, and spending is lower where access is lower. Readmission is a softer version of the same label. A patient with no regular care, no transport or a hospital that is hard to reach is less likely to be recorded as returning, however sick.
+
+The test for the problem is not complicated. Compare the label across groups at the same measured level of illness. If the label is lower for one group at the same burden, it is recording access. If it is the same, the label may be doing its job. This explainer runs that test on the benchmark's hospital data and reports what it finds, including that it finds little.
+
+## Core Concept: Compare at the Same Burden
+
+1. **Choose a measure of need that does not depend on access to the specific service.** Here, the number of diagnoses recorded for the stay is the closest column, with the caveat that diagnoses are themselves recorded when care happens.
+2. **Stratify on it** and compare the label rate between groups in each stratum.
+3. **Average the gaps** with weights for how common each stratum is.
+4. **Look at the raw use measures** (visits in the previous year) for the same groups, since a gap there is the mechanism.
+
+A material gap at the same burden is the signature of an access-driven label.
+
+## Concrete Example: Healthcare Readmission
+
+[Healthcare Readmission](../Healthcare%20Readmission/): about 99,500 patients with diabetes, the target is readmission within 30 days, the groups are African American patients against everyone else, and the burden is the number of diagnoses recorded for the stay.
+
+```
+what the label records is a hospital return, which needs access to a hospital
+readmitted within 30 days: African American patients 0.112, others 0.112
+
+readmission rate by recorded diagnoses (columns: others, African American)
+black       0      1
+burden              
+1-5     0.081  0.097
+6-7     0.107  0.106
+8       0.122  0.103
+9       0.124  0.127
+10+     0.152  0.125
+patients per cell
+black       0     1
+burden             
+1-5     14929  5121
+6-7     16058  4143
+8        8573  1867
+9       40623  8071
+10+        99     8
+
+gap at the same burden, weighted by how common each burden is: +0.0027
+
+visits in the year before: African American patients 1.20, others 1.22
+```
+
+On this data the label does not show an access gap. The overall readmission rate is 0.112 for both groups, the gaps within a burden stratum are small and go both ways (+0.016 at 1 to 5 diagnoses, -0.019 at 8), the weighted gap is +0.0027, and visits in the previous year are close (1.20 against 1.22). The 10 or more diagnoses stratum has only 8 African American patients, so its rate says nothing.
+
+That is a finding. It says that for this label the Obermeyer mechanism is not visible in the columns available; it does not say the label is a good measure of need, only that the same-burden comparison is clean. A label based on cost or on total visits could still fail, and the check above should be repeated for any label before it is used.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 utilization-as-a-label.py`). `data.df` holds the raw rows, so columns the harness does not encode can still be used to define strata.
+
+```python
+import numpy as np
+import pandas as pd
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Healthcare Readmission")
+df = data.df.copy()
+df["readmitted_30"] = data.y.to_numpy()
+df["black"] = (df["race"] == "AfricanAmerican").astype(int)
+
+print("what the label records is a hospital return, which needs access to a hospital")
+print(f"readmitted within 30 days: African American patients {df[df.black == 1].readmitted_30.mean():.3f}, "
+      f"others {df[df.black == 0].readmitted_30.mean():.3f}")
+
+# Compare patients with the same illness burden: the same number of recorded diagnoses.
+df["burden"] = pd.cut(df["number_diagnoses"], [0, 5, 7, 8, 9, 20], labels=["1-5", "6-7", "8", "9", "10+"])
+table = df.groupby(["burden", "black"], observed=True).readmitted_30.agg(["mean", "size"]).unstack("black")
+print("\nreadmission rate by recorded diagnoses (columns: others, African American)")
+print(table["mean"].round(3).to_string())
+print("patients per cell")
+print(table["size"].to_string())
+
+weights = df.groupby("burden", observed=True).size() / len(df)
+rate = df.groupby(["burden", "black"], observed=True).readmitted_30.mean().unstack("black")
+print(f"\ngap at the same burden, weighted by how common each burden is: {(weights * (rate[1] - rate[0])).sum():+.4f}")
+
+# What a utilization label would see: visits in the previous year.
+prior = df["number_outpatient"] + df["number_emergency"] + df["number_inpatient"]
+print(f"\nvisits in the year before: African American patients {prior[df.black == 1].mean():.2f}, others {prior[df.black == 0].mean():.2f}")
+```
+
+## Limitations
+
+1. **The burden measure is itself recorded through care.** A patient with less access may have fewer diagnoses recorded, which would make the strata look healthier than they are and hide a gap.
+2. **Only one label was checked.** Readmission within 30 days is not cost, and the result does not transfer to other labels.
+3. **Strata are coarse.** Number of diagnoses is a blunt proxy for severity. A finer severity measure could show a gap this one does not.
+4. **Small cells.** The top stratum has 8 patients in one group, and the other cells have a few thousand, so differences below a point are within noise. See [Disaggregated Evaluation](disaggregated-evaluation.md).
+5. **A clean check is not a proof.** It rules out one mechanism in one measure.
+
+## Related Concepts
+
+* [The Obermeyer Case](obermeyer-cost-proxy.md) - the cost label that failed this test
+* [Label Bias](label-bias.md) - labels that carry historical decisions
+* [Underdiagnosis Bias](underdiagnosis-bias.md) - unequal recorded disease
+* [Missing Data as Bias in EHRs](missing-data-bias-ehr.md) - unequal access showing up as unequal records
+* [Measurement Bias](measurement-bias.md) - a quantity recorded differently by group
+
+## Related Projects in This Repo
+
+* [`Healthcare Readmission/`](../Healthcare%20Readmission/) - the audit used for the example above
+
+## Further Reading
+
+* [Obermeyer, Z. et al. (2019): Dissecting racial bias in an algorithm used to manage the health of populations](https://www.science.org/doi/10.1126/science.aax2342) - Science 366; the cost-as-need label and how the same-illness comparison exposed it.
+* [Jacobs, A. Z., Wallach, H. (2021): Measurement and Fairness](https://arxiv.org/abs/1912.05511) - FAccT 2021; a framework for when a label measures what it claims.
+* [Strack, B. et al. (2014): Impact of HbA1c Measurement on Hospital Readmission Rates](https://doi.org/10.1155/2014/781670) - BioMed Research International; the paper that describes this dataset.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Discharge Leakage in Readmission Models
+URL: https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html
+Summary: Learn to ask when each column is known and what it does to the rows. See Healthcare Readmission: 2.4% of rows are deaths or hospice discharges, adding the disposition lifts AUC from 0.640 to 0.671, and most of that is not from them.
+
+> *Some columns are only known once the outcome is nearly decided. A model that uses them looks better than it will be on the day it is needed.*
+
+## The One-Sentence Definition
+
+**Discharge leakage** is the use, in a readmission model, of columns recorded at or after discharge (where the patient went, whether they died) that would not be known when the model is meant to make its prediction, and that carry information about the outcome.
+
+## Why It Matters
+
+[Data Leakage](data-leakage.md) explains the general problem: information from the future inflates evaluation scores. A readmission model is typically run at or before discharge to decide who gets follow-up, so what counts as "available at prediction time" depends on when it runs. The discharge disposition (home, nursing facility, hospice, expired) is known at the end of the stay, which is exactly the moment such a model is used, so it may be fair to use. A patient who died during the stay, though, cannot be readmitted, and their row is a built-in negative.
+
+The fairness side is quieter. Rows for patients who died or went to hospice are not spread equally across groups, and they lower the measured base rate and shift every per-group number. Both problems are easy to check.
+
+## Core Concept: Ask Two Questions of Each Column
+
+1. **When is it known?** If it is not available when the model will run, it leaks. If it is, it is allowed but it is carrying information from the end of the stay.
+2. **What does it do to the rows?** Some values (expired, hospice) change who can have the outcome at all. Those rows belong in the training data only if the deployed model will see them.
+
+## Concrete Example: Healthcare Readmission
+
+[Healthcare Readmission](../Healthcare%20Readmission/): about 99,500 patients with diabetes, 30-day readmission, a gradient-boosted model on the audit's core and proxy columns (no race, gender or age), the benchmark's split. The audit's two row filters remove unknown race and gender and do not remove patients who died or went to hospice. The model flags the top 11% of scores, about the base rate.
+
+```
+rows 99,492; died or went to hospice 2,384 (2.4%); readmitted within 30 days: 1.8% of them, 11.5% of everyone else
+share of African American patients among them: 18.4% (all rows: 19.3%)
+
+all rows, with discharge disposition                 AUC 0.671 | flagged rate: African American 0.126, others 0.106, gap +0.0194
+all rows, without discharge disposition              AUC 0.640 | flagged rate: African American 0.129, others 0.105, gap +0.0239
+patients who left alive only, with disposition       AUC 0.663 | flagged rate: African American 0.125, others 0.106, gap +0.0190
+patients who left alive only, without disposition    AUC 0.639 | flagged rate: African American 0.131, others 0.105, gap +0.0259
+```
+
+- **2,384 rows (2.4%) are end-of-life discharges.** Only 1.8% of them were readmitted against 11.5% of everyone else. They are in the data as ordinary "not readmitted" examples.
+- **The disposition column helps a lot:** AUC 0.671 with it and 0.640 without. Dropping the end-of-life rows removes only part of that, leaving 0.663 against 0.639, so most of the lift comes from other dispositions (for example discharge to a skilled nursing facility, where readmission is more common).
+- **The group gap moves a little:** the flagged-rate gap for African American patients is +0.0194 with the column and +0.0239 without, and it is +0.0190 and +0.0259 on the rows that left alive. Dropping the column makes the gap slightly wider here.
+- **The rows are not spread evenly:** African American patients are 18.4% of the end-of-life rows against 19.3% of all rows, a small difference.
+
+If the model is meant to run on admission, the disposition column is a leak and the 0.671 is not achievable. If it runs at discharge, the column is legitimate and the 11.5% base rate that excludes end-of-life patients is the one to use.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 discharge-leakage-in-readmission-models.py`).
+
+```python
+import numpy as np
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Healthcare Readmission", strategy="unawareness")   # core + proxy columns, no race, gender or age
+train, test = data.idx_train, data.idx_test
+y = data.y.to_numpy()
+black = (data.df["race"] == "AfricanAmerican").to_numpy().astype(int)
+disposition = data.df["discharge_disposition_id"].to_numpy()
+END_OF_LIFE = {11, 13, 14, 19, 20, 21}          # expired, or discharged to hospice: readmission within 30 days is very unlikely
+
+dead = np.isin(disposition, list(END_OF_LIFE))
+print(f"rows {len(y):,}; died or went to hospice {dead.sum():,} ({dead.mean():.1%}); readmitted within 30 days: "
+      f"{y[dead].mean():.1%} of them, {y[~dead].mean():.1%} of everyone else")
+print(f"share of African American patients among them: {black[dead].mean():.1%} (all rows: {black.mean():.1%})")
+
+def report(name, columns, rows_train, rows_test):
+    X = data.X[columns]
+    model = HistGradientBoostingClassifier(random_state=data.random_state).fit(X.iloc[rows_train], y[rows_train])
+    p = model.predict_proba(X.iloc[rows_test])[:, 1]
+    flagged = p >= np.quantile(p, 0.89)              # flag the top 11%, about the base rate
+    b = black[rows_test]
+    print(f"{name:52s} AUC {roc_auc_score(y[rows_test], p):.3f} | flagged rate: African American {flagged[b == 1].mean():.3f}, "
+          f"others {flagged[b == 0].mean():.3f}, gap {flagged[b == 1].mean() - flagged[b == 0].mean():+.4f}")
+
+everything = list(data.X.columns)
+without = [c for c in everything if c != "discharge_disposition_id"]
+alive_train, alive_test = train[~dead[train]], test[~dead[test]]
+print()
+report("all rows, with discharge disposition", everything, train, test)
+report("all rows, without discharge disposition", without, train, test)
+report("patients who left alive only, with disposition", everything, alive_train, alive_test)
+report("patients who left alive only, without disposition", without, alive_train, alive_test)
+```
+
+## Limitations
+
+1. **The "when is it known" question has no answer in the data.** It depends on how the model will be deployed, so the same column is a leak in one design and a feature in another.
+2. **Disposition codes are coarse.** The grouping into end-of-life codes here is a choice, and other codes (such as left against medical advice) have their own effects.
+3. **The fairness effect is small on this data.** The flagged-rate gap moved by a few tenths of a point. In a dataset where groups differ more in discharge destination, it could move more.
+4. **Dropping the column hides, not fixes.** Without the disposition, the model leans on other columns that carry part of it.
+5. **Excluding rows changes the question.** A model trained and tested only on patients who left alive answers a different question from one that must also score the patients who will not.
+
+## Related Concepts
+
+* [Data Leakage](data-leakage.md) - the general problem of information from the future
+* [Survivorship Bias](survivorship-bias.md) - when the rows that remain are the ones that passed a filter
+* [Missing Data as Bias in EHRs](missing-data-bias-ehr.md) - how recording depends on care
+* [Disaggregated Evaluation](disaggregated-evaluation.md) - how to look at the per-group effect of a design choice
+* [Model Cards](model-cards.md) - where the intended time of use should be written down
+
+## Related Projects in This Repo
+
+* [`Healthcare Readmission/`](../Healthcare%20Readmission/) - the audit used for the example above
+
+## Further Reading
+
+* [Strack, B. et al. (2014): Impact of HbA1c Measurement on Hospital Readmission Rates](https://doi.org/10.1155/2014/781670) - BioMed Research International; the paper that describes this dataset and its variables.
+* [Kaufman, S., Rosset, S., Perlich, C., Stitelman, O. (2012): Leakage in Data Mining: Formulation, Detection, and Avoidance](https://doi.org/10.1145/2382577.2382579) - ACM Transactions on Knowledge Discovery from Data 6(4); a taxonomy of leakage.
+* [Wiens, J. et al. (2019): Do No Harm: A Roadmap for Responsible Machine Learning for Health Care](https://doi.org/10.1038/s41591-019-0548-6) - Nature Medicine 25; on defining the time of use for a clinical model.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+

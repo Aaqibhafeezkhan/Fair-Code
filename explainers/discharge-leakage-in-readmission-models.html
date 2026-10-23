@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discharge Leakage in Readmission Models · Fair Code</title>
+<meta name="description" content="How discharge disposition can leak the outcome in a readmission model, and what end-of-life rows do to the base rate, shown on 99,492 patients.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Discharge Leakage in Readmission Models · Fair Code">
+<meta property="og:description" content="How discharge disposition can leak the outcome in a readmission model, and what end-of-life rows do to the base rate, shown on 99,492 patients.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/discharge-leakage-in-readmission-models.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Discharge Leakage in Readmission Models · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/discharge-leakage-in-readmission-models.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Discharge Leakage in Readmission Models · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Discharge Leakage in Readmission Models · Fair Code">
+<meta name="twitter:description" content="How discharge disposition can leak the outcome in a readmission model, and what end-of-life rows do to the base rate, shown on 99,492 patients.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/discharge-leakage-in-readmission-models.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Discharge Leakage in Readmission Models",
+      "description": "Learn to ask when each column is known and what it does to the rows. See Healthcare Readmission: 2.4% of rows are deaths or hospice discharges, adding the disposition lifts AUC from 0.640 to 0.671, and most of that is not from them.",
+      "url": "https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Discharge Leakage in Readmission Models?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Discharge leakage is the use, in a readmission model, of columns recorded at or after discharge (where the patient went, whether they died) that would not be known when the model is meant to make its prediction, and that carry information about the outcome."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Data Leakage explains the general problem: information from the future inflates evaluation scores. A readmission model is typically run at or before discharge to decide who gets follow-up, so what counts as \"available at prediction time\" depends on when it runs. The discharge disposition (home, nursing facility, hospice, expired) is known at the end of the stay, which is exactly the moment such a model is used, so it may be fair to use."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Discharge Leakage in Readmission Models",
+          "item": "https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/discharge-leakage-in-readmission-models.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Discharge Leakage in Readmission Models</h1>
+      <p class="explainer-lede">Some columns are only known once the outcome is nearly decided.</p>
+      <p class="explainer-lede">Learn to ask when each column is known and what it does to the rows. See Healthcare Readmission: 2.4% of rows are deaths or hospice discharges, adding the disposition lifts AUC from 0.640 to 0.671, and most of that is not from them.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Some columns are only known once the outcome is nearly decided. A model that uses them looks better than it will be on the day it is needed.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Discharge leakage</strong> is the use, in a readmission model, of columns recorded at or after discharge (where the patient went, whether they died) that would not be known when the model is meant to make its prediction, and that carry information about the outcome.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p><a href="data-leakage.html">Data Leakage</a> explains the general problem: information from the future inflates evaluation scores. A readmission model is typically run at or before discharge to decide who gets follow-up, so what counts as &quot;available at prediction time&quot; depends on when it runs. The discharge disposition (home, nursing facility, hospice, expired) is known at the end of the stay, which is exactly the moment such a model is used, so it may be fair to use. A patient who died during the stay, though, cannot be readmitted, and their row is a built-in negative.</p>
+<p>The fairness side is quieter. Rows for patients who died or went to hospice are not spread equally across groups, and they lower the measured base rate and shift every per-group number. Both problems are easy to check.</p>
+<h3 id="core-concept-ask-two-questions-of-each-column">Core Concept: Ask Two Questions of Each Column</h3>
+<ol><li><strong>When is it known?</strong> If it is not available when the model will run, it leaks. If it is, it is allowed but it is carrying information from the end of the stay.</li><li><strong>What does it do to the rows?</strong> Some values (expired, hospice) change who can have the outcome at all. Those rows belong in the training data only if the deployed model will see them.</li></ol>
+<h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
+<p><a href="../index.html#project-readmission">Healthcare Readmission</a>: about 99,500 patients with diabetes, 30-day readmission, a gradient-boosted model on the audit&#x27;s core and proxy columns (no race, gender or age), the benchmark&#x27;s split. The audit&#x27;s two row filters remove unknown race and gender and do not remove patients who died or went to hospice. The model flags the top 11% of scores, about the base rate.</p>
+<pre><code>rows 99,492; died or went to hospice 2,384 (2.4%); readmitted within 30 days: 1.8% of them, 11.5% of everyone else
+share of African American patients among them: 18.4% (all rows: 19.3%)
+
+all rows, with discharge disposition                 AUC 0.671 | flagged rate: African American 0.126, others 0.106, gap +0.0194
+all rows, without discharge disposition              AUC 0.640 | flagged rate: African American 0.129, others 0.105, gap +0.0239
+patients who left alive only, with disposition       AUC 0.663 | flagged rate: African American 0.125, others 0.106, gap +0.0190
+patients who left alive only, without disposition    AUC 0.639 | flagged rate: African American 0.131, others 0.105, gap +0.0259</code></pre>
+<ul><li><strong>2,384 rows (2.4%) are end-of-life discharges.</strong> Only 1.8% of them were readmitted against 11.5% of everyone else. They are in the data as ordinary &quot;not readmitted&quot; examples.</li><li><strong>The disposition column helps a lot:</strong> AUC 0.671 with it and 0.640 without. Dropping the end-of-life rows removes only part of that, leaving 0.663 against 0.639, so most of the lift comes from other dispositions (for example discharge to a skilled nursing facility, where readmission is more common).</li><li><strong>The group gap moves a little:</strong> the flagged-rate gap for African American patients is +0.0194 with the column and +0.0239 without, and it is +0.0190 and +0.0259 on the rows that left alive. Dropping the column makes the gap slightly wider here.</li><li><strong>The rows are not spread evenly:</strong> African American patients are 18.4% of the end-of-life rows against 19.3% of all rows, a small difference.</li></ul>
+<p>If the model is meant to run on admission, the disposition column is a leak and the 0.671 is not achievable. If it runs at discharge, the column is legitimate and the 11.5% base rate that excludes end-of-life patients is the one to use.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 discharge-leakage-in-readmission-models.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Healthcare Readmission&quot;, strategy=&quot;unawareness&quot;)   # core + proxy columns, no race, gender or age
+train, test = data.idx_train, data.idx_test
+y = data.y.to_numpy()
+black = (data.df[&quot;race&quot;] == &quot;AfricanAmerican&quot;).to_numpy().astype(int)
+disposition = data.df[&quot;discharge_disposition_id&quot;].to_numpy()
+END_OF_LIFE = {11, 13, 14, 19, 20, 21}          # expired, or discharged to hospice: readmission within 30 days is very unlikely
+
+dead = np.isin(disposition, list(END_OF_LIFE))
+print(f&quot;rows {len(y):,}; died or went to hospice {dead.sum():,} ({dead.mean():.1%}); readmitted within 30 days: &quot;
+      f&quot;{y[dead].mean():.1%} of them, {y[~dead].mean():.1%} of everyone else&quot;)
+print(f&quot;share of African American patients among them: {black[dead].mean():.1%} (all rows: {black.mean():.1%})&quot;)
+
+def report(name, columns, rows_train, rows_test):
+    X = data.X[columns]
+    model = HistGradientBoostingClassifier(random_state=data.random_state).fit(X.iloc[rows_train], y[rows_train])
+    p = model.predict_proba(X.iloc[rows_test])[:, 1]
+    flagged = p &gt;= np.quantile(p, 0.89)              # flag the top 11%, about the base rate
+    b = black[rows_test]
+    print(f&quot;{name:52s} AUC {roc_auc_score(y[rows_test], p):.3f} | flagged rate: African American {flagged[b == 1].mean():.3f}, &quot;
+          f&quot;others {flagged[b == 0].mean():.3f}, gap {flagged[b == 1].mean() - flagged[b == 0].mean():+.4f}&quot;)
+
+everything = list(data.X.columns)
+without = [c for c in everything if c != &quot;discharge_disposition_id&quot;]
+alive_train, alive_test = train[~dead[train]], test[~dead[test]]
+print()
+report(&quot;all rows, with discharge disposition&quot;, everything, train, test)
+report(&quot;all rows, without discharge disposition&quot;, without, train, test)
+report(&quot;patients who left alive only, with disposition&quot;, everything, alive_train, alive_test)
+report(&quot;patients who left alive only, without disposition&quot;, without, alive_train, alive_test)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The &quot;when is it known&quot; question has no answer in the data.</strong> It depends on how the model will be deployed, so the same column is a leak in one design and a feature in another.</li><li><strong>Disposition codes are coarse.</strong> The grouping into end-of-life codes here is a choice, and other codes (such as left against medical advice) have their own effects.</li><li><strong>The fairness effect is small on this data.</strong> The flagged-rate gap moved by a few tenths of a point. In a dataset where groups differ more in discharge destination, it could move more.</li><li><strong>Dropping the column hides, not fixes.</strong> Without the disposition, the model leans on other columns that carry part of it.</li><li><strong>Excluding rows changes the question.</strong> A model trained and tested only on patients who left alive answers a different question from one that must also score the patients who will not.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="data-leakage.html">Data Leakage</a> - the general problem of information from the future</li><li><a href="survivorship-bias.html">Survivorship Bias</a> - when the rows that remain are the ones that passed a filter</li><li><a href="missing-data-bias-ehr.html">Missing Data as Bias in EHRs</a> - how recording depends on care</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - how to look at the per-group effect of a design choice</li><li><a href="model-cards.html">Model Cards</a> - where the intended time of use should be written down</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-readmission"><code>Healthcare Readmission/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://doi.org/10.1155/2014/781670" target="_blank" rel="noreferrer noopener">Strack, B. et al. (2014): Impact of HbA1c Measurement on Hospital Readmission Rates</a> - BioMed Research International; the paper that describes this dataset and its variables.</li><li><a href="https://doi.org/10.1145/2382577.2382579" target="_blank" rel="noreferrer noopener">Kaufman, S., Rosset, S., Perlich, C., Stitelman, O. (2012): Leakage in Data Mining: Formulation, Detection, and Avoidance</a> - ACM Transactions on Knowledge Discovery from Data 6(4); a taxonomy of leakage.</li><li><a href="https://doi.org/10.1038/s41591-019-0548-6" target="_blank" rel="noreferrer noopener">Wiens, J. et al. (2019): Do No Harm: A Roadmap for Responsible Machine Learning for Health Care</a> - Nature Medicine 25; on defining the time of use for a clinical model.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

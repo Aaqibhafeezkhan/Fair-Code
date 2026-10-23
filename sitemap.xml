@@ -342,11 +342,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/adverse-action-notices.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/geographic-proxies-and-redlining.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/risk-based-pricing-gaps.html</loc>
+    <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/race-in-clinical-models.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/utilization-as-a-label.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/discharge-leakage-in-readmission-models.html</loc>
   </url>
 </urlset>

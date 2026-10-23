@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race in Clinical Models · Fair Code</title>
+<meta name="description" content="Comparing a hospital readmission model with and without race on accuracy, calibration and who gets a limited place: the effect is small either way.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/race-in-clinical-models.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Race in Clinical Models · Fair Code">
+<meta property="og:description" content="Comparing a hospital readmission model with and without race on accuracy, calibration and who gets a limited place: the effect is small either way.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/race-in-clinical-models.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/race-in-clinical-models.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Race in Clinical Models · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/race-in-clinical-models.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Race in Clinical Models · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Race in Clinical Models · Fair Code">
+<meta name="twitter:description" content="Comparing a hospital readmission model with and without race on accuracy, calibration and who gets a limited place: the effect is small either way.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/race-in-clinical-models.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Race in Clinical Models",
+      "description": "Learn how to compare a clinical risk model with and without race on accuracy, calibration by group and who receives a limited resource. See Healthcare Readmission: AUC 0.635 against 0.633, and the same 1.2-point over-prediction for African American patients either way.",
+      "url": "https://www.thefaircode.xyz/explainers/race-in-clinical-models.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/race-in-clinical-models.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Race in Clinical Models?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The race-in-clinical-models question is whether a prediction model for care should take race (or an ethnicity field) as an input, given that race is a social category that can stand in for differences in access and exposure but is not itself a biological cause."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Several clinical formulas used a race term for years, and Race Correction in Clinical Algorithms describes how that delayed care for some patients. The same question now arises for every machine-learning risk model trained on hospital data: leave race in and the model can be checked for calibration by group and can correct for real differences in data quality; take it out and the model cannot use it, but the information often leaks back through proxies (Proxy Variables)."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Race in Clinical Models",
+          "item": "https://www.thefaircode.xyz/explainers/race-in-clinical-models.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/race-in-clinical-models.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Race in Clinical Models</h1>
+      <p class="explainer-lede">Whether a model should see race is a values question with a small statistical effect.</p>
+      <p class="explainer-lede">Learn how to compare a clinical risk model with and without race on accuracy, calibration by group and who receives a limited resource. See Healthcare Readmission: AUC 0.635 against 0.633, and the same 1.2-point over-prediction for African American patients either way.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Whether a clinical model should see a patient&#x27;s race is argued as if it were a statistical question. On real data it is often a values question with a small statistical effect.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>The <strong>race-in-clinical-models question</strong> is whether a prediction model for care should take race (or an ethnicity field) as an input, given that race is a social category that can stand in for differences in access and exposure but is not itself a biological cause.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Several clinical formulas used a race term for years, and <a href="race-correction-clinical-algorithms.html">Race Correction in Clinical Algorithms</a> describes how that delayed care for some patients. The same question now arises for every machine-learning risk model trained on hospital data: leave race in and the model can be checked for calibration by group and can correct for real differences in data quality; take it out and the model cannot use it, but the information often leaks back through proxies (<a href="proxy-variables.html">Proxy Variables</a>).</p>
+<p>Two arguments are common and both are partly empirical. For including it: a model that ignores a group variable can be systematically off for that group, and you cannot see it without the variable. Against: using race as a predictor can hard-code a historical disparity into a score that allocates care. This explainer runs the comparison on the benchmark&#x27;s hospital data so the empirical half has numbers.</p>
+<h3 id="core-concept-three-things-to-compare">Core Concept: Three Things to Compare</h3>
+<ol><li><strong>Accuracy:</strong> does the model with race predict better overall?</li><li><strong>Calibration by group:</strong> does the predicted risk match the observed rate in each group, with and without race?</li><li><strong>Allocation:</strong> if the score picks who gets a limited resource, how does the share of places and the share of the truly high-risk who get one change?</li></ol>
+<p>Only the third is what a patient experiences, and it needs a rule for how many places there are. The example uses the top 10% of scores.</p>
+<h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
+<p><a href="../index.html#project-readmission">Healthcare Readmission</a>: 30-day readmission after a hospital stay with diabetes, about 99,500 patients, logistic regression on the audit&#x27;s core and proxy columns, the benchmark&#x27;s split. One model also receives race, gender and age; the other receives none of them.</p>
+<pre><code>with race in the model
+  AUC 0.635
+  African American: mean predicted risk 0.115 vs observed 0.103 | given a place 0.114 | of those who were readmitted, given a place 0.213
+  other patients : mean predicted risk 0.112 vs observed 0.114 | given a place 0.097 | of those who were readmitted, given a place 0.203
+without race (and without gender and age)
+  AUC 0.633
+  African American: mean predicted risk 0.114 vs observed 0.103 | given a place 0.111 | of those who were readmitted, given a place 0.213
+  other patients : mean predicted risk 0.112 vs observed 0.114 | given a place 0.097 | of those who were readmitted, given a place 0.205</code></pre>
+<ul><li><strong>Accuracy barely moves:</strong> AUC 0.635 with race and 0.633 without. For this model race adds almost no predictive information beyond the clinical columns.</li><li><strong>Calibration differs by group either way:</strong> African American patients have a mean predicted risk of 0.115 and an observed rate of 0.103, so the model over-predicts for them by about 1.2 points with race and 1.1 without; for other patients predicted 0.112 against observed 0.114. Removing race does not fix it, because the over-prediction comes from the other columns.</li><li><strong>Allocation shifts by under a point:</strong> the share of African American patients given a place is 11.4% with race and 11.1% without, against 9.7% for others. Of the patients who really were readmitted, 21.3% of African American patients and 20.3% of others receive a place with race, 21.3% and 20.5% without.</li></ul>
+<p>So on this model the debate is not a trade between accuracy and fairness: the variable carries almost no signal, and the group-level calibration gap exists with or without it. A model where race carried real signal would tell a different story, and the check above is how to find out.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 race-in-clinical-models.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+with_race = load_audit(&quot;Healthcare Readmission&quot;, strategy=&quot;baseline&quot;)      # core + proxy + race, gender and age
+without = load_audit(&quot;Healthcare Readmission&quot;, strategy=&quot;unawareness&quot;)     # the same without the protected columns
+train, test = with_race.idx_train, with_race.idx_test
+y = with_race.y.to_numpy()
+black = (with_race.df[&quot;race&quot;] == &quot;AfricanAmerican&quot;).to_numpy().astype(int)[test]
+
+def fit(data):
+    X = data.X.to_numpy(dtype=float)
+    Z = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+    model = LogisticRegression(max_iter=2000).fit(Z[train], y[train])
+    return model.predict_proba(Z[test])[:, 1]
+
+def report(name, p):
+    y_te = y[test]
+    # Use the score to pick the 10% of patients for a follow-up programme with a fixed number of places.
+    chosen = p &gt;= np.quantile(p, 0.90)
+    print(f&quot;{name}&quot;)
+    print(f&quot;  AUC {roc_auc_score(y_te, p):.3f}&quot;)
+    for g, label in ((1, &quot;African American&quot;), (0, &quot;other patients &quot;)):
+        rows = black == g
+        print(f&quot;  {label}: mean predicted risk {p[rows].mean():.3f} vs observed {y_te[rows].mean():.3f} &quot;
+              f&quot;| given a place {chosen[rows].mean():.3f} | of those who were readmitted, given a place {chosen[rows &amp; (y_te == 1)].mean():.3f}&quot;)
+
+report(&quot;with race in the model&quot;, fit(with_race))
+report(&quot;without race (and without gender and age)&quot;, fit(without))</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>One dataset, one outcome.</strong> Readmission is a weak signal here (AUC about 0.63), which is why race adds little. A model with stronger signal can behave very differently.</li><li><strong>The &quot;other patients&quot; group is mixed.</strong> It combines several groups, and a gap for one group can be hidden inside it. Report each group you have enough rows for.</li><li><strong>A small allocation shift is not a small harm.</strong> At a few thousand patients per percentage point, the number of people affected can still be large.</li><li><strong>Removing race does not remove it.</strong> The model without race still sees the proxy columns, and its calibration gap is unchanged.</li><li><strong>Whether to include it is not settled by this table.</strong> The choice also turns on how the score will be used and on what the clinical and ethical consensus is, see <a href="race-correction-clinical-algorithms.html">Race Correction in Clinical Algorithms</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="race-correction-clinical-algorithms.html">Race Correction in Clinical Algorithms</a> - formulas that took race as an explicit input</li><li><a href="proxy-variables.html">Proxy Variables</a> - why removing the column does not remove the information</li><li><a href="clinical-score-miscalibration.html">Clinical Score Miscalibration</a> - calibration by group in detail</li><li><a href="underdiagnosis-bias.html">Underdiagnosis Bias</a> - how the labels themselves can differ by group</li><li><a href="fairness-through-unawareness.html">Fairness Through Unawareness</a> - the general case for dropping an attribute</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-readmission"><code>Healthcare Readmission/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://www.nejm.org/doi/full/10.1056/NEJMms2004740" target="_blank" rel="noreferrer noopener">Vyas, D. A., Eisenstein, L. G., Jones, D. S. (2020): Hidden in Plain Sight - Reconsidering the Use of Race Correction in Clinical Algorithms</a> - New England Journal of Medicine 383; the review of race terms across specialities.</li><li><a href="https://www.science.org/doi/10.1126/science.aax2342" target="_blank" rel="noreferrer noopener">Obermeyer, Z. et al. (2019): Dissecting racial bias in an algorithm used to manage the health of populations</a> - Science 366; a score that allocated care and its group-level calibration.</li><li>Delgado, C. et al. (2022). A Unifying Approach for GFR Estimation: Recommendations of the NKF-ASN Task Force on Reassessing the Inclusion of Race in Diagnosing Kidney Disease. American Journal of Kidney Diseases 79(2) - the recommendation to remove the race term from eGFR.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

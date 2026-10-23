@@ -907,5 +907,39 @@ window.FAIR_CODE_EXPLAINERS = [
       "metrics",
       "detection"
     ]
+  },
+  {
+    "slug": "race-in-clinical-models",
+    "title": "Race in Clinical Models",
+    "subtitle": "Whether a model should see race is a values question with a small statistical effect.",
+    "summary": "Learn how to compare a clinical risk model with and without race on accuracy, calibration by group and who receives a limited resource. See Healthcare Readmission: AUC 0.635 against 0.633, and the same 1.2-point over-prediction for African American patients either way.",
+    "description": "Comparing a hospital readmission model with and without race on accuracy, calibration and who gets a limited place: the effect is small either way.",
+    "tags": [
+      "metrics",
+      "healthcare"
+    ]
+  },
+  {
+    "slug": "utilization-as-a-label",
+    "title": "Utilization as a Label",
+    "subtitle": "A label that records who came back records who could come back.",
+    "summary": "Learn the same-burden comparison that exposes an access-driven label. See Healthcare Readmission: readmission is 0.112 for both groups and the burden-adjusted gap is +0.0027, so the Obermeyer mechanism is not visible here.",
+    "description": "How to test whether a utilization label records access, by comparing groups at the same illness burden, shown on Healthcare Readmission.",
+    "tags": [
+      "data",
+      "healthcare"
+    ]
+  },
+  {
+    "slug": "discharge-leakage-in-readmission-models",
+    "title": "Discharge Leakage in Readmission Models",
+    "seo_title": "Discharge Leakage in Readmission Models",
+    "subtitle": "Some columns are only known once the outcome is nearly decided.",
+    "summary": "Learn to ask when each column is known and what it does to the rows. See Healthcare Readmission: 2.4% of rows are deaths or hospice discharges, adding the disposition lifts AUC from 0.640 to 0.671, and most of that is not from them.",
+    "description": "How discharge disposition can leak the outcome in a readmission model, and what end-of-life rows do to the base rate, shown on 99,492 patients.",
+    "tags": [
+      "data",
+      "healthcare"
+    ]
   }
 ];

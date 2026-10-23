@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimum Detectable Gap · Fair Code</title>
+<meta name="description" content="How large a fairness gap must be for an audit to detect it at 80% power, checked with the permutation test and applied to the benchmark&#x27;s groups.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/minimum-detectable-gap.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Minimum Detectable Gap · Fair Code">
+<meta property="og:description" content="How large a fairness gap must be for an audit to detect it at 80% power, checked with the permutation test and applied to the benchmark&#x27;s groups.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/minimum-detectable-gap.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/minimum-detectable-gap.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Minimum Detectable Gap · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/minimum-detectable-gap.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Minimum Detectable Gap · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Minimum Detectable Gap · Fair Code">
+<meta name="twitter:description" content="How large a fairness gap must be for an audit to detect it at 80% power, checked with the permutation test and applied to the benchmark&#x27;s groups.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/minimum-detectable-gap.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Minimum Detectable Gap",
+      "description": "Learn how big a true gap must be for a test of a given size to detect it, and check the formula with the repo's permutation test. See the benchmark's audits: German Credit with groups of 69 and 131 can only detect a 21-point gap, while Benefits Denial by sex can detect 3.7 points.",
+      "url": "https://www.thefaircode.xyz/explainers/minimum-detectable-gap.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/minimum-detectable-gap.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Minimum Detectable Gap?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The minimum detectable gap is the smallest true difference in selection rates between two groups that a test of a given size would detect with a stated probability (the power, usually 80%), at a stated significance level (usually 0.05)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every audit in this repo reports a p-value for each gap, and a p-value above 0.05 is easily read as \"no gap\". It means the audit did not find one. With groups of 69 and 131, as in German Credit Lending, the audit cannot find a gap of less than about 21 percentage points, so a result of \"not significant\" says almost nothing about a gap of 9 points."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Minimum Detectable Gap",
+          "item": "https://www.thefaircode.xyz/explainers/minimum-detectable-gap.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/minimum-detectable-gap.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Minimum Detectable Gap</h1>
+      <p class="explainer-lede">A non-significant gap can be a gap the audit could never see.</p>
+      <p class="explainer-lede">Learn how big a true gap must be for a test of a given size to detect it, and check the formula with the repo&#x27;s permutation test. See the benchmark&#x27;s audits: German Credit with groups of 69 and 131 can only detect a 21-point gap, while Benefits Denial by sex can detect 3.7 points.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A non-significant gap is not a small gap. It might be a gap the audit could never have seen.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>The <strong>minimum detectable gap</strong> is the smallest true difference in selection rates between two groups that a test of a given size would detect with a stated probability (the power, usually 80%), at a stated significance level (usually 0.05).</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Every audit in this repo reports a p-value for each gap, and a p-value above 0.05 is easily read as &quot;no gap&quot;. It means the audit did not find one. With groups of 69 and 131, as in German Credit Lending, the audit cannot find a gap of less than about 21 percentage points, so a result of &quot;not significant&quot; says almost nothing about a gap of 9 points.</p>
+<p>Power analysis answers the question before you look: how large must a gap be for this audit to detect it most of the time? It should be reported with every non-significant result, and used to decide how many rows to label in the first place (<a href="stratified-test-sets-for-fairness.html">Stratified Test Sets for Fairness</a>).</p>
+<h3 id="core-concept-the-gap-that-stands-out-from-the-noise">Core Concept: The Gap That Stands Out From the Noise</h3>
+<p>For two groups of sizes <code>n_a</code> and <code>n_b</code> with selection rate near <code>p</code>, the standard error of the difference is <code>sqrt(p (1 - p) (1/n_a + 1/n_b))</code>. To detect a gap with a two-sided test at level <code>alpha</code> and power <code>1 - beta</code>, the gap has to be about</p>
+<pre><code>MDG = (z(1 - alpha/2) + z(1 - beta)) * sqrt(p (1 - p) (1/n_a + 1/n_b))</code></pre>
+<p>With <code>alpha = 0.05</code> and 80% power the multiplier is 2.80. Using <code>p = 0.5</code> gives the largest standard error and so the most conservative answer. The formula is a normal approximation, so it is worth checking with the actual test.</p>
+<h3 id="concrete-example-what-the-benchmark-s-audits-can-detect">Concrete Example: What the Benchmark&#x27;s Audits Can Detect</h3>
+<p>First the formula, then a check with this repo&#x27;s permutation test, then the benchmark&#x27;s own groups.</p>
+<pre><code>minimum detectable gap in selection rate (80% power, alpha 0.05, base rate 0.5), two equal groups
+     30 per group: 0.362
+    100 per group: 0.198
+    200 per group: 0.140
+    500 per group: 0.089
+   1000 per group: 0.063
+   5000 per group: 0.028
+
+planted a gap of 0.140 between two groups of 200: the permutation test flagged it in 77% of 300 runs (target 80%)
+
+audit / attribute                     n (disadv, adv)  detectable gap  observed gap  p-value
+german_credit_lending / age                   69, 131           0.208        -0.091    0.171
+insurance_denial / age                       106, 161           0.175        -0.073    0.262
+insurance_denial / gender                    134, 133           0.171        -0.056    0.400
+benefits_denial / national_origin           688, 5825           0.056        +0.005    0.673
+benefits_denial / race                      690, 5823           0.056        -0.042    0.000
+benefits_denial / age                       944, 5569           0.049        +0.028    0.006
+compas / race                              1804, 1444           0.049        +0.149    0.000
+benefits_denial / sex                      2153, 4360           0.037        -0.051    0.000
+tenant_screening / race                    2943, 2224           0.039        +0.114    0.000
+healthcare_readmission / race             4541, 15358           0.024        -0.001    0.076
+ai_fair_recruitment / gender              8410, 14652           0.019        -0.007    0.136
+healthcare_readmission / age              9010, 10889           0.020        -0.001    0.002
+healthcare_readmission / gender           10661, 9238           0.020        +0.001    0.001</code></pre>
+<ul><li><strong>The formula holds up.</strong> Planting the predicted gap (0.140) between two groups of 200, the permutation test from <code>faircode.significance</code> flagged it in 77% of 300 runs against the 80% target; a normal approximation is a little optimistic.</li><li><strong>Small audits cannot see moderate gaps.</strong> At 100 per group the detectable gap is 0.198; at 30 it is 0.362.</li><li><strong>Against the benchmark&#x27;s own rows</strong> (S2 logistic regression, demographic parity gap, from <code>results/</code>, the current results): German Credit age has groups of 69 and 131, can only detect a gap of 0.208, and observed -0.091 with p = 0.171. Insurance Denial age and gender (0.175 and 0.171 detectable) observed -0.073 and -0.056, also not significant. Those results are consistent with real gaps of that size. At the other end, Benefits Denial by sex can detect 0.037 and observed -0.051, p &lt; 0.001.</li></ul>
+<p>Healthcare Readmission and AI Fair Recruitment can detect gaps of 0.02 or less, so their near-zero gaps are informative: the data would have shown a gap of two points.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 minimum-detectable-gap.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+from scipy.stats import norm
+from faircode.significance import permutation_test
+
+def minimum_detectable_gap(n_a, n_b, rate=0.5, alpha=0.05, power=0.80):
+    &quot;&quot;&quot;Smallest true difference in selection rates that a two-sided test at `alpha` detects with probability `power`
+    (normal approximation; `rate` = 0.5 is the worst case, where the variance is largest).&quot;&quot;&quot;
+    se = np.sqrt(rate * (1 - rate) * (1 / n_a + 1 / n_b))
+    return (norm.ppf(1 - alpha / 2) + norm.ppf(power)) * se
+
+print(&quot;minimum detectable gap in selection rate (80% power, alpha 0.05, base rate 0.5), two equal groups&quot;)
+for n in (30, 100, 200, 500, 1000, 5000):
+    print(f&quot;  {n:5d} per group: {minimum_detectable_gap(n, n):.3f}&quot;)
+
+# Check the formula with the repo&#x27;s own permutation test: plant a gap of the predicted size and count detections.
+rng = np.random.default_rng(0)
+n, gap, reps = 200, minimum_detectable_gap(200, 200), 300
+hits = 0
+for r in range(reps):
+    a = (rng.random(n) &lt; 0.5 + gap / 2).astype(float)
+    b = (rng.random(n) &lt; 0.5 - gap / 2).astype(float)
+    hits += permutation_test(a, b, n_permutations=199, random_state=r) &lt; 0.05
+print(f&quot;\nplanted a gap of {gap:.3f} between two groups of {n}: the permutation test flagged it in {hits / reps:.0%} of {reps} runs (target 80%)&quot;)
+
+# What the benchmark&#x27;s own audits can and cannot detect.
+results = pd.read_csv(&quot;results/results_fairness.csv&quot;)
+rows = results[(results.strategy == &quot;unawareness_proxy_removal&quot;) &amp; (results.model == &quot;logistic_regression&quot;)
+               &amp; (results.metric == &quot;demographic_parity_diff&quot;) &amp; ~results.protected_attribute.str.contains(&quot;_x_&quot;)]
+print(f&quot;\n{&#x27;audit / attribute&#x27;:36s} {&#x27;n (disadv, adv)&#x27;:&gt;16} {&#x27;detectable gap&#x27;:&gt;15} {&#x27;observed gap&#x27;:&gt;13} {&#x27;p-value&#x27;:&gt;8}&quot;)
+for r in rows.sort_values(&quot;n_disadvantaged&quot;).itertuples():
+    mdg = minimum_detectable_gap(r.n_disadvantaged, r.n_advantaged)
+    print(f&quot;{r.audit + &#x27; / &#x27; + r.protected_attribute:36s} {f&#x27;{r.n_disadvantaged}, {r.n_advantaged}&#x27;:&gt;16} {mdg:15.3f} {r.value:+13.3f} {r.p_value:8.3f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It is a normal approximation.</strong> The simulation fell about three points short of the target at 200 per group. For very small groups or rates near 0 or 1, simulate with the real test.</li><li><strong>The base rate is an assumption.</strong> <code>p = 0.5</code> is the worst case. A rate near 0.1 makes smaller gaps detectable, a fact the table above does not use.</li><li><strong>It is for one comparison.</strong> Many metrics or many groups need a stricter <code>alpha</code>, see <a href="multiple-comparisons.html">Multiple Comparisons</a>, and the detectable gap grows with it.</li><li><strong>It does not make a small gap unimportant.</strong> A gap below the detectable size can still be real and harmful, which is the point of knowing the limit.</li><li><strong>It describes the test, not the model.</strong> A model&#x27;s gap also varies with the split, see <a href="seed-and-split-sensitivity.html">Seed and Split Sensitivity</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a> - the test whose power this measures</li><li><a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a> - an interval is another way to see what the data cannot rule out</li><li><a href="stratified-test-sets-for-fairness.html">Stratified Test Sets for Fairness</a> - collecting enough rows for the groups that matter</li><li><a href="multiple-comparisons.html">Multiple Comparisons</a> - why the detectable gap grows with the number of tests</li><li><a href="disaggregated-evaluation.html">Disaggregated Evaluation</a> - small cells and what they can show</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-credit"><code>German Credit Lending/</code></a> - the smallest groups</li><li><a href="../results/"><code>results/</code></a> - the benchmark rows quoted above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Cohen, J. (1988). <em>Statistical Power Analysis for the Behavioral Sciences</em> (2nd ed.). Lawrence Erlbaum - the standard reference on power.</li><li><a href="https://arxiv.org/abs/2010.09851" target="_blank" rel="noreferrer noopener">Ji, D., Smyth, P., Steyvers, M. (2020): Can I Trust My Fairness Metric? Assessing Fairness with Unlabeled Data and Bayesian Inference</a> - NeurIPS 2020; uncertainty in fairness metrics with limited labels.</li><li>Agresti, A. (2013). Categorical Data Analysis (3rd ed.). Wiley - confidence intervals for differences, ratios and odds ratios of proportions.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

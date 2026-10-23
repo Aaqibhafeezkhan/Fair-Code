@@ -12,7 +12,7 @@ It is also a trap, because an oversampled set no longer reflects the population.
 
 ## Core Concept: Choose the Mix, Then Weight Back
 
-1. **Choose the target size** for each group (or cell) from how narrow an interval you need (the minimum detectable gap for a given group size).
+1. **Choose the target size** for each group (or cell) from how narrow an interval you need, see [Minimum Detectable Gap](minimum-detectable-gap.md).
 2. **Sample the groups at different rates** to hit those sizes.
 3. **Report per-group metrics unweighted:** they are valid inside each group.
 4. **Report any overall metric with weights** `population share / sample share` per group.
@@ -89,6 +89,7 @@ for label, share in (("random sample", None), ("stratified: half under 30", 0.5)
 
 ## Related Concepts
 
+* [Minimum Detectable Gap](minimum-detectable-gap.md) - how many rows a gap of a given size needs
 * [Cross-Validation for Fairness](cross-validation-for-fairness.md) - using all rows as test data
 * [Disaggregated Evaluation](disaggregated-evaluation.md) - the per-group reporting this makes possible
 * [Sampling Bias](sampling-bias.md) - when the pool itself is not representative

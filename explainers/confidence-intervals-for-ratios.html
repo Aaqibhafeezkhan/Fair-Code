@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confidence Intervals for Ratios · Fair Code</title>
+<meta name="description" content="Intervals for a disparate impact ratio by percentile bootstrap and the log-ratio delta method, and why a near-zero denominator has no honest interval.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/confidence-intervals-for-ratios.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Confidence Intervals for Ratios · Fair Code">
+<meta property="og:description" content="Intervals for a disparate impact ratio by percentile bootstrap and the log-ratio delta method, and why a near-zero denominator has no honest interval.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/confidence-intervals-for-ratios.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/confidence-intervals-for-ratios.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Confidence Intervals for Ratios · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/confidence-intervals-for-ratios.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Confidence Intervals for Ratios · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Confidence Intervals for Ratios · Fair Code">
+<meta name="twitter:description" content="Intervals for a disparate impact ratio by percentile bootstrap and the log-ratio delta method, and why a near-zero denominator has no honest interval.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/confidence-intervals-for-ratios.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Confidence Intervals for Ratios",
+      "description": "Learn the percentile bootstrap and the delta-method log-ratio interval for a disparate impact ratio. See COMPAS: a gradient-boosting model selects 1 of 1,444 White defendants, the ratio is 1,252, and the two intervals disagree by orders of magnitude.",
+      "url": "https://www.thefaircode.xyz/explainers/confidence-intervals-for-ratios.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/confidence-intervals-for-ratios.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Confidence Intervals for Ratios?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A confidence interval for a ratio such as the disparate impact ratio accounts for the fact that a ratio of two noisy rates is skewed and unbounded above, usually by working on the log of the ratio."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The four-fifths rule is a ratio: a group's selection rate divided by the highest group's rate. An audit that reports a ratio of 0.74 with no interval invites the question of whether 0.74 might be 0.9. Intervals for differences are straightforward (Bootstrap Confidence Intervals). A ratio is not: it can run from 0 to infinity, a ratio of 2 and a ratio of 0.5 describe the same disparity in opposite directions, and as the denominator approaches zero the ratio explodes."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Confidence Intervals for Ratios",
+          "item": "https://www.thefaircode.xyz/explainers/confidence-intervals-for-ratios.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/confidence-intervals-for-ratios.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Confidence Intervals for Ratios</h1>
+      <p class="explainer-lede">A ratio of two noisy rates is skewed, and with a near-zero denominator it cannot be estimated.</p>
+      <p class="explainer-lede">Learn the percentile bootstrap and the delta-method log-ratio interval for a disparate impact ratio. See COMPAS: a gradient-boosting model selects 1 of 1,444 White defendants, the ratio is 1,252, and the two intervals disagree by orders of magnitude.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A ratio of two rates has a lopsided sampling distribution. When the denominator is nearly zero, no interval is honest.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>confidence interval for a ratio</strong> such as the disparate impact ratio accounts for the fact that a ratio of two noisy rates is skewed and unbounded above, usually by working on the log of the ratio.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>The four-fifths rule is a ratio: a group&#x27;s selection rate divided by the highest group&#x27;s rate. An audit that reports a ratio of 0.74 with no interval invites the question of whether 0.74 might be 0.9. Intervals for differences are straightforward (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>). A ratio is not: it can run from 0 to infinity, a ratio of 2 and a ratio of 0.5 describe the same disparity in opposite directions, and as the denominator approaches zero the ratio explodes.</p>
+<p>That explosion is not a theoretical worry. In the benchmark&#x27;s own results a COMPAS model had a ratio of 1,250 with an interval up to 879,158, which is why the harness now reports no ratio when the advantaged group has fewer than 30 selected rows.</p>
+<h3 id="core-concept-work-on-the-log-scale">Core Concept: Work on the Log Scale</h3>
+<ol><li><strong>Percentile bootstrap on the ratio:</strong> resample each group, recompute the ratio, take the 2.5th and 97.5th percentiles. Simple, but unstable when the denominator can be zero in a resample.</li><li><strong>Delta method on the log ratio (Katz et al., 1978):</strong> <code>log(ratio)</code> is close to normal with standard error <code>sqrt(1/x_a - 1/n_a + 1/x_b - 1/n_b)</code>, where <code>x</code> is the number selected and <code>n</code> the group size. Exponentiate the interval&#x27;s ends. Symmetric on the log scale, so a ratio of 2 and one of 0.5 get matching intervals.</li><li><strong>Percentile bootstrap on the log ratio</strong> gives the same shape as 2 without assuming normality.</li></ol>
+<p>All three need enough selected rows in both groups. The standard error above shows why: <code>1/x_b</code> grows as the number selected shrinks.</p>
+<h3 id="concrete-example-two-real-ratios-and-one-hypothetical-sweep">Concrete Example: Two Real Ratios and One Hypothetical Sweep</h3>
+<p>First a well-behaved ratio, then the COMPAS gradient-boosting case behind the harness change, then the same arithmetic with the denominator set to 3, 10 and 30 selected rows.</p>
+<pre><code>Benefits Denial, women vs men                    126/2153  vs   477/4360  ratio     0.535 | percentile bootstrap [   0.441,      0.642] | log-ratio (delta) [   0.443,      0.646]
+COMPAS gradient boosting: 1 of 1444 White defendants are selected
+COMPAS gradient boosting, Black vs White        1564/1804  vs     1/1444  ratio  1251.894 | percentile bootstrap [ 314.374,   1271.104] | log-ratio (delta) [ 176.451,   8881.992]
+3 selected in the advantaged group               800/1804  vs     3/1444  ratio   213.452 | percentile bootstrap [  91.479,    655.563] | log-ratio (delta) [  68.842,    661.825]
+10 selected in the advantaged group              800/1804  vs    10/1444  ratio    64.035 | percentile bootstrap [  38.139,    159.293] | log-ratio (delta) [  34.454,    119.014]
+30 selected in the advantaged group              800/1804  vs    30/1444  ratio    21.345 | percentile bootstrap [  15.437,     32.903] | log-ratio (delta) [  14.924,     30.529]</code></pre>
+<ul><li><strong>A stable ratio gives agreement.</strong> On Benefits Denial women are selected at 0.535 times the rate of men; the percentile bootstrap gives [0.441, 0.642] and the delta method [0.443, 0.646].</li><li><strong>A near-zero denominator breaks both.</strong> The gradient-boosting model with race as a feature selects 1 of 1,444 White defendants. The ratio is 1,252. The percentile bootstrap says [314, 1,271] (it cannot exceed what one selected row allows, so its upper end is falsely tight and it drops resamples where the denominator is zero), and the delta method says [176, 8,882]. The truth is that a ratio built on one row is not estimable.</li><li><strong>The intervals converge as the denominator grows.</strong> At 3 selected rows the two methods give [91, 656] and [69, 662]; at 30 they give [15.4, 32.9] and [14.9, 30.5], close to each other and to a usable answer.</li></ul>
+<p>So the fix for the benchmark was not a better interval. It was a rule: with fewer than about 30 selected rows in the denominator group, report no ratio.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 confidence-intervals-for-ratios.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from scipy.stats import norm
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+def intervals(selected_a, n_a, selected_b, n_b, level=0.95, n_boot=4000, seed=0):
+    &quot;&quot;&quot;Ratio of selection rates, group a over group b, with three 95% intervals.&quot;&quot;&quot;
+    rng = np.random.default_rng(seed)
+    ratio = (selected_a / n_a) / (selected_b / n_b)
+    z = norm.ppf(0.5 + level / 2)
+    # 1. percentile bootstrap on the ratio itself
+    boot_a = rng.binomial(n_a, selected_a / n_a, n_boot) / n_a
+    boot_b = rng.binomial(n_b, selected_b / n_b, n_boot) / n_b
+    with np.errstate(divide=&quot;ignore&quot;, invalid=&quot;ignore&quot;):
+        ratios = boot_a / boot_b
+    ratios = ratios[np.isfinite(ratios)]
+    percentile = np.percentile(ratios, [100 * (1 - level) / 2, 100 * (1 + level) / 2])
+    # 2. delta method on the log ratio: se = sqrt(1/x_a - 1/n_a + 1/x_b - 1/n_b)  (Katz et al. 1978)
+    se = np.sqrt(1 / selected_a - 1 / n_a + 1 / selected_b - 1 / n_b)
+    log_interval = np.exp(np.log(ratio) + np.array([-z, z]) * se)
+    return ratio, percentile, log_interval, se
+
+def show(label, sa, na, sb, nb):
+    ratio, pct, log, se = intervals(sa, na, sb, nb)
+    print(f&quot;{label:46s} {sa:5d}/{na:&lt;5d} vs {sb:5d}/{nb:&lt;5d} ratio {ratio:9.3f} | percentile bootstrap [{pct[0]:8.3f}, {pct[1]:10.3f}] &quot;
+          f&quot;| log-ratio (delta) [{log[0]:8.3f}, {log[1]:10.3f}]&quot;)
+
+# 1. A stable ratio: Benefits Denial, logistic regression on the core features, selection of women against men.
+data = load_audit(&quot;Benefits Denial&quot;)
+model = build_model(&quot;logistic_regression&quot;, data.random_state).fit(data.X.iloc[data.idx_train], data.y.iloc[data.idx_train])
+pred = model.predict(data.X.iloc[data.idx_test])
+women = data.masks[&quot;sex&quot;].to_numpy()[data.idx_test] == 1
+show(&quot;Benefits Denial, women vs men&quot;, int(pred[women].sum()), int(women.sum()), int(pred[~women].sum()), int((~women).sum()))
+
+# 2. A ratio with a near-zero denominator: COMPAS, gradient boosting with every feature (race included), Black vs White defendants.
+compas = load_audit(&quot;COMPAS&quot;, strategy=&quot;baseline&quot;)
+gb = build_model(&quot;gradient_boosting&quot;, compas.random_state).fit(compas.X.iloc[compas.idx_train], compas.y.iloc[compas.idx_train])
+pred = gb.predict(compas.X.iloc[compas.idx_test])
+black = compas.masks[&quot;race&quot;].to_numpy()[compas.idx_test] == 1
+print(f&quot;COMPAS gradient boosting: {int(pred[~black].sum())} of {int((~black).sum())} White defendants are selected&quot;)
+if pred[~black].sum() &gt; 0:
+    show(&quot;COMPAS gradient boosting, Black vs White&quot;, int(pred[black].sum()), int(black.sum()), int(pred[~black].sum()), int((~black).sum()))
+
+# 3. The same arithmetic with a denominator of 3, 10 and 30 selected rows out of 1,444.
+for denominator in (3, 10, 30):
+    show(f&quot;{denominator} selected in the advantaged group&quot;, 800, 1804, denominator, 1444)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>Both methods need selected rows in both groups.</strong> With zero selected rows in the denominator the ratio is undefined and the delta formula divides by zero.</li><li><strong>The delta method is an approximation.</strong> It works well for 30 or more selected rows and degrades below that, as the sweep above shows.</li><li><strong>The percentile bootstrap hides the problem.</strong> Dropping resamples where the denominator is zero shrinks the interval toward the point estimate and makes a bad ratio look precise.</li><li><strong>It treats each rate as an independent binomial.</strong> If rows are clustered (one person in the data many times), the standard error is too small.</li><li><strong>A ratio hides the size of the groups.</strong> Report the counts of selected and total rows next to every ratio.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="disparate-impact.html">Disparate Impact</a> - the ratio and the four-fifths rule</li><li><a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a> - the interval for a difference</li><li><a href="minimum-detectable-gap.html">Minimum Detectable Gap</a> - how many rows a comparison needs</li><li><a href="demographic-parity.html">Demographic Parity</a> - the difference form of the same comparison</li><li><a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a> - a test that does not need a variance formula</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the stable ratio</li><li><a href="../index.html#project-compas"><code>COMPAS/</code></a> - the near-zero denominator</li><li><a href="../results/"><code>results/</code></a> - the benchmark&#x27;s ratio rows</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li>Katz, D., Baptista, J., Azen, S. P., Pike, M. C. (1978). Obtaining Confidence Intervals for the Risk Ratio in Cohort Studies. Biometrics 34(3) - the log-ratio interval.</li><li>Efron, B., Tibshirani, R. (1993). An Introduction to the Bootstrap. Chapman and Hall - bootstrap intervals and their failure modes.</li><li>The Uniform Guidelines on Employee Selection Procedures (1978), 29 CFR Part 1607 - the four-fifths rule that the ratio comes from.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

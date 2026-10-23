@@ -1039,5 +1039,38 @@ window.FAIR_CODE_EXPLAINERS = [
       "detection",
       "metrics"
     ]
+  },
+  {
+    "slug": "minimum-detectable-gap",
+    "title": "Minimum Detectable Gap",
+    "subtitle": "A non-significant gap can be a gap the audit could never see.",
+    "summary": "Learn how big a true gap must be for a test of a given size to detect it, and check the formula with the repo's permutation test. See the benchmark's audits: German Credit with groups of 69 and 131 can only detect a 21-point gap, while Benefits Denial by sex can detect 3.7 points.",
+    "description": "How large a fairness gap must be for an audit to detect it at 80% power, checked with the permutation test and applied to the benchmark's groups.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
+  },
+  {
+    "slug": "small-group-shrinkage",
+    "title": "Small-Group Shrinkage",
+    "subtitle": "Estimate a rate for a group too small to measure, and know what it hides.",
+    "summary": "Learn empirical-Bayes shrinkage toward the pooled rate for many small groups. On Healthcare Readmission it cuts the error of small-audit cell accuracies from 0.144 to 0.043, and pulls a cell whose true accuracy is 6.8 points below the pool back to almost exactly the pool.",
+    "description": "Empirical-Bayes shrinkage cuts the error of small-group rates by two thirds on Healthcare Readmission, and can hide a real gap in the smallest cell.",
+    "tags": [
+      "data",
+      "detection"
+    ]
+  },
+  {
+    "slug": "confidence-intervals-for-ratios",
+    "title": "Confidence Intervals for Ratios",
+    "subtitle": "A ratio of two noisy rates is skewed, and with a near-zero denominator it cannot be estimated.",
+    "summary": "Learn the percentile bootstrap and the delta-method log-ratio interval for a disparate impact ratio. See COMPAS: a gradient-boosting model selects 1 of 1,444 White defendants, the ratio is 1,252, and the two intervals disagree by orders of magnitude.",
+    "description": "Intervals for a disparate impact ratio by percentile bootstrap and the log-ratio delta method, and why a near-zero denominator has no honest interval.",
+    "tags": [
+      "detection",
+      "metrics"
+    ]
   }
 ];

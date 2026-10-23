@@ -175,6 +175,7 @@ A model trained on `credit_customers.csv` cannot retroactively learn how a rejec
 - [What Is Label Bias?](label-bias.md) - covers what happens when the labels themselves are distorted by biased human decisions. Selection bias is the earlier-stage version of the same problem: the row is missing before any label could even be attached.
 - [What Is a Confounding Variable?](confounding-variable.md) - a hidden variable that causes two observed features to correlate. Selection bias is the special case where the hidden cause is the act of being included in the dataset itself.
 - [What Is Distribution Shift?](distribution-shift.md) - covers a population that changes between training and deployment. Selection bias is a distortion that can exist on day one, before any drift has had a chance to occur.
+- [Survivorship Bias](survivorship-bias.md) - the earlier-stage filter as a special case
 
 ---
 

@@ -222,6 +222,7 @@ The example used a categorical stratifier. For a continuous confounder (age, inc
 * [What Is a Confounding Variable?](confounding-variable.md) - the underlying causal structure that makes Simpson's reversals possible.
 * [What Is the Base Rate Fallacy?](base-rate-fallacy.md) - a related error about ignoring prior probabilities when reading a conditional rate.
 * [What Is a Proxy Variable?](proxy-variables.md) - why conditioning on the wrong variable can hide real discrimination instead of explaining it.
+* [Aggregation Bias](aggregation-bias.md) - when one pooled model fits no group well, the model-level version of the same reversal
 
 ## Related Projects in This Repo
 

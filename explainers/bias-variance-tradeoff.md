@@ -100,6 +100,7 @@ This detection method focuses on accuracy drops. However, a model might maintain
 * [Model Drift](model-drift.md) - how a model's generalization quality degrades over time as the real world moves away from the training patterns it memorized.
 * [What Is Machine Learning Bias?](ml-bias.md) - the four entry points for bias, showing how training data composition forces these trade-offs.
 * [Sampling Bias](sampling-bias.md) - why minority groups often lack enough data to build stable patterns, leading to the high-variance failures described above.
+* [Differential Privacy](differential-privacy.md) - privacy noise as added variance
 
 ## Related Projects in This Repo
 

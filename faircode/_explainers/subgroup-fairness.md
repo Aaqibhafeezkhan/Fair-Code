@@ -183,6 +183,8 @@ Constraining the model to equalize a metric inside a discovered subgroup can pus
 * [What Is Simpson's Paradox in Fairness Audits?](simpsons-paradox.md) - why an aggregate rate can disagree with its disaggregated cells.
 * [Why Fairness Metrics Conflict](fairness-metric-conflicts.md) - the impossibility results that also constrain what a subgroup audit can promise.
 * [What Is the Base Rate Fallacy?](base-rate-fallacy.md) - why small subgroups produce volatile rate estimates.
+* [Aggregation Bias](aggregation-bias.md) - a pooled model against a model per group
+* [Leave-One-Group-Out Evaluation](leave-one-group-out-evaluation.md) - group-level checks beyond the groups in training
 
 ## Related Projects in This Repo
 

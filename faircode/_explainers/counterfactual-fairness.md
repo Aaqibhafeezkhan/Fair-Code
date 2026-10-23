@@ -315,6 +315,7 @@ Counterfactual fairness can produce demographic outcome gaps - because it permit
 ### Label Bias
 
 Label bias means the training labels themselves encode historical discrimination - the human decisions the model was trained to replicate were made under biased conditions. Even a counterfactually fair feature set cannot correct for labels that carry the discriminatory signal directly. A causally fair model trained on causally unfair labels is still unfair. See the [label bias explainer](label-bias.md).
+- [Algorithmic Recourse](algorithmic-recourse.md) - what a person can change, as opposed to what the model would change
 
 ---
 

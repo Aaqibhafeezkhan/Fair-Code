@@ -147,6 +147,12 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 
 ---
 
+## Related Concepts
+
+* [The Obermeyer Case](obermeyer-cost-proxy.md) - cost as a proxy for need
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - Full COMPAS analysis: biased model → fair model → 82% gap reduction

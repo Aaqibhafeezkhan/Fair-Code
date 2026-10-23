@@ -136,6 +136,7 @@ A counterfactual that suggests "move to a different zip code" is technically act
 * [Counterfactual Fairness](counterfactual-fairness.md) - the fairness *definition* this explainer is explicitly not about, despite the shared name.
 * [What Are SHAP Values?](shap-values.md) and [What Is LIME?](lime.md) - the two feature-attribution explainability methods this one is offered as a third alternative to.
 * [Protected Attribute](protected-attribute.md) - why an actionable-feature constraint has to exclude these by definition.
+* [Algorithmic Recourse](algorithmic-recourse.md) - limiting a counterfactual to changes a person can make
 
 ## Related Projects in This Repo
 

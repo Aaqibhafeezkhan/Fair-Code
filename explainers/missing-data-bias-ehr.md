@@ -115,6 +115,7 @@ A missingness rate computed on a few hundred records has a wide margin of error.
 * [Selection Bias](selection-bias.md) - why the process that decides who enters a dataset (or which of their visits get recorded) can bias a model before any protected attribute is considered.
 * [Label Bias](label-bias.md) - what happens when the outcome label itself, not just a feature, is less reliably recorded for one group.
 * [Proxy Variables](proxy-variables.md) - why a missingness indicator can become a new proxy for the protected attribute it was meant to work around.
+* [What Is Data Leakage?](data-leakage.md) - columns recorded after the outcome
 
 ## Related Projects in This Repo
 

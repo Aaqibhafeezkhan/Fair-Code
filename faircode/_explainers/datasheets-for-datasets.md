@@ -114,6 +114,7 @@ print(f"\n{len(unknown)} of the questions above cannot be answered from the repo
 * [Missing Data as Bias in EHRs](missing-data-bias-ehr.md) - what the missingness numbers above mean
 * [Label Bias](label-bias.md) - the collection and preprocessing questions expose it
 * [Protected Attribute](protected-attribute.md) - the sensitive columns the composition section must name
+* [Algorithmic Impact Assessment](algorithmic-impact-assessment.md) - where a dataset's unknowns enter a deployment review
 
 ## Related Projects in This Repo
 

@@ -98,6 +98,9 @@ Just because a feature is not a legally protected attribute does not mean it is 
 * [What is a Proxy Variable?](proxy-variables.md) - the correlated features that reconstruct protected attributes after they are removed.
 * [Disparate Treatment](disparate-treatment.md) - intentional discrimination via direct use of a protected attribute.
 * [Proxy Entanglement](proxy-entanglement.md) - why removing proxies one at a time fails when multiple features encode the same protected signal.
+* [Differential Privacy](differential-privacy.md) - protecting the people in the data without hiding the groups
+* [Fairness Without Demographics](fairness-without-demographics.md) - improving the worst-off group when the attribute is not available
+* [Race Correction in Clinical Algorithms](race-correction-clinical-algorithms.md) - when race is an explicit input to a clinical formula
 
 ## Further Reading
 

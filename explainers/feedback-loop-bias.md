@@ -233,6 +233,14 @@ Feedback loops are the reason algorithmic auditing cannot be a one-time exercise
 
 ---
 
+## Related Concepts
+
+* [What Is Automation Bias?](automation-bias.md) - why people follow a score, and how that feeds the next model
+* [Fairness in Ranking](fairness-in-ranking.md) - ranked results shape the clicks that retrain the ranker
+* [Reinforcement Learning](reinforcement-learning.md) - rewards that shape the data a policy sees next
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - The COMPAS criminal justice audit; the arrest-based training data used in this system is precisely the kind of feedback-contaminated label source this explainer describes

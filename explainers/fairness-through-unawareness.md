@@ -111,6 +111,7 @@ Some uses of a protected-adjacent attribute are lawful and relevant (age in cert
 * [Proxy Variables](proxy-variables.md) - the mechanism (correlated features standing in for the removed attribute) that makes fairness through unawareness fail.
 * [What Are Pre-, In-, and Post-Processing Fairness Mitigations?](mitigation-strategies.md) - where "unawareness" sits as the first, weakest step in a five-strategy ladder, and what the stronger steps do differently.
 * [What Is Demographic Parity?](demographic-parity.md) - the metric used to measure the gap in the Tenant Screening example above.
+* [Fair Representation Learning](fair-representation-learning.md) - a stronger version of dropping the column
 
 ## Related Projects in This Repo
 

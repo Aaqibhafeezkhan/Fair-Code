@@ -174,6 +174,8 @@ The entire premise of a train/test split is that held-out rows are a fair previe
 * [What Is Machine Learning Bias?](ml-bias.md) - places labels as one of four entry points bias can use to reach a model, alongside training data, proxies, and feedback loops.
 * [What Is Distribution Shift?](distribution-shift.md) - what happens to a learned mapping after deployment, once the population it was trained on stops matching the population it is applied to.
 * [What Is Calibration?](calibration.md) - a deeper look at why a model can be accurate overall while still treating groups unequally.
+* [Reinforcement Learning](reinforcement-learning.md) - learning from a reward instead of labels
+* [What Is Unsupervised Learning?](unsupervised-learning.md) - learning structure without labels
 
 ## Related Projects in This Repo
 

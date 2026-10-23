@@ -98,6 +98,9 @@ Models trained on a 50/50 resampled dataset will output scores that assume the w
 * [What Is a ROC Curve and AUC?](roc-curve-auc.md) - why AUC is mathematically robust to class imbalance, even when raw accuracy fails.
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - how resampling to catch more rare positive cases inevitably trades off against the false positive rate.
 * [What Is Sampling Bias?](sampling-bias.md) - when the imbalance is not a reflection of the real world, but a flaw in how the data was collected.
+* [What Is the Bias-Variance Trade-off?](bias-variance-tradeoff.md) - how model flexibility interacts with rare groups
+* [What Is a Precision-Recall Curve?](precision-recall-curve.md) - why accuracy and ROC are lenient when positives are rare
+* [Reweighing](reweighing.md) - the same weighting mechanics applied to groups
 
 ## Related Projects in This Repo
 

@@ -113,6 +113,10 @@ S3 and S4 close the *measured* demographic parity gap, but neither one touches t
 * [What Is Fairness Through Unawareness?](fairness-through-unawareness.md) - the S1 strategy on its own, and why the 17.2-point residual gap above is the direct evidence against relying on it alone.
 * [What Is Demographic Parity?](demographic-parity.md) - the metric `ExponentiatedGradient`'s constraint directly targets in this repo's S3 strategy.
 * [Proxy Variables](proxy-variables.md) - what S2's proxy-removal step is actually trying to remove, and why it can never remove all of it.
+* [Fairness Regularization](fairness-regularization.md) - the penalty form of an in-processing method
+* [Group-Specific Thresholds](group-specific-thresholds.md) - the simplest post-processing rule
+* [Reject Option Classification](reject-option-classification.md) - post-processing near the decision boundary
+* [Reweighing](reweighing.md) - the pre-processing rung of the ladder
 
 ## Related Projects in This Repo
 

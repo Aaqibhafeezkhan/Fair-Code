@@ -351,6 +351,9 @@ Gap:              0.1614, unchanged across all 5 cycles</code></pre>
 <h3 id="limitations-of-feedback-loop-detection">Limitations of Feedback Loop Detection</h3>
 <ul><li>Simulations like the one above are approximations. The real amplification rate depends on deployment intensity, retraining frequency, and how directly model predictions influence the label-generating process in your domain.</li><li>In many production systems, the link between model output and training labels is indirect or obfuscated. Auditing requires access to the full pipeline, not just the model.</li><li>Feedback loops interact with proxy variables: a proxy that produces mild bias in cycle 1 can produce severe bias by cycle 5 after amplification. Always audit both together.</li></ul>
 <hr>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="automation-bias.html">What Is Automation Bias?</a> - why people follow a score, and how that feeds the next model</li><li><a href="fairness-in-ranking.html">Fairness in Ranking</a> - ranked results shape the clicks that retrain the ranker</li><li><a href="reinforcement-learning.html">Reinforcement Learning</a> - rewards that shape the data a policy sees next</li></ul>
+<hr>
 <h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
 <ul><li><a href="../index.html#project-compas"><code>COMPAS/</code></a> - The COMPAS criminal justice audit; the arrest-based training data used in this system is precisely the kind of feedback-contaminated label source this explainer describes</li><li><a href="proxy-variables.html"><code>explainers/proxy-variables.md</code></a> - Proxy variables are the mechanism that feedback loops amplify; read this first</li><li><a href="sampling-bias.html"><code>explainers/sampling-bias.md</code></a> - Feedback loops can be understood as a dynamic form of sampling bias that gets worse over time</li></ul>
 <hr>

@@ -149,6 +149,7 @@ The Detection Code has no privacy accountant, so its `sigma` values do not map t
 * [Mitigation Strategies](mitigation-strategies.md) - this repo's five bias-mitigation strategies, none of which is DP; adding DP on top would need its own per-group evaluation.
 * Membership inference - the attack DP is designed to prevent: given a trained model, deciding whether a specific record was in its training set. DP bounds how well any such attack can do.
 * [What Is Underdiagnosis Bias?](underdiagnosis-bias.md) - another case where a technique aimed at one problem quietly worsens per-group outcomes.
+* [What Is the Bias-Variance Trade-off?](bias-variance-tradeoff.md) - noise added for privacy shifts the same trade-off for small groups
 
 ## Related Projects in This Repo
 

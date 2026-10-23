@@ -228,6 +228,7 @@ A recidivism tool and a medical diagnostic tool have different fairness requirem
 * [Disparate Treatment](disparate-treatment.md) - When the protected attribute is used directly.
 * [Why Fairness Metrics Conflict](fairness-metric-conflicts.md) - The mathematical impossibility result that constrains all fairness work.
 * [Proxy Entanglement](proxy-entanglement.md) - What happens when proxy variables form a correlated cluster rather than independent channels.
+* [The Biggest Myth About AI Objectivity](ai-objectivity-myth.md) - why "the algorithm is neutral" is not a defence
 
 ---
 

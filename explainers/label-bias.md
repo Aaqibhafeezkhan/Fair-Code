@@ -360,6 +360,9 @@ Disparate Treatment occurs when a protected attribute is used directly in the de
 ### Fairness Metric Conflicts
 
 Any fairness constraint applied to correct for label bias will trade off against accuracy on the biased labels. This apparent trade-off is a feature, not a bug - but it registers as an accuracy drop in standard evaluation. See the [fairness metric conflicts explainer](fairness-metric-conflicts.md).
+- [The Biggest Myth About AI Objectivity](ai-objectivity-myth.md) - why a model trained on human decisions is not objective
+- [What Is Data Leakage?](data-leakage.md) - information the model should not have at prediction time
+- [The Obermeyer Case](obermeyer-cost-proxy.md) - a label that measures spending, not illness
 
 ---
 

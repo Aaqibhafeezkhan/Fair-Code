@@ -106,6 +106,7 @@ print("- Groups smaller than 30 test rows carry small_sample_warning in the resu
 * [ML Bias](ml-bias.md) - the sources of bias the caveats section should name
 * [Accuracy Is Not Enough in Healthcare AI](accuracy-not-enough-healthcare-ai.md) - why a headline number is not a safety claim
 * [Model Drift](model-drift.md) - why a card needs a date and a review
+* [Algorithmic Impact Assessment](algorithmic-impact-assessment.md) - the review that a model card feeds into
 
 ## Related Projects in This Repo
 

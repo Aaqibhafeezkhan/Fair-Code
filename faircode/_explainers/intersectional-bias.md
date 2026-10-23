@@ -105,6 +105,7 @@ With a small doubly-disadvantaged cell, a wide confidence interval crossing zero
 * [What Is Demographic Parity?](demographic-parity.md) - the single-axis metric this explainer's concrete example crosses two of.
 * [What Is Equal Opportunity (and How It Differs From Equalized Odds)?](equal-opportunity.md) - another case where checking less than the full picture can hide a real disparity.
 * [What Is the Base Rate Fallacy?](base-rate-fallacy.md) - the small-subgroup statistics problem that gets sharper once you're down to an intersectional cell.
+* [Aggregation Bias](aggregation-bias.md) - why a single model per population can fit each intersection differently
 
 ## Related Projects in This Repo
 

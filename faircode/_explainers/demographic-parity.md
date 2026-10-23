@@ -197,6 +197,14 @@ def plot_parity_gap(rates_df, group_col, rate_col='positive_rate', title='Demogr
 
 ---
 
+## Related Concepts
+
+* [Choosing a Fairness Metric](choosing-a-fairness-metric.md) - how to decide whether parity is the right metric
+* [Conditional Demographic Parity](conditional-demographic-parity.md) - parity within strata of a legitimate factor
+* [Fairness in Ranking](fairness-in-ranking.md) - the classification metric that exposure generalises
+
+---
+
 ## Related Projects in This Repo
 
 - All five audits ([`COMPAS/`](../COMPAS/), [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/), [`German Credit Lending/`](../German%20Credit%20Lending/), [`Insurance Denial/`](../Insurance%20Denial/), [`Benefits Denial/`](../Benefits%20Denial/)) - demographic parity gap is the primary fairness metric in every one

@@ -109,6 +109,7 @@ S3's -1.4-point gap and S4's 2.3-point gap both have confidence intervals crossi
 * [What Are Pre-, In-, and Post-Processing Fairness Mitigations?](mitigation-strategies.md) - the fairness-only half of the exact same S0-S4 progression used here.
 * [What Is Accuracy Equality?](accuracy-equality.md) - a fairness metric built on accuracy itself, and the parallel reminder that one blended accuracy number can hide asymmetry underneath it.
 * [What Is Bias-Variance Trade-off?](bias-variance-tradeoff.md) - a different, model-internal trade-off; useful for not confusing "the model overfit" with "the model traded accuracy for fairness."
+* [Fairness Regularization](fairness-regularization.md) - a penalty weight traces the trade-off curve
 
 ## Related Projects in This Repo
 

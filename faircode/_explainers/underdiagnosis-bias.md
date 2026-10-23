@@ -243,6 +243,7 @@ Mitigating underdiagnosis bias requires expanding diagnostic testing and lowerin
 * [What Is Selection Bias?](selection-bias.md) - how dataset entry filters exclude individuals before diagnostic labels are even created.
 * [Why Accuracy Is Not Enough in Healthcare AI](accuracy-not-enough-healthcare-ai.md) - why high headline accuracy hides severe per-group recall and false-negative gaps.
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - why false negatives in underserved groups carry disproportionate clinical harm.
+* [Why Medical Imaging Models Fail on Underrepresented Groups](medical-imaging-representation-gaps.md) - another way a group is under-served by clinical models
 
 ## Related Projects in This Repo
 

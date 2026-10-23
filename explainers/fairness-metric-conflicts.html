@@ -408,6 +408,9 @@ print(audit)</code></pre>
 <p><strong>Metric satisfaction does not prove fairness.</strong> A model can satisfy demographic parity by systematically reducing outcomes for an advantaged group rather than improving them for a disadvantaged group. Parity in mediocrity is not justice. Always inspect absolute rates, not just gaps.</p>
 <p><strong>Intersectionality is not captured by pairwise audits.</strong> Auditing by race and by gender separately misses discrimination against Black women specifically, or other intersecting identities. Pairwise metrics pass while intersectional disparities persist. True auditing requires disaggregating by all relevant combinations - which is why large, representative datasets are a prerequisite.</p>
 <hr>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="choosing-a-fairness-metric.html">Choosing a Fairness Metric</a> - a decision path from the harm to the metric</li></ul>
+<hr>
 <h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
 <ul><li><a href="../index.html#project-compas"><code>COMPAS/</code></a> - The ProPublica / Northpointe conflict is a direct illustration of this metric incompatibility</li><li><a href="equalized-odds.html"><code>explainers/equalized-odds.md</code></a> - Deep dive on the error-rate fairness metric</li><li><a href="demographic-parity.html"><code>explainers/demographic-parity.md</code></a> - Deep dive on the equal-outcome-rate metric (the third leg of the impossibility triangle)</li><li><a href="proxy-variables.html"><code>explainers/proxy-variables.md</code></a> - How corrupted base rates flow into metric calculations</li><li><a href="disparate-impact.html"><code>explainers/disparate-impact.md</code></a> - The legal metric (demographic parity under the 80% rule) and its limits</li><li><a href="sampling-bias.html"><code>explainers/sampling-bias.md</code></a> - Why ground truth in training data may not be true</li></ul>
 <hr>

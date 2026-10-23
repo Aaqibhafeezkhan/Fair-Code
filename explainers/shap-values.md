@@ -253,6 +253,12 @@ The pipeline is not complete until you can explain every decision the model make
 
 ---
 
+## Related Concepts
+
+* [What Is LIME?](lime.md) - a local surrogate compared with exact attributions
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - The biased and fair models where SHAP reveals race as the top driver

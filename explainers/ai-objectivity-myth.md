@@ -132,6 +132,7 @@ Even after a model is shown not to be objective, the institutional response is o
 * [What Is a Proxy Variable?](proxy-variables.md) - the specific mechanism behind "we removed the protected attribute, so it's fine."
 * [What Is Label Bias?](label-bias.md) - why the "ground truth" a model is trained to match is itself a human judgment, not a fact.
 * [How Does AI Detect Patterns?](how-ai-detects-patterns.md) - the mechanical reason a Random Forest cannot tell a causal pattern from a discriminatory one.
+* [What Is Automation Bias?](automation-bias.md) - why deference to a score is misplaced
 
 ## Related Projects in This Repo
 

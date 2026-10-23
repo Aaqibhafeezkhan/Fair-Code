@@ -161,6 +161,12 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 
 ---
 
+## Related Concepts
+
+* [The Obermeyer Case](obermeyer-cost-proxy.md) - cost as a proxy for need
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - Full COMPAS analysis: biased model → fair model → 82% gap reduction
@@ -626,6 +632,7 @@ Sampling bias is distinct from - but connected to - other fairness failure modes
 - **Proxy variables** encode protected attributes through correlated features. Sampling bias encodes them through who was included in the data at all. Both must be audited independently. See [`proxy-variables.md`](proxy-variables.md).
 - **Demographic parity** (coming soon) measures whether positive prediction rates are equal across groups. Sampling bias is one of the root causes of demographic parity violations.
 - **Measurement bias** is a sibling concept: the same feature (e.g., arrest records) means different things for different groups because it's collected differently. Sampling bias is about *who* is counted; measurement bias is about *how* they're counted.
+- [Why Medical Imaging Models Fail on Underrepresented Groups](medical-imaging-representation-gaps.md) - representation gaps in clinical imaging data
 
 ---
 
@@ -897,6 +904,12 @@ Explainability is not a nice-to-have. It is the mechanism by which accountabilit
 SHAP values do not fix bias. Removing protected attributes and proxy variables fixes bias. What SHAP does is make the model's reasoning visible - so you can catch problems before deployment, explain decisions to the people affected by them, and demonstrate to auditors and regulators that the system is operating as intended.
 
 The pipeline is not complete until you can explain every decision the model makes.
+
+---
+
+## Related Concepts
+
+* [What Is LIME?](lime.md) - a local surrogate compared with exact attributions
 
 ---
 
@@ -1802,6 +1815,12 @@ This is why choosing a metric is not sufficient. You must also audit the data th
 
 ---
 
+## Related Concepts
+
+* [Choosing a Fairness Metric](choosing-a-fairness-metric.md) - a decision path from the harm to the metric
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - The ProPublica / Northpointe conflict is a direct illustration of this metric incompatibility
@@ -2253,6 +2272,14 @@ def plot_parity_gap(rates_df, group_col, rate_col='positive_rate', title='Demogr
 
 ---
 
+## Related Concepts
+
+* [Choosing a Fairness Metric](choosing-a-fairness-metric.md) - how to decide whether parity is the right metric
+* [Conditional Demographic Parity](conditional-demographic-parity.md) - parity within strata of a legitimate factor
+* [Fairness in Ranking](fairness-in-ranking.md) - the classification metric that exposure generalises
+
+---
+
 ## Related Projects in This Repo
 
 - All five audits ([`COMPAS/`](../COMPAS/), [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/), [`German Credit Lending/`](../German%20Credit%20Lending/), [`Insurance Denial/`](../Insurance%20Denial/), [`Benefits Denial/`](../Benefits%20Denial/)) - demographic parity gap is the primary fairness metric in every one
@@ -2512,6 +2539,14 @@ Feedback loops are the reason algorithmic auditing cannot be a one-time exercise
 - Simulations like the one above are approximations. The real amplification rate depends on deployment intensity, retraining frequency, and how directly model predictions influence the label-generating process in your domain.
 - In many production systems, the link between model output and training labels is indirect or obfuscated. Auditing requires access to the full pipeline, not just the model.
 - Feedback loops interact with proxy variables: a proxy that produces mild bias in cycle 1 can produce severe bias by cycle 5 after amplification. Always audit both together.
+
+---
+
+## Related Concepts
+
+* [What Is Automation Bias?](automation-bias.md) - why people follow a score, and how that feeds the next model
+* [Fairness in Ranking](fairness-in-ranking.md) - ranked results shape the clicks that retrain the ranker
+* [Reinforcement Learning](reinforcement-learning.md) - rewards that shape the data a policy sees next
 
 ---
 
@@ -2901,6 +2936,9 @@ Disparate Treatment occurs when a protected attribute is used directly in the de
 ### Fairness Metric Conflicts
 
 Any fairness constraint applied to correct for label bias will trade off against accuracy on the biased labels. This apparent trade-off is a feature, not a bug - but it registers as an accuracy drop in standard evaluation. See the [fairness metric conflicts explainer](fairness-metric-conflicts.md).
+- [The Biggest Myth About AI Objectivity](ai-objectivity-myth.md) - why a model trained on human decisions is not objective
+- [What Is Data Leakage?](data-leakage.md) - information the model should not have at prediction time
+- [The Obermeyer Case](obermeyer-cost-proxy.md) - a label that measures spending, not illness
 
 ---
 
@@ -3664,6 +3702,7 @@ Counterfactual fairness can produce demographic outcome gaps - because it permit
 ### Label Bias
 
 Label bias means the training labels themselves encode historical discrimination - the human decisions the model was trained to replicate were made under biased conditions. Even a counterfactually fair feature set cannot correct for labels that carry the discriminatory signal directly. A causally fair model trained on causally unfair labels is still unfair. See the [label bias explainer](label-bias.md).
+- [Algorithmic Recourse](algorithmic-recourse.md) - what a person can change, as opposed to what the model would change
 
 ---
 
@@ -4842,6 +4881,7 @@ Multicollinearity is a model-training problem: when two features are highly corr
 * [Counterfactual Fairness](counterfactual-fairness.md) - An entangled proxy cluster is especially hard to reason about counterfactually, because the protected attribute flows into the prediction through multiple correlated paths simultaneously.
 * [Label Bias](label-bias.md) - Entangled proxies often arise because training labels were generated by human decisions that were themselves made with knowledge of the protected attribute - the entanglement is inherited from the decision-making process, not just the feature set.
 * [Feedback Loop Bias](feedback-loop-bias.md) - When a model trained on an entangled proxy cluster is redeployed and its predictions become new training labels, the entangled signal gets reinforced across cycles.
+* [Fair Representation Learning](fair-representation-learning.md) - removing the directions that carry a cluster of proxies
 
 ---
 
@@ -5097,6 +5137,7 @@ A recidivism tool and a medical diagnostic tool have different fairness requirem
 * [Disparate Treatment](disparate-treatment.md) - When the protected attribute is used directly.
 * [Why Fairness Metrics Conflict](fairness-metric-conflicts.md) - The mathematical impossibility result that constrains all fairness work.
 * [Proxy Entanglement](proxy-entanglement.md) - What happens when proxy variables form a correlated cluster rather than independent channels.
+* [The Biggest Myth About AI Objectivity](ai-objectivity-myth.md) - why "the algorithm is neutral" is not a defence
 
 ---
 
@@ -5511,6 +5552,7 @@ A Random Forest treats `education.num` and `relationship` identically: both are 
 * [What Happens Inside a Neural Network?](neural-networks.md) - covers pattern detection in a different model family, where patterns are encoded as learned weights rather than tree splits.
 * [What Are SHAP Values?](shap-values.md) - a more granular way to inspect which patterns drove a single prediction, not just the model as a whole.
 * [What Is Proxy Entanglement?](proxy-entanglement.md) - what happens when a detected pattern is spread across multiple correlated features instead of concentrated in one.
+* [What Is Unsupervised Learning?](unsupervised-learning.md) - clustering as pattern detection
 
 ## Related Projects in This Repo
 
@@ -5708,6 +5750,8 @@ For protected subgroups that are already small in the dataset (as in Audit 06, w
 * [What is Feedback Loop Bias?](feedback-loop-bias.md) - retraining on a model's own drifted outputs can compound distribution shift across cycles.
 * [What Is Data Leakage?](data-leakage.md) - both concepts explain why strong test performance can fail to predict production performance, for different underlying reasons.
 * [What Is Machine Learning Bias?](ml-bias.md) - distribution shift is a fifth entry point for bias, occurring after the four covered there, once the model is already deployed.
+* [AI Hallucinations](ai-hallucinations.md) - confident output on inputs far from the training data
+* [Leave-One-Group-Out Evaluation](leave-one-group-out-evaluation.md) - testing a model on a group it never saw
 
 ## Related Projects in This Repo
 
@@ -5862,6 +5906,7 @@ Even after a model is shown not to be objective, the institutional response is o
 * [What Is a Proxy Variable?](proxy-variables.md) - the specific mechanism behind "we removed the protected attribute, so it's fine."
 * [What Is Label Bias?](label-bias.md) - why the "ground truth" a model is trained to match is itself a human judgment, not a fact.
 * [How Does AI Detect Patterns?](how-ai-detects-patterns.md) - the mechanical reason a Random Forest cannot tell a causal pattern from a discriminatory one.
+* [What Is Automation Bias?](automation-bias.md) - why deference to a score is misplaced
 
 ## Related Projects in This Repo
 
@@ -6093,6 +6138,7 @@ Disparate impact measures unequal selection rates across groups. Confounding is 
 
 ### Feedback Loop Bias
 When a confounded model is deployed and its outputs influence future labels - recidivism surveillance, credit monitoring, healthcare resource allocation - the confounding strengthens across retraining cycles. The model's outputs become part of the data-generating process, reinforcing the spurious association with each iteration. See [feedback-loop-bias.md](feedback-loop-bias.md).
+- [Conditional Demographic Parity](conditional-demographic-parity.md) - which factors are legitimate to condition on
 
 ---
 
@@ -6649,6 +6695,8 @@ The entire premise of a train/test split is that held-out rows are a fair previe
 * [What Is Machine Learning Bias?](ml-bias.md) - places labels as one of four entry points bias can use to reach a model, alongside training data, proxies, and feedback loops.
 * [What Is Distribution Shift?](distribution-shift.md) - what happens to a learned mapping after deployment, once the population it was trained on stops matching the population it is applied to.
 * [What Is Calibration?](calibration.md) - a deeper look at why a model can be accurate overall while still treating groups unequally.
+* [Reinforcement Learning](reinforcement-learning.md) - learning from a reward instead of labels
+* [What Is Unsupervised Learning?](unsupervised-learning.md) - learning structure without labels
 
 ## Related Projects in This Repo
 
@@ -7199,6 +7247,7 @@ A model trained on `credit_customers.csv` cannot retroactively learn how a rejec
 - [What Is Label Bias?](label-bias.md) - covers what happens when the labels themselves are distorted by biased human decisions. Selection bias is the earlier-stage version of the same problem: the row is missing before any label could even be attached.
 - [What Is a Confounding Variable?](confounding-variable.md) - a hidden variable that causes two observed features to correlate. Selection bias is the special case where the hidden cause is the act of being included in the dataset itself.
 - [What Is Distribution Shift?](distribution-shift.md) - covers a population that changes between training and deployment. Selection bias is a distortion that can exist on day one, before any drift has had a chance to occur.
+- [Survivorship Bias](survivorship-bias.md) - the earlier-stage filter as a special case
 
 ---
 
@@ -7590,6 +7639,7 @@ Two groups can have identical AUCs and still be treated unequally: same ranking 
 * [Equalized Odds](equalized-odds.md) - the fairness metric that reads the ROC curve per group, requiring equal true positive *and* false positive rates instead of just equal area.
 * [Calibration](calibration.md) - why AUC's blindness to the actual score values lets a well-ranked model still mean different things for different groups.
 * [What Is Predictive Parity?](predictive-parity.md) - the COMPAS dispute in full, where two defensible error-based definitions of fairness could not both hold at once.
+* [What Is a Precision-Recall Curve?](precision-recall-curve.md) - the curve to read under heavy class imbalance
 
 ## Related Projects in This Repo
 
@@ -7710,6 +7760,9 @@ Models trained on a 50/50 resampled dataset will output scores that assume the w
 * [What Is a ROC Curve and AUC?](roc-curve-auc.md) - why AUC is mathematically robust to class imbalance, even when raw accuracy fails.
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - how resampling to catch more rare positive cases inevitably trades off against the false positive rate.
 * [What Is Sampling Bias?](sampling-bias.md) - when the imbalance is not a reflection of the real world, but a flaw in how the data was collected.
+* [What Is the Bias-Variance Trade-off?](bias-variance-tradeoff.md) - how model flexibility interacts with rare groups
+* [What Is a Precision-Recall Curve?](precision-recall-curve.md) - why accuracy and ROC are lenient when positives are rare
+* [Reweighing](reweighing.md) - the same weighting mechanics applied to groups
 
 ## Related Projects in This Repo
 
@@ -7831,6 +7884,7 @@ This detection method focuses on accuracy drops. However, a model might maintain
 * [Model Drift](model-drift.md) - how a model's generalization quality degrades over time as the real world moves away from the training patterns it memorized.
 * [What Is Machine Learning Bias?](ml-bias.md) - the four entry points for bias, showing how training data composition forces these trade-offs.
 * [Sampling Bias](sampling-bias.md) - why minority groups often lack enough data to build stable patterns, leading to the high-variance failures described above.
+* [Differential Privacy](differential-privacy.md) - privacy noise as added variance
 
 ## Related Projects in This Repo
 
@@ -8075,6 +8129,9 @@ Just because a feature is not a legally protected attribute does not mean it is 
 * [What is a Proxy Variable?](proxy-variables.md) - the correlated features that reconstruct protected attributes after they are removed.
 * [Disparate Treatment](disparate-treatment.md) - intentional discrimination via direct use of a protected attribute.
 * [Proxy Entanglement](proxy-entanglement.md) - why removing proxies one at a time fails when multiple features encode the same protected signal.
+* [Differential Privacy](differential-privacy.md) - protecting the people in the data without hiding the groups
+* [Fairness Without Demographics](fairness-without-demographics.md) - improving the worst-off group when the attribute is not available
+* [Race Correction in Clinical Algorithms](race-correction-clinical-algorithms.md) - when race is an explicit input to a clinical formula
 
 ## Further Reading
 
@@ -8525,6 +8582,7 @@ A missingness rate computed on a few hundred records has a wide margin of error.
 * [Selection Bias](selection-bias.md) - why the process that decides who enters a dataset (or which of their visits get recorded) can bias a model before any protected attribute is considered.
 * [Label Bias](label-bias.md) - what happens when the outcome label itself, not just a feature, is less reliably recorded for one group.
 * [Proxy Variables](proxy-variables.md) - why a missingness indicator can become a new proxy for the protected attribute it was meant to work around.
+* [What Is Data Leakage?](data-leakage.md) - columns recorded after the outcome
 
 ## Related Projects in This Repo
 
@@ -9119,6 +9177,7 @@ Mitigating underdiagnosis bias requires expanding diagnostic testing and lowerin
 * [What Is Selection Bias?](selection-bias.md) - how dataset entry filters exclude individuals before diagnostic labels are even created.
 * [Why Accuracy Is Not Enough in Healthcare AI](accuracy-not-enough-healthcare-ai.md) - why high headline accuracy hides severe per-group recall and false-negative gaps.
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - why false negatives in underserved groups carry disproportionate clinical harm.
+* [Why Medical Imaging Models Fail on Underrepresented Groups](medical-imaging-representation-gaps.md) - another way a group is under-served by clinical models
 
 ## Related Projects in This Repo
 
@@ -9650,6 +9709,7 @@ No post-hoc statistical correction (IPW, parceling, or Heckman models) can subst
 - [What Is Sampling Bias?](sampling-bias.md) - representation differences across groups in a collected dataset.
 - [What Is Distribution Shift?](distribution-shift.md) - performance loss when deploying a model trained on approved cases (`S = 1`) to the full applicant distribution (`S = 0, 1`).
 - [What Is Feedback Loop Bias?](feedback-loop-bias.md) - how excluding rejected applicants from future training sets locks in historical discrimination over time.
+- [Survivorship Bias](survivorship-bias.md) - estimating outcomes for the people a gate removed
 
 ---
 
@@ -10226,6 +10286,7 @@ The true-positive-rate gap is estimated only from rows where `y_true == 1`; for 
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - the per-threshold trade-off between the two error types Equal Opportunity and Equalized Odds split apart.
 * [What Is Demographic Parity?](demographic-parity.md) - a fairness definition that ignores ground truth entirely, unlike Equal Opportunity and Equalized Odds which both condition on it.
 * [What Is Label Bias?](label-bias.md) - why the "true" in true positive rate is only as trustworthy as the label it's measured against.
+* [Group-Specific Thresholds](group-specific-thresholds.md) - thresholds chosen to equalise true positive rates
 
 ## Related Projects in This Repo
 
@@ -10353,6 +10414,7 @@ With a small doubly-disadvantaged cell, a wide confidence interval crossing zero
 * [What Is Demographic Parity?](demographic-parity.md) - the single-axis metric this explainer's concrete example crosses two of.
 * [What Is Equal Opportunity (and How It Differs From Equalized Odds)?](equal-opportunity.md) - another case where checking less than the full picture can hide a real disparity.
 * [What Is the Base Rate Fallacy?](base-rate-fallacy.md) - the small-subgroup statistics problem that gets sharper once you're down to an intersectional cell.
+* [Aggregation Bias](aggregation-bias.md) - why a single model per population can fit each intersection differently
 
 ## Related Projects in This Repo
 
@@ -10764,6 +10826,10 @@ S3 and S4 close the *measured* demographic parity gap, but neither one touches t
 * [What Is Fairness Through Unawareness?](fairness-through-unawareness.md) - the S1 strategy on its own, and why the 17.2-point residual gap above is the direct evidence against relying on it alone.
 * [What Is Demographic Parity?](demographic-parity.md) - the metric `ExponentiatedGradient`'s constraint directly targets in this repo's S3 strategy.
 * [Proxy Variables](proxy-variables.md) - what S2's proxy-removal step is actually trying to remove, and why it can never remove all of it.
+* [Fairness Regularization](fairness-regularization.md) - the penalty form of an in-processing method
+* [Group-Specific Thresholds](group-specific-thresholds.md) - the simplest post-processing rule
+* [Reject Option Classification](reject-option-classification.md) - post-processing near the decision boundary
+* [Reweighing](reweighing.md) - the pre-processing rung of the ladder
 
 ## Related Projects in This Repo
 
@@ -10897,6 +10963,7 @@ Some uses of a protected-adjacent attribute are lawful and relevant (age in cert
 * [Proxy Variables](proxy-variables.md) - the mechanism (correlated features standing in for the removed attribute) that makes fairness through unawareness fail.
 * [What Are Pre-, In-, and Post-Processing Fairness Mitigations?](mitigation-strategies.md) - where "unawareness" sits as the first, weakest step in a five-strategy ladder, and what the stronger steps do differently.
 * [What Is Demographic Parity?](demographic-parity.md) - the metric used to measure the gap in the Tenant Screening example above.
+* [Fair Representation Learning](fair-representation-learning.md) - a stronger version of dropping the column
 
 ## Related Projects in This Repo
 
@@ -11183,6 +11250,7 @@ A counterfactual that suggests "move to a different zip code" is technically act
 * [Counterfactual Fairness](counterfactual-fairness.md) - the fairness *definition* this explainer is explicitly not about, despite the shared name.
 * [What Are SHAP Values?](shap-values.md) and [What Is LIME?](lime.md) - the two feature-attribution explainability methods this one is offered as a third alternative to.
 * [Protected Attribute](protected-attribute.md) - why an actionable-feature constraint has to exclude these by definition.
+* [Algorithmic Recourse](algorithmic-recourse.md) - limiting a counterfactual to changes a person can make
 
 ## Related Projects in This Repo
 
@@ -11468,6 +11536,7 @@ S3's -1.4-point gap and S4's 2.3-point gap both have confidence intervals crossi
 * [What Are Pre-, In-, and Post-Processing Fairness Mitigations?](mitigation-strategies.md) - the fairness-only half of the exact same S0-S4 progression used here.
 * [What Is Accuracy Equality?](accuracy-equality.md) - a fairness metric built on accuracy itself, and the parallel reminder that one blended accuracy number can hide asymmetry underneath it.
 * [What Is Bias-Variance Trade-off?](bias-variance-tradeoff.md) - a different, model-internal trade-off; useful for not confusing "the model overfit" with "the model traded accuracy for fairness."
+* [Fairness Regularization](fairness-regularization.md) - a penalty weight traces the trade-off curve
 
 ## Related Projects in This Repo
 
@@ -11837,6 +11906,7 @@ The example used a categorical stratifier. For a continuous confounder (age, inc
 * [What Is a Confounding Variable?](confounding-variable.md) - the underlying causal structure that makes Simpson's reversals possible.
 * [What Is the Base Rate Fallacy?](base-rate-fallacy.md) - a related error about ignoring prior probabilities when reading a conditional rate.
 * [What Is a Proxy Variable?](proxy-variables.md) - why conditioning on the wrong variable can hide real discrimination instead of explaining it.
+* [Aggregation Bias](aggregation-bias.md) - when one pooled model fits no group well, the model-level version of the same reversal
 
 ## Related Projects in This Repo
 
@@ -12302,6 +12372,8 @@ Constraining the model to equalize a metric inside a discovered subgroup can pus
 * [What Is Simpson's Paradox in Fairness Audits?](simpsons-paradox.md) - why an aggregate rate can disagree with its disaggregated cells.
 * [Why Fairness Metrics Conflict](fairness-metric-conflicts.md) - the impossibility results that also constrain what a subgroup audit can promise.
 * [What Is the Base Rate Fallacy?](base-rate-fallacy.md) - why small subgroups produce volatile rate estimates.
+* [Aggregation Bias](aggregation-bias.md) - a pooled model against a model per group
+* [Leave-One-Group-Out Evaluation](leave-one-group-out-evaluation.md) - group-level checks beyond the groups in training
 
 ## Related Projects in This Repo
 
@@ -12475,6 +12547,7 @@ The Detection Code has no privacy accountant, so its `sigma` values do not map t
 * [Mitigation Strategies](mitigation-strategies.md) - this repo's five bias-mitigation strategies, none of which is DP; adding DP on top would need its own per-group evaluation.
 * Membership inference - the attack DP is designed to prevent: given a trained model, deciding whether a specific record was in its training set. DP bounds how well any such attack can do.
 * [What Is Underdiagnosis Bias?](underdiagnosis-bias.md) - another case where a technique aimed at one problem quietly worsens per-group outcomes.
+* [What Is the Bias-Variance Trade-off?](bias-variance-tradeoff.md) - noise added for privacy shifts the same trade-off for small groups
 
 ## Related Projects in This Repo
 
@@ -14964,6 +15037,7 @@ print("- Groups smaller than 30 test rows carry small_sample_warning in the resu
 * [ML Bias](ml-bias.md) - the sources of bias the caveats section should name
 * [Accuracy Is Not Enough in Healthcare AI](accuracy-not-enough-healthcare-ai.md) - why a headline number is not a safety claim
 * [Model Drift](model-drift.md) - why a card needs a date and a review
+* [Algorithmic Impact Assessment](algorithmic-impact-assessment.md) - the review that a model card feeds into
 
 ## Related Projects in This Repo
 
@@ -15101,6 +15175,7 @@ print(f"\n{len(unknown)} of the questions above cannot be answered from the repo
 * [Missing Data as Bias in EHRs](missing-data-bias-ehr.md) - what the missingness numbers above mean
 * [Label Bias](label-bias.md) - the collection and preprocessing questions expose it
 * [Protected Attribute](protected-attribute.md) - the sensitive columns the composition section must name
+* [Algorithmic Impact Assessment](algorithmic-impact-assessment.md) - where a dataset's unknowns enter a deployment review
 
 ## Related Projects in This Repo
 

@@ -172,6 +172,8 @@ For protected subgroups that are already small in the dataset (as in Audit 06, w
 * [What is Feedback Loop Bias?](feedback-loop-bias.md) - retraining on a model's own drifted outputs can compound distribution shift across cycles.
 * [What Is Data Leakage?](data-leakage.md) - both concepts explain why strong test performance can fail to predict production performance, for different underlying reasons.
 * [What Is Machine Learning Bias?](ml-bias.md) - distribution shift is a fifth entry point for bias, occurring after the four covered there, once the model is already deployed.
+* [AI Hallucinations](ai-hallucinations.md) - confident output on inputs far from the training data
+* [Leave-One-Group-Out Evaluation](leave-one-group-out-evaluation.md) - testing a model on a group it never saw
 
 ## Related Projects in This Repo
 

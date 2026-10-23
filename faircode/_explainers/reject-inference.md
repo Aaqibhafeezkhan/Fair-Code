@@ -278,6 +278,7 @@ No post-hoc statistical correction (IPW, parceling, or Heckman models) can subst
 - [What Is Sampling Bias?](sampling-bias.md) - representation differences across groups in a collected dataset.
 - [What Is Distribution Shift?](distribution-shift.md) - performance loss when deploying a model trained on approved cases (`S = 1`) to the full applicant distribution (`S = 0, 1`).
 - [What Is Feedback Loop Bias?](feedback-loop-bias.md) - how excluding rejected applicants from future training sets locks in historical discrimination over time.
+- [Survivorship Bias](survivorship-bias.md) - estimating outcomes for the people a gate removed
 
 ---
 

@@ -206,6 +206,7 @@ Disparate impact measures unequal selection rates across groups. Confounding is 
 
 ### Feedback Loop Bias
 When a confounded model is deployed and its outputs influence future labels - recidivism surveillance, credit monitoring, healthcare resource allocation - the confounding strengthens across retraining cycles. The model's outputs become part of the data-generating process, reinforcing the spurious association with each iteration. See [feedback-loop-bias.md](feedback-loop-bias.md).
+- [Conditional Demographic Parity](conditional-demographic-parity.md) - which factors are legitimate to condition on
 
 ---
 

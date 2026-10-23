@@ -308,6 +308,12 @@ This is why choosing a metric is not sufficient. You must also audit the data th
 
 ---
 
+## Related Concepts
+
+* [Choosing a Fairness Metric](choosing-a-fairness-metric.md) - a decision path from the harm to the metric
+
+---
+
 ## Related Projects in This Repo
 
 - [`COMPAS/`](../COMPAS/) - The ProPublica / Northpointe conflict is a direct illustration of this metric incompatibility

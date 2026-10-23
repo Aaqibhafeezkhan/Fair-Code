@@ -119,6 +119,7 @@ The true-positive-rate gap is estimated only from rows where `y_true == 1`; for 
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - the per-threshold trade-off between the two error types Equal Opportunity and Equalized Odds split apart.
 * [What Is Demographic Parity?](demographic-parity.md) - a fairness definition that ignores ground truth entirely, unlike Equal Opportunity and Equalized Odds which both condition on it.
 * [What Is Label Bias?](label-bias.md) - why the "true" in true positive rate is only as trustworthy as the label it's measured against.
+* [Group-Specific Thresholds](group-specific-thresholds.md) - thresholds chosen to equalise true positive rates
 
 ## Related Projects in This Repo
 

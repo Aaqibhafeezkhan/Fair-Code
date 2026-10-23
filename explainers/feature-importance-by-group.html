@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Importance by Group · Fair Code</title>
+<meta name="description" content="Running permutation importance per group to see whether a model relies on different features for different people, shown on Benefits Denial.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/feature-importance-by-group.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Feature Importance by Group · Fair Code">
+<meta property="og:description" content="Running permutation importance per group to see whether a model relies on different features for different people, shown on Benefits Denial.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/feature-importance-by-group.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/feature-importance-by-group.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Feature Importance by Group · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/feature-importance-by-group.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Feature Importance by Group · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Feature Importance by Group · Fair Code">
+<meta name="twitter:description" content="Running permutation importance per group to see whether a model relies on different features for different people, shown on Benefits Denial.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/feature-importance-by-group.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Feature Importance by Group",
+      "description": "Learn how to run permutation importance separately on each group's rows, with the standard deviation over shuffles. See Benefits Denial: shuffling capital gain costs 0.079 accuracy on men and 0.042 on women, and education about a third as much for women.",
+      "url": "https://www.thefaircode.xyz/explainers/feature-importance-by-group.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/feature-importance-by-group.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Feature Importance by Group?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Feature importance by group is the importance of each input measured separately on each group's rows, so you can see whether the model leans on different features for different people."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A global importance ranking says which features matter on average. If one feature drives decisions for one group and barely touches another, the average hides it, and that is where aggregation effects and proxy use tend to show up (Aggregation Bias). It is also a check on a fairness claim: \"the model doesn't rely on X\" should hold for every group, not just overall."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Feature Importance by Group",
+          "item": "https://www.thefaircode.xyz/explainers/feature-importance-by-group.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/feature-importance-by-group.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Feature Importance by Group</h1>
+      <p class="explainer-lede">Does the model lean on different features for different people?</p>
+      <p class="explainer-lede">Learn how to run permutation importance separately on each group&#x27;s rows, with the standard deviation over shuffles. See Benefits Denial: shuffling capital gain costs 0.079 accuracy on men and 0.042 on women, and education about a third as much for women.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>One importance chart for the whole model assumes the model reasons the same way for everyone. Compute it per group and see.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Feature importance by group</strong> is the importance of each input measured separately on each group&#x27;s rows, so you can see whether the model leans on different features for different people.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>A global importance ranking says which features matter on average. If one feature drives decisions for one group and barely touches another, the average hides it, and that is where aggregation effects and proxy use tend to show up (<a href="aggregation-bias.html">Aggregation Bias</a>). It is also a check on a fairness claim: &quot;the model doesn&#x27;t rely on X&quot; should hold for every group, not just overall.</p>
+<p>The measurement is permutation importance (Breiman, 2001): shuffle one column among the rows you are looking at and see how much the score drops. Run it on a group&#x27;s rows and you get that group&#x27;s importance. It is model-agnostic and needs no assumptions about the model&#x27;s form.</p>
+<h3 id="core-concept-shuffle-one-column-on-one-group-s-rows">Core Concept: Shuffle One Column, On One Group&#x27;s Rows</h3>
+<pre><code>for each group:
+    for each feature:
+        repeat 20 times: shuffle that column within the group&#x27;s test rows, record the drop in accuracy
+    importance = mean drop (with its standard deviation over the shuffles)</code></pre>
+<p>Two things to keep in mind. The importance is in units of the score, so it depends on how much score there is to lose: a group where the model is nearly always right has less room to drop. And the shuffles give a standard deviation, which tells you whether a difference between two features or two groups is large enough to mean anything.</p>
+<h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
+<p><a href="../index.html#project-benefits">Benefits Denial</a>: a gradient-boosted model on the audit&#x27;s five core columns (sex and race are not inputs), the benchmark&#x27;s split, test rows split into men and women. The score is accuracy.</p>
+<pre><code>gradient boosting, accuracy 0.832; test rows: 4360 men, 2153 women
+feature           everyone                men              women
+workclass          +0.0016    +0.0012 +/-0.0009    +0.0006 +/-0.0010
+education          -0.0000    +0.0001 +/-0.0003    +0.0001 +/-0.0003
+education.num      +0.0250    +0.0308 +/-0.0023    +0.0100 +/-0.0020
+capital.gain       +0.0698    +0.0792 +/-0.0023    +0.0417 +/-0.0022
+capital.loss       +0.0261    +0.0302 +/-0.0018    +0.0121 +/-0.0011</code></pre>
+<ul><li><strong>The same two columns drive both groups,</strong> <code>capital.gain</code> first, but the size differs a lot. Shuffling <code>capital.gain</code> costs 0.079 accuracy on men and 0.042 on women; <code>education.num</code> costs 0.031 against 0.010; <code>capital.loss</code> costs 0.030 against 0.012. For women the model leans on these columns about a third to a half as much.</li><li><strong>The order of the lower two changes,</strong> with <code>capital.loss</code> ahead of <code>education.num</code> for women and the reverse for men, although for women the two are within one standard deviation of each other.</li><li><strong><code>workclass</code> and <code>education</code> are near zero for both,</strong> consistent with the claim that the model does not use them.</li></ul>
+<p>Part of the gap is mechanical. Women are a minority of the positive class in this data, a model can get most of them right by predicting &quot;no&quot;, and accuracy has less to lose. That does not make the difference unimportant, but it is a reason to also check with a measure that does not depend on the base rate, such as AUC, before concluding the model reasons differently.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 feature-importance-by-group.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from sklearn.inspection import permutation_importance
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit(&quot;Benefits Denial&quot;)             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X, y = data.X, data.y.to_numpy()
+women = data.masks[&quot;sex&quot;].to_numpy().astype(int)
+model = build_model(&quot;gradient_boosting&quot;, data.random_state).fit(X.iloc[train], y[train])
+
+def importance(rows):
+    &quot;&quot;&quot;Drop in accuracy when one column is shuffled, on `rows` only; mean and standard deviation over 20 shuffles.&quot;&quot;&quot;
+    result = permutation_importance(model, X.iloc[rows], y[rows], scoring=&quot;accuracy&quot;, n_repeats=20, random_state=0)
+    return result.importances_mean, result.importances_std
+
+everyone = importance(test)
+by_group = {name: importance(test[women[test] == g]) for g, name in ((0, &quot;men&quot;), (1, &quot;women&quot;))}
+print(f&quot;gradient boosting, accuracy {model.score(X.iloc[test], y[test]):.3f}; test rows: {(women[test] == 0).sum()} men, {(women[test] == 1).sum()} women&quot;)
+print(f&quot;{&#x27;feature&#x27;:15s} {&#x27;everyone&#x27;:&gt;10} {&#x27;men&#x27;:&gt;18} {&#x27;women&#x27;:&gt;18}&quot;)
+for i, column in enumerate(X.columns):
+    men, women_ = by_group[&quot;men&quot;], by_group[&quot;women&quot;]
+    print(f&quot;{column:15s} {everyone[0][i]:+10.4f} {men[0][i]:+10.4f} +/-{men[1][i]:.4f} {women_[0][i]:+10.4f} +/-{women_[1][i]:.4f}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>Importance depends on the score.</strong> A group with a lower base rate or a higher accuracy can show smaller drops for the same reliance, so compare with more than one score.</li><li><strong>Correlated features share importance.</strong> Shuffling one of two near-duplicates can leave the other to carry the signal, so both look unimportant. See <a href="proxy-entanglement.html">Proxy Entanglement</a>.</li><li><strong>Shuffling creates unrealistic rows.</strong> A shuffled column can combine values that never occur together, and the model is judged on them.</li><li><strong>Small groups have wide intervals.</strong> The standard deviation over shuffles measures only the shuffling, not the sampling noise of a small group.</li><li><strong>Importance is not effect.</strong> A feature can matter equally to two groups while pushing in opposite directions, see <a href="partial-dependence-by-group.html">Partial Dependence by Group</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="partial-dependence-by-group.html">Partial Dependence by Group</a> - the direction of a feature&#x27;s effect, per group</li><li><a href="explanation-disagreement.html">Explanation Disagreement</a> - when two importance methods give different answers</li><li><a href="shap-values.html">SHAP Values</a> - an attribution for a single prediction</li><li><a href="aggregation-bias.html">Aggregation Bias</a> - when one model fits groups with different relationships</li><li><a href="proxy-variables.html">Proxy Variables</a> - why &quot;the model does not use X&quot; needs a check per group</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-benefits"><code>Benefits Denial/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://link.springer.com/article/10.1023/A:1010933404324" target="_blank" rel="noreferrer noopener">Breiman, L. (2001): Random Forests</a> - Machine Learning 45; permutation importance.</li><li><a href="https://www.jmlr.org/papers/v20/18-760.html" target="_blank" rel="noreferrer noopener">Fisher, A., Rudin, C., Dominici, F. (2019): All Models Are Wrong, but Many Are Useful</a> - JMLR 20; model class reliance and its uncertainty.</li><li><a href="https://christophm.github.io/interpretable-ml-book/feature-importance.html" target="_blank" rel="noreferrer noopener">Molnar, C. (2022): Interpretable Machine Learning, permutation feature importance</a> - a worked treatment with the caveats listed above.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

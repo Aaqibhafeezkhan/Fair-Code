@@ -16585,3 +16585,363 @@ for label, share in (("random sample", None), ("stratified: half under 30", 0.5)
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 
+---
+
+# Feature Importance by Group
+URL: https://www.thefaircode.xyz/explainers/feature-importance-by-group.html
+Summary: Learn how to run permutation importance separately on each group's rows, with the standard deviation over shuffles. See Benefits Denial: shuffling capital gain costs 0.079 accuracy on men and 0.042 on women, and education about a third as much for women.
+
+> *One importance chart for the whole model assumes the model reasons the same way for everyone. Compute it per group and see.*
+
+## The One-Sentence Definition
+
+**Feature importance by group** is the importance of each input measured separately on each group's rows, so you can see whether the model leans on different features for different people.
+
+## Why It Matters
+
+A global importance ranking says which features matter on average. If one feature drives decisions for one group and barely touches another, the average hides it, and that is where aggregation effects and proxy use tend to show up ([Aggregation Bias](aggregation-bias.md)). It is also a check on a fairness claim: "the model doesn't rely on X" should hold for every group, not just overall.
+
+The measurement is permutation importance (Breiman, 2001): shuffle one column among the rows you are looking at and see how much the score drops. Run it on a group's rows and you get that group's importance. It is model-agnostic and needs no assumptions about the model's form.
+
+## Core Concept: Shuffle One Column, On One Group's Rows
+
+```
+for each group:
+    for each feature:
+        repeat 20 times: shuffle that column within the group's test rows, record the drop in accuracy
+    importance = mean drop (with its standard deviation over the shuffles)
+```
+
+Two things to keep in mind. The importance is in units of the score, so it depends on how much score there is to lose: a group where the model is nearly always right has less room to drop. And the shuffles give a standard deviation, which tells you whether a difference between two features or two groups is large enough to mean anything.
+
+## Concrete Example: Benefits Denial
+
+[Benefits Denial](../Benefits%20Denial/): a gradient-boosted model on the audit's five core columns (sex and race are not inputs), the benchmark's split, test rows split into men and women. The score is accuracy.
+
+```
+gradient boosting, accuracy 0.832; test rows: 4360 men, 2153 women
+feature           everyone                men              women
+workclass          +0.0016    +0.0012 +/-0.0009    +0.0006 +/-0.0010
+education          -0.0000    +0.0001 +/-0.0003    +0.0001 +/-0.0003
+education.num      +0.0250    +0.0308 +/-0.0023    +0.0100 +/-0.0020
+capital.gain       +0.0698    +0.0792 +/-0.0023    +0.0417 +/-0.0022
+capital.loss       +0.0261    +0.0302 +/-0.0018    +0.0121 +/-0.0011
+```
+
+- **The same two columns drive both groups,** `capital.gain` first, but the size differs a lot. Shuffling `capital.gain` costs 0.079 accuracy on men and 0.042 on women; `education.num` costs 0.031 against 0.010; `capital.loss` costs 0.030 against 0.012. For women the model leans on these columns about a third to a half as much.
+- **The order of the lower two changes,** with `capital.loss` ahead of `education.num` for women and the reverse for men, although for women the two are within one standard deviation of each other.
+- **`workclass` and `education` are near zero for both,** consistent with the claim that the model does not use them.
+
+Part of the gap is mechanical. Women are a minority of the positive class in this data, a model can get most of them right by predicting "no", and accuracy has less to lose. That does not make the difference unimportant, but it is a reason to also check with a measure that does not depend on the base rate, such as AUC, before concluding the model reasons differently.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 feature-importance-by-group.py`).
+
+```python
+import numpy as np
+from sklearn.inspection import permutation_importance
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit("Benefits Denial")             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X, y = data.X, data.y.to_numpy()
+women = data.masks["sex"].to_numpy().astype(int)
+model = build_model("gradient_boosting", data.random_state).fit(X.iloc[train], y[train])
+
+def importance(rows):
+    """Drop in accuracy when one column is shuffled, on `rows` only; mean and standard deviation over 20 shuffles."""
+    result = permutation_importance(model, X.iloc[rows], y[rows], scoring="accuracy", n_repeats=20, random_state=0)
+    return result.importances_mean, result.importances_std
+
+everyone = importance(test)
+by_group = {name: importance(test[women[test] == g]) for g, name in ((0, "men"), (1, "women"))}
+print(f"gradient boosting, accuracy {model.score(X.iloc[test], y[test]):.3f}; test rows: {(women[test] == 0).sum()} men, {(women[test] == 1).sum()} women")
+print(f"{'feature':15s} {'everyone':>10} {'men':>18} {'women':>18}")
+for i, column in enumerate(X.columns):
+    men, women_ = by_group["men"], by_group["women"]
+    print(f"{column:15s} {everyone[0][i]:+10.4f} {men[0][i]:+10.4f} +/-{men[1][i]:.4f} {women_[0][i]:+10.4f} +/-{women_[1][i]:.4f}")
+```
+
+## Limitations
+
+1. **Importance depends on the score.** A group with a lower base rate or a higher accuracy can show smaller drops for the same reliance, so compare with more than one score.
+2. **Correlated features share importance.** Shuffling one of two near-duplicates can leave the other to carry the signal, so both look unimportant. See [Proxy Entanglement](proxy-entanglement.md).
+3. **Shuffling creates unrealistic rows.** A shuffled column can combine values that never occur together, and the model is judged on them.
+4. **Small groups have wide intervals.** The standard deviation over shuffles measures only the shuffling, not the sampling noise of a small group.
+5. **Importance is not effect.** A feature can matter equally to two groups while pushing in opposite directions, see [Partial Dependence by Group](partial-dependence-by-group.md).
+
+## Related Concepts
+
+* [Partial Dependence by Group](partial-dependence-by-group.md) - the direction of a feature's effect, per group
+* [Explanation Disagreement](explanation-disagreement.md) - when two importance methods give different answers
+* [SHAP Values](shap-values.md) - an attribution for a single prediction
+* [Aggregation Bias](aggregation-bias.md) - when one model fits groups with different relationships
+* [Proxy Variables](proxy-variables.md) - why "the model does not use X" needs a check per group
+
+## Related Projects in This Repo
+
+* [`Benefits Denial/`](../Benefits%20Denial/) - the audit used for the example above
+
+## Further Reading
+
+* [Breiman, L. (2001): Random Forests](https://link.springer.com/article/10.1023/A:1010933404324) - Machine Learning 45; permutation importance.
+* [Fisher, A., Rudin, C., Dominici, F. (2019): All Models Are Wrong, but Many Are Useful](https://www.jmlr.org/papers/v20/18-760.html) - JMLR 20; model class reliance and its uncertainty.
+* [Molnar, C. (2022): Interpretable Machine Learning, permutation feature importance](https://christophm.github.io/interpretable-ml-book/feature-importance.html) - a worked treatment with the caveats listed above.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Partial Dependence by Group
+URL: https://www.thefaircode.xyz/explainers/partial-dependence-by-group.html
+Summary: Learn how to draw a model's average prediction against one feature for each group, and why scikit-learn's default for trees ignores the rows you pass. See Benefits Denial: women's curve sits 0.044 below men's at 6 years of schooling and 0.025 below at 16, with only 17 women at the top.
+
+> *A model can respond to a feature the same way for two groups or not at all. The curve per group shows which, as long as you only trust it where the group has data.*
+
+## The One-Sentence Definition
+
+**Partial dependence by group** is the model's average predicted probability as one feature is set to each value in a grid, computed separately over each group's rows, so the curve for one group can be compared with the curve for another.
+
+## Why It Matters
+
+[Feature Importance by Group](feature-importance-by-group.md) says how much a model uses a feature for each group. Partial dependence says what the model does with it. Two groups can have the same importance for schooling and very different curves: one rises steeply with years of education, the other barely, or one starts higher and stays higher.
+
+The curve also tells you something importance cannot: the size of a gap at a given value of the feature. If the model predicts a lower probability for one group at every level of education with the other columns averaged over that group's own rows, the difference is the model's, not only the data's.
+
+## Core Concept: Set the Feature, Average Over the Group
+
+```
+for each value v in the grid:
+    set the feature to v for every row of the group, leaving the other columns as they are
+    average the model's predicted probability over those rows
+```
+
+One implementation detail matters a great deal. scikit-learn's default for tree models (`method="recursion"`) does not use the rows you pass; it averages over the training data's leaf weights, so the curve is identical for every group. Use `method="brute"` to average over the rows of the group.
+
+## Concrete Example: Benefits Denial
+
+[Benefits Denial](../Benefits%20Denial/): the same gradient-boosted model as the previous explainer, with years of schooling (`education.num`) varied from 6 to 16.
+
+```
+average predicted probability of 'income above $50K' as education.num varies
+ education.num       6       9      10      12      13      14      16
+           men   0.123   0.196   0.222   0.267   0.381   0.486   0.621
+         women   0.079   0.152   0.179   0.225   0.342   0.452   0.596
+gap (women-men)  -0.044  -0.044  -0.043  -0.042  -0.039  -0.033  -0.025
+
+test rows actually observed at each value (the curve is only supported where there is data)
+           men     133    1420     880     138     767     224      64
+         women      59     699     576      71     327      95      17
+```
+
+- **The curves have the same shape.** Probability of income above $50K climbs from 0.123 (men) and 0.079 (women) at 6 years to 0.621 and 0.596 at 16 years.
+- **The gap shrinks as schooling rises.** Women's curve is 0.044 below men's at 6 years and 0.025 below at 16, so more schooling closes some of the gap but not all of it. The model gives a woman with a doctorate-level education less than a man with the same education, averaged over each group's own capital gains and losses and other columns.
+- **The ends are thinly supported.** There are 17 women in the test rows at 16 years and 59 at 6 years, against 1,420 men at 9 years, so the right end of the women's curve rests on very few rows.
+
+The final block of the output is the check that should accompany any curve like this: the number of rows behind each point.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 partial-dependence-by-group.py`).
+
+```python
+import numpy as np
+from sklearn.inspection import partial_dependence
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+from faircode.models import build_model
+
+data = load_audit("Benefits Denial")             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X, y = data.X.astype(float), data.y.to_numpy()   # float columns: partial dependence refuses integer ones
+women = data.masks["sex"].to_numpy().astype(int)
+model = build_model("gradient_boosting", data.random_state).fit(X.iloc[train], y[train])
+# method="brute" averages over the rows you pass (here, one group). The default "recursion" for trees ignores them and
+# uses the training rows, which would draw the same curve for every group.
+
+grid = [6, 9, 10, 12, 13, 14, 16]                # years of schooling (education.num)
+print("average predicted probability of 'income above $50K' as education.num varies")
+print(f"{'education.num':>14} " + " ".join(f"{g:>7}" for g in grid))
+rows = {}
+for g, name in ((0, "men"), (1, "women")):
+    subset = X.iloc[test[women[test] == g]]
+    curve = partial_dependence(model, subset, ["education.num"], custom_values={"education.num": np.array(grid)},
+                               kind="average", method="brute", response_method="predict_proba")["average"][0]
+    rows[name] = curve
+    print(f"{name:>14} " + " ".join(f"{v:7.3f}" for v in curve))
+print(f"{'gap (women-men)':>14} " + " ".join(f"{w - m:+7.3f}" for w, m in zip(rows["women"], rows["men"])))
+
+print("\ntest rows actually observed at each value (the curve is only supported where there is data)")
+for g, name in ((0, "men"), (1, "women")):
+    values = X["education.num"].to_numpy()[test[women[test] == g]]
+    print(f"{name:>14} " + " ".join(f"{(values == v).sum():7d}" for v in grid))
+```
+
+## Limitations
+
+1. **It averages over the group's own other columns.** The gap above mixes the model's treatment of sex with the different distribution of the other features in each group, so it is not a pure effect of sex (the model does not even see it).
+2. **It assumes the feature can be set freely.** Setting `education.num` to 16 for a row whose other columns do not fit that education creates an unrealistic row.
+3. **Thin regions are unreliable.** The 17-row end of the women's curve is where the model has the least to learn from and the curve is least trustworthy.
+4. **Averages hide heterogeneity.** An average curve can be flat while individual curves rise and fall, so individual conditional expectation curves are a useful companion.
+5. **The default can silently give the same curve for every group.** Check that the curves can differ, as in the note above.
+
+## Related Concepts
+
+* [Feature Importance by Group](feature-importance-by-group.md) - how much the model uses a feature, per group
+* [Explanation Disagreement](explanation-disagreement.md) - when two ways of explaining the same model differ
+* [Aggregation Bias](aggregation-bias.md) - one model and different relationships by group
+* [Counterfactual Explanation](counterfactual-explanation.md) - the one-person version of "set the feature and see"
+* [Algorithmic Recourse](algorithmic-recourse.md) - when the feature is one a person can change
+
+## Related Projects in This Repo
+
+* [`Benefits Denial/`](../Benefits%20Denial/) - the audit used for the example above
+
+## Further Reading
+
+* [Friedman, J. H. (2001): Greedy Function Approximation: A Gradient Boosting Machine](https://projecteuclid.org/journals/annals-of-statistics/volume-29/issue-5/Greedy-function-approximation-A-gradient-boosting-machine/10.1214/aos/1013203451.full) - Annals of Statistics 29(5); the introduction of partial dependence.
+* [Goldstein, A., Kapelner, A., Bleich, J., Pitkin, E. (2015): Peeking Inside the Black Box](https://arxiv.org/abs/1309.6392) - Journal of Computational and Graphical Statistics 24(1); individual conditional expectation plots.
+* [Apley, D. W., Zhu, J. (2020): Visualizing the Effects of Predictor Variables in Black Box Supervised Learning Models](https://arxiv.org/abs/1612.08468) - Journal of the Royal Statistical Society B 82(4); accumulated local effects, which avoid unrealistic rows.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Explanation Disagreement
+URL: https://www.thefaircode.xyz/explainers/explanation-disagreement.html
+Summary: Learn to rank the same model's features with permutation importance, SHAP and logistic coefficients and compare the ranks. See Benefits Denial: capital gain is first by two methods and third by SHAP, relationship (a sex proxy) is first by SHAP only, and agreement is weaker for women.
+
+> *Two explanation methods on the same model can name different top features. When a fairness claim rests on one of them, that is not a detail.*
+
+## The One-Sentence Definition
+
+**Explanation disagreement** is the situation in which different feature-attribution methods (permutation importance, SHAP, a surrogate's coefficients) rank the inputs of the same model differently, so a statement about what the model uses depends on which method you ask.
+
+## Why It Matters
+
+Fairness work leans on explanations in specific sentences: "the model does not use race", "the main driver is income", "the top feature is a proxy for sex". Each is a claim that a feature is or is not important, and each is only as good as the method behind it. Methods answer different questions: how much does the score drop when this column is scrambled, how much does this column move the average prediction away from the baseline, how large is this coefficient in a different model.
+
+When the methods agree, the claim is robust. When they disagree, the disagreement is the finding, and it deserves to be reported with the claim.
+
+## Core Concept: Rank the Features Three Ways, Then Compare the Ranks
+
+1. **Permutation importance:** drop in accuracy when a column is shuffled.
+2. **SHAP:** mean absolute contribution of the column to the model's predictions ([SHAP Values](shap-values.md)).
+3. **Standardized logistic coefficients:** magnitude of the weight in a linear model fitted to the same data. (This is a different model, so it asks a different question.)
+
+Compare with a rank correlation (Spearman) overall and per group, and look at the specific features a fairness claim is about.
+
+## Concrete Example: Benefits Denial
+
+[Benefits Denial](../Benefits%20Denial/): the audit's core and proxy columns with sex and race left out, a gradient-boosted model, the benchmark's split. The ranks are of 10 features (1 is most important).
+
+```
+feature           permutation   SHAP  |logistic coef|   (rank of 10, everyone)
+relationship                3      1                3
+education.num               2      2                2
+capital.gain                1      3                1
+marital.status              6      4                4
+occupation                  7      5                9
+hours.per.week              5      6                5
+capital.loss                4      7                6
+workclass                   8      8                8
+fnlwgt                     10      9               10
+education                   9     10                7
+
+Spearman correlation between the rankings
+  permutation vs SHAP, everyone: 0.83
+  permutation vs logistic coefficients: 0.90; SHAP vs logistic: 0.78
+  permutation vs SHAP, men: 0.83
+  permutation vs SHAP, women: 0.66
+```
+
+- **Broad agreement.** The rankings correlate at 0.83 (permutation against SHAP) and 0.90 (permutation against the logistic coefficients), and the least important features (`workclass`, `fnlwgt`) are ranked near the bottom by all three, so a claim that the model ignores them holds.
+- **The top spot is contested.** `capital.gain` is first by permutation and by the logistic coefficients but third by SHAP, and `relationship` is first by SHAP and third by the other two.
+- **That matters for fairness.** `relationship` encodes sex (Husband and Wife are almost fully male and female). A claim that "the model's main driver is a proxy for sex" is true by SHAP and weaker by the other two. A claim that "capital gain is the main driver" has the opposite pattern.
+- **The disagreement is larger for women.** The correlation between permutation and SHAP is 0.83 on men's rows and 0.66 on women's, so the explanation is less settled for the group with fewer positives.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 explanation-disagreement.py`). It needs `shap`, which is not a dependency of this package (`pip install shap`).
+
+```python
+import numpy as np
+import shap
+from scipy.stats import spearmanr
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.inspection import permutation_importance
+from sklearn.linear_model import LogisticRegression
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Benefits Denial", strategy="unawareness")   # core + proxy columns, no protected columns
+train, test = data.idx_train, data.idx_test
+X = data.X.astype(float)
+y = data.y.to_numpy()
+women = data.masks["sex"].to_numpy().astype(int)
+columns = list(X.columns)
+model = GradientBoostingClassifier(random_state=data.random_state).fit(X.iloc[train], y[train])
+
+def permutation(rows):
+    return permutation_importance(model, X.iloc[rows], y[rows], scoring="accuracy", n_repeats=10, random_state=0).importances_mean
+
+def shap_mean_abs(rows):
+    return np.abs(shap.TreeExplainer(model).shap_values(X.iloc[rows])).mean(axis=0)
+
+methods_by_group = {}
+for name, rows in (("everyone", test), ("men", test[women[test] == 0]), ("women", test[women[test] == 1])):
+    methods_by_group[name] = {"permutation": permutation(rows), "SHAP": shap_mean_abs(rows)}
+
+# A third, non-tree view: standardized logistic regression coefficients (the model is different, so this is a different question).
+Z = (X - X.iloc[train].mean()) / (X.iloc[train].std() + 1e-9)
+logistic = np.abs(LogisticRegression(max_iter=1000).fit(Z.iloc[train], y[train]).coef_[0])
+
+def rank(values):
+    return len(values) - np.argsort(np.argsort(values))     # 1 = most important
+
+print(f"{'feature':16s} {'permutation':>12} {'SHAP':>6} {'|logistic coef|':>16}   (rank of 10, everyone)")
+perm, sh = rank(methods_by_group["everyone"]["permutation"]), rank(methods_by_group["everyone"]["SHAP"])
+lg = rank(logistic)
+for i in np.argsort(sh):
+    print(f"{columns[i]:16s} {perm[i]:12d} {sh[i]:6d} {lg[i]:16d}")
+
+print("\nSpearman correlation between the rankings")
+everyone = methods_by_group["everyone"]
+print(f"  permutation vs SHAP, everyone: {spearmanr(everyone['permutation'], everyone['SHAP'])[0]:.2f}")
+print(f"  permutation vs logistic coefficients: {spearmanr(everyone['permutation'], logistic)[0]:.2f}; SHAP vs logistic: {spearmanr(everyone['SHAP'], logistic)[0]:.2f}")
+for name in ("men", "women"):
+    m = methods_by_group[name]
+    print(f"  permutation vs SHAP, {name}: {spearmanr(m['permutation'], m['SHAP'])[0]:.2f}")
+```
+
+## Limitations
+
+1. **Different methods answer different questions.** Disagreement is not an error in one of them. Report which question each answers rather than picking the one that supports the claim.
+2. **The logistic coefficients are from another model.** They describe the linear fit, not the gradient-boosted model, so agreement or not says something about the data's structure, not about that model.
+3. **Rank correlation hides magnitude.** Two features can be close in importance and far in rank, and the reverse.
+4. **Correlated features split credit unpredictably.** Permutation and SHAP treat a pair of correlated columns differently, which is part of the `relationship` and `marital.status` difference above.
+5. **Ten features is a small ranking.** A correlation of 0.66 on ten items has wide uncertainty.
+
+## Related Concepts
+
+* [SHAP Values](shap-values.md) - the attribution method used above
+* [What Is LIME?](lime.md) - a local surrogate, another way to explain
+* [Feature Importance by Group](feature-importance-by-group.md) - per-group permutation importance
+* [Proxy Variables](proxy-variables.md) - why the rank of `relationship` matters here
+* [Counterfactual Explanation](counterfactual-explanation.md) - an explanation of one decision, not of the model
+
+## Related Projects in This Repo
+
+* [`Benefits Denial/`](../Benefits%20Denial/) - the audit used for the example above
+
+## Further Reading
+
+* [Krishna, S. et al. (2022): The Disagreement Problem in Explainable Machine Learning: A Practitioner's Perspective](https://arxiv.org/abs/2202.01602) - the study of when explanation methods disagree and how practitioners cope.
+* [Lundberg, S., Lee, S.-I. (2017): A Unified Approach to Interpreting Model Predictions](https://arxiv.org/abs/1705.07874) - NeurIPS 2017; the SHAP method.
+* [Rudin, C. (2019): Stop Explaining Black Box Machine Learning Models for High Stakes Decisions and Use Interpretable Models Instead](https://arxiv.org/abs/1811.10154) - Nature Machine Intelligence 1; the case against relying on post hoc explanations.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+

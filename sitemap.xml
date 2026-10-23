@@ -366,11 +366,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/seed-and-split-sensitivity.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/cross-validation-for-fairness.html</loc>
+    <lastmod>2026-10-23</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/stratified-test-sets-for-fairness.html</loc>
+    <lastmod>2026-10-23</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/feature-importance-by-group.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/partial-dependence-by-group.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/explanation-disagreement.html</loc>
   </url>
 </urlset>

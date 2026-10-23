@@ -696,5 +696,29 @@
     "summary": "Learn to oversample a small group for evaluation and reweight to recover population rates. See German Credit Lending: a half-under-30 test set narrows the under-30 accuracy interval from 0.213 to 0.183, and the unweighted overall accuracy is biased low until reweighted.",
     "description": "Oversampling a small group in an evaluation set to narrow its interval, and weighting rows back to the population for an overall number.",
     "tags": ["data", "detection"]
+  },
+  {
+    "slug": "feature-importance-by-group",
+    "title": "Feature Importance by Group",
+    "subtitle": "Does the model lean on different features for different people?",
+    "summary": "Learn how to run permutation importance separately on each group's rows, with the standard deviation over shuffles. See Benefits Denial: shuffling capital gain costs 0.079 accuracy on men and 0.042 on women, and education about a third as much for women.",
+    "description": "Running permutation importance per group to see whether a model relies on different features for different people, shown on Benefits Denial.",
+    "tags": ["explainability", "detection"]
+  },
+  {
+    "slug": "partial-dependence-by-group",
+    "title": "Partial Dependence by Group",
+    "subtitle": "What the model does with a feature, drawn once per group.",
+    "summary": "Learn how to draw a model's average prediction against one feature for each group, and why scikit-learn's default for trees ignores the rows you pass. See Benefits Denial: women's curve sits 0.044 below men's at 6 years of schooling and 0.025 below at 16, with only 17 women at the top.",
+    "description": "Partial dependence drawn per group, with method brute so each curve averages over its own rows, and the row counts behind each point.",
+    "tags": ["explainability", "detection"]
+  },
+  {
+    "slug": "explanation-disagreement",
+    "title": "Explanation Disagreement",
+    "subtitle": "Two explanation methods, one model, different top features.",
+    "summary": "Learn to rank the same model's features with permutation importance, SHAP and logistic coefficients and compare the ranks. See Benefits Denial: capital gain is first by two methods and third by SHAP, relationship (a sex proxy) is first by SHAP only, and agreement is weaker for women.",
+    "description": "Comparing permutation importance, SHAP and logistic coefficients on one model, and why a fairness claim should say which method it rests on.",
+    "tags": ["explainability", "detection"]
   }
 ]

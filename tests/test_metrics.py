@@ -62,7 +62,7 @@ DISADVANTAGED = np.array([True] * 10 + [False] * 10)
 @pytest.fixture(scope="module")
 def metrics():
     return compute_metrics(Y_TRUE, Y_PRED, DISADVANTAGED, n_resamples=200, n_permutations=200,
-                           random_state=42)
+                           random_state=42, min_selected_for_ratio=0)
 
 
 def test_all_six_metrics_present(metrics):
@@ -143,7 +143,7 @@ def test_disparate_impact_ratio_of_one_for_identical_groups():
     y_true = np.array([1, 0] * 20)
     y_pred = np.array([1, 0] * 20)
     disadv = np.array(([True] * 20) + ([False] * 20))
-    m = compute_metrics(y_true, y_pred, disadv, n_resamples=200, n_permutations=200)
+    m = compute_metrics(y_true, y_pred, disadv, n_resamples=200, n_permutations=200, min_selected_for_ratio=0)
     assert m["disparate_impact_ratio"]["value"] == pytest.approx(1.0, abs=1e-6)
     assert not m["disparate_impact_ratio"]["significant"]
 
@@ -233,3 +233,39 @@ def test_equalized_odds_is_driven_by_the_tpr_gap_when_the_fpr_gap_is_undefined()
     result = compute_metrics(y_true, y_pred, disadvantaged, n_resamples=50, n_permutations=50)
     assert result["equalized_odds_diff"]["note"] == "driven_by_tpr_gap"
     assert result["equalized_odds_diff"]["value"] == result["equal_opportunity_diff"]["value"] == -0.25
+
+
+# ── An advantaged group the model almost never selects (#1094) ──────────────────────────────
+
+def _rare_selection(n_selected_advantaged):
+    n = 400
+    disadv = np.array([True] * n + [False] * n)
+    y_true = np.zeros(2 * n, dtype=int)
+    y_pred = np.zeros(2 * n, dtype=int)
+    y_pred[:n // 2] = 1                                   # disadvantaged group: half selected
+    y_pred[n:n + n_selected_advantaged] = 1
+    return y_true, y_pred, disadv
+
+
+def test_ratio_is_not_reported_when_the_advantaged_group_is_almost_never_selected():
+    for selected in (0, 1, 29):
+        result = compute_metrics(*_rare_selection(selected), n_resamples=50, n_permutations=50)["disparate_impact_ratio"]
+        assert result["value"] is None and result["ci_low"] is None and result["ci_high"] is None
+        assert result["note"] == "advantaged_selection_too_rare"
+        assert result["significant"] is False
+        assert (result["n_disadvantaged"], result["n_advantaged"]) == (400, 400)
+
+
+def test_ratio_is_reported_from_thirty_selected_rows():
+    result = compute_metrics(*_rare_selection(30), n_resamples=50, n_permutations=50)["disparate_impact_ratio"]
+    assert result["note"] is None
+    assert result["value"] == pytest.approx((200 / 400) / (30 / 400), rel=1e-3)
+    assert result["ci_high"] < 1000                          # no epsilon-sized upper end
+
+
+def test_the_threshold_is_adjustable_and_other_metrics_are_unaffected():
+    args = _rare_selection(5)
+    strict = compute_metrics(*args, n_resamples=50, n_permutations=50)
+    loose = compute_metrics(*args, n_resamples=50, n_permutations=50, min_selected_for_ratio=5)
+    assert strict["disparate_impact_ratio"]["value"] is None and loose["disparate_impact_ratio"]["value"] is not None
+    assert strict["demographic_parity_diff"]["value"] == loose["demographic_parity_diff"]["value"]

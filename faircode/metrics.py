@@ -46,6 +46,11 @@ METRICS = (
 )
 
 _RATIO_EPSILON = 1e-6
+# The ratio's denominator is the advantaged group's selection rate. When the model selects fewer than this
+# many advantaged rows the ratio is dominated by that handful of rows (and by _RATIO_EPSILON when it selects
+# none): COMPAS gradient boosting read 1,250 with an interval up to 879,158 (#1094). 30 matches the
+# small_sample_warning convention elsewhere in this module.
+MIN_SELECTED_FOR_RATIO = 30
 
 
 def _empty_result(note, n_disadvantaged=0, n_advantaged=0):
@@ -101,11 +106,15 @@ def _permutation_ratio_p(a, b, n_permutations, random_state):
     return at_least_as_extreme / n_permutations
 
 
-def _ratio_report(disadv_pred, adv_pred, n_resamples, n_permutations, confidence, random_state):
+def _ratio_report(disadv_pred, adv_pred, n_resamples, n_permutations, confidence, random_state,
+                  min_selected=MIN_SELECTED_FOR_RATIO):
     a = np.asarray(disadv_pred, dtype=float)
     b = np.asarray(adv_pred, dtype=float)
     if len(a) == 0 or len(b) == 0:
         return _empty_result("insufficient_data", len(a), len(b))
+    if b.sum() < min_selected:
+        # An unbounded, epsilon-driven number is worse than none: report the sizes and say why.
+        return _empty_result("advantaged_selection_too_rare", len(a), len(b))
     ratio, ci_low, ci_high = _bootstrap_ratio(a, b, n_resamples, confidence, random_state)
     p_value = _permutation_ratio_p(a, b, n_permutations, random_state)
     return {
@@ -132,7 +141,8 @@ def _diff_report(disadv, adv, n_resamples, n_permutations, confidence, random_st
 
 
 def compute_metrics(y_true, y_pred, disadvantaged, n_resamples=2000,
-                    n_permutations=2000, confidence=0.95, random_state=42):
+                    n_permutations=2000, confidence=0.95, random_state=42,
+                    min_selected_for_ratio=MIN_SELECTED_FOR_RATIO):
     """All six fairness metrics for one set of held-out predictions.
 
     y_true / y_pred are 0/1 arrays over the same rows; disadvantaged is a
@@ -140,6 +150,11 @@ def compute_metrics(y_true, y_pred, disadvantaged, n_resamples=2000,
     protected attribute is unknown should already be excluded by the caller.
     Returns {metric_name: {value, ci_low, ci_high, p_value, significant,
     n_disadvantaged, n_advantaged, small_sample_warning, note}}.
+
+    disparate_impact_ratio is reported as None with the note
+    `advantaged_selection_too_rare` when the model selects fewer than
+    `min_selected_for_ratio` advantaged rows (default 30): the ratio would be
+    set by a handful of rows or by the epsilon floor (#1094).
     """
     y_true = np.asarray(y_true, dtype=int)
     y_pred = np.asarray(y_pred, dtype=int)
@@ -152,7 +167,8 @@ def compute_metrics(y_true, y_pred, disadvantaged, n_resamples=2000,
     results["demographic_parity_diff"] = _diff_report(
         pred_disadv, pred_adv, n_resamples, n_permutations, confidence, random_state)
     results["disparate_impact_ratio"] = _ratio_report(
-        pred_disadv, pred_adv, n_resamples, n_permutations, confidence, random_state)
+        pred_disadv, pred_adv, n_resamples, n_permutations, confidence, random_state,
+        min_selected_for_ratio)
 
     pos_disadv = disadv & (y_true == 1)
     pos_adv = adv & (y_true == 1)

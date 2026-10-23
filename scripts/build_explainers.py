@@ -563,6 +563,7 @@ def build_jsonld(entry, canonical, markdown_text="", dates=None):
 
 TITLE_SUFFIX = " · Fair Code"
 TITLE_MAX = 65          # search results cut a <title> after about this many characters (#1105)
+DESCRIPTION_MIN, DESCRIPTION_MAX, DESCRIPTION_TARGET = 70, 160, 155   # meta descriptions are cut near 160 (#1104)
 
 
 def seo_title(entry):
@@ -574,6 +575,27 @@ def seo_title(entry):
             f"{entry['slug']}: the page title is {len(text + TITLE_SUFFIX)} characters (limit {TITLE_MAX}); "
             f"add a shorter `seo_title` of at most {TITLE_MAX - len(TITLE_SUFFIX)} characters to assets/explainers-data.json")
     return text
+
+
+def meta_description(entry):
+    """An optional `description` from the data file, else the summary cut at the last sentence end that
+    fits in DESCRIPTION_TARGET characters (or, if the first sentence is longer, at a word boundary with
+    an ellipsis). Raises when the result is outside DESCRIPTION_MIN..DESCRIPTION_MAX."""
+    text = " ".join((entry.get("description") or entry["summary"]).split())
+    if len(text) > DESCRIPTION_MAX and not entry.get("description"):
+        window = text[:DESCRIPTION_TARGET + 1]
+        ends = [m.end() for m in re.finditer(r"[.!?](?=\s|$)", window)]
+        ends = [e for e in ends if e <= DESCRIPTION_TARGET]
+        if ends and ends[-1] >= DESCRIPTION_MIN:
+            text = text[:ends[-1]].strip()
+        else:
+            cut = text[:DESCRIPTION_TARGET - 3].rsplit(" ", 1)[0].rstrip(",;:- ")
+            text = cut + "..."
+    if not DESCRIPTION_MIN <= len(text) <= DESCRIPTION_MAX:
+        raise ValueError(f"{entry['slug']}: the meta description is {len(text)} characters "
+                         f"(allowed {DESCRIPTION_MIN}-{DESCRIPTION_MAX}); add a `description` to assets/explainers-data.json")
+    return text
+
 
 
 def build_page(entry, known_slugs):
@@ -590,7 +612,7 @@ def build_page(entry, known_slugs):
     return PAGE_TEMPLATE.format(
         title=escape_html(seo_title(entry)),
         summary=escape_html(entry["summary"]),
-        meta_description=escape_html(entry["summary"]),
+        meta_description=escape_html(meta_description(entry)),
         canonical=canonical,
         subtitle=escape_html(entry["subtitle"]),
         content=content_html,

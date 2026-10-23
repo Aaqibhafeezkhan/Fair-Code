@@ -152,3 +152,26 @@ def test_every_explainer_title_fits_the_limit():
     entries = json.loads((REPO_ROOT / "assets" / "explainers-data.json").read_text(encoding="utf-8"))
     for entry in entries:
         assert len(script.seo_title(entry) + script.TITLE_SUFFIX) <= script.TITLE_MAX, entry["slug"]
+
+
+def test_meta_description_prefers_the_data_file_and_cuts_at_a_sentence():
+    # #1104: search results cut a meta description at about 160 characters.
+    import pytest
+    script = importlib.import_module("scripts.build_explainers")
+    short = "A short, clear summary of exactly one sentence that is comfortably inside the allowed range."
+    assert script.meta_description({"slug": "x", "summary": short}) == short
+    assert script.meta_description({"slug": "x", "summary": "S" * 300, "description": short}) == short
+    long = "First sentence that carries the point of the page in a handful of words. " + "Second sentence " * 20
+    cut = script.meta_description({"slug": "x", "summary": long})
+    assert cut == "First sentence that carries the point of the page in a handful of words."
+    one_long_sentence = "word " * 80
+    assert script.meta_description({"slug": "x", "summary": one_long_sentence}).endswith("...")
+    with pytest.raises(ValueError, match="description"):
+        script.meta_description({"slug": "x", "summary": "Too short."})
+
+
+def test_every_explainer_description_is_between_70_and_160_characters():
+    script = importlib.import_module("scripts.build_explainers")
+    entries = json.loads((REPO_ROOT / "assets" / "explainers-data.json").read_text(encoding="utf-8"))
+    for entry in entries:
+        assert script.DESCRIPTION_MIN <= len(script.meta_description(entry)) <= script.DESCRIPTION_MAX, entry["slug"]

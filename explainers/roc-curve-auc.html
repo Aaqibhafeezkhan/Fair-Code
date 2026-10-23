@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>What Is a ROC Curve and AUC? · Fair Code</title>
-<meta name="description" content="Learn what a ROC curve and its area (AUC) actually measure - the model&#x27;s ability to rank cases by risk - and why that single headline number hides the two things fairness depends on: where you set the decision threshold, and whether ranking quality is equal across groups. See how COMPAS&#x27;s ordinary 0.68 baseline AUC (frozen from paper/results-frozen) sat on top of a large racial false-positive gap. Includes detection code for per-group AUC and overlaid ROC curves.">
+<meta name="description" content="What a ROC curve and AUC measure, why one AUC hides threshold choice and per-group ranking quality, and how to compute per-group AUC and overlaid ROC curves.">
 <link rel="canonical" href="https://www.thefaircode.xyz/explainers/roc-curve-auc.html">
 <meta name="author" content="Yash Kewlani">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:site_name" content="Fair Code">
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="What Is a ROC Curve and AUC? · Fair Code">
-<meta property="og:description" content="Learn what a ROC curve and its area (AUC) actually measure - the model&#x27;s ability to rank cases by risk - and why that single headline number hides the two things fairness depends on: where you set the decision threshold, and whether ranking quality is equal across groups. See how COMPAS&#x27;s ordinary 0.68 baseline AUC (frozen from paper/results-frozen) sat on top of a large racial false-positive gap. Includes detection code for per-group AUC and overlaid ROC curves.">
+<meta property="og:description" content="What a ROC curve and AUC measure, why one AUC hides threshold choice and per-group ranking quality, and how to compute per-group AUC and overlaid ROC curves.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://www.thefaircode.xyz/explainers/roc-curve-auc.html">
 <meta property="og:image" content="https://www.thefaircode.xyz/assets/og/roc-curve-auc.png">
@@ -26,7 +26,7 @@
 <meta property="og:image:alt" content="What Is a ROC Curve and AUC? · Fair Code (light)">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="What Is a ROC Curve and AUC? · Fair Code">
-<meta name="twitter:description" content="Learn what a ROC curve and its area (AUC) actually measure - the model&#x27;s ability to rank cases by risk - and why that single headline number hides the two things fairness depends on: where you set the decision threshold, and whether ranking quality is equal across groups. See how COMPAS&#x27;s ordinary 0.68 baseline AUC (frozen from paper/results-frozen) sat on top of a large racial false-positive gap. Includes detection code for per-group AUC and overlaid ROC curves.">
+<meta name="twitter:description" content="What a ROC curve and AUC measure, why one AUC hides threshold choice and per-group ranking quality, and how to compute per-group AUC and overlaid ROC curves.">
 <meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/roc-curve-auc.png">
 
 <link rel="icon" href="/assets/icons/favicon.ico" sizes="any">

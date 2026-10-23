@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Missing Data as Bias in Electronic Health Records · Fair Code</title>
-<meta name="description" content="Learn how unequal access to care turns into unequal missingness in EHR data, and why a model reading a blank field as &#x27;nothing notable happened&#x27; is actually reading &#x27;this group is observed less.&#x27; Covers the MCAR/MAR/MNAR framework, why naive imputation and row-dropping both make access-driven missingness worse, and why a missingness indicator can become a new proxy for the protected attribute it was meant to work around. Anchored to real missingness rates computed directly from the Healthcare Readmission dataset (a 10.7-point payer-code gap by race), with detection code that flags MNAR candidates by group.">
+<meta name="description" content="How unequal access to care becomes unequal missingness in EHR data, why imputation and row-dropping make it worse, and how to flag MNAR candidates by group.">
 <link rel="canonical" href="https://www.thefaircode.xyz/explainers/missing-data-bias-ehr.html">
 <meta name="author" content="Yash Kewlani">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:site_name" content="Fair Code">
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="Missing Data as Bias in Electronic Health Records · Fair Code">
-<meta property="og:description" content="Learn how unequal access to care turns into unequal missingness in EHR data, and why a model reading a blank field as &#x27;nothing notable happened&#x27; is actually reading &#x27;this group is observed less.&#x27; Covers the MCAR/MAR/MNAR framework, why naive imputation and row-dropping both make access-driven missingness worse, and why a missingness indicator can become a new proxy for the protected attribute it was meant to work around. Anchored to real missingness rates computed directly from the Healthcare Readmission dataset (a 10.7-point payer-code gap by race), with detection code that flags MNAR candidates by group.">
+<meta property="og:description" content="How unequal access to care becomes unequal missingness in EHR data, why imputation and row-dropping make it worse, and how to flag MNAR candidates by group.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://www.thefaircode.xyz/explainers/missing-data-bias-ehr.html">
 <meta property="og:image" content="https://www.thefaircode.xyz/assets/og/missing-data-bias-ehr.png">
@@ -26,7 +26,7 @@
 <meta property="og:image:alt" content="Missing Data as Bias in Electronic Health Records · Fair Code (light)">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Missing Data as Bias in Electronic Health Records · Fair Code">
-<meta name="twitter:description" content="Learn how unequal access to care turns into unequal missingness in EHR data, and why a model reading a blank field as &#x27;nothing notable happened&#x27; is actually reading &#x27;this group is observed less.&#x27; Covers the MCAR/MAR/MNAR framework, why naive imputation and row-dropping both make access-driven missingness worse, and why a missingness indicator can become a new proxy for the protected attribute it was meant to work around. Anchored to real missingness rates computed directly from the Healthcare Readmission dataset (a 10.7-point payer-code gap by race), with detection code that flags MNAR candidates by group.">
+<meta name="twitter:description" content="How unequal access to care becomes unequal missingness in EHR data, why imputation and row-dropping make it worse, and how to flag MNAR candidates by group.">
 <meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/missing-data-bias-ehr.png">
 
 <link rel="icon" href="/assets/icons/favicon.ico" sizes="any">

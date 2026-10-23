@@ -18345,3 +18345,434 @@ print(f"  share of the total that runs through the two mediators: {indirect.sum(
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 
+---
+
+# Randomized Post-Processing
+URL: https://www.thefaircode.xyz/explainers/randomized-post-processing.html
+Summary: Learn the Hardt-Price-Srebro linear programme over score bins. On Tenant Screening it cuts the equalized-odds gap from 0.149 to 0.009 to 0.020 for under a point of accuracy, with 1.2% to 5.9% of rows changing decision between draws.
+
+> *When no single cut-off makes two groups' error rates equal, mix two decisions with a weighted coin. It can reach the target exactly, and it decides some people by chance.*
+
+## The One-Sentence Definition
+
+**Randomized post-processing** is a post-processing rule that, for each group and score range, predicts "positive" with a chosen probability instead of always or never, so that the groups' true and false positive rates can be made equal exactly.
+
+## Why It Matters
+
+[Group-Specific Thresholds](group-specific-thresholds.md) equalize one error rate by moving a cut-off. For equalized odds you need two rates to match at once, a true positive rate and a false positive rate, and a pair of thresholds usually cannot reach both. Hardt, Price and Srebro (2016) showed that the set of achievable pairs is the region under each group's ROC curve, and that the best equal-odds point can be reached by mixing two thresholds: use one with probability `p` and the other with probability `1 - p`.
+
+That gives an exact answer and an uncomfortable one. Two applicants with the same score and group can get different decisions because of a random draw.
+
+## Core Concept: A Linear Programme Over Score Bins
+
+Divide scores into bins. For each group and bin, the variable `q` is the probability of a positive decision. The group's true positive rate is the sum of `q` weighted by how many true positives fall in each bin, and likewise for false positives. Choose all `q` to maximize accuracy subject to the two groups having the same true positive rate and the same false positive rate. It is a small linear programme.
+
+```
+maximize   accuracy(q)
+subject to TPR(group 0; q) = TPR(group 1; q)
+           FPR(group 0; q) = FPR(group 1; q)
+           0 <= q <= 1
+```
+
+Most of the `q` come out as 0 or 1 (an ordinary threshold). Only the bin where the cut-off falls needs a fractional value, and the coarser the score, the more it matters.
+
+## Concrete Example: Tenant Screening
+
+[Tenant Screening](../Tenant%20Screening/): logistic regression scores, the disadvantaged group is Black applicants, the rules are fitted on the benchmark's training rows and evaluated on its test rows. The score is cut into 4, 6 and 20 bins to show what coarseness does.
+
+```
+one threshold at 0.5                     accuracy 0.639 | TPR white 0.725 black 0.809 | FPR white 0.460 black 0.609 | equalized-odds gap 0.1486
+
+4 score bins: 2 of 8 probabilities are strictly between 0 and 1
+  white: 0.00 0.48 1.00 1.00
+  black: 0.00 0.00 1.00 1.00
+randomized post-processing (4 bins), one draw accuracy 0.633 | TPR white 0.653 black 0.668 | FPR white 0.415 black 0.400 | equalized-odds gap 0.0153
+  over 20 random draws: accuracy 0.633 +/- 0.003; the same person gets a different decision in 5.9% of rows between two draws
+
+6 score bins: 2 of 12 probabilities are strictly between 0 and 1
+  white: 0.03 0.58 1.00 1.00 1.00 1.00
+  black: 0.00 0.00 1.00 1.00 1.00 1.00
+randomized post-processing (6 bins), one draw accuracy 0.636 | TPR white 0.817 black 0.808 | FPR white 0.601 black 0.606 | equalized-odds gap 0.0088
+  over 20 random draws: accuracy 0.637 +/- 0.002; the same person gets a different decision in 4.1% of rows between two draws
+
+20 score bins: 2 of 40 probabilities are strictly between 0 and 1
+  white: 0.25 0.00 0.00 0.00 0.00 0.01 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+  black: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+randomized post-processing (20 bins), one draw accuracy 0.638 | TPR white 0.765 black 0.754 | FPR white 0.515 black 0.535 | equalized-odds gap 0.0202
+  over 20 random draws: accuracy 0.636 +/- 0.002; the same person gets a different decision in 1.2% of rows between two draws
+
+deterministic group thresholds (match TPR) accuracy 0.640 | TPR white 0.725 black 0.712 | FPR white 0.460 black 0.472 | equalized-odds gap 0.0133
+```
+
+- **A single threshold of 0.5 is far from equal odds:** true positive rate 0.725 for White and 0.809 for Black applicants, false positive rate 0.460 against 0.609, an equalized-odds gap of 0.149.
+- **The programme closes it almost entirely:** gaps of 0.015, 0.009 and 0.020 at 4, 6 and 20 bins, at an accuracy of 0.633 to 0.638 against 0.639. The cost is under a point.
+- **Few probabilities are fractional.** Two of 8, 12 or 40 are strictly between 0 and 1; the rest are plain thresholds, so the randomness is concentrated in one score range for one group.
+- **People get different decisions on different draws:** between two draws 5.9% (4 bins), 4.1% (6) and 1.2% (20) of rows change. A finer score confines the randomness to fewer people.
+- **A deterministic pair of thresholds does about as well here:** equalized-odds gap 0.0133 at accuracy 0.640, because the group ROC curves are close enough that the threshold pair nearly reaches the target. Randomization matters when no pair gets there.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 randomized-post-processing.py`).
+
+```python
+import numpy as np
+from scipy.optimize import linprog
+from sklearn.linear_model import LogisticRegression
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Tenant Screening")            # S2 feature set: core features, no race, no proxies
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+y = data.y.to_numpy()
+group = data.masks["race"].to_numpy().astype(int)     # 1 = Black applicants
+score = LogisticRegression(max_iter=1000).fit(X[train], y[train]).predict_proba(X)[:, 1]
+def rates(pred, rows):
+    out = {}
+    for g in (0, 1):
+        r = rows[group[rows] == g]
+        out[g] = (pred[r][y[r] == 1].mean(), pred[r][y[r] == 0].mean())   # (TPR, FPR)
+    return out
+
+def report(name, pred):
+    r = rates(pred, test)
+    acc = (pred[test] == y[test]).mean()
+    print(f"{name:40s} accuracy {acc:.3f} | TPR white {r[0][0]:.3f} black {r[1][0]:.3f} | FPR white {r[0][1]:.3f} black {r[1][1]:.3f} "
+          f"| equalized-odds gap {max(abs(r[1][0] - r[0][0]), abs(r[1][1] - r[0][1])):.4f}")
+
+report("one threshold at 0.5", (score >= 0.5).astype(int))
+
+def solve(bins):
+    """Hardt, Price, Srebro: for each group and score bin, the probability q of predicting positive so that both groups
+    have the same TPR and FPR, maximizing accuracy. A linear programme in 2 x bins probabilities."""
+    edges = np.quantile(score[train], np.linspace(0, 1, bins + 1)[1:-1])
+    bin_of = np.digitize(score, edges)
+    P = {(g, b, label): np.mean((group[train] == g) & (bin_of[train] == b) & (y[train] == label))
+         for g in (0, 1) for b in range(bins) for label in (0, 1)}
+    Pg = {(g, label): np.mean((group[train] == g) & (y[train] == label)) for g in (0, 1) for label in (0, 1)}
+    index = lambda g, b: g * bins + b
+    c = np.zeros(2 * bins)                            # maximize accuracy = minimize -(P(y=1, q) + P(y=0, 1-q))
+    A_eq = np.zeros((2, 2 * bins))
+    for g, sign in ((0, 1), (1, -1)):
+        for b in range(bins):
+            c[index(g, b)] = -(P[(g, b, 1)] - P[(g, b, 0)])
+            A_eq[0, index(g, b)] = sign * P[(g, b, 1)] / Pg[(g, 1)]    # TPR(group 0) - TPR(group 1) = 0
+            A_eq[1, index(g, b)] = sign * P[(g, b, 0)] / Pg[(g, 0)]    # FPR(group 0) - FPR(group 1) = 0
+    q = linprog(c, A_eq=A_eq, b_eq=[0, 0], bounds=[(0, 1)] * (2 * bins)).x
+    return q, bin_of
+
+for bins in (4, 6, 20):
+    q, bin_of = solve(bins)
+    fractional = int(((q > 1e-6) & (q < 1 - 1e-6)).sum())
+    draws = []
+    for seed in range(20):
+        rng = np.random.default_rng(seed)
+        pred = (rng.random(len(y)) < q[group * bins + bin_of]).astype(int)
+        draws.append(pred)
+    accs = np.array([(d[test] == y[test]).mean() for d in draws])
+    print(f"\n{bins} score bins: {fractional} of {2 * bins} probabilities are strictly between 0 and 1")
+    for g, name in ((0, "white"), (1, "black")):
+        print(f"  {name}: " + " ".join(f"{q[g * bins + b]:.2f}" for b in range(bins)))
+    report(f"randomized post-processing ({bins} bins), one draw", draws[0])
+    print(f"  over 20 random draws: accuracy {accs.mean():.3f} +/- {accs.std(ddof=1):.3f}; the same person gets a different decision in "
+          f"{np.mean([(draws[0][test] != d[test]).mean() for d in draws[1:]]):.1%} of rows between two draws")
+
+# Deterministic alternative for comparison: one threshold per group, chosen on the training rows to match TPR.
+t_white = 0.5
+target = (score[train][(group[train] == 0) & (y[train] == 1)] >= t_white).mean()
+t_black = np.quantile(score[train][(group[train] == 1) & (y[train] == 1)], 1 - target)
+print()
+report("deterministic group thresholds (match TPR)", np.where(group == 1, score >= t_black, score >= t_white).astype(int))
+```
+
+## Limitations
+
+1. **It decides some people by chance.** Two identical applicants can be treated differently, which is hard to defend in lending and hiring and may be unlawful. See the legal discussion in [Group-Specific Thresholds](group-specific-thresholds.md).
+2. **It needs the group at prediction time,** as group thresholds do.
+3. **It equalizes the rates it is told to.** Here that is equalized odds. Calibration and predictive parity are not preserved, see [Fairness Metric Conflicts](fairness-metric-conflicts.md).
+4. **The result depends on the draw.** Fix the random seed for any decision that must be reproducible, and say so.
+5. **It is fitted on training scores.** The guarantee is on the training distribution, and the test gaps (0.009 to 0.020) show some slippage.
+
+## Related Concepts
+
+* [Group-Specific Thresholds](group-specific-thresholds.md) - the deterministic version
+* [Equalized Odds](equalized-odds.md) - the criterion this achieves
+* [Reject Option Classification](reject-option-classification.md) - another post-processing rule, deterministic and local
+* [Mitigation Strategies](mitigation-strategies.md) - where post-processing sits
+* [Fairness-Accuracy Pareto Frontier](fairness-accuracy-pareto-frontier.md) - the trade-off these rules traverse
+
+## Related Projects in This Repo
+
+* [`Tenant Screening/`](../Tenant%20Screening/) - the audit used for the example above
+
+## Further Reading
+
+* [Hardt, M., Price, E., Srebro, N. (2016): Equality of Opportunity in Supervised Learning](https://arxiv.org/abs/1610.02413) - NeurIPS 2016; the derived predictor and the linear programme.
+* [Woodworth, B., Gunasekar, S., Ohannessian, M. I., Srebro, N. (2017): Learning Non-Discriminatory Predictors](https://arxiv.org/abs/1702.06081) - COLT 2017; limits of post-processing for equalized odds.
+* [Corbett-Davies, S., Goel, S. (2018): The Measure and Mismeasure of Fairness](https://arxiv.org/abs/1808.00023) - a critique of fairness definitions, including randomized rules.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Fairness-Accuracy Pareto Frontier
+URL: https://www.thefaircode.xyz/explainers/fairness-accuracy-pareto-frontier.html
+Summary: Learn to sweep decision rules and keep the non-dominated ones. On Tenant Screening 1,681 threshold pairs give an 8-point frontier that is nearly flat: a gap of 0.0047 costs no accuracy against 0.114 at the default threshold.
+
+> *A trade-off is not a single curve you slide along. It is the set of choices nothing else beats, and sometimes it is shorter than you expect.*
+
+## The One-Sentence Definition
+
+A **fairness-accuracy Pareto frontier** is the set of models (or decision rules) for which no other candidate has both higher accuracy and a smaller fairness gap, so that moving along it improves one at the cost of the other.
+
+## Why It Matters
+
+[Fairness-Accuracy Trade-off](fairness-accuracy-tradeoff.md) shows one mitigation moving a gap and an accuracy. A single before-and-after hides two questions. Was the "after" the best available at its gap, or would a different method have kept more accuracy? And how steep is the trade-off: how many points of accuracy does each point of gap cost?
+
+The frontier answers both. Enumerate many candidate rules, keep the non-dominated ones, and plot or tabulate them. A method that lies well inside the frontier is leaving accuracy on the table; a frontier that is nearly flat says the trade-off is small. Martinez, Bertran and Sapiro (2020) treat this as multi-objective optimization.
+
+## Core Concept: Non-Dominated Points
+
+```
+a point (accuracy a, gap g) is on the frontier if no other point has  a' >= a  and  g' <= g  with one strict
+```
+
+For a fixed score you can generate candidates by sweeping the decision rule: a threshold for each group on a grid. A frontier of a fixed score only covers what thresholds can do; a different training method (a different score) can lie off it.
+
+## Concrete Example: Tenant Screening
+
+[Tenant Screening](../Tenant%20Screening/): the S2 logistic regression scores, a 41 by 41 grid of threshold pairs (one per group, 0.20 to 0.80), evaluated on the benchmark's test rows, giving 1,681 candidate rules. Then the benchmark's five strategies from `results/` (the current results) are placed against it.
+
+```
+1681 threshold pairs, 8 on the accuracy-gap frontier
+single threshold 0.5:  accuracy 0.639, gap 0.114
+
+the frontier, smallest gap first
+  |parity gap|  accuracy  threshold, white  threshold, black
+        0.0004     0.617              0.32              0.38
+        0.0004     0.630              0.35              0.41
+        0.0020     0.636              0.38              0.44
+        0.0023     0.639              0.43              0.49
+        0.0032     0.640              0.49              0.55
+        0.0047     0.645              0.46              0.52
+        0.1185     0.645              0.47              0.59
+        0.1468     0.646              0.46              0.59
+
+the benchmark's strategies on the same audit (benchmark split, so the numbers can differ slightly from the sweep):
+  baseline                     accuracy 0.690, |gap| 0.054; best sweep accuracy at that gap 0.645 (+0.045)
+  unawareness                  accuracy 0.689, |gap| 0.119; best sweep accuracy at that gap 0.645 (+0.044)
+  unawareness_proxy_removal    accuracy 0.639, |gap| 0.114; best sweep accuracy at that gap 0.645 (-0.006)
+  in_processing                accuracy 0.626, |gap| 0.017; best sweep accuracy at that gap 0.645 (-0.019)
+  post_processing              accuracy 0.639, |gap| 0.005; best sweep accuracy at that gap 0.645 (-0.005)
+```
+
+- **The frontier has 8 points and is nearly flat.** Accuracy runs from 0.617 at a gap of 0.0004 to 0.645 at 0.0047, and then stays at 0.645 to 0.646 all the way to a gap of 0.147. The most accurate rules and the fair ones are almost the same rules.
+- **Equalizing is almost free here.** The single threshold of 0.5 has accuracy 0.639 and a gap of 0.114; a pair of thresholds (0.46 and 0.52) has accuracy 0.645 and a gap of 0.0047. The default threshold was not the accuracy-maximizing one, so a small shift improves both.
+- **S2, S4 and S3 sit on or just inside the frontier.** S2 (0.639, gap 0.114) is 0.006 below the frontier's accuracy at its gap level, S4 post-processing (0.639, 0.005) 0.005 below, S3 in-processing (0.626, 0.017) 0.019 below.
+- **S0 and S1 are off it, above it.** S0 and S1 reach 0.690 and 0.689 because they use extra columns (the protected attribute and proxies), which is a different score, not a better rule on this one. A frontier belongs to a score.
+
+So for this audit, with this score, the frontier says the cost of fairness is under a point of accuracy. In other audits it is steeper, which is why the shape matters more than any single point.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 fairness-accuracy-pareto-frontier.py`).
+
+```python
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Tenant Screening")            # S2 feature set: core features, no race, no proxies
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+y = data.y.to_numpy()
+black = data.masks["race"].to_numpy().astype(int)
+score = LogisticRegression(max_iter=1000).fit(X[train], y[train]).predict_proba(X)[:, 1]
+s_te, y_te, b_te = score[test], y[test], black[test]
+
+# Sweep one threshold per group and keep (accuracy, |parity gap|) for each pair: 41 x 41 candidate rules.
+grid = np.linspace(0.2, 0.8, 41)
+points = []
+for t0 in grid:
+    for t1 in grid:
+        pred = np.where(b_te == 1, s_te >= t1, s_te >= t0)
+        points.append((float((pred == y_te).mean()), abs(float(pred[b_te == 1].mean() - pred[b_te == 0].mean())), t0, t1))
+points = np.array(points)
+
+def non_dominated(p):
+    """A point is on the frontier if no other point has accuracy at least as high and a gap at most as large (and one is strictly better)."""
+    keep = []
+    for i, (acc, gap, *_ ) in enumerate(p):
+        dominated = np.any((p[:, 0] >= acc) & (p[:, 1] <= gap) & ((p[:, 0] > acc) | (p[:, 1] < gap)))
+        keep.append(not dominated)
+    return p[np.array(keep)]
+frontier = non_dominated(points)
+frontier = frontier[np.argsort(frontier[:, 1])]
+print(f"{len(points)} threshold pairs, {len(frontier)} on the accuracy-gap frontier")
+print(f"single threshold 0.5:  accuracy {points[np.argmin(np.abs(points[:, 2] - 0.5) + np.abs(points[:, 3] - 0.5)), 0]:.3f}, "
+      f"gap {points[np.argmin(np.abs(points[:, 2] - 0.5) + np.abs(points[:, 3] - 0.5)), 1]:.3f}")
+print("\nthe frontier, smallest gap first")
+print(f"  {'|parity gap|':>12} {'accuracy':>9} {'threshold, white':>17} {'threshold, black':>17}")
+for acc, gap, t0, t1 in frontier:
+    print(f"  {gap:12.4f} {acc:9.3f} {t0:17.2f} {t1:17.2f}")
+
+# Where do the benchmark's five strategies sit? Logistic regression on this audit, from results/ (the current results).
+fair = pd.read_csv("results/results_fairness.csv"); perf = pd.read_csv("results/results_performance.csv")
+f = fair[(fair.audit == "tenant_screening") & (fair.model == "logistic_regression") & (fair.protected_attribute == "race")
+         & (fair.metric == "demographic_parity_diff")].set_index("strategy")
+p = perf[(perf.audit == "tenant_screening") & (perf.model == "logistic_regression") & (perf.metric == "accuracy")].set_index("strategy")
+print("\nthe benchmark's strategies on the same audit (benchmark split, so the numbers can differ slightly from the sweep):")
+for strategy in f.index:
+    acc, gap = p.loc[strategy, "value"], abs(f.loc[strategy, "value"])
+    better = frontier[frontier[:, 1] <= gap]
+    best = better[:, 0].max() if len(better) else float("nan")
+    print(f"  {strategy:28s} accuracy {acc:.3f}, |gap| {gap:.3f}; best sweep accuracy at that gap {best:.3f} ({acc - best:+.3f})")
+```
+
+## Limitations
+
+1. **The frontier belongs to the candidates you tried.** More thresholds, other scores or other methods can move it outward.
+2. **It is measured on one test split.** The accuracies differ by a few tenths of a point between rules, which is inside the split noise, see [Seed and Split Sensitivity](seed-and-split-sensitivity.md). Choose on training or validation data and report on test data.
+3. **One gap, one measure of accuracy.** Frontiers differ by metric, and equalized odds, calibration and parity do not share one.
+4. **A frontier is a menu, not an answer.** Which point to take is a policy decision.
+5. **Group thresholds use the group at prediction time,** with the legal issues in [Group-Specific Thresholds](group-specific-thresholds.md).
+
+## Related Concepts
+
+* [Fairness-Accuracy Trade-off](fairness-accuracy-tradeoff.md) - the trade-off a frontier maps
+* [Group-Specific Thresholds](group-specific-thresholds.md) - the rule family swept here
+* [Randomized Post-Processing](randomized-post-processing.md) - reaching points between thresholds
+* [Mitigation Strategies](mitigation-strategies.md) - the five strategies placed against the frontier
+* [Max-Min (Rawlsian) Fairness](maxmin-fairness.md) - an objective that picks a point differently
+
+## Related Projects in This Repo
+
+* [`Tenant Screening/`](../Tenant%20Screening/) - the audit used for the example above
+* [`results/`](../results/) - the benchmark rows the strategies are read from
+
+## Further Reading
+
+* [Martinez, N., Bertran, M., Sapiro, G. (2020): Minimax Pareto Fairness: A Multi Objective Perspective](https://proceedings.mlr.press/v119/martinez20a.html) - ICML 2020; the fairness-accuracy trade-off as multi-objective optimization.
+* [Wei, S., Niethammer, M. (2022): The Fairness-Accuracy Pareto Front](https://arxiv.org/abs/2008.10797) - Statistical Analysis and Data Mining 15(3); tracing the front for several methods.
+* [Dutta, S. et al. (2020): Is There a Trade-Off Between Fairness and Accuracy? A Perspective Using Mismatched Hypothesis Testing](https://arxiv.org/abs/1910.07870) - ICML 2020; when the trade-off disappears.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# Choosing a Mitigation Strategy
+URL: https://www.thefaircode.xyz/explainers/choosing-a-mitigation-strategy.html
+Summary: Learn to choose among the benchmark's strategies by constraints first. Over 13 audit and attribute pairs, S3 and S4 cut the median parity gap to 0.009 and 0.007 against 0.042 for S2, S3 costs 2.7 points of accuracy, and S4 needs group labels at prediction time.
+
+> *Five strategies, seven audits. The table of what each one costs and what it needs is already in the benchmark's results.*
+
+## The One-Sentence Definition
+
+**Choosing a mitigation strategy** is picking among the benchmark's five approaches (use everything, drop the protected column, drop it and its proxies, constrain training, adjust predictions) by what each needs, what it costs in accuracy, and how much of the gap it leaves.
+
+## Why It Matters
+
+[Mitigation Strategies](mitigation-strategies.md) describes the five rungs of the ladder. A practitioner needs a different answer: which one should I use? That depends on constraints you have before you look at any numbers. If the protected attribute is not available at prediction time, post-processing is out. If you cannot retrain, in-processing is out. If the legal environment forbids using the attribute in a decision, so are group thresholds.
+
+The benchmark can say something about the rest. Over the seven audits it records each strategy's accuracy and parity gap for the same model, so the cost and the typical effect of each can be read off.
+
+## Core Concept: Constraints First, Then the Numbers
+
+1. **What does each strategy need?** Group labels while training, or at prediction time.
+2. **What does it cost?** The change in accuracy against the simplest honest baseline.
+3. **What does it leave?** The size of the remaining gap and whether it is still significant.
+
+The baseline for comparison is S2, the same model without the protected column or its proxies, because that is what most careful teams start with.
+
+## Concrete Example: The Benchmark's Seven Audits
+
+The logistic regression rows of `results/` (the current results) for every audit and protected attribute, 13 pairs (intersections left out), with S2 as the reference.
+
+```
+logistic regression, 13 audit/attribute pairs, compared with S2 (the same model without the protected column or proxies)
+strategy              median accuracy change  median |parity gap|  gap smaller than S2  still significant   needs group labels: training / prediction
+S0 baseline                           +0.000                0.054                 4/13              10/13   no (it uses the column as a feature) / yes, as a feature
+S1 unawareness                        +0.000                0.041                 4/13               6/13   no / no
+S2 proxy removal                      +0.000                0.042                    -               7/13   no / no
+S3 in-processing                      -0.027                0.009                 8/13               4/13   yes / no
+S4 post-processing                    +0.000                0.007                 9/13               3/13   yes / yes
+```
+
+- **S3 in-processing and S4 post-processing close the gap; the rest barely do.** The median absolute parity gap is 0.009 for S3 and 0.007 for S4 against 0.042 for S2 and 0.041 for S1. The gap is smaller than S2's in 8 of 13 pairs for S3 and 9 of 13 for S4.
+- **S3 costs accuracy; S4 does not, in the median.** S3's median accuracy change is -0.027 and S4's is +0.000. The medians hide the spread, so check the audit you care about.
+- **Fewer pairs stay significant:** 4 of 13 for S3 and 3 of 13 for S4, against 7 of 13 for S2 and 10 of 13 for S0 (the model that uses the protected attribute directly).
+- **The needs differ.** S1 and S2 need no group labels anywhere. S3 needs them while training. S4 needs them while training and again at prediction, which is the constraint that most often rules it out.
+
+A short decision rule follows: if you cannot use the attribute at prediction time, choose S3; if you can and may, S4 gives the smallest gaps for the least accuracy; if neither is possible, S2 with a proxy audit is the floor, and its remaining gaps need explaining.
+
+## Detection/Implementation Code
+
+Run from the repo root (`python3 choosing-a-mitigation-strategy.py`). It reads the benchmark's current results.
+
+```python
+import numpy as np
+import pandas as pd
+
+fair = pd.read_csv("results/results_fairness.csv")          # the benchmark's current results
+perf = pd.read_csv("results/results_performance.csv")
+STRATEGIES = ["baseline", "unawareness", "unawareness_proxy_removal", "in_processing", "post_processing"]
+LABEL = dict(zip(STRATEGIES, ["S0 baseline", "S1 unawareness", "S2 proxy removal", "S3 in-processing", "S4 post-processing"]))
+NEEDS = {  # (group labels while training, group labels when predicting)
+    "baseline": ("no (it uses the column as a feature)", "yes, as a feature"), "unawareness": ("no", "no"),
+    "unawareness_proxy_removal": ("no", "no"), "in_processing": ("yes", "no"), "post_processing": ("yes", "yes")}
+
+gap = fair[(fair.model == "logistic_regression") & (fair.metric == "demographic_parity_diff") & ~fair.protected_attribute.str.contains("_x_")]
+acc = perf[(perf.model == "logistic_regression") & (perf.metric == "accuracy")].set_index(["audit", "strategy"]).value
+pairs = gap.set_index(["audit", "protected_attribute", "strategy"])
+rows = []
+for strategy in STRATEGIES:
+    changes, remaining, closed, significant, acc_change = [], [], 0, 0, []
+    for (audit, attribute), g in gap.groupby(["audit", "protected_attribute"]):
+        base = pairs.loc[(audit, attribute, "unawareness_proxy_removal")]
+        row = pairs.loc[(audit, attribute, strategy)]
+        remaining.append(abs(row.value)); changes.append(abs(row.value) - abs(base.value))
+        significant += bool(row.significant); closed += abs(row.value) < abs(base.value)
+        acc_change.append(acc[(audit, strategy)] - acc[(audit, "unawareness_proxy_removal")])
+    rows.append((strategy, np.median(acc_change), np.median(remaining), closed, significant, len(changes)))
+
+print(f"logistic regression, {len(rows) and rows[0][5]} audit/attribute pairs, compared with S2 (the same model without the protected column or proxies)")
+print(f"{'strategy':20s} {'median accuracy change':>23} {'median |parity gap|':>20} {'gap smaller than S2':>20} {'still significant':>18}   needs group labels: training / prediction")
+for strategy, d_acc, med_gap, closed, significant, n in rows:
+    smaller = '-' if strategy == 'unawareness_proxy_removal' else f'{closed}/{n}'
+    print(f"{LABEL[strategy]:20s} {d_acc:+23.3f} {med_gap:20.3f} {smaller:>20} {f'{significant}/{n}':>18}   {NEEDS[strategy][0]} / {NEEDS[strategy][1]}")
+```
+
+## Limitations
+
+1. **Medians over 13 pairs hide a lot.** The audits differ in size, base rate and how much accuracy there is to lose. Look at the audit closest to yours.
+2. **Only logistic regression is shown.** The benchmark also runs random forests and gradient boosting, which behave differently.
+3. **All five use demographic parity as the target.** The benchmark constrains S3 and S4 on one fixed criterion, so a different criterion would give a different table, see [Choosing a Fairness Metric](choosing-a-fairness-metric.md).
+4. **The gaps come from single splits.** See [Seed and Split Sensitivity](seed-and-split-sensitivity.md) for how much that matters on small audits.
+5. **A smaller gap is not a fair outcome.** The strategies change the model's behaviour; whether the remaining or removed gap is justified is a separate question.
+
+## Related Concepts
+
+* [Mitigation Strategies](mitigation-strategies.md) - what the five strategies are
+* [Fairness-Accuracy Pareto Frontier](fairness-accuracy-pareto-frontier.md) - how much accuracy the best rule at a given gap keeps
+* [Group-Specific Thresholds](group-specific-thresholds.md) - what S4 does in its simplest form
+* [Choosing a Fairness Metric](choosing-a-fairness-metric.md) - the choice that comes before this one
+* [Fairness Through Unawareness](fairness-through-unawareness.md) - why S1 and S2 are not enough
+
+## Related Projects in This Repo
+
+* [`results/`](../results/) - the numbers in the table
+* [Benchmark Results Dashboard](../benchmark.html) - the same table, filterable
+
+## Further Reading
+
+* [Bird, S. et al. (2020): Fairlearn: A toolkit for assessing and improving fairness in AI](https://www.microsoft.com/en-us/research/publication/fairlearn-a-toolkit-for-assessing-and-improving-fairness-in-ai/) - Microsoft technical report MSR-TR-2020-32; the toolkit behind the benchmark's S3 and S4.
+* [Agarwal, A. et al. (2018): A Reductions Approach to Fair Classification](https://arxiv.org/abs/1803.02453) - ICML 2018; the in-processing method used for S3.
+* [Friedler, S. A. et al. (2019): A Comparative Study of Fairness-Enhancing Interventions in Machine Learning](https://arxiv.org/abs/1802.04422) - FAT* 2019; how interventions compare across datasets and metrics.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+

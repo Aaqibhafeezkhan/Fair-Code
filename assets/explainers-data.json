@@ -808,5 +808,29 @@
     "summary": "Learn a linear mediation analysis that splits the effect of an attribute into direct and indirect paths with bootstrap intervals. On Benefits Denial the total effect is -0.1788, through hours -0.0272, through schooling -0.0025, and 83% is direct.",
     "description": "Splitting the sex gap in income into direct and mediated paths with bootstrap intervals, and what must be assumed for the split to mean anything.",
     "tags": ["metrics", "explainability"]
+  },
+  {
+    "slug": "randomized-post-processing",
+    "title": "Randomized Post-Processing",
+    "subtitle": "Mix two decisions with a weighted coin to reach equalized odds exactly.",
+    "summary": "Learn the Hardt-Price-Srebro linear programme over score bins. On Tenant Screening it cuts the equalized-odds gap from 0.149 to 0.009 to 0.020 for under a point of accuracy, with 1.2% to 5.9% of rows changing decision between draws.",
+    "description": "The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows.",
+    "tags": ["metrics"]
+  },
+  {
+    "slug": "fairness-accuracy-pareto-frontier",
+    "title": "Fairness-Accuracy Pareto Frontier",
+    "subtitle": "The set of choices nothing else beats, and it can be short.",
+    "summary": "Learn to sweep decision rules and keep the non-dominated ones. On Tenant Screening 1,681 threshold pairs give an 8-point frontier that is nearly flat: a gap of 0.0047 costs no accuracy against 0.114 at the default threshold.",
+    "description": "A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark's five strategies sit against it.",
+    "tags": ["metrics", "detection"]
+  },
+  {
+    "slug": "choosing-a-mitigation-strategy",
+    "title": "Choosing a Mitigation Strategy",
+    "subtitle": "What each of the five strategies needs, costs and leaves.",
+    "summary": "Learn to choose among the benchmark's strategies by constraints first. Over 13 audit and attribute pairs, S3 and S4 cut the median parity gap to 0.009 and 0.007 against 0.042 for S2, S3 costs 2.7 points of accuracy, and S4 needs group labels at prediction time.",
+    "description": "Choosing among the five mitigation strategies from the benchmark's results: what each needs, the median accuracy cost and the gap left, over 13 pairs.",
+    "tags": ["metrics"]
   }
 ]

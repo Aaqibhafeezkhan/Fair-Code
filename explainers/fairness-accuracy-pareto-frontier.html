@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fairness-Accuracy Pareto Frontier · Fair Code</title>
+<meta name="description" content="A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark&#x27;s five strategies sit against it.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/fairness-accuracy-pareto-frontier.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Fairness-Accuracy Pareto Frontier · Fair Code">
+<meta property="og:description" content="A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark&#x27;s five strategies sit against it.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/fairness-accuracy-pareto-frontier.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/fairness-accuracy-pareto-frontier.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness-Accuracy Pareto Frontier · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/fairness-accuracy-pareto-frontier.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Fairness-Accuracy Pareto Frontier · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Fairness-Accuracy Pareto Frontier · Fair Code">
+<meta name="twitter:description" content="A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark&#x27;s five strategies sit against it.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/fairness-accuracy-pareto-frontier.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Fairness-Accuracy Pareto Frontier",
+      "description": "Learn to sweep decision rules and keep the non-dominated ones. On Tenant Screening 1,681 threshold pairs give an 8-point frontier that is nearly flat: a gap of 0.0047 costs no accuracy against 0.114 at the default threshold.",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-accuracy-pareto-frontier.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/fairness-accuracy-pareto-frontier.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Fairness-Accuracy Pareto Frontier?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A fairness-accuracy Pareto frontier is the set of models (or decision rules) for which no other candidate has both higher accuracy and a smaller fairness gap, so that moving along it improves one at the cost of the other."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Fairness-Accuracy Trade-off shows one mitigation moving a gap and an accuracy. A single before-and-after hides two questions. Was the \"after\" the best available at its gap, or would a different method have kept more accuracy? And how steep is the trade-off: how many points of accuracy does each point of gap cost?"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Fairness-Accuracy Pareto Frontier",
+          "item": "https://www.thefaircode.xyz/explainers/fairness-accuracy-pareto-frontier.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/fairness-accuracy-pareto-frontier.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Fairness-Accuracy Pareto Frontier</h1>
+      <p class="explainer-lede">The set of choices nothing else beats, and it can be short.</p>
+      <p class="explainer-lede">Learn to sweep decision rules and keep the non-dominated ones. On Tenant Screening 1,681 threshold pairs give an 8-point frontier that is nearly flat: a gap of 0.0047 costs no accuracy against 0.114 at the default threshold.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A trade-off is not a single curve you slide along. It is the set of choices nothing else beats, and sometimes it is shorter than you expect.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p>A <strong>fairness-accuracy Pareto frontier</strong> is the set of models (or decision rules) for which no other candidate has both higher accuracy and a smaller fairness gap, so that moving along it improves one at the cost of the other.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p><a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a> shows one mitigation moving a gap and an accuracy. A single before-and-after hides two questions. Was the &quot;after&quot; the best available at its gap, or would a different method have kept more accuracy? And how steep is the trade-off: how many points of accuracy does each point of gap cost?</p>
+<p>The frontier answers both. Enumerate many candidate rules, keep the non-dominated ones, and plot or tabulate them. A method that lies well inside the frontier is leaving accuracy on the table; a frontier that is nearly flat says the trade-off is small. Martinez, Bertran and Sapiro (2020) treat this as multi-objective optimization.</p>
+<h3 id="core-concept-non-dominated-points">Core Concept: Non-Dominated Points</h3>
+<pre><code>a point (accuracy a, gap g) is on the frontier if no other point has  a&#x27; &gt;= a  and  g&#x27; &lt;= g  with one strict</code></pre>
+<p>For a fixed score you can generate candidates by sweeping the decision rule: a threshold for each group on a grid. A frontier of a fixed score only covers what thresholds can do; a different training method (a different score) can lie off it.</p>
+<h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
+<p><a href="../index.html#project-tenant">Tenant Screening</a>: the S2 logistic regression scores, a 41 by 41 grid of threshold pairs (one per group, 0.20 to 0.80), evaluated on the benchmark&#x27;s test rows, giving 1,681 candidate rules. Then the benchmark&#x27;s five strategies from <code>results/</code> (the current results) are placed against it.</p>
+<pre><code>1681 threshold pairs, 8 on the accuracy-gap frontier
+single threshold 0.5:  accuracy 0.639, gap 0.114
+
+the frontier, smallest gap first
+  |parity gap|  accuracy  threshold, white  threshold, black
+        0.0004     0.617              0.32              0.38
+        0.0004     0.630              0.35              0.41
+        0.0020     0.636              0.38              0.44
+        0.0023     0.639              0.43              0.49
+        0.0032     0.640              0.49              0.55
+        0.0047     0.645              0.46              0.52
+        0.1185     0.645              0.47              0.59
+        0.1468     0.646              0.46              0.59
+
+the benchmark&#x27;s strategies on the same audit (benchmark split, so the numbers can differ slightly from the sweep):
+  baseline                     accuracy 0.690, |gap| 0.054; best sweep accuracy at that gap 0.645 (+0.045)
+  unawareness                  accuracy 0.689, |gap| 0.119; best sweep accuracy at that gap 0.645 (+0.044)
+  unawareness_proxy_removal    accuracy 0.639, |gap| 0.114; best sweep accuracy at that gap 0.645 (-0.006)
+  in_processing                accuracy 0.626, |gap| 0.017; best sweep accuracy at that gap 0.645 (-0.019)
+  post_processing              accuracy 0.639, |gap| 0.005; best sweep accuracy at that gap 0.645 (-0.005)</code></pre>
+<ul><li><strong>The frontier has 8 points and is nearly flat.</strong> Accuracy runs from 0.617 at a gap of 0.0004 to 0.645 at 0.0047, and then stays at 0.645 to 0.646 all the way to a gap of 0.147. The most accurate rules and the fair ones are almost the same rules.</li><li><strong>Equalizing is almost free here.</strong> The single threshold of 0.5 has accuracy 0.639 and a gap of 0.114; a pair of thresholds (0.46 and 0.52) has accuracy 0.645 and a gap of 0.0047. The default threshold was not the accuracy-maximizing one, so a small shift improves both.</li><li><strong>S2, S4 and S3 sit on or just inside the frontier.</strong> S2 (0.639, gap 0.114) is 0.006 below the frontier&#x27;s accuracy at its gap level, S4 post-processing (0.639, 0.005) 0.005 below, S3 in-processing (0.626, 0.017) 0.019 below.</li><li><strong>S0 and S1 are off it, above it.</strong> S0 and S1 reach 0.690 and 0.689 because they use extra columns (the protected attribute and proxies), which is a different score, not a better rule on this one. A frontier belongs to a score.</li></ul>
+<p>So for this audit, with this score, the frontier says the cost of fairness is under a point of accuracy. In other audits it is steeper, which is why the shape matters more than any single point.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 fairness-accuracy-pareto-frontier.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Tenant Screening&quot;)            # S2 feature set: core features, no race, no proxies
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+y = data.y.to_numpy()
+black = data.masks[&quot;race&quot;].to_numpy().astype(int)
+score = LogisticRegression(max_iter=1000).fit(X[train], y[train]).predict_proba(X)[:, 1]
+s_te, y_te, b_te = score[test], y[test], black[test]
+
+# Sweep one threshold per group and keep (accuracy, |parity gap|) for each pair: 41 x 41 candidate rules.
+grid = np.linspace(0.2, 0.8, 41)
+points = []
+for t0 in grid:
+    for t1 in grid:
+        pred = np.where(b_te == 1, s_te &gt;= t1, s_te &gt;= t0)
+        points.append((float((pred == y_te).mean()), abs(float(pred[b_te == 1].mean() - pred[b_te == 0].mean())), t0, t1))
+points = np.array(points)
+
+def non_dominated(p):
+    &quot;&quot;&quot;A point is on the frontier if no other point has accuracy at least as high and a gap at most as large (and one is strictly better).&quot;&quot;&quot;
+    keep = []
+    for i, (acc, gap, *_ ) in enumerate(p):
+        dominated = np.any((p[:, 0] &gt;= acc) &amp; (p[:, 1] &lt;= gap) &amp; ((p[:, 0] &gt; acc) | (p[:, 1] &lt; gap)))
+        keep.append(not dominated)
+    return p[np.array(keep)]
+frontier = non_dominated(points)
+frontier = frontier[np.argsort(frontier[:, 1])]
+print(f&quot;{len(points)} threshold pairs, {len(frontier)} on the accuracy-gap frontier&quot;)
+print(f&quot;single threshold 0.5:  accuracy {points[np.argmin(np.abs(points[:, 2] - 0.5) + np.abs(points[:, 3] - 0.5)), 0]:.3f}, &quot;
+      f&quot;gap {points[np.argmin(np.abs(points[:, 2] - 0.5) + np.abs(points[:, 3] - 0.5)), 1]:.3f}&quot;)
+print(&quot;\nthe frontier, smallest gap first&quot;)
+print(f&quot;  {&#x27;|parity gap|&#x27;:&gt;12} {&#x27;accuracy&#x27;:&gt;9} {&#x27;threshold, white&#x27;:&gt;17} {&#x27;threshold, black&#x27;:&gt;17}&quot;)
+for acc, gap, t0, t1 in frontier:
+    print(f&quot;  {gap:12.4f} {acc:9.3f} {t0:17.2f} {t1:17.2f}&quot;)
+
+# Where do the benchmark&#x27;s five strategies sit? Logistic regression on this audit, from results/ (the current results).
+fair = pd.read_csv(&quot;results/results_fairness.csv&quot;); perf = pd.read_csv(&quot;results/results_performance.csv&quot;)
+f = fair[(fair.audit == &quot;tenant_screening&quot;) &amp; (fair.model == &quot;logistic_regression&quot;) &amp; (fair.protected_attribute == &quot;race&quot;)
+         &amp; (fair.metric == &quot;demographic_parity_diff&quot;)].set_index(&quot;strategy&quot;)
+p = perf[(perf.audit == &quot;tenant_screening&quot;) &amp; (perf.model == &quot;logistic_regression&quot;) &amp; (perf.metric == &quot;accuracy&quot;)].set_index(&quot;strategy&quot;)
+print(&quot;\nthe benchmark&#x27;s strategies on the same audit (benchmark split, so the numbers can differ slightly from the sweep):&quot;)
+for strategy in f.index:
+    acc, gap = p.loc[strategy, &quot;value&quot;], abs(f.loc[strategy, &quot;value&quot;])
+    better = frontier[frontier[:, 1] &lt;= gap]
+    best = better[:, 0].max() if len(better) else float(&quot;nan&quot;)
+    print(f&quot;  {strategy:28s} accuracy {acc:.3f}, |gap| {gap:.3f}; best sweep accuracy at that gap {best:.3f} ({acc - best:+.3f})&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The frontier belongs to the candidates you tried.</strong> More thresholds, other scores or other methods can move it outward.</li><li><strong>It is measured on one test split.</strong> The accuracies differ by a few tenths of a point between rules, which is inside the split noise, see <a href="seed-and-split-sensitivity.html">Seed and Split Sensitivity</a>. Choose on training or validation data and report on test data.</li><li><strong>One gap, one measure of accuracy.</strong> Frontiers differ by metric, and equalized odds, calibration and parity do not share one.</li><li><strong>A frontier is a menu, not an answer.</strong> Which point to take is a policy decision.</li><li><strong>Group thresholds use the group at prediction time,</strong> with the legal issues in <a href="group-specific-thresholds.html">Group-Specific Thresholds</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a> - the trade-off a frontier maps</li><li><a href="group-specific-thresholds.html">Group-Specific Thresholds</a> - the rule family swept here</li><li><a href="randomized-post-processing.html">Randomized Post-Processing</a> - reaching points between thresholds</li><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - the five strategies placed against the frontier</li><li><a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a> - an objective that picks a point differently</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-tenant"><code>Tenant Screening/</code></a> - the audit used for the example above</li><li><a href="../results/"><code>results/</code></a> - the benchmark rows the strategies are read from</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://proceedings.mlr.press/v119/martinez20a.html" target="_blank" rel="noreferrer noopener">Martinez, N., Bertran, M., Sapiro, G. (2020): Minimax Pareto Fairness: A Multi Objective Perspective</a> - ICML 2020; the fairness-accuracy trade-off as multi-objective optimization.</li><li><a href="https://arxiv.org/abs/2008.10797" target="_blank" rel="noreferrer noopener">Wei, S., Niethammer, M. (2022): The Fairness-Accuracy Pareto Front</a> - Statistical Analysis and Data Mining 15(3); tracing the front for several methods.</li><li><a href="https://arxiv.org/abs/1910.07870" target="_blank" rel="noreferrer noopener">Dutta, S. et al. (2020): Is There a Trade-Off Between Fairness and Accuracy? A Perspective Using Mismatched Hypothesis Testing</a> - ICML 2020; when the trade-off disappears.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

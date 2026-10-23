@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Randomized Post-Processing · Fair Code</title>
+<meta name="description" content="The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/randomized-post-processing.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Randomized Post-Processing · Fair Code">
+<meta property="og:description" content="The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/randomized-post-processing.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/randomized-post-processing.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Randomized Post-Processing · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/randomized-post-processing.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Randomized Post-Processing · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Randomized Post-Processing · Fair Code">
+<meta name="twitter:description" content="The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/randomized-post-processing.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Randomized Post-Processing",
+      "description": "Learn the Hardt-Price-Srebro linear programme over score bins. On Tenant Screening it cuts the equalized-odds gap from 0.149 to 0.009 to 0.020 for under a point of accuracy, with 1.2% to 5.9% of rows changing decision between draws.",
+      "url": "https://www.thefaircode.xyz/explainers/randomized-post-processing.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/randomized-post-processing.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Randomized Post-Processing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Randomized post-processing is a post-processing rule that, for each group and score range, predicts \"positive\" with a chosen probability instead of always or never, so that the groups' true and false positive rates can be made equal exactly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Group-Specific Thresholds equalize one error rate by moving a cut-off. For equalized odds you need two rates to match at once, a true positive rate and a false positive rate, and a pair of thresholds usually cannot reach both. Hardt, Price and Srebro (2016) showed that the set of achievable pairs is the region under each group's ROC curve, and that the best equal-odds point can be reached by mixing two thresholds: use one with probability p and the other with probability 1 - p."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Randomized Post-Processing",
+          "item": "https://www.thefaircode.xyz/explainers/randomized-post-processing.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/randomized-post-processing.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Randomized Post-Processing</h1>
+      <p class="explainer-lede">Mix two decisions with a weighted coin to reach equalized odds exactly.</p>
+      <p class="explainer-lede">Learn the Hardt-Price-Srebro linear programme over score bins. On Tenant Screening it cuts the equalized-odds gap from 0.149 to 0.009 to 0.020 for under a point of accuracy, with 1.2% to 5.9% of rows changing decision between draws.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>When no single cut-off makes two groups&#x27; error rates equal, mix two decisions with a weighted coin. It can reach the target exactly, and it decides some people by chance.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Randomized post-processing</strong> is a post-processing rule that, for each group and score range, predicts &quot;positive&quot; with a chosen probability instead of always or never, so that the groups&#x27; true and false positive rates can be made equal exactly.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p><a href="group-specific-thresholds.html">Group-Specific Thresholds</a> equalize one error rate by moving a cut-off. For equalized odds you need two rates to match at once, a true positive rate and a false positive rate, and a pair of thresholds usually cannot reach both. Hardt, Price and Srebro (2016) showed that the set of achievable pairs is the region under each group&#x27;s ROC curve, and that the best equal-odds point can be reached by mixing two thresholds: use one with probability <code>p</code> and the other with probability <code>1 - p</code>.</p>
+<p>That gives an exact answer and an uncomfortable one. Two applicants with the same score and group can get different decisions because of a random draw.</p>
+<h3 id="core-concept-a-linear-programme-over-score-bins">Core Concept: A Linear Programme Over Score Bins</h3>
+<p>Divide scores into bins. For each group and bin, the variable <code>q</code> is the probability of a positive decision. The group&#x27;s true positive rate is the sum of <code>q</code> weighted by how many true positives fall in each bin, and likewise for false positives. Choose all <code>q</code> to maximize accuracy subject to the two groups having the same true positive rate and the same false positive rate. It is a small linear programme.</p>
+<pre><code>maximize   accuracy(q)
+subject to TPR(group 0; q) = TPR(group 1; q)
+           FPR(group 0; q) = FPR(group 1; q)
+           0 &lt;= q &lt;= 1</code></pre>
+<p>Most of the <code>q</code> come out as 0 or 1 (an ordinary threshold). Only the bin where the cut-off falls needs a fractional value, and the coarser the score, the more it matters.</p>
+<h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
+<p><a href="../index.html#project-tenant">Tenant Screening</a>: logistic regression scores, the disadvantaged group is Black applicants, the rules are fitted on the benchmark&#x27;s training rows and evaluated on its test rows. The score is cut into 4, 6 and 20 bins to show what coarseness does.</p>
+<pre><code>one threshold at 0.5                     accuracy 0.639 | TPR white 0.725 black 0.809 | FPR white 0.460 black 0.609 | equalized-odds gap 0.1486
+
+4 score bins: 2 of 8 probabilities are strictly between 0 and 1
+  white: 0.00 0.48 1.00 1.00
+  black: 0.00 0.00 1.00 1.00
+randomized post-processing (4 bins), one draw accuracy 0.633 | TPR white 0.653 black 0.668 | FPR white 0.415 black 0.400 | equalized-odds gap 0.0153
+  over 20 random draws: accuracy 0.633 +/- 0.003; the same person gets a different decision in 5.9% of rows between two draws
+
+6 score bins: 2 of 12 probabilities are strictly between 0 and 1
+  white: 0.03 0.58 1.00 1.00 1.00 1.00
+  black: 0.00 0.00 1.00 1.00 1.00 1.00
+randomized post-processing (6 bins), one draw accuracy 0.636 | TPR white 0.817 black 0.808 | FPR white 0.601 black 0.606 | equalized-odds gap 0.0088
+  over 20 random draws: accuracy 0.637 +/- 0.002; the same person gets a different decision in 4.1% of rows between two draws
+
+20 score bins: 2 of 40 probabilities are strictly between 0 and 1
+  white: 0.25 0.00 0.00 0.00 0.00 0.01 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+  black: 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+randomized post-processing (20 bins), one draw accuracy 0.638 | TPR white 0.765 black 0.754 | FPR white 0.515 black 0.535 | equalized-odds gap 0.0202
+  over 20 random draws: accuracy 0.636 +/- 0.002; the same person gets a different decision in 1.2% of rows between two draws
+
+deterministic group thresholds (match TPR) accuracy 0.640 | TPR white 0.725 black 0.712 | FPR white 0.460 black 0.472 | equalized-odds gap 0.0133</code></pre>
+<ul><li><strong>A single threshold of 0.5 is far from equal odds:</strong> true positive rate 0.725 for White and 0.809 for Black applicants, false positive rate 0.460 against 0.609, an equalized-odds gap of 0.149.</li><li><strong>The programme closes it almost entirely:</strong> gaps of 0.015, 0.009 and 0.020 at 4, 6 and 20 bins, at an accuracy of 0.633 to 0.638 against 0.639. The cost is under a point.</li><li><strong>Few probabilities are fractional.</strong> Two of 8, 12 or 40 are strictly between 0 and 1; the rest are plain thresholds, so the randomness is concentrated in one score range for one group.</li><li><strong>People get different decisions on different draws:</strong> between two draws 5.9% (4 bins), 4.1% (6) and 1.2% (20) of rows change. A finer score confines the randomness to fewer people.</li><li><strong>A deterministic pair of thresholds does about as well here:</strong> equalized-odds gap 0.0133 at accuracy 0.640, because the group ROC curves are close enough that the threshold pair nearly reaches the target. Randomization matters when no pair gets there.</li></ul>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 randomized-post-processing.py</code>).</p>
+<pre><code class="language-python">import numpy as np
+from scipy.optimize import linprog
+from sklearn.linear_model import LogisticRegression
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit(&quot;Tenant Screening&quot;)            # S2 feature set: core features, no race, no proxies
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = (X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9)
+y = data.y.to_numpy()
+group = data.masks[&quot;race&quot;].to_numpy().astype(int)     # 1 = Black applicants
+score = LogisticRegression(max_iter=1000).fit(X[train], y[train]).predict_proba(X)[:, 1]
+def rates(pred, rows):
+    out = {}
+    for g in (0, 1):
+        r = rows[group[rows] == g]
+        out[g] = (pred[r][y[r] == 1].mean(), pred[r][y[r] == 0].mean())   # (TPR, FPR)
+    return out
+
+def report(name, pred):
+    r = rates(pred, test)
+    acc = (pred[test] == y[test]).mean()
+    print(f&quot;{name:40s} accuracy {acc:.3f} | TPR white {r[0][0]:.3f} black {r[1][0]:.3f} | FPR white {r[0][1]:.3f} black {r[1][1]:.3f} &quot;
+          f&quot;| equalized-odds gap {max(abs(r[1][0] - r[0][0]), abs(r[1][1] - r[0][1])):.4f}&quot;)
+
+report(&quot;one threshold at 0.5&quot;, (score &gt;= 0.5).astype(int))
+
+def solve(bins):
+    &quot;&quot;&quot;Hardt, Price, Srebro: for each group and score bin, the probability q of predicting positive so that both groups
+    have the same TPR and FPR, maximizing accuracy. A linear programme in 2 x bins probabilities.&quot;&quot;&quot;
+    edges = np.quantile(score[train], np.linspace(0, 1, bins + 1)[1:-1])
+    bin_of = np.digitize(score, edges)
+    P = {(g, b, label): np.mean((group[train] == g) &amp; (bin_of[train] == b) &amp; (y[train] == label))
+         for g in (0, 1) for b in range(bins) for label in (0, 1)}
+    Pg = {(g, label): np.mean((group[train] == g) &amp; (y[train] == label)) for g in (0, 1) for label in (0, 1)}
+    index = lambda g, b: g * bins + b
+    c = np.zeros(2 * bins)                            # maximize accuracy = minimize -(P(y=1, q) + P(y=0, 1-q))
+    A_eq = np.zeros((2, 2 * bins))
+    for g, sign in ((0, 1), (1, -1)):
+        for b in range(bins):
+            c[index(g, b)] = -(P[(g, b, 1)] - P[(g, b, 0)])
+            A_eq[0, index(g, b)] = sign * P[(g, b, 1)] / Pg[(g, 1)]    # TPR(group 0) - TPR(group 1) = 0
+            A_eq[1, index(g, b)] = sign * P[(g, b, 0)] / Pg[(g, 0)]    # FPR(group 0) - FPR(group 1) = 0
+    q = linprog(c, A_eq=A_eq, b_eq=[0, 0], bounds=[(0, 1)] * (2 * bins)).x
+    return q, bin_of
+
+for bins in (4, 6, 20):
+    q, bin_of = solve(bins)
+    fractional = int(((q &gt; 1e-6) &amp; (q &lt; 1 - 1e-6)).sum())
+    draws = []
+    for seed in range(20):
+        rng = np.random.default_rng(seed)
+        pred = (rng.random(len(y)) &lt; q[group * bins + bin_of]).astype(int)
+        draws.append(pred)
+    accs = np.array([(d[test] == y[test]).mean() for d in draws])
+    print(f&quot;\n{bins} score bins: {fractional} of {2 * bins} probabilities are strictly between 0 and 1&quot;)
+    for g, name in ((0, &quot;white&quot;), (1, &quot;black&quot;)):
+        print(f&quot;  {name}: &quot; + &quot; &quot;.join(f&quot;{q[g * bins + b]:.2f}&quot; for b in range(bins)))
+    report(f&quot;randomized post-processing ({bins} bins), one draw&quot;, draws[0])
+    print(f&quot;  over 20 random draws: accuracy {accs.mean():.3f} +/- {accs.std(ddof=1):.3f}; the same person gets a different decision in &quot;
+          f&quot;{np.mean([(draws[0][test] != d[test]).mean() for d in draws[1:]]):.1%} of rows between two draws&quot;)
+
+# Deterministic alternative for comparison: one threshold per group, chosen on the training rows to match TPR.
+t_white = 0.5
+target = (score[train][(group[train] == 0) &amp; (y[train] == 1)] &gt;= t_white).mean()
+t_black = np.quantile(score[train][(group[train] == 1) &amp; (y[train] == 1)], 1 - target)
+print()
+report(&quot;deterministic group thresholds (match TPR)&quot;, np.where(group == 1, score &gt;= t_black, score &gt;= t_white).astype(int))</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It decides some people by chance.</strong> Two identical applicants can be treated differently, which is hard to defend in lending and hiring and may be unlawful. See the legal discussion in <a href="group-specific-thresholds.html">Group-Specific Thresholds</a>.</li><li><strong>It needs the group at prediction time,</strong> as group thresholds do.</li><li><strong>It equalizes the rates it is told to.</strong> Here that is equalized odds. Calibration and predictive parity are not preserved, see <a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a>.</li><li><strong>The result depends on the draw.</strong> Fix the random seed for any decision that must be reproducible, and say so.</li><li><strong>It is fitted on training scores.</strong> The guarantee is on the training distribution, and the test gaps (0.009 to 0.020) show some slippage.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="group-specific-thresholds.html">Group-Specific Thresholds</a> - the deterministic version</li><li><a href="equalized-odds.html">Equalized Odds</a> - the criterion this achieves</li><li><a href="reject-option-classification.html">Reject Option Classification</a> - another post-processing rule, deterministic and local</li><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - where post-processing sits</li><li><a href="fairness-accuracy-pareto-frontier.html">Fairness-Accuracy Pareto Frontier</a> - the trade-off these rules traverse</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-tenant"><code>Tenant Screening/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1610.02413" target="_blank" rel="noreferrer noopener">Hardt, M., Price, E., Srebro, N. (2016): Equality of Opportunity in Supervised Learning</a> - NeurIPS 2016; the derived predictor and the linear programme.</li><li><a href="https://arxiv.org/abs/1702.06081" target="_blank" rel="noreferrer noopener">Woodworth, B., Gunasekar, S., Ohannessian, M. I., Srebro, N. (2017): Learning Non-Discriminatory Predictors</a> - COLT 2017; limits of post-processing for equalized odds.</li><li><a href="https://arxiv.org/abs/1808.00023" target="_blank" rel="noreferrer noopener">Corbett-Davies, S., Goel, S. (2018): The Measure and Mismeasure of Fairness</a> - a critique of fairness definitions, including randomized rules.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

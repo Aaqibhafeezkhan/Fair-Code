@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choosing a Mitigation Strategy · Fair Code</title>
+<meta name="description" content="Choosing among the five mitigation strategies from the benchmark&#x27;s results: what each needs, the median accuracy cost and the gap left, over 13 pairs.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/choosing-a-mitigation-strategy.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="Choosing a Mitigation Strategy · Fair Code">
+<meta property="og:description" content="Choosing among the five mitigation strategies from the benchmark&#x27;s results: what each needs, the median accuracy cost and the gap left, over 13 pairs.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/choosing-a-mitigation-strategy.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/choosing-a-mitigation-strategy.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Choosing a Mitigation Strategy · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/choosing-a-mitigation-strategy.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="Choosing a Mitigation Strategy · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Choosing a Mitigation Strategy · Fair Code">
+<meta name="twitter:description" content="Choosing among the five mitigation strategies from the benchmark&#x27;s results: what each needs, the median accuracy cost and the gap left, over 13 pairs.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/choosing-a-mitigation-strategy.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "Choosing a Mitigation Strategy",
+      "description": "Learn to choose among the benchmark's strategies by constraints first. Over 13 audit and attribute pairs, S3 and S4 cut the median parity gap to 0.009 and 0.007 against 0.042 for S2, S3 costs 2.7 points of accuracy, and S4 needs group labels at prediction time.",
+      "url": "https://www.thefaircode.xyz/explainers/choosing-a-mitigation-strategy.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/choosing-a-mitigation-strategy.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Choosing a Mitigation Strategy?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Choosing a mitigation strategy is picking among the benchmark's five approaches (use everything, drop the protected column, drop it and its proxies, constrain training, adjust predictions) by what each needs, what it costs in accuracy, and how much of the gap it leaves."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mitigation Strategies describes the five rungs of the ladder. A practitioner needs a different answer: which one should I use? That depends on constraints you have before you look at any numbers. If the protected attribute is not available at prediction time, post-processing is out. If you cannot retrain, in-processing is out. If the legal environment forbids using the attribute in a decision, so are group thresholds."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Choosing a Mitigation Strategy",
+          "item": "https://www.thefaircode.xyz/explainers/choosing-a-mitigation-strategy.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/choosing-a-mitigation-strategy.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">Choosing a Mitigation Strategy</h1>
+      <p class="explainer-lede">What each of the five strategies needs, costs and leaves.</p>
+      <p class="explainer-lede">Learn to choose among the benchmark&#x27;s strategies by constraints first. Over 13 audit and attribute pairs, S3 and S4 cut the median parity gap to 0.009 and 0.007 against 0.042 for S2, S3 costs 2.7 points of accuracy, and S4 needs group labels at prediction time.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>Five strategies, seven audits. The table of what each one costs and what it needs is already in the benchmark&#x27;s results.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Choosing a mitigation strategy</strong> is picking among the benchmark&#x27;s five approaches (use everything, drop the protected column, drop it and its proxies, constrain training, adjust predictions) by what each needs, what it costs in accuracy, and how much of the gap it leaves.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p><a href="mitigation-strategies.html">Mitigation Strategies</a> describes the five rungs of the ladder. A practitioner needs a different answer: which one should I use? That depends on constraints you have before you look at any numbers. If the protected attribute is not available at prediction time, post-processing is out. If you cannot retrain, in-processing is out. If the legal environment forbids using the attribute in a decision, so are group thresholds.</p>
+<p>The benchmark can say something about the rest. Over the seven audits it records each strategy&#x27;s accuracy and parity gap for the same model, so the cost and the typical effect of each can be read off.</p>
+<h3 id="core-concept-constraints-first-then-the-numbers">Core Concept: Constraints First, Then the Numbers</h3>
+<ol><li><strong>What does each strategy need?</strong> Group labels while training, or at prediction time.</li><li><strong>What does it cost?</strong> The change in accuracy against the simplest honest baseline.</li><li><strong>What does it leave?</strong> The size of the remaining gap and whether it is still significant.</li></ol>
+<p>The baseline for comparison is S2, the same model without the protected column or its proxies, because that is what most careful teams start with.</p>
+<h3 id="concrete-example-the-benchmark-s-seven-audits">Concrete Example: The Benchmark&#x27;s Seven Audits</h3>
+<p>The logistic regression rows of <code>results/</code> (the current results) for every audit and protected attribute, 13 pairs (intersections left out), with S2 as the reference.</p>
+<pre><code>logistic regression, 13 audit/attribute pairs, compared with S2 (the same model without the protected column or proxies)
+strategy              median accuracy change  median |parity gap|  gap smaller than S2  still significant   needs group labels: training / prediction
+S0 baseline                           +0.000                0.054                 4/13              10/13   no (it uses the column as a feature) / yes, as a feature
+S1 unawareness                        +0.000                0.041                 4/13               6/13   no / no
+S2 proxy removal                      +0.000                0.042                    -               7/13   no / no
+S3 in-processing                      -0.027                0.009                 8/13               4/13   yes / no
+S4 post-processing                    +0.000                0.007                 9/13               3/13   yes / yes</code></pre>
+<ul><li><strong>S3 in-processing and S4 post-processing close the gap; the rest barely do.</strong> The median absolute parity gap is 0.009 for S3 and 0.007 for S4 against 0.042 for S2 and 0.041 for S1. The gap is smaller than S2&#x27;s in 8 of 13 pairs for S3 and 9 of 13 for S4.</li><li><strong>S3 costs accuracy; S4 does not, in the median.</strong> S3&#x27;s median accuracy change is -0.027 and S4&#x27;s is +0.000. The medians hide the spread, so check the audit you care about.</li><li><strong>Fewer pairs stay significant:</strong> 4 of 13 for S3 and 3 of 13 for S4, against 7 of 13 for S2 and 10 of 13 for S0 (the model that uses the protected attribute directly).</li><li><strong>The needs differ.</strong> S1 and S2 need no group labels anywhere. S3 needs them while training. S4 needs them while training and again at prediction, which is the constraint that most often rules it out.</li></ul>
+<p>A short decision rule follows: if you cannot use the attribute at prediction time, choose S3; if you can and may, S4 gives the smallest gaps for the least accuracy; if neither is possible, S2 with a proxy audit is the floor, and its remaining gaps need explaining.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>python3 choosing-a-mitigation-strategy.py</code>). It reads the benchmark&#x27;s current results.</p>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+
+fair = pd.read_csv(&quot;results/results_fairness.csv&quot;)          # the benchmark&#x27;s current results
+perf = pd.read_csv(&quot;results/results_performance.csv&quot;)
+STRATEGIES = [&quot;baseline&quot;, &quot;unawareness&quot;, &quot;unawareness_proxy_removal&quot;, &quot;in_processing&quot;, &quot;post_processing&quot;]
+LABEL = dict(zip(STRATEGIES, [&quot;S0 baseline&quot;, &quot;S1 unawareness&quot;, &quot;S2 proxy removal&quot;, &quot;S3 in-processing&quot;, &quot;S4 post-processing&quot;]))
+NEEDS = {  # (group labels while training, group labels when predicting)
+    &quot;baseline&quot;: (&quot;no (it uses the column as a feature)&quot;, &quot;yes, as a feature&quot;), &quot;unawareness&quot;: (&quot;no&quot;, &quot;no&quot;),
+    &quot;unawareness_proxy_removal&quot;: (&quot;no&quot;, &quot;no&quot;), &quot;in_processing&quot;: (&quot;yes&quot;, &quot;no&quot;), &quot;post_processing&quot;: (&quot;yes&quot;, &quot;yes&quot;)}
+
+gap = fair[(fair.model == &quot;logistic_regression&quot;) &amp; (fair.metric == &quot;demographic_parity_diff&quot;) &amp; ~fair.protected_attribute.str.contains(&quot;_x_&quot;)]
+acc = perf[(perf.model == &quot;logistic_regression&quot;) &amp; (perf.metric == &quot;accuracy&quot;)].set_index([&quot;audit&quot;, &quot;strategy&quot;]).value
+pairs = gap.set_index([&quot;audit&quot;, &quot;protected_attribute&quot;, &quot;strategy&quot;])
+rows = []
+for strategy in STRATEGIES:
+    changes, remaining, closed, significant, acc_change = [], [], 0, 0, []
+    for (audit, attribute), g in gap.groupby([&quot;audit&quot;, &quot;protected_attribute&quot;]):
+        base = pairs.loc[(audit, attribute, &quot;unawareness_proxy_removal&quot;)]
+        row = pairs.loc[(audit, attribute, strategy)]
+        remaining.append(abs(row.value)); changes.append(abs(row.value) - abs(base.value))
+        significant += bool(row.significant); closed += abs(row.value) &lt; abs(base.value)
+        acc_change.append(acc[(audit, strategy)] - acc[(audit, &quot;unawareness_proxy_removal&quot;)])
+    rows.append((strategy, np.median(acc_change), np.median(remaining), closed, significant, len(changes)))
+
+print(f&quot;logistic regression, {len(rows) and rows[0][5]} audit/attribute pairs, compared with S2 (the same model without the protected column or proxies)&quot;)
+print(f&quot;{&#x27;strategy&#x27;:20s} {&#x27;median accuracy change&#x27;:&gt;23} {&#x27;median |parity gap|&#x27;:&gt;20} {&#x27;gap smaller than S2&#x27;:&gt;20} {&#x27;still significant&#x27;:&gt;18}   needs group labels: training / prediction&quot;)
+for strategy, d_acc, med_gap, closed, significant, n in rows:
+    smaller = &#x27;-&#x27; if strategy == &#x27;unawareness_proxy_removal&#x27; else f&#x27;{closed}/{n}&#x27;
+    print(f&quot;{LABEL[strategy]:20s} {d_acc:+23.3f} {med_gap:20.3f} {smaller:&gt;20} {f&#x27;{significant}/{n}&#x27;:&gt;18}   {NEEDS[strategy][0]} / {NEEDS[strategy][1]}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>Medians over 13 pairs hide a lot.</strong> The audits differ in size, base rate and how much accuracy there is to lose. Look at the audit closest to yours.</li><li><strong>Only logistic regression is shown.</strong> The benchmark also runs random forests and gradient boosting, which behave differently.</li><li><strong>All five use demographic parity as the target.</strong> The benchmark constrains S3 and S4 on one fixed criterion, so a different criterion would give a different table, see <a href="choosing-a-fairness-metric.html">Choosing a Fairness Metric</a>.</li><li><strong>The gaps come from single splits.</strong> See <a href="seed-and-split-sensitivity.html">Seed and Split Sensitivity</a> for how much that matters on small audits.</li><li><strong>A smaller gap is not a fair outcome.</strong> The strategies change the model&#x27;s behaviour; whether the remaining or removed gap is justified is a separate question.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="mitigation-strategies.html">Mitigation Strategies</a> - what the five strategies are</li><li><a href="fairness-accuracy-pareto-frontier.html">Fairness-Accuracy Pareto Frontier</a> - how much accuracy the best rule at a given gap keeps</li><li><a href="group-specific-thresholds.html">Group-Specific Thresholds</a> - what S4 does in its simplest form</li><li><a href="choosing-a-fairness-metric.html">Choosing a Fairness Metric</a> - the choice that comes before this one</li><li><a href="fairness-through-unawareness.html">Fairness Through Unawareness</a> - why S1 and S2 are not enough</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../results/"><code>results/</code></a> - the numbers in the table</li><li><a href="../benchmark.html">Benchmark Results Dashboard</a> - the same table, filterable</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://www.microsoft.com/en-us/research/publication/fairlearn-a-toolkit-for-assessing-and-improving-fairness-in-ai/" target="_blank" rel="noreferrer noopener">Bird, S. et al. (2020): Fairlearn: A toolkit for assessing and improving fairness in AI</a> - Microsoft technical report MSR-TR-2020-32; the toolkit behind the benchmark&#x27;s S3 and S4.</li><li><a href="https://arxiv.org/abs/1803.02453" target="_blank" rel="noreferrer noopener">Agarwal, A. et al. (2018): A Reductions Approach to Fair Classification</a> - ICML 2018; the in-processing method used for S3.</li><li><a href="https://arxiv.org/abs/1802.04422" target="_blank" rel="noreferrer noopener">Friedler, S. A. et al. (2019): A Comparative Study of Fairness-Enhancing Interventions in Machine Learning</a> - FAT* 2019; how interventions compare across datasets and metrics.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

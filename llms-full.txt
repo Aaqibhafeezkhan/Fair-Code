@@ -1188,7 +1188,7 @@ Under Title VII, an employer that fails the 80% rule can still defend its select
 
 - [EEOC Uniform Guidelines on Employee Selection Procedures, 29 CFR Part 1607](https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1607) - the source text of the Four-Fifths Rule (§1607.4(D))
 - [*Griggs v. Duke Power Co.*, 401 U.S. 424 (1971)](https://supreme.justia.com/cases/federal/us/401/424/) - the Supreme Court case establishing the disparate-impact doctrine
-- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://www.californialawreview.org/print/2-big-datas-disparate-impact) - how the Four-Fifths Rule applies to algorithmic decision-making
+- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2477899) - how the Four-Fifths Rule applies to algorithmic decision-making
 - [Chouldechova (2017): *Fair Prediction with Disparate Impact*](https://arxiv.org/abs/1703.00056) - the impossibility result connecting disparate impact, calibration, and equalized odds
 - [Fairlearn: `demographic_parity_ratio`](https://fairlearn.org/main/user_guide/assessment/common_fairness_metrics.html) - the library implementation used in the code snippet above
 
@@ -1492,7 +1492,7 @@ The fairness metric that directly measures the downstream outcome of disparate t
 - [Title VII of the Civil Rights Act of 1964, 42 U.S.C. §2000e-2](https://www.eeoc.gov/statutes/title-vii-civil-rights-act-1964) - the statutory basis for both disparate treatment and disparate impact doctrine
 - [*McDonnell Douglas Corp. v. Green*, 411 U.S. 792 (1973)](https://supreme.justia.com/cases/federal/us/411/792/) - the Supreme Court case establishing the burden-shifting framework for disparate treatment claims
 - [*Watson v. Fort Worth Bank & Trust*, 487 U.S. 977 (1988)](https://supreme.justia.com/cases/federal/us/487/977/) - extended disparate impact analysis to subjective criteria; relevant to proxy-based indirect treatment
-- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://www.californialawreview.org/print/2-big-datas-disparate-impact) - the definitive law review article mapping both doctrines onto algorithmic decision-making
+- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2477899) - the definitive law review article mapping both doctrines onto algorithmic decision-making
 - [EEOC: Prohibited Employment Policies/Practices](https://www.eeoc.gov/prohibited-employment-policiespractices) - plain-language EEOC guidance distinguishing disparate treatment from disparate impact in employment contexts
 
 ---
@@ -2952,7 +2952,7 @@ Any fairness constraint applied to correct for label bias will trade off against
 
 ## Further Reading
 
-- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://www.californialawreview.org/print/2-big-datas-disparate-impact) - Section III covers biased training labels as a mechanism of algorithmic discrimination
+- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2477899) - Section III covers biased training labels as a mechanism of algorithmic discrimination
 - [Friedler et al. (2019): *A Comparative Study of Fairness-Enhancing Interventions in Machine Learning*](https://arxiv.org/abs/1802.04422) - empirical comparison of pre-, in-, and post-processing mitigation strategies, including label noise correction
 - [Jacobs & Wallach (2021): *Measurement and Fairness*, FAccT 2021](https://arxiv.org/abs/1912.05511) - the definitive paper on the gap between what ML labels purport to measure and what they actually encode
 - [Obermeyer et al. (2019): *Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations*, Science](https://www.science.org/doi/10.1126/science.aax2342) - landmark audit showing a healthcare algorithm that used healthcare cost as a proxy for health need; the label itself (cost) was biased because Black patients had less access to care at equal health levels
@@ -6203,6 +6203,7 @@ Chouldechova (2017) proved the mechanism algebraically: if predictive parity hol
 Compute Positive Predictive Value per group, then pair it with a base-rate check, since a small PPV gap next to a large base-rate gap is the signature Chouldechova identified.
 
 ```python
+# runnable
 import pandas as pd
 
 
@@ -6252,9 +6253,15 @@ def base_rate_gap(df: pd.DataFrame, y_true: str, group_col: str):
     return rates.max() - rates.min()
 
 
-# Usage example
-# predictive_parity_gap(compas_df, y_true="two_year_recid", y_pred="flagged_high_risk", group_col="race")
-# base_rate_gap(compas_df, y_true="two_year_recid", group_col="race")
+sample = pd.DataFrame(
+    {
+        "group": ["A", "A", "B", "B"],
+        "y_true": [1, 0, 1, 0],
+        "y_pred": [1, 1, 1, 0],
+    }
+)
+predictive_parity_gap(sample, y_true="y_true", y_pred="y_pred", group_col="group")
+base_rate_gap(sample, y_true="y_true", group_col="group")
 ```
 
 ## Concrete Example: COMPAS - Audit 01
@@ -6861,7 +6868,7 @@ Real clustering pipelines often run PCA or UMAP before k-means to cut down featu
 
 ## Further Reading
 
-* [ProPublica: The Secret Bias Hidden in Mortgage-Approval Algorithms](https://www.propublica.org/article/the-secret-bias-hidden-in-mortgage-approval-algorithms) - documents ZIP-code and similar geographic clustering recovering protected-class structure in real lending and insurance pricing systems.
+* [Martinez, E., Kirchner, L. (2021): The Secret Bias Hidden in Mortgage-Approval Algorithms](https://themarkup.org/denied/2021/08/25/the-secret-bias-hidden-in-mortgage-approval-algorithms) - The Markup and the Associated Press; an investigation of national mortgage data finding that lenders were more likely to deny applicants of color than comparable White applicants.
 * [Chierichetti, Kumar, Lattanzi & Vassilvitskii (2017): Fair Clustering Through Fairlets, NeurIPS](https://papers.nips.cc/paper/2017/hash/978fce5bcc4eccc88ad48ce3914124a-Abstract.html) - the foundational paper formalising what it means for a clustering algorithm itself to be fair, and a concrete algorithm for enforcing it.
 * [Barocas, Hardt & Narayanan: Fairness and Machine Learning](https://fairmlbook.org/) - covers unsupervised and representation-learning settings alongside the supervised case this repo's audits focus on.
 
@@ -10701,7 +10708,7 @@ With enough rows, even a trivially small gap can produce a low p-value. Always r
 
 * [Efron, B., Tibshirani, R. (1993): *An Introduction to the Bootstrap*](https://doi.org/10.1201/9780429246593) - the foundational reference for the bootstrap resampling method used here.
 * [Good, P. (2005): *Permutation, Parametric, and Bootstrap Tests of Hypotheses*](https://doi.org/10.1007/b138696) - covers permutation testing as a distribution-free alternative to classical significance tests.
-* [Ho, D. E., Imai, K. (2006): Randomization Inference With Natural Experiments](https://doi.org/10.1198/016214506000000330) - a practical treatment of permutation-based inference outside a designed experiment, close to how audit data is actually collected.
+* [Ho, D. E., Imai, K. (2006): Randomization Inference With Natural Experiments](https://doi.org/10.1198/016214505000001258) - a practical treatment of permutation-based inference outside a designed experiment, close to how audit data is actually collected.
 
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
 

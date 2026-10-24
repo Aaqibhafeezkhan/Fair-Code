@@ -247,7 +247,7 @@ Under Title VII, an employer that fails the 80% rule can still defend its select
 
 - [EEOC Uniform Guidelines on Employee Selection Procedures, 29 CFR Part 1607](https://www.ecfr.gov/current/title-29/subtitle-B/chapter-XIV/part-1607) - the source text of the Four-Fifths Rule (§1607.4(D))
 - [*Griggs v. Duke Power Co.*, 401 U.S. 424 (1971)](https://supreme.justia.com/cases/federal/us/401/424/) - the Supreme Court case establishing the disparate-impact doctrine
-- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://www.californialawreview.org/print/2-big-datas-disparate-impact) - how the Four-Fifths Rule applies to algorithmic decision-making
+- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2477899) - how the Four-Fifths Rule applies to algorithmic decision-making
 - [Chouldechova (2017): *Fair Prediction with Disparate Impact*](https://arxiv.org/abs/1703.00056) - the impossibility result connecting disparate impact, calibration, and equalized odds
 - [Fairlearn: `demographic_parity_ratio`](https://fairlearn.org/main/user_guide/assessment/common_fairness_metrics.html) - the library implementation used in the code snippet above
 

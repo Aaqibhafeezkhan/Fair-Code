@@ -134,6 +134,6 @@ With enough rows, even a trivially small gap can produce a low p-value. Always r
 
 * [Efron, B., Tibshirani, R. (1993): *An Introduction to the Bootstrap*](https://doi.org/10.1201/9780429246593) - the foundational reference for the bootstrap resampling method used here.
 * [Good, P. (2005): *Permutation, Parametric, and Bootstrap Tests of Hypotheses*](https://doi.org/10.1007/b138696) - covers permutation testing as a distribution-free alternative to classical significance tests.
-* [Ho, D. E., Imai, K. (2006): Randomization Inference With Natural Experiments](https://doi.org/10.1198/016214506000000330) - a practical treatment of permutation-based inference outside a designed experiment, close to how audit data is actually collected.
+* [Ho, D. E., Imai, K. (2006): Randomization Inference With Natural Experiments](https://doi.org/10.1198/016214505000001258) - a practical treatment of permutation-based inference outside a designed experiment, close to how audit data is actually collected.
 
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*

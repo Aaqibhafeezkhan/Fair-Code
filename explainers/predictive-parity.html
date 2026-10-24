@@ -112,7 +112,7 @@
         "url": "https://www.thefaircode.xyz/index.html#explainers"
       },
       "datePublished": "2026-07-06",
-      "dateModified": "2026-09-19"
+      "dateModified": "2026-10-23"
     },
     {
       "@type": "FAQPage",
@@ -205,7 +205,8 @@ Predictive Parity holds when:  PPV(group a) ≈ PPV(group b)</code></pre>
 <p>Chouldechova (2017) proved the mechanism algebraically: if predictive parity holds but the base rate of the outcome differs between two groups, the false positive rate and false negative rate cannot be equal across those same groups. It is not a modeling flaw. It is an identity that follows directly from the definitions once base rates diverge.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Compute Positive Predictive Value per group, then pair it with a base-rate check, since a small PPV gap next to a large base-rate gap is the signature Chouldechova identified.</p>
-<pre><code class="language-python">import pandas as pd
+<pre><code class="language-python"># runnable
+import pandas as pd
 
 
 def predictive_parity_gap(df: pd.DataFrame, y_true: str, y_pred: str, group_col: str):
@@ -254,9 +255,15 @@ def base_rate_gap(df: pd.DataFrame, y_true: str, group_col: str):
     return rates.max() - rates.min()
 
 
-# Usage example
-# predictive_parity_gap(compas_df, y_true=&quot;two_year_recid&quot;, y_pred=&quot;flagged_high_risk&quot;, group_col=&quot;race&quot;)
-# base_rate_gap(compas_df, y_true=&quot;two_year_recid&quot;, group_col=&quot;race&quot;)</code></pre>
+sample = pd.DataFrame(
+    {
+        &quot;group&quot;: [&quot;A&quot;, &quot;A&quot;, &quot;B&quot;, &quot;B&quot;],
+        &quot;y_true&quot;: [1, 0, 1, 0],
+        &quot;y_pred&quot;: [1, 1, 1, 0],
+    }
+)
+predictive_parity_gap(sample, y_true=&quot;y_true&quot;, y_pred=&quot;y_pred&quot;, group_col=&quot;group&quot;)
+base_rate_gap(sample, y_true=&quot;y_true&quot;, group_col=&quot;group&quot;)</code></pre>
 <h3 id="concrete-example-compas-audit-01">Concrete Example: COMPAS - Audit 01</h3>
 <p>The <a href="../index.html#project-compas">COMPAS</a> audit in this repo uses the same ProPublica recidivism dataset at the center of the 2016 &quot;Machine Bias&quot; investigation, where race is the protected attribute - but this repo&#x27;s <code>COMPAS/compas-scores-raw.csv</code> has no independent two-year re-offense outcome to check predictive parity against (per <code>COMPAS/audit.yaml</code>, its target is <code>ScoreText</code>, COMPAS&#x27;s own risk label). The real-world 2016 controversy - which <em>is</em> about actual two-year re-offense, from ProPublica&#x27;s own separate analysis file - unfolded exactly as follows:</p>
 <p>ProPublica and Northpointe (COMPAS&#x27;s vendor) checked different fairness criteria on that dataset and both were internally correct. ProPublica&#x27;s reading, an error-rate check, found the false positive rate for Black defendants was roughly double that of white defendants: Black defendants who did not reoffend were flagged high-risk far more often. Northpointe&#x27;s reading, a predictive-parity check, found PPV was close across race: a &quot;high risk&quot; label corresponded to actual reoffending at a similar rate for both groups. Northpointe presented that second result as proof the tool was not biased.</p>

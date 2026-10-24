@@ -142,7 +142,7 @@ Real clustering pipelines often run PCA or UMAP before k-means to cut down featu
 
 ## Further Reading
 
-* [ProPublica: The Secret Bias Hidden in Mortgage-Approval Algorithms](https://www.propublica.org/article/the-secret-bias-hidden-in-mortgage-approval-algorithms) - documents ZIP-code and similar geographic clustering recovering protected-class structure in real lending and insurance pricing systems.
+* [Martinez, E., Kirchner, L. (2021): The Secret Bias Hidden in Mortgage-Approval Algorithms](https://themarkup.org/denied/2021/08/25/the-secret-bias-hidden-in-mortgage-approval-algorithms) - The Markup and the Associated Press; an investigation of national mortgage data finding that lenders were more likely to deny applicants of color than comparable White applicants.
 * [Chierichetti, Kumar, Lattanzi & Vassilvitskii (2017): Fair Clustering Through Fairlets, NeurIPS](https://papers.nips.cc/paper/2017/hash/978fce5bcc4eccc88ad48ce3914124a-Abstract.html) - the foundational paper formalising what it means for a clustering algorithm itself to be fair, and a concrete algorithm for enforcing it.
 * [Barocas, Hardt & Narayanan: Fairness and Machine Learning](https://fairmlbook.org/) - covers unsupervised and representation-learning settings alongside the supervised case this repo's audits focus on.
 

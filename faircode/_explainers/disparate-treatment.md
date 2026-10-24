@@ -288,7 +288,7 @@ The fairness metric that directly measures the downstream outcome of disparate t
 - [Title VII of the Civil Rights Act of 1964, 42 U.S.C. §2000e-2](https://www.eeoc.gov/statutes/title-vii-civil-rights-act-1964) - the statutory basis for both disparate treatment and disparate impact doctrine
 - [*McDonnell Douglas Corp. v. Green*, 411 U.S. 792 (1973)](https://supreme.justia.com/cases/federal/us/411/792/) - the Supreme Court case establishing the burden-shifting framework for disparate treatment claims
 - [*Watson v. Fort Worth Bank & Trust*, 487 U.S. 977 (1988)](https://supreme.justia.com/cases/federal/us/487/977/) - extended disparate impact analysis to subjective criteria; relevant to proxy-based indirect treatment
-- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://www.californialawreview.org/print/2-big-datas-disparate-impact) - the definitive law review article mapping both doctrines onto algorithmic decision-making
+- [Barocas & Selbst (2016): *Big Data's Disparate Impact*, 104 Calif. L. Rev. 671](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2477899) - the definitive law review article mapping both doctrines onto algorithmic decision-making
 - [EEOC: Prohibited Employment Policies/Practices](https://www.eeoc.gov/prohibited-employment-policiespractices) - plain-language EEOC guidance distinguishing disparate treatment from disparate impact in employment contexts
 
 ---

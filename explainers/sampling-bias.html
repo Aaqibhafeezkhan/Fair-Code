@@ -112,7 +112,7 @@
         "url": "https://www.thefaircode.xyz/index.html#explainers"
       },
       "datePublished": "2026-05-18",
-      "dateModified": "2026-10-23"
+      "dateModified": "2026-10-24"
     },
     {
       "@type": "FAQPage",
@@ -340,7 +340,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 <h3 id="limitations">Limitations</h3>
 <ol><li><strong>You cannot see who is missing from the data alone.</strong> The checks above compare the sample with a known population. Without an outside benchmark (a census table, a registry) a missing group leaves no trace in the rows.</li><li><strong>Reweighting and oversampling cannot recover missing information.</strong> They reuse the few rows you have for an under-represented group, which also amplifies their noise. See <a href="class-imbalance.html">Class Imbalance</a>.</li><li><strong>&quot;Representative&quot; depends on where the model will be used.</strong> A sample that matches today&#x27;s population can stop matching it later. See <a href="distribution-shift.html">Distribution Shift</a>.</li><li><strong>Measuring representation needs the group labels.</strong> When the attribute was never collected the audit cannot start, see <a href="inferring-protected-attributes.html">Inferring Protected Attributes</a>.</li><li><strong>A better sample does not fix the labels.</strong> Even a perfectly representative sample carries whatever bias the labels have, see <a href="label-bias.html">Label Bias</a>.</li></ol>
 <hr>
-<h3 id="relationship-to-other-concepts">Relationship to Other Concepts</h3>
+<h3 id="related-concepts">Related Concepts</h3>
 <p>Sampling bias is distinct from - but connected to - other fairness failure modes:</p>
 <ul><li><strong>Proxy variables</strong> encode protected attributes through correlated features. Sampling bias encodes them through who was included in the data at all. Both must be audited independently. See <a href="proxy-variables.html"><code>proxy-variables.md</code></a>.</li><li><strong>Demographic parity</strong> (see <a href="demographic-parity.html"><code>demographic-parity.md</code></a>) measures whether positive prediction rates are equal across groups. Sampling bias is one of the root causes of demographic parity violations.</li><li><strong>Measurement bias</strong> is a sibling concept: the same feature (e.g., arrest records) means different things for different groups because it&#x27;s collected differently. Sampling bias is about <em>who</em> is counted; measurement bias is about <em>how</em> they&#x27;re counted.</li><li><a href="medical-imaging-representation-gaps.html">Why Medical Imaging Models Fail on Underrepresented Groups</a> - representation gaps in clinical imaging data</li></ul>
 <hr>

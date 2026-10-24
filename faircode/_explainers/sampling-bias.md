@@ -223,7 +223,7 @@ The data you have is a record of the world as it was - including which people we
 
 ---
 
-## Relationship to Other Concepts
+## Related Concepts
 
 Sampling bias is distinct from - but connected to - other fairness failure modes:
 

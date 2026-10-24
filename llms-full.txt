@@ -626,7 +626,7 @@ The data you have is a record of the world as it was - including which people we
 
 ---
 
-## Relationship to Other Concepts
+## Related Concepts
 
 Sampling bias is distinct from - but connected to - other fairness failure modes:
 
@@ -779,7 +779,7 @@ Race is gone from the feature set. The model now distributes influence across le
 
 ---
 
-## How to Use SHAP in Practice
+## Detection Code: How to Use SHAP in Practice
 
 ### Installation
 
@@ -1009,7 +1009,7 @@ The legal exposure is gone, and the model is selecting candidates on demonstrate
 
 ---
 
-## How to Calculate It in Python
+## Detection Code: How to Calculate It in Python
 
 The 80% rule is one of the cheapest fairness checks you can run. No external library required.
 
@@ -1644,7 +1644,7 @@ ProPublica asked: *do false accusations fall equally?* Northpointe asked: *when 
 
 ---
 
-## The Impossibility Visualised
+## Detection Code: The Impossibility Visualised
 
 Imagine two groups with different base rates: Group A reoffends at 40%, Group B at 20%.
 
@@ -3917,7 +3917,7 @@ features = [
 
 ---
 
-## How to Inspect What a Network Learned
+## Detection Code: Inspecting What a Network Learned
 
 Neural networks are not fully interpretable, but you can probe them.
 
@@ -5421,7 +5421,7 @@ Every audit in this repo runs on the same underlying mechanism: a Random Forest 
 
 The non-obvious part is this: pattern detection has no concept of "should." A Random Forest does not know that `CustodyStatus` reflects decades of over-policing rather than individual criminality. It only knows that `CustodyStatus` and `race` move together, and that both move together with the recidivism label. From the model's point of view, a proxy and a cause look identical - both are just columns with high feature importance.
 
-## How Pattern Detection Works
+## How the Pattern Search Works
 
 A Random Forest Classifier - the model used across every audit in this repo - detects patterns through three mechanisms working together.
 
@@ -6199,6 +6199,60 @@ Predictive Parity holds when:  PPV(group a) ≈ PPV(group b)
 
 Chouldechova (2017) proved the mechanism algebraically: if predictive parity holds but the base rate of the outcome differs between two groups, the false positive rate and false negative rate cannot be equal across those same groups. It is not a modeling flaw. It is an identity that follows directly from the definitions once base rates diverge.
 
+## Concrete Example: COMPAS - Audit 01
+
+The [COMPAS](../COMPAS/) audit in this repo uses the same ProPublica recidivism dataset at the center of the 2016 "Machine Bias" investigation, where race is the protected attribute - but this repo's `COMPAS/compas-scores-raw.csv` has no independent two-year re-offense outcome to check predictive parity against (per `COMPAS/audit.yaml`, its target is `ScoreText`, COMPAS's own risk label). The real-world 2016 controversy - which *is* about actual two-year re-offense, from ProPublica's own separate analysis file - unfolded exactly as follows:
+
+ProPublica and Northpointe (COMPAS's vendor) checked different fairness criteria on that dataset and both were internally correct. ProPublica's reading, an error-rate check, found the false positive rate for Black defendants was roughly double that of white defendants: Black defendants who did not reoffend were flagged high-risk far more often. Northpointe's reading, a predictive-parity check, found PPV was close across race: a "high risk" label corresponded to actual reoffending at a similar rate for both groups. Northpointe presented that second result as proof the tool was not biased.
+
+The same mechanism is directly reproducible in this repo on [German Credit Lending](../German%20Credit%20Lending/), where `class` (good/bad credit history) is a real recorded label a model can actually be scored against:
+
+```python
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+
+df = pd.read_csv("German Credit Lending/credit_customers.csv")
+df["target"] = (df["class"] == "good").astype(int)
+df["is_young"] = (df["age"] < 30).astype(int)
+
+cat_cols = ["checking_status", "credit_history", "purpose", "savings_status",
+            "employment", "personal_status", "other_parties", "property_magnitude",
+            "other_payment_plans", "housing", "job", "own_telephone", "foreign_worker"]
+for col in cat_cols:
+    df[col] = LabelEncoder().fit_transform(df[col])
+
+features = ["checking_status", "duration", "credit_history", "purpose", "credit_amount",
+            "savings_status", "employment", "installment_commitment", "personal_status",
+            "other_parties", "residence_since", "property_magnitude", "age",
+            "other_payment_plans", "housing", "existing_credits", "job",
+            "num_dependents", "own_telephone", "foreign_worker"]
+
+X_train, X_test, y_train, y_test, g_train, g_test = train_test_split(
+    df[features], df["target"], df["is_young"], test_size=0.2, random_state=42, stratify=df["target"])
+model = RandomForestClassifier(random_state=42)
+model.fit(X_train, y_train)
+
+predictions = pd.DataFrame({"target": y_test.values, "is_good_credit_pred": model.predict(X_test),
+                            "is_young": g_test.values})
+
+ppv_by_age, gap = predictive_parity_gap(
+    predictions, y_true="target", y_pred="is_good_credit_pred", group_col="is_young"
+)
+```
+
+**Actual output** (`is_young`: 1 = under 30, 0 = 30+):
+
+```
+PPV by group:
+  0: 78.76%
+  1: 73.08%
+Predictive Parity Gap: 5.68%
+```
+
+A real, if modest, predictive-parity gap - a "good credit" flag is a little more trustworthy for older applicants than younger ones. The COMPAS case above is the more dramatic historical illustration of the same trade-off (PPV close, FPR far apart), just not one this repo's own file can recompute end to end.
+
 ## Detection Code
 
 Compute Positive Predictive Value per group, then pair it with a base-rate check, since a small PPV gap next to a large base-rate gap is the signature Chouldechova identified.
@@ -6264,60 +6318,6 @@ sample = pd.DataFrame(
 predictive_parity_gap(sample, y_true="y_true", y_pred="y_pred", group_col="group")
 base_rate_gap(sample, y_true="y_true", group_col="group")
 ```
-
-## Concrete Example: COMPAS - Audit 01
-
-The [COMPAS](../COMPAS/) audit in this repo uses the same ProPublica recidivism dataset at the center of the 2016 "Machine Bias" investigation, where race is the protected attribute - but this repo's `COMPAS/compas-scores-raw.csv` has no independent two-year re-offense outcome to check predictive parity against (per `COMPAS/audit.yaml`, its target is `ScoreText`, COMPAS's own risk label). The real-world 2016 controversy - which *is* about actual two-year re-offense, from ProPublica's own separate analysis file - unfolded exactly as follows:
-
-ProPublica and Northpointe (COMPAS's vendor) checked different fairness criteria on that dataset and both were internally correct. ProPublica's reading, an error-rate check, found the false positive rate for Black defendants was roughly double that of white defendants: Black defendants who did not reoffend were flagged high-risk far more often. Northpointe's reading, a predictive-parity check, found PPV was close across race: a "high risk" label corresponded to actual reoffending at a similar rate for both groups. Northpointe presented that second result as proof the tool was not biased.
-
-The same mechanism is directly reproducible in this repo on [German Credit Lending](../German%20Credit%20Lending/), where `class` (good/bad credit history) is a real recorded label a model can actually be scored against:
-
-```python
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-
-df = pd.read_csv("German Credit Lending/credit_customers.csv")
-df["target"] = (df["class"] == "good").astype(int)
-df["is_young"] = (df["age"] < 30).astype(int)
-
-cat_cols = ["checking_status", "credit_history", "purpose", "savings_status",
-            "employment", "personal_status", "other_parties", "property_magnitude",
-            "other_payment_plans", "housing", "job", "own_telephone", "foreign_worker"]
-for col in cat_cols:
-    df[col] = LabelEncoder().fit_transform(df[col])
-
-features = ["checking_status", "duration", "credit_history", "purpose", "credit_amount",
-            "savings_status", "employment", "installment_commitment", "personal_status",
-            "other_parties", "residence_since", "property_magnitude", "age",
-            "other_payment_plans", "housing", "existing_credits", "job",
-            "num_dependents", "own_telephone", "foreign_worker"]
-
-X_train, X_test, y_train, y_test, g_train, g_test = train_test_split(
-    df[features], df["target"], df["is_young"], test_size=0.2, random_state=42, stratify=df["target"])
-model = RandomForestClassifier(random_state=42)
-model.fit(X_train, y_train)
-
-predictions = pd.DataFrame({"target": y_test.values, "is_good_credit_pred": model.predict(X_test),
-                            "is_young": g_test.values})
-
-ppv_by_age, gap = predictive_parity_gap(
-    predictions, y_true="target", y_pred="is_good_credit_pred", group_col="is_young"
-)
-```
-
-**Actual output** (`is_young`: 1 = under 30, 0 = 30+):
-
-```
-PPV by group:
-  0: 78.76%
-  1: 73.08%
-Predictive Parity Gap: 5.68%
-```
-
-A real, if modest, predictive-parity gap - a "good credit" flag is a little more trustworthy for older applicants than younger ones. The COMPAS case above is the more dramatic historical illustration of the same trade-off (PPV close, FPR far apart), just not one this repo's own file can recompute end to end.
 
 ## Limitations and Trade-offs
 
@@ -12443,7 +12443,7 @@ Why this is disparate:
 
 A minimal way to see the mechanism: train a logistic model with DP-SGD on data where 10% of rows follow a different feature-to-label rule than the other 90%, and read out accuracy per group as `sigma` increases. The majority accuracy holds; the minority accuracy falls faster and further. The Detection Code section gives a runnable version.
 
-## Concrete Illustration (from the literature, not a Fair Code run)
+## Illustration From the Literature (not a Fair Code run)
 
 **This repo's benchmark harness does not train any DP model** - there is no `epsilon` in `faircode/strategies.py` and no DP row in `results/`. Every number in this section is from the published study below, quoted so the pattern is concrete, not reproduced here.
 
@@ -12454,6 +12454,82 @@ Bagdasaryan et al. (2019), *Differential Privacy Has Disparate Impact on Model A
 - Across tasks, the finding held: "the reduction in accuracy incurred by deep learning models with differential privacy disproportionately impacts underrepresented subgroups," and the effect grows as epsilon shrinks. Their summary of the mechanism is that **the gradient clipping and noise addition of DP-SGD "disproportionately affect" the subgroups whose gradients are largest and whose share of the data is smallest** - i.e. "the poor get poorer."
 
 The relevance to this repo: every audit here is built around a protected group that is, in its dataset, the smaller or worse-served one (younger applicants, minority defendants, one insurance tier). Those are precisely the groups DP-SGD costs the most accuracy. "We added a privacy guarantee" is therefore not evidence of "we did not make the fairness gap worse" - it needs its own per-group check.
+
+## Concrete Example: Benefits Denial
+
+The literature finding is about deep models on skewed image and text data. Does it show up in one of this repo's audits? [Benefits Denial](../Benefits%20Denial/): a logistic regression on the audit's five core columns (sex and race are not inputs), trained with the DP-SGD recipe above, with the benchmark's split. The noise multiplier is the only thing that changes; no privacy accountant is run, so no epsilon is claimed for any row.
+
+```python
+# runnable
+import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Benefits Denial")             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = np.column_stack([(X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9), np.ones(len(X))])
+y = data.y.to_numpy().astype(float)
+women = data.masks["sex"].to_numpy().astype(bool)
+age55 = data.masks["age"].to_numpy().astype(bool)
+group = {"men": ~women, "women": women}
+
+def dp_sgd(noise_multiplier, steps=3000, batch=256, lr=0.5, clip=1.0, seed=0):
+    """DP-SGD for logistic regression: clip each example's gradient to norm `clip`, add Gaussian noise of
+    scale noise_multiplier * clip to the summed gradient. noise_multiplier = 0 is clipping only. No privacy
+    accountant is run, so no epsilon is claimed."""
+    rng = np.random.default_rng(seed)
+    w = np.zeros(X.shape[1])
+    rows = train
+    for _ in range(steps):
+        idx = rng.choice(rows, batch)
+        p = 1 / (1 + np.exp(-(X[idx] @ w)))
+        g = (p - y[idx])[:, None] * X[idx]
+        g = g / np.maximum(1.0, np.linalg.norm(g, axis=1, keepdims=True) / clip)
+        total = g.sum(axis=0)
+        if noise_multiplier:
+            total = total + rng.normal(scale=noise_multiplier * clip, size=len(w))
+        w -= lr * total / batch
+    return w
+
+def summarize(w):
+    pred = (X[test] @ w > 0).astype(int)
+    out = {"overall": (pred == y[test]).mean()}
+    for name, mask in group.items():
+        m = mask[test]
+        out[name] = (pred[m] == y[test][m]).mean()
+    out["women_55plus"] = (pred[(women & age55)[test]] == y[test][(women & age55)[test]]).mean()
+    out["gap"] = pred[women[test]].mean() - pred[~women[test]].mean()
+    return out
+
+print(f"{'noise multiplier':>17} {'overall':>8} {'men':>7} {'women':>7} {'women 55+':>10} {'parity gap':>11}   (mean of 5 seeds)")
+for sigma in (0, 8, 32, 64, 128, 256):
+    runs = [summarize(dp_sgd(sigma, seed=s)) for s in range(5)]
+    mean = {k: np.mean([r[k] for r in runs]) for k in runs[0]}
+    print(f"{sigma:17.1f} {mean['overall']:8.3f} {mean['men']:7.3f} {mean['women']:7.3f} {mean['women_55plus']:10.3f} {mean['gap']:+11.4f}")
+print(f"\ntest rows: {(~women[test]).sum()} men, {women[test].sum()} women, {(women & age55)[test].sum()} women aged 55 or over")
+```
+
+Output (mean of 5 seeds):
+
+```
+ noise multiplier  overall     men   women  women 55+  parity gap   (mean of 5 seeds)
+              0.0    0.811   0.767   0.900      0.896     -0.0531
+              8.0    0.810   0.766   0.900      0.899     -0.0505
+             32.0    0.805   0.758   0.898      0.899     -0.0480
+             64.0    0.796   0.751   0.888      0.885     -0.0468
+            128.0    0.742   0.704   0.818      0.800     -0.0541
+            256.0    0.739   0.698   0.823      0.822     -0.0492
+
+test rows: 4360 men, 2153 women, 294 women aged 55 or over
+```
+
+What the run shows:
+
+- **For most of the sweep nothing happens.** Up to a noise multiplier of 32 the accuracy of men and women moves by less than a point, and the sex parity gap stays near -0.05. The model has six parameters and 26,000 training rows, so the summed gradient of a batch of 256 swamps the noise.
+- **When the noise finally matters, it costs both groups.** At 128, overall accuracy falls from 0.811 to 0.742, men from 0.767 to 0.704 and women from 0.900 to 0.818, a slightly larger drop for women (8.2 points against 6.3), and the parity gap barely moves (-0.0531 to -0.0541).
+- **The narrowest group moves most, from very few rows.** Women aged 55 or over (294 test rows) fall from 0.896 to 0.800 at 128, 9.6 points, but a group that size has an interval of several points either way.
+
+So here the disparate effect reported by Bagdasaryan and colleagues is not visible for sex. That is a statement about a small linear model on a large tabular audit, not about deep models: it is the regime where the noise is small relative to the signal, and the minority is not a distinct sub-population that the model needs separate parameters for. It is also why the synthetic example below, where the minority follows a different rule, is built the way it is.
 
 ## Detection Code
 

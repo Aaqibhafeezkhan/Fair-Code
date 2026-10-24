@@ -136,7 +136,7 @@ ProPublica asked: *do false accusations fall equally?* Northpointe asked: *when 
 
 ---
 
-## The Impossibility Visualised
+## Detection Code: The Impossibility Visualised
 
 Imagine two groups with different base rates: Group A reoffends at 40%, Group B at 20%.
 

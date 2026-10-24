@@ -184,7 +184,7 @@ features = [
 
 ---
 
-## How to Inspect What a Network Learned
+## Detection Code: Inspecting What a Network Learned
 
 Neural networks are not fully interpretable, but you can probe them.
 

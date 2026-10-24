@@ -67,7 +67,7 @@ The legal exposure is gone, and the model is selecting candidates on demonstrate
 
 ---
 
-## How to Calculate It in Python
+## Detection Code: How to Calculate It in Python
 
 The 80% rule is one of the cheapest fairness checks you can run. No external library required.
 

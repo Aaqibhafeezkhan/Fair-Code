@@ -124,7 +124,7 @@ Race is gone from the feature set. The model now distributes influence across le
 
 ---
 
-## How to Use SHAP in Practice
+## Detection Code: How to Use SHAP in Practice
 
 ### Installation
 

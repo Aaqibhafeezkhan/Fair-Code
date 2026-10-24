@@ -37,7 +37,7 @@ Why this is disparate:
 
 A minimal way to see the mechanism: train a logistic model with DP-SGD on data where 10% of rows follow a different feature-to-label rule than the other 90%, and read out accuracy per group as `sigma` increases. The majority accuracy holds; the minority accuracy falls faster and further. The Detection Code section gives a runnable version.
 
-## Concrete Illustration (from the literature, not a Fair Code run)
+## Illustration From the Literature (not a Fair Code run)
 
 **This repo's benchmark harness does not train any DP model** - there is no `epsilon` in `faircode/strategies.py` and no DP row in `results/`. Every number in this section is from the published study below, quoted so the pattern is concrete, not reproduced here.
 
@@ -48,6 +48,82 @@ Bagdasaryan et al. (2019), *Differential Privacy Has Disparate Impact on Model A
 - Across tasks, the finding held: "the reduction in accuracy incurred by deep learning models with differential privacy disproportionately impacts underrepresented subgroups," and the effect grows as epsilon shrinks. Their summary of the mechanism is that **the gradient clipping and noise addition of DP-SGD "disproportionately affect" the subgroups whose gradients are largest and whose share of the data is smallest** - i.e. "the poor get poorer."
 
 The relevance to this repo: every audit here is built around a protected group that is, in its dataset, the smaller or worse-served one (younger applicants, minority defendants, one insurance tier). Those are precisely the groups DP-SGD costs the most accuracy. "We added a privacy guarantee" is therefore not evidence of "we did not make the fairness gap worse" - it needs its own per-group check.
+
+## Concrete Example: Benefits Denial
+
+The literature finding is about deep models on skewed image and text data. Does it show up in one of this repo's audits? [Benefits Denial](../Benefits%20Denial/): a logistic regression on the audit's five core columns (sex and race are not inputs), trained with the DP-SGD recipe above, with the benchmark's split. The noise multiplier is the only thing that changes; no privacy accountant is run, so no epsilon is claimed for any row.
+
+```python
+# runnable
+import numpy as np
+from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
+
+data = load_audit("Benefits Denial")             # S2 feature set: core features, no protected columns
+train, test = data.idx_train, data.idx_test
+X = data.X.to_numpy(dtype=float)
+X = np.column_stack([(X - X[train].mean(axis=0)) / (X[train].std(axis=0) + 1e-9), np.ones(len(X))])
+y = data.y.to_numpy().astype(float)
+women = data.masks["sex"].to_numpy().astype(bool)
+age55 = data.masks["age"].to_numpy().astype(bool)
+group = {"men": ~women, "women": women}
+
+def dp_sgd(noise_multiplier, steps=3000, batch=256, lr=0.5, clip=1.0, seed=0):
+    """DP-SGD for logistic regression: clip each example's gradient to norm `clip`, add Gaussian noise of
+    scale noise_multiplier * clip to the summed gradient. noise_multiplier = 0 is clipping only. No privacy
+    accountant is run, so no epsilon is claimed."""
+    rng = np.random.default_rng(seed)
+    w = np.zeros(X.shape[1])
+    rows = train
+    for _ in range(steps):
+        idx = rng.choice(rows, batch)
+        p = 1 / (1 + np.exp(-(X[idx] @ w)))
+        g = (p - y[idx])[:, None] * X[idx]
+        g = g / np.maximum(1.0, np.linalg.norm(g, axis=1, keepdims=True) / clip)
+        total = g.sum(axis=0)
+        if noise_multiplier:
+            total = total + rng.normal(scale=noise_multiplier * clip, size=len(w))
+        w -= lr * total / batch
+    return w
+
+def summarize(w):
+    pred = (X[test] @ w > 0).astype(int)
+    out = {"overall": (pred == y[test]).mean()}
+    for name, mask in group.items():
+        m = mask[test]
+        out[name] = (pred[m] == y[test][m]).mean()
+    out["women_55plus"] = (pred[(women & age55)[test]] == y[test][(women & age55)[test]]).mean()
+    out["gap"] = pred[women[test]].mean() - pred[~women[test]].mean()
+    return out
+
+print(f"{'noise multiplier':>17} {'overall':>8} {'men':>7} {'women':>7} {'women 55+':>10} {'parity gap':>11}   (mean of 5 seeds)")
+for sigma in (0, 8, 32, 64, 128, 256):
+    runs = [summarize(dp_sgd(sigma, seed=s)) for s in range(5)]
+    mean = {k: np.mean([r[k] for r in runs]) for k in runs[0]}
+    print(f"{sigma:17.1f} {mean['overall']:8.3f} {mean['men']:7.3f} {mean['women']:7.3f} {mean['women_55plus']:10.3f} {mean['gap']:+11.4f}")
+print(f"\ntest rows: {(~women[test]).sum()} men, {women[test].sum()} women, {(women & age55)[test].sum()} women aged 55 or over")
+```
+
+Output (mean of 5 seeds):
+
+```
+ noise multiplier  overall     men   women  women 55+  parity gap   (mean of 5 seeds)
+              0.0    0.811   0.767   0.900      0.896     -0.0531
+              8.0    0.810   0.766   0.900      0.899     -0.0505
+             32.0    0.805   0.758   0.898      0.899     -0.0480
+             64.0    0.796   0.751   0.888      0.885     -0.0468
+            128.0    0.742   0.704   0.818      0.800     -0.0541
+            256.0    0.739   0.698   0.823      0.822     -0.0492
+
+test rows: 4360 men, 2153 women, 294 women aged 55 or over
+```
+
+What the run shows:
+
+- **For most of the sweep nothing happens.** Up to a noise multiplier of 32 the accuracy of men and women moves by less than a point, and the sex parity gap stays near -0.05. The model has six parameters and 26,000 training rows, so the summed gradient of a batch of 256 swamps the noise.
+- **When the noise finally matters, it costs both groups.** At 128, overall accuracy falls from 0.811 to 0.742, men from 0.767 to 0.704 and women from 0.900 to 0.818, a slightly larger drop for women (8.2 points against 6.3), and the parity gap barely moves (-0.0531 to -0.0541).
+- **The narrowest group moves most, from very few rows.** Women aged 55 or over (294 test rows) fall from 0.896 to 0.800 at 128, 9.6 points, but a group that size has an interval of several points either way.
+
+So here the disparate effect reported by Bagdasaryan and colleagues is not visible for sex. That is a statement about a small linear model on a large tabular audit, not about deep models: it is the regime where the noise is small relative to the signal, and the minority is not a distinct sub-population that the model needs separate parameters for. It is also why the synthetic example below, where the minority follows a different rule, is built the way it is.
 
 ## Detection Code
 

@@ -42,6 +42,7 @@ import math
 import re
 import sys
 from pathlib import Path
+import difflib
 
 import pandas as pd
 
@@ -309,7 +310,16 @@ def main(argv=None) -> int:
         if args.audit:
             unknown = sorted(set(args.audit) - known_audits(args.current, args.reference, kinds))
             if unknown:
+                available = sorted(known_audits(args.current, args.reference, kinds))
                 print(f"error: unknown audit(s): {', '.join(unknown)}", file=sys.stderr)
+                if available:
+                    print(f"Available audits: {', '.join(available)}", file=sys.stderr)
+                    for name in unknown:
+                        matches = difflib.get_close_matches(
+                            name, available, n=1, cutoff=0.4
+                        )
+                        if matches:
+                            print(f"Did you mean '{matches[0]}'?", file=sys.stderr)
                 return 2
         diff = diff_dirs(args.current, args.reference, kinds, args.threshold, args.audit)
     except FileNotFoundError as exc:

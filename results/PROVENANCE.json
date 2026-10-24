@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "files": {
+    "results_fairness.csv": "90a3d2aa4fdede01a8125df0815db4492958f15042ab88513cf784b16d2a7754",
+    "results_performance.csv": "41d10b8dfe1e0d5d242f0c2182f535d5b55f81d3f1bd79e77abb71acc38ba4f3",
+    "summary.csv": "7e40fc20d76a39cceb3b3dba1cc1c8dedf1da58b294dae0195dcf27c7cda65c1"
+  },
+  "runs": [
+    {
+      "description": "Rows for the audits other than COMPAS and Healthcare Readmission come from a full benchmark run made before PROVENANCE.json existed; its commit, library versions and seeds were not recorded.",
+      "commit": null,
+      "dirty": null,
+      "python": null,
+      "libraries": {},
+      "lockfile_sha256": null,
+      "n_resamples": null,
+      "n_permutations": null,
+      "audits": [
+        "ai_fair_recruitment",
+        "benefits_denial",
+        "german_credit_lending",
+        "insurance_denial",
+        "tenant_screening"
+      ]
+    },
+    {
+      "description": "COMPAS and Healthcare Readmission rerun with the default 2000 resamples and permutations, to withhold disparate_impact_ratio when the advantaged group is almost never selected (#1094). Every other row reproduced the earlier values exactly. Library versions are those of the machine that ran it.",
+      "commit": "32acbc1480261282aee912896caca0f893437559",
+      "dirty": false,
+      "python": "3.13.2",
+      "libraries": {
+        "numpy": "2.4.6",
+        "pandas": "3.0.3",
+        "scikit-learn": "1.9.0",
+        "scipy": "1.18.0",
+        "fairlearn": "0.14.0",
+        "matplotlib": "3.10.9",
+        "PyYAML": "6.0.3"
+      },
+      "lockfile_sha256": "523e7c78788b2e8fd4bf8585f8bd88a9d9d0f71e4017bb412fb47032322ca264",
+      "n_resamples": 2000,
+      "n_permutations": 2000,
+      "audits": [
+        "compas",
+        "healthcare_readmission"
+      ]
+    }
+  ]
+}

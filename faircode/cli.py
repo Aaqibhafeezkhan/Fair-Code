@@ -889,7 +889,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "benchmark":
         try:
-            from .benchmark import run_benchmark, write_report
+            from .benchmark import collect_provenance, run_benchmark, write_report
         except ImportError as exc:
             print(f"error: the benchmark command needs scikit-learn and pyyaml "
                   f"(pip install faircode[benchmark]): {exc}", file=sys.stderr)
@@ -924,7 +924,9 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
         try:
-            write_report(fairness_df, performance_df, args.out, make_plots=not args.no_plots)
+            write_report(fairness_df, performance_df, args.out, make_plots=not args.no_plots,
+                         provenance=collect_provenance(fairness_df["audit"].unique(), args.n_resamples, args.n_permutations,
+                                                       description="faircode benchmark"))
         except ImportError as exc:
             print(f"error: writing benchmark plots needs matplotlib "
                   f"(pip install faircode[benchmark]): {exc}", file=sys.stderr)

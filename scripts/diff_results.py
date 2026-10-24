@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -155,6 +156,52 @@ def summarize(diff: dict) -> dict:
     return out
 
 
+def read_provenance(directory) -> dict | None:
+    """Where a result set came from (#1129): the commit, Python and library versions read from PROVENANCE.json (written by
+    `faircode benchmark`) or, for the frozen snapshot, from its MANIFEST.md. None when neither exists."""
+    directory = Path(directory)
+    record = directory / "PROVENANCE.json"
+    if record.is_file():
+        runs = json.loads(record.read_text(encoding="utf-8")).get("runs", [])
+        if not runs:
+            return None
+        last = runs[-1]
+        return {"source": "PROVENANCE.json", "commit": last.get("commit"), "dirty": last.get("dirty"), "python": last.get("python"),
+                "libraries": {k.lower(): v for k, v in (last.get("libraries") or {}).items() if v}, "runs": len(runs),
+                "description": last.get("description")}
+    manifest = directory / "MANIFEST.md"
+    if manifest.is_file():
+        text = manifest.read_text(encoding="utf-8")
+        field = lambda name: (re.search(rf"\*\*{re.escape(name)}:\*\*\s*`?([^`\n]+)`?", text) or [None, None])[1]
+        libraries = {n: field(n) for n in ("scikit-learn", "fairlearn", "pandas", "numpy") if field(n)}
+        return {"source": "MANIFEST.md", "commit": field("Git commit"), "dirty": None, "python": field("Python"),
+                "libraries": libraries, "runs": 1, "description": "frozen snapshot"}
+    return None
+
+
+def describe_provenance(label, info) -> str:
+    if info is None:
+        return f"{label}: no provenance recorded"
+    commit = (info["commit"] or "unknown")[:7] + (" (dirty tree)" if info.get("dirty") else "")
+    libs = ", ".join(f"{name} {version}" for name, version in sorted(info["libraries"].items()))
+    runs = f", {info['runs']} runs" if info.get("runs", 1) > 1 else ""
+    return f"{label}: commit {commit}, Python {info['python']}{runs}; {libs or 'no library versions'}"
+
+
+def provenance_report(current_dir, reference_dir) -> str:
+    """Both sides' provenance and the library versions that differ, so a moved row can be told apart from a library bump."""
+    cur, ref = read_provenance(current_dir), read_provenance(reference_dir)
+    lines = [describe_provenance("current  ", cur), describe_provenance("reference", ref)]
+    if cur and ref:
+        names = sorted(set(cur["libraries"]) & set(ref["libraries"]))   # only libraries both sides recorded
+        differ = [f"{n} {ref['libraries'][n]} -> {cur['libraries'][n]}" for n in names if cur["libraries"][n] != ref["libraries"][n]]
+        if cur["python"] != ref["python"]:
+            differ.insert(0, f"python {ref['python']} -> {cur['python']}")
+        lines.append("versions that differ: " + (", ".join(differ) if differ else "none"))
+    return "\n".join(lines) + "\n\n"
+
+
+
 def render_summary(summary: dict) -> str:
     lines = []
     for kind, audits in summary.items():
@@ -231,6 +278,8 @@ def main(argv=None) -> int:
     except FileNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    if not args.json:
+        print(provenance_report(args.current, args.reference), end="")
     if args.summary:
         summary = summarize(diff)
         print(json.dumps(summary, indent=2) if args.json else render_summary(summary), end="\n" if args.json else "")

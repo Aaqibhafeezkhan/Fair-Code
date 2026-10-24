@@ -215,3 +215,23 @@ def test_withheld_rows_have_their_own_block_and_summary_count(tmp_path, capsys):
     assert dr.main(args + ["--summary"]) == 0
     assert "1 withheld" in capsys.readouterr().out
     assert dr.main(args + ["--fail-on-change"]) == 1
+
+
+def test_limit_lists_at_most_n_rows_per_kind_and_counts_the_rest(tmp_path):
+    """#1131: a lockfile bump can move hundreds of rows; --limit keeps the PR comment under GitHub's size cap."""
+    ref = _fair([["a", "baseline", "lr", "sex", f"m{i}", 0.1] for i in range(5)])
+    cur = _fair([["a", "baseline", "lr", "sex", f"m{i}", 0.5] for i in range(5)])
+    diff = {"fairness": dr.diff_table(cur, ref, dr.KINDS["fairness"][1], threshold=0.01)}
+    text = dr.render(diff, limit=2)
+    assert text.count("0.1000 -> 0.5000") == 2
+    assert "3 more rows not listed (--limit 2)" in text
+    assert "more rows not listed" not in dr.render(diff, limit=5)
+    assert dr.render(diff).count("0.1000 -> 0.5000") == 5
+
+
+def test_limit_must_be_positive(tmp_path, capsys):
+    _write(tmp_path / "cur", _fair([["a", "b", "lr", "sex", "dp", 0.1]]))
+    _write(tmp_path / "ref", _fair([["a", "b", "lr", "sex", "dp", 0.1]]))
+    with pytest.raises(SystemExit):
+        dr.main(["--current", str(tmp_path / "cur"), "--reference", str(tmp_path / "ref"), "--limit", "0"])
+    assert "--limit must be at least 1" in capsys.readouterr().err

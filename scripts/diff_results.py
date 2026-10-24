@@ -8,6 +8,7 @@ and prints the per-row change, so nobody has to diff two CSVs by hand:
     python3 scripts/diff_results.py                       # fairness + performance, moved rows only
     python3 scripts/diff_results.py --threshold 0.02      # flag rows that moved by more than 0.02
     python3 scripts/diff_results.py --kind fairness --all # every row, not just the ones that moved
+    python3 scripts/diff_results.py --limit 100           # list at most 100 rows per kind
     python3 scripts/diff_results.py --json                # machine-readable
     python3 scripts/diff_results.py --fail-on-change      # exit 1 if any row is flagged (for CI)
     python3 scripts/diff_results.py --audit COMPAS        # only these audits (repeatable)
@@ -232,7 +233,8 @@ def _flagged(row: dict) -> bool:
     return row["status"] != "unchanged"
 
 
-def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESHOLD) -> str:
+def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESHOLD, limit: int | None = None) -> str:
+    """`limit` caps the rows listed per kind (withheld rows count too); the rest are counted in a closing line (#1131)."""
     lines = []
     for kind, rows in diff.items():
         keys = KINDS[kind][1]
@@ -242,7 +244,12 @@ def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESH
                      f"(moved by more than {threshold:g}, or present on one side only), "
                      f"{different} measured on different test sets")
         withheld = []
-        for r in rows if show_all else flagged:
+        listed = 0
+        shown = rows if show_all else flagged
+        for r in shown:
+            if limit is not None and listed >= limit:
+                break
+            listed += 1
             label = " / ".join(r[k] for k in keys)
             if r["status"] == "withheld":
                 notes = r["withheld"]
@@ -269,6 +276,8 @@ def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESH
         if withheld:
             lines.append(f"  withheld ({len(withheld)} rows where the benchmark chose not to report a value, with its reason):")
             lines.extend(withheld)
+        if listed < len(shown):
+            lines.append(f"  ... {len(shown) - listed} more rows not listed (--limit {limit}); run without --limit for all of them")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
@@ -286,11 +295,15 @@ def main(argv=None) -> int:
     p.add_argument("--fail-on-change", action="store_true", help="exit 1 if any row is flagged")
     p.add_argument("--audit", action="append", metavar="NAME",
                    help="only compare this audit (repeatable; default: every audit)")
+    p.add_argument("--limit", type=int, metavar="N",
+                   help="list at most N rows per kind and count the rest (keeps a PR comment under GitHub's size limit)")
     p.add_argument("--summary", action="store_true",
                    help="print one line per audit and kind instead of every row")
     args = p.parse_args(argv)
     if args.threshold < 0:
         p.error("--threshold must be zero or positive")
+    if args.limit is not None and args.limit < 1:
+        p.error("--limit must be at least 1")
     kinds = ("fairness", "performance") if args.kind == "both" else (args.kind,)
     try:
         if args.audit:
@@ -310,7 +323,7 @@ def main(argv=None) -> int:
     elif args.json:
         print(json.dumps(diff, indent=2))
     else:
-        print(render(diff, args.all, args.threshold), end="")
+        print(render(diff, args.all, args.threshold, args.limit), end="")
     if args.fail_on_change and any(_flagged(r) for rows in diff.values() for r in rows):
         return 1
     return 0

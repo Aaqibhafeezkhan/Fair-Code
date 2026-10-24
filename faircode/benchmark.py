@@ -140,6 +140,21 @@ class AuditData:
     random_state: int
     df: pd.DataFrame | None = None   # the filtered raw rows, for columns the harness does not encode
 
+    def group(self, name) -> np.ndarray:
+        """The mask of protected attribute `name` as a plain 0/1 integer array (1 = the disadvantaged group), aligned with
+        `X_all` and `y`. `masks` holds boolean Series; this avoids `.to_numpy().astype(int)` at every use (#1133)."""
+        if name not in self.masks:
+            raise KeyError(f"no protected attribute {name!r}; this audit has {sorted(self.masks)}")
+        return self.masks[name].to_numpy().astype(int)
+
+    def train_group(self, name) -> np.ndarray:
+        """`group(name)` for the manifest's training rows (`idx_train`)."""
+        return self.group(name)[self.idx_train]
+
+    def test_group(self, name) -> np.ndarray:
+        """`group(name)` for the manifest's test rows (`idx_test`)."""
+        return self.group(name)[self.idx_test]
+
 
 def prepare_audit(manifest, strategy=None, random_state=None) -> AuditData:
     """Load, encode and split one manifest. `run_audit` and `load_audit` both call this,

@@ -13641,7 +13641,7 @@ def reweighing_weights(s, y):
 def run(folder, attribute):
     data = load_audit(folder)                     # S2 feature set: core features, no protected columns
     train, test = data.idx_train, data.idx_test
-    s = data.masks[attribute].to_numpy()          # 1 = disadvantaged group
+    s = data.group(attribute)                     # 1 = disadvantaged group, as a plain 0/1 array
     s_tr, s_te = s[train], s[test]
     y_tr, y_te = data.y.iloc[train].to_numpy(), data.y.iloc[test].to_numpy()
     w = reweighing_weights(s_tr, y_tr)
@@ -16607,7 +16607,7 @@ from faircode.models import build_model
 
 data = load_audit("German Credit Lending")       # 1,000 applicants; the disadvantaged group is those under 30
 X, y = data.X, data.y.to_numpy()
-young = data.masks["age"].to_numpy().astype(int)
+young = data.group("age")                         # 1 = under 30, as a plain 0/1 array
 # Out-of-fold predictions for everyone, so every row has an honest prediction to evaluate.
 pred = cross_val_predict(build_model("logistic_regression", data.random_state), X, y, cv=10)
 correct = (pred == y).astype(float)

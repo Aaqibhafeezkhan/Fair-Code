@@ -108,3 +108,25 @@ def test_df_holds_the_filtered_raw_rows_in_the_same_order():
     assert len(data.df) == len(data.X_all) == len(data.y)
     assert {"age", "class"} <= set(data.df.columns)
     assert (data.df.index == data.X_all.index).all()
+
+
+def test_group_accessors_return_plain_integer_arrays_aligned_with_the_split():
+    data = load_audit(AUDIT)
+    full = data.group("age")
+    assert full.dtype.kind == "i" and set(np.unique(full)) <= {0, 1} and len(full) == len(data.y)
+    assert np.array_equal(full, data.masks["age"].to_numpy().astype(int))
+    assert np.array_equal(data.train_group("age"), full[data.idx_train])
+    assert np.array_equal(data.test_group("age"), full[data.idx_test])
+    assert len(data.train_group("age")) + len(data.test_group("age")) == len(full)
+
+
+def test_group_arithmetic_is_integer_arithmetic():
+    data = load_audit(Path(__file__).resolve().parent.parent / "Insurance Denial")      # two attributes
+    cell = data.group("age") * 2 + data.group("gender")
+    assert set(np.unique(cell)) == {0, 1, 2, 3}
+
+
+def test_an_unknown_attribute_names_the_ones_the_audit_has():
+    data = load_audit(AUDIT)
+    with pytest.raises(KeyError, match="age"):
+        data.group("race")

@@ -6,7 +6,7 @@ from faircode.models import build_model
 
 data = load_audit("German Credit Lending")       # 1,000 applicants; the disadvantaged group is those under 30
 X, y = data.X, data.y.to_numpy()
-young = data.masks["age"].to_numpy().astype(int)
+young = data.group("age")                         # 1 = under 30, as a plain 0/1 array
 # Out-of-fold predictions for everyone, so every row has an honest prediction to evaluate.
 pred = cross_val_predict(build_model("logistic_regression", data.random_state), X, y, cv=10)
 correct = (pred == y).astype(float)

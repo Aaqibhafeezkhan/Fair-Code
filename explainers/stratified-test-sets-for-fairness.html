@@ -112,7 +112,7 @@
         "url": "https://www.thefaircode.xyz/index.html#explainers"
       },
       "datePublished": "2026-10-23",
-      "dateModified": "2026-10-23"
+      "dateModified": "2026-10-24"
     },
     {
       "@type": "FAQPage",
@@ -215,7 +215,7 @@ from faircode.models import build_model
 
 data = load_audit(&quot;German Credit Lending&quot;)       # 1,000 applicants; the disadvantaged group is those under 30
 X, y = data.X, data.y.to_numpy()
-young = data.masks[&quot;age&quot;].to_numpy().astype(int)
+young = data.group(&quot;age&quot;)                         # 1 = under 30, as a plain 0/1 array
 # Out-of-fold predictions for everyone, so every row has an honest prediction to evaluate.
 pred = cross_val_predict(build_model(&quot;logistic_regression&quot;, data.random_state), X, y, cv=10)
 correct = (pred == y).astype(float)

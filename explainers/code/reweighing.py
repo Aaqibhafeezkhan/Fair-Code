@@ -15,7 +15,7 @@ def reweighing_weights(s, y):
 def run(folder, attribute):
     data = load_audit(folder)                     # S2 feature set: core features, no protected columns
     train, test = data.idx_train, data.idx_test
-    s = data.masks[attribute].to_numpy()          # 1 = disadvantaged group
+    s = data.group(attribute)                     # 1 = disadvantaged group, as a plain 0/1 array
     s_tr, s_te = s[train], s[test]
     y_tr, y_te = data.y.iloc[train].to_numpy(), data.y.iloc[test].to_numpy()
     w = reweighing_weights(s_tr, y_tr)

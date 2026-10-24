@@ -459,7 +459,9 @@
     return out;
   }
 
-  function recordsToTable(records) {
+  // `typed` is true for JSON, whose cells carry their own type: only null (or an absent key) is missing, so the
+  // strings "NA" and "" stay values, as in pandas (#1036). A sheet's cells go through isMissing() like CSV text.
+  function recordsToTable(records, typed) {
     if (!records.length) return { columns: [], rows: [] };
     records = records.map(function (r) {
       return r && typeof r === 'object' && !Array.isArray(r) ? flattenRecord(r, '', {}) : r;
@@ -482,6 +484,7 @@
       var obj = {};
       for (var ci = 0; ci < columns.length; ci++) {
         var raw = item[columns[ci]];
+        if (typed) { obj[columns[ci]] = raw === undefined ? null : raw; continue; }
         raw = raw === undefined ? '' : raw;
         obj[columns[ci]] = isMissing(raw) ? null : raw;
       }
@@ -503,7 +506,7 @@
       records.push(record);
     });
     if (!records.length) throw new Error('dataset is empty (no header row)');
-    return recordsToTable(records);
+    return recordsToTable(records, true);
   }
 
   // ── JSON parsing ────────────────────────────────────────────────────────
@@ -531,7 +534,7 @@
       if (!parsed[0] || typeof parsed[0] !== "object" || Array.isArray(parsed[0])) {
         throw new Error("Unsupported JSON format (expected records or split orientation).");
       }
-      return recordsToTable(parsed);
+      return recordsToTable(parsed, true);
     }
 
     // 2. Split format: { columns: ["colA", "colB"], data: [[1, 2], ...] }
@@ -544,8 +547,7 @@
         var splitObj = {};
         for (var sci = 0; sci < splitColumns.length; sci++) {
           var splitRaw = rowVal[sci];
-          splitRaw = splitRaw === undefined ? '' : splitRaw;
-          splitObj[splitColumns[sci]] = isMissing(splitRaw) ? null : splitRaw;
+          splitObj[splitColumns[sci]] = splitRaw === undefined ? null : splitRaw;
         }
         splitRows.push(splitObj);
       }
@@ -585,8 +587,7 @@
           var colObj = {};
           for (var cni2 = 0; cni2 < colNames.length; cni2++) {
             var colRaw = parsed[colNames[cni2]][indexKeys[ri]];
-            colRaw = colRaw === undefined ? '' : colRaw;
-            colObj[colNames[cni2]] = isMissing(colRaw) ? null : colRaw;
+            colObj[colNames[cni2]] = colRaw === undefined ? null : colRaw;
           }
           colRows.push(colObj);
         }

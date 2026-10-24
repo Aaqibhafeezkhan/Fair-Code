@@ -1,0 +1,73 @@
+name: External links
+
+# Weekly report of dead external links in the markdown docs and explainers (#1127). It only reports: the
+# job never fails because of a broken or blocked link, nothing here is a required check, and a pull request
+# never waits on it. When links are broken it opens (or edits) ONE issue, "Dead external links (weekly check)";
+# when they are all fine it closes that issue. See scripts/check_external_links.py for how links are classified.
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"      # Mondays, 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: "Dead external links (weekly check)"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Check the external links
+        run: python3 scripts/check_external_links.py --json > "$RUNNER_TEMP/report.json"
+
+      - name: Show the report
+        run: |
+          python3 - <<'PY'
+          import json, os
+          report = json.load(open(os.environ["RUNNER_TEMP"] + "/report.json"))
+          print(f"checked {report['checked']}: {len(report['ok'])} ok, {len(report['broken'])} broken, {len(report['unknown'])} unknown")
+          for item in report["broken"]:
+              print("broken:", item["detail"], item["url"], item["files"][:3])
+          PY
+
+      - name: Open, update or close the tracking issue
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          report = json.load(open(os.environ["RUNNER_TEMP"] + "/report.json"))
+          lines = [f"The weekly external link check found {len(report['broken'])} broken link(s) among {report['checked']} checked "
+                   f"({len(report['unknown'])} more could not be verified: blocked, rate limited or unreachable).", ""]
+          for item in report["broken"]:
+              lines.append(f"- `{item['detail']}` {item['url']} (in {', '.join('`' + f + '`' for f in item['files'][:5])})")
+          lines += ["", "Find the current address of each source (or replace it), run `make build-explainers`, and this issue closes "
+                    "itself on the next weekly run once nothing is broken. Reproduce locally with `python3 scripts/check_external_links.py`."]
+          open(os.environ["RUNNER_TEMP"] + "/body.md", "w").write("\n".join(lines) + "\n")
+          open(os.environ["RUNNER_TEMP"] + "/broken_count", "w").write(str(len(report["broken"])))
+          PY
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$ISSUE_TITLE\" in:title" --json number,title -q ".[] | select(.title == \"$ISSUE_TITLE\") | .number" | head -n 1)"
+          broken="$(cat "$RUNNER_TEMP/broken_count")"
+          if [ "$broken" -gt 0 ]; then
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/body.md"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --label documentation --body-file "$RUNNER_TEMP/body.md"
+            fi
+          elif [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed --comment "The weekly check found no broken external links."
+          fi

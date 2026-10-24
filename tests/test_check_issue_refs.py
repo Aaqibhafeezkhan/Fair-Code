@@ -80,3 +80,70 @@ def test_without_gh_the_check_is_skipped_unless_required(capsys, monkeypatch):
     assert script.main([]) == 0 and "skipping the issue-reference check" in capsys.readouterr().out
     assert script.main(["--require"]) == 2
     capsys.readouterr()
+
+
+# ── A pull request may cite the issues it closes as closed (#1139) ────────────────────────────
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("body,expected", [
+    ("Closes #3", {3}),
+    ("fixes #3 and resolves #4", {3, 4}),
+    ("Closes #3, closes #4", {3, 4}),
+    ("Closes #3, #4", {3}),                      # GitHub closes only the first without a keyword of its own
+    ("resolved: #5", {5}),
+    ("Fixed yakew7/Fair-Code#3", {3}),
+    ("See #3, related to #4, not closing anything", set()),
+    ("closest to #3", set()),
+    ("", set()),
+    (None, set()),
+])
+def test_issues_closed_by_a_pull_request_body(body, expected):
+    assert script.issues_closed_by(body) == expected
+
+
+def _event(tmp_path, body, name="pull_request"):
+    payload = tmp_path / "event.json"
+    payload.write_text(json.dumps({"pull_request": {"body": body}}), encoding="utf-8")
+    return {"GITHUB_EVENT_NAME": name, "GITHUB_EVENT_PATH": str(payload)}
+
+
+def test_the_closes_of_a_pull_request_come_from_the_event_payload(tmp_path):
+    assert script.pull_request_closes(_event(tmp_path, "Closes #3")) == {3}
+    assert script.pull_request_closes(_event(tmp_path, "Closes #3", name="push")) == set()
+    assert script.pull_request_closes({}) == set()
+    assert script.pull_request_closes({"GITHUB_EVENT_NAME": "pull_request", "GITHUB_EVENT_PATH": str(tmp_path / "missing.json")}) == set()
+
+
+def _docs(tmp_path, monkeypatch):
+    issues = tmp_path / "issues.json"
+    issues.write_text(json.dumps([{"number": n, "state": s.upper()} for n, s in STATES.items()]))
+    (tmp_path / "CHANGELOG.md").write_text("- fix (closes #3)\n- other fix (closes #4)\n")
+    (tmp_path / "ROADMAP.md").write_text("- [x] done work (#3)\n")
+    monkeypatch.setattr(script, "ROOT", tmp_path)
+    return issues
+
+
+def test_a_pull_request_that_closes_the_issue_passes_but_another_open_issue_still_fails(tmp_path, capsys, monkeypatch):
+    issues = _docs(tmp_path, monkeypatch)
+    monkeypatch.setattr(script, "pull_request_closes", lambda environ=None: {3})
+    assert script.main(["--issues", str(issues)]) == 1          # #4 is open and not closed by this PR
+    out = capsys.readouterr().out
+    assert "note: assuming #3 closed" in out and "'closes #4' but #4 is still open" in out and "#3" not in out.split("note:")[1].split("\n", 1)[1]
+
+
+def test_when_the_pull_request_closes_everything_cited_the_check_passes(tmp_path, capsys, monkeypatch):
+    issues = _docs(tmp_path, monkeypatch)
+    monkeypatch.setattr(script, "pull_request_closes", lambda environ=None: {3, 4})
+    assert script.main(["--issues", str(issues)]) == 0
+    assert "note: assuming #3, #4 closed" in capsys.readouterr().out
+
+
+def test_locally_the_check_stays_strict_unless_assume_closed_is_given(tmp_path, capsys, monkeypatch):
+    issues = _docs(tmp_path, monkeypatch)
+    monkeypatch.setattr(script, "pull_request_closes", lambda environ=None: set())
+    assert script.main(["--issues", str(issues)]) == 1
+    capsys.readouterr()
+    assert script.main(["--issues", str(issues), "--assume-closed", "3", "--assume-closed", "4"]) == 0
+    assert "note: assuming #3, #4 closed" in capsys.readouterr().out

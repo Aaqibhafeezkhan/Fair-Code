@@ -13,6 +13,13 @@ numbers). Rules:
 
     python3 scripts/check_issue_refs.py                 # asks `gh` for the issue and PR states
     python3 scripts/check_issue_refs.py --issues FILE   # FILE: JSON [{"number": N, "state": "OPEN"|"CLOSED"|"MERGED"}]
+    python3 scripts/check_issue_refs.py --assume-closed 12 --assume-closed 15   # treat #12 and #15 as closed
+
+A pull request that fixes issue #N says `Closes #N` in its body, and its CHANGELOG and ROADMAP lines are part of the
+same change, so #N is still open while the PR is checked and would fail the rules above (#1139). In a pull_request
+run the script reads the PR body from the event payload (GITHUB_EVENT_PATH), takes the issues it closes (closes,
+fixes or resolves, in any form GitHub accepts) and treats them as closed, saying so in the output. Citing any other
+open issue as closed still fails. Locally the check stays strict unless `--assume-closed` is given.
 
 Without `gh` (or a network) it prints a note and exits 0, so `make lint` works offline; pass
 `--require` to make that an error (CI).
@@ -22,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -32,6 +40,29 @@ ROOT = Path(__file__).resolve().parent.parent
 REF = re.compile(r"#(\d+)")
 CLOSES = re.compile(r"closes? ((?:#\d+(?:,? (?:and )?)?)+)", re.IGNORECASE)
 CLOSING = re.compile(r"closing\s+(?:issues?\s+)?((?:#\d+(?:(?:,| and|-)\s*)?)+)", re.IGNORECASE)
+
+
+CLOSING_KEYWORD = re.compile(r"\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\b:?\s+(?:[\w.-]+/[\w.-]+)?#(\d+)", re.IGNORECASE)
+
+
+def issues_closed_by(body: str | None) -> set[int]:
+    """The issue numbers a pull request body closes, using the keywords GitHub recognises (each needs its own keyword)."""
+    return {int(n) for n in CLOSING_KEYWORD.findall(body or "")}
+
+
+def pull_request_closes(environ=None) -> set[int]:
+    """Issues closed by the pull request this run is checking, from the event payload; empty outside a pull request."""
+    env = os.environ if environ is None else environ
+    if env.get("GITHUB_EVENT_NAME") not in ("pull_request", "pull_request_target"):
+        return set()
+    path = env.get("GITHUB_EVENT_PATH")
+    if not path or not Path(path).is_file():
+        return set()
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return set()
+    return issues_closed_by((payload.get("pull_request") or {}).get("body"))
 
 
 def load_states(issues_file: str | None) -> dict[int, str] | None:
@@ -112,11 +143,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--issues", metavar="FILE", help="issue states as JSON instead of asking gh")
     parser.add_argument("--require", action="store_true", help="fail when the issue states cannot be fetched")
+    parser.add_argument("--assume-closed", type=int, action="append", default=[], metavar="N",
+                        help="treat issue N as closed (repeatable); in a pull request the issues its body closes are assumed closed")
     args = parser.parse_args(argv)
     states = load_states(args.issues)
     if states is None:
         print("note: could not fetch issue states from GitHub (gh missing or offline); skipping the issue-reference check")
         return 2 if args.require else 0
+    assumed = sorted((set(args.assume_closed) | pull_request_closes()) & {n for n, state in states.items() if state == "open"})
+    for n in assumed:
+        states[n] = "closed"
+    if assumed:
+        print("note: assuming " + ", ".join(f"#{n}" for n in assumed) + " closed (named by --assume-closed or closed by this pull request)")
     problems = []
     for filename, checker in (
         ("ROADMAP.md", check_roadmap),

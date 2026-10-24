@@ -228,7 +228,7 @@ The data you have is a record of the world as it was - including which people we
 Sampling bias is distinct from - but connected to - other fairness failure modes:
 
 - **Proxy variables** encode protected attributes through correlated features. Sampling bias encodes them through who was included in the data at all. Both must be audited independently. See [`proxy-variables.md`](proxy-variables.md).
-- **Demographic parity** (coming soon) measures whether positive prediction rates are equal across groups. Sampling bias is one of the root causes of demographic parity violations.
+- **Demographic parity** (see [`demographic-parity.md`](demographic-parity.md)) measures whether positive prediction rates are equal across groups. Sampling bias is one of the root causes of demographic parity violations.
 - **Measurement bias** is a sibling concept: the same feature (e.g., arrest records) means different things for different groups because it's collected differently. Sampling bias is about *who* is counted; measurement bias is about *how* they're counted.
 - [Why Medical Imaging Models Fail on Underrepresented Groups](medical-imaging-representation-gaps.md) - representation gaps in clinical imaging data
 

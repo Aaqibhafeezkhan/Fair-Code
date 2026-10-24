@@ -157,7 +157,8 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 
 - [`COMPAS/`](../COMPAS/) - Full COMPAS analysis: biased model → fair model → 82% gap reduction
 - [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - AI recruitment bias: 96.1% gap reduction after feature audit
-- Coming soon: Facial recognition bias, HMDA loan bias, healthcare AI
+- The other audits run the same proxy analysis: [`German Credit Lending/`](../German%20Credit%20Lending/), [`Insurance Denial/`](../Insurance%20Denial/), [`Benefits Denial/`](../Benefits%20Denial/), [`Healthcare Readmission/`](../Healthcare%20Readmission/) and [`Tenant Screening/`](../Tenant%20Screening/)
+- Planned in the [ROADMAP](../ROADMAP.md): facial recognition accuracy gaps, HMDA mortgage lending bias and an LLM bias audit
 
 ---
 

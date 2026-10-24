@@ -150,6 +150,7 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 ## Related Concepts
 
 * [The Obermeyer Case](obermeyer-cost-proxy.md) - cost as a proxy for need
+* [How Does Position Bias Distort What a Ranking Learns?](position-bias-and-click-models.md) - separating position from relevance in click data
 
 ---
 

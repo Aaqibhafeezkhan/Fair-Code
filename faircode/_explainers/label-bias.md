@@ -363,6 +363,7 @@ Any fairness constraint applied to correct for label bias will trade off against
 - [The Biggest Myth About AI Objectivity](ai-objectivity-myth.md) - why a model trained on human decisions is not objective
 - [What Is Data Leakage?](data-leakage.md) - information the model should not have at prediction time
 - [The Obermeyer Case](obermeyer-cost-proxy.md) - a label that measures spending, not illness
+- [How Does Position Bias Distort What a Ranking Learns?](position-bias-and-click-models.md) - separating position from relevance in click data
 
 ---
 

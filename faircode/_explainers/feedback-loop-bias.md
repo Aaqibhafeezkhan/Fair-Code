@@ -238,6 +238,7 @@ Feedback loops are the reason algorithmic auditing cannot be a one-time exercise
 * [What Is Automation Bias?](automation-bias.md) - why people follow a score, and how that feeds the next model
 * [Fairness in Ranking](fairness-in-ranking.md) - ranked results shape the clicks that retrain the ranker
 * [Reinforcement Learning](reinforcement-learning.md) - rewards that shape the data a policy sees next
+* [What Is Popularity Bias?](popularity-bias.md) - exposure that compounds when a ranker learns from its own clicks
 
 ---
 

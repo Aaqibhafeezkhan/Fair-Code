@@ -231,6 +231,7 @@ Sampling bias is distinct from - but connected to - other fairness failure modes
 - **Demographic parity** (see [`demographic-parity.md`](demographic-parity.md)) measures whether positive prediction rates are equal across groups. Sampling bias is one of the root causes of demographic parity violations.
 - **Measurement bias** is a sibling concept: the same feature (e.g., arrest records) means different things for different groups because it's collected differently. Sampling bias is about *who* is counted; measurement bias is about *how* they're counted.
 - [Why Medical Imaging Models Fail on Underrepresented Groups](medical-imaging-representation-gaps.md) - representation gaps in clinical imaging data
+- [What Is Popularity Bias?](popularity-bias.md) - exposure that compounds when a ranker learns from its own clicks
 
 ---
 

@@ -164,6 +164,7 @@ Data doesn't exist in a vacuum. It reflects the society that generated it. A mod
 ## Related Concepts
 
 * [The Obermeyer Case](obermeyer-cost-proxy.md) - cost as a proxy for need
+* [How Does Position Bias Distort What a Ranking Learns?](position-bias-and-click-models.md) - separating position from relevance in click data
 
 ---
 
@@ -634,6 +635,7 @@ Sampling bias is distinct from - but connected to - other fairness failure modes
 - **Demographic parity** (see [`demographic-parity.md`](demographic-parity.md)) measures whether positive prediction rates are equal across groups. Sampling bias is one of the root causes of demographic parity violations.
 - **Measurement bias** is a sibling concept: the same feature (e.g., arrest records) means different things for different groups because it's collected differently. Sampling bias is about *who* is counted; measurement bias is about *how* they're counted.
 - [Why Medical Imaging Models Fail on Underrepresented Groups](medical-imaging-representation-gaps.md) - representation gaps in clinical imaging data
+- [What Is Popularity Bias?](popularity-bias.md) - exposure that compounds when a ranker learns from its own clicks
 
 ---
 
@@ -2549,6 +2551,7 @@ Feedback loops are the reason algorithmic auditing cannot be a one-time exercise
 * [What Is Automation Bias?](automation-bias.md) - why people follow a score, and how that feeds the next model
 * [Fairness in Ranking](fairness-in-ranking.md) - ranked results shape the clicks that retrain the ranker
 * [Reinforcement Learning](reinforcement-learning.md) - rewards that shape the data a policy sees next
+* [What Is Popularity Bias?](popularity-bias.md) - exposure that compounds when a ranker learns from its own clicks
 
 ---
 
@@ -2941,6 +2944,7 @@ Any fairness constraint applied to correct for label bias will trade off against
 - [The Biggest Myth About AI Objectivity](ai-objectivity-myth.md) - why a model trained on human decisions is not objective
 - [What Is Data Leakage?](data-leakage.md) - information the model should not have at prediction time
 - [The Obermeyer Case](obermeyer-cost-proxy.md) - a label that measures spending, not illness
+- [How Does Position Bias Distort What a Ranking Learns?](position-bias-and-click-models.md) - separating position from relevance in click data
 
 ---
 
@@ -11550,6 +11554,7 @@ S3's -1.4-point gap and S4's 2.3-point gap both have confidence intervals crossi
 * [What Is Accuracy Equality?](accuracy-equality.md) - a fairness metric built on accuracy itself, and the parallel reminder that one blended accuracy number can hide asymmetry underneath it.
 * [What Is Bias-Variance Trade-off?](bias-variance-tradeoff.md) - a different, model-internal trade-off; useful for not confusing "the model overfit" with "the model traded accuracy for fairness."
 * [Fairness Regularization](fairness-regularization.md) - a penalty weight traces the trade-off curve
+* [What Is Two-Sided Fairness in a Marketplace?](two-sided-fairness.md) - exposure for the ranked and utility for the searcher on one sweep
 
 ## Related Projects in This Repo
 
@@ -13559,6 +13564,8 @@ report(scores(X_fair), "mitigated (Gender removed)")
 * [Subgroup Fairness](subgroup-fairness.md) - exposure can differ for intersections the aggregate hides
 * [Label Bias](label-bias.md) - when the relevance label is itself biased
 * [Feedback Loop Bias](feedback-loop-bias.md) - ranked results shape the clicks that retrain the ranker
+* [What Is Popularity Bias?](popularity-bias.md) - exposure that compounds when a ranker learns from its own clicks
+* [What Is Two-Sided Fairness in a Marketplace?](two-sided-fairness.md) - exposure for the ranked and utility for the searcher on one sweep
 
 ## Related Projects in This Repo
 
@@ -18171,6 +18178,7 @@ for md_g, md_o in ((10, 10), (10, 20), (20, 10), (20, 20)):
 * [Label Shift and Fairness](label-shift-and-fairness.md) - a change in base rates, which delay can mimic
 * [Feedback Loop Bias](feedback-loop-bias.md) - decisions that shape the data seen next
 * [Reject Inference](reject-inference.md) - outcomes missing for the people not selected
+* [How Does Position Bias Distort What a Ranking Learns?](position-bias-and-click-models.md) - separating position from relevance in click data
 
 ## Related Projects in This Repo
 
@@ -19288,6 +19296,421 @@ for name, costs in scenarios:
 * [Elkan, C. (2001): The Foundations of Cost-Sensitive Learning](https://cseweb.ucsd.edu/~elkan/rescale.pdf) - IJCAI 2001; the cost-minimizing threshold and why costs and class proportions are interchangeable.
 * [Hardt, M., Price, E., Srebro, N. (2016): Equality of Opportunity in Supervised Learning](https://arxiv.org/abs/1610.02413) - NeurIPS 2016; threshold rules under a fairness constraint, the counterpart to cost-optimal ones.
 * [Corbett-Davies, S., Goel, S. (2018): The Measure and Mismeasure of Fairness](https://arxiv.org/abs/1808.00023) - why a fairness constraint and a cost-minimizing rule can pull apart.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# What Is Popularity Bias?
+URL: https://www.thefaircode.xyz/explainers/popularity-bias.html
+Summary: Learn how a ranking that learns from clicks freezes who is shown. On AI Fair Recruitment only 1,000 of 23,062 candidates are ever shown, 5,389 hired candidates are never seen, and rank correlation of exposure with merit falls from 1.000 to 0.500 as popularity gains weight, while the Gini of exposure stays at 0.961 and misses it.
+
+> *A ranking that learns from what people clicked will keep showing what it already showed. The items it never showed cannot earn the clicks that would move them up.*
+
+## The One-Sentence Definition
+
+**Popularity bias** is a feedback loop in which items that are already popular are shown more, so they collect more clicks, so they look even more popular, while items that were never shown cannot collect any.
+
+## Why It Matters
+
+[Fairness in Ranking](fairness-in-ranking.md) measures exposure for one list. A recommender or a search engine produces a new list every day, and today's clicks are tomorrow's training data. Abdollahpouri et al. (2019) showed that recommendation algorithms give popular items far more exposure than their share of interest justifies, and that users with niche tastes are served worst. For a marketplace or a hiring platform the same loop applies to people: whoever is ranked low early never gets the attention that would show whether they deserved a higher rank.
+
+This is the ranking cousin of [Feedback Loop Bias](feedback-loop-bias.md). That explainer retrains a classifier on labels its own decisions shaped. Here the object is the *order of a list* and the quantity that compounds is *exposure*.
+
+## Core Concept: Exposure Chooses the Data
+
+Each round:
+
+1. Rank the items by a score.
+2. The position gives each item an exposure, here `1 / log2(rank + 1)` for the top `K` and zero below.
+3. An item is clicked with probability exposure times how relevant it is.
+4. The next score mixes the item's merit with its popularity so far, the share of rounds it was clicked: `(1 - w) * merit + w * popularity`.
+
+Three things follow from this loop, and none of them depends on what the merit scores are:
+
+* **The shown set freezes.** An item below `K` has no clicks, so its popularity stays at zero and it cannot rise.
+* **Inside the shown set, luck replaces merit.** Early clicks are partly chance, and the loop turns them into rank.
+* **Whatever group imbalance the first ranking had is locked in**, because the unseen items are exactly the ones that would change it.
+
+## Concrete Example: AI Fair Recruitment
+
+The [AI Fair Recruitment](../AI%20Fair%20Recruitment/) audit: the 23,062 test candidates are the items, `K` is 1,000, clicks are simulated from the hire label with probability `exposure * (0.2 + 0.6 * hired)`, and the simulation runs 30 rounds. Merit is the logistic regression's predicted hire probability. `w` is the weight of popularity in the ranker. The same loop runs twice: once with a ranker that does not use `Gender` (the benchmark's S2 feature set) and once with one that does (the baseline).
+
+```
+Gender not used by the ranker: female share of the pool 0.365, of the first top 1000 0.356
+  w 0.00 | gini of exposure 0.962 | rank correlation of exposure with merit 1.000 | female share of exposure 0.368 | ever shown 1000 | hired never shown 5389
+  w 0.10 | gini of exposure 0.961 | rank correlation of exposure with merit 0.855 | female share of exposure 0.369 | ever shown 1000 | hired never shown 5389
+  w 0.25 | gini of exposure 0.961 | rank correlation of exposure with merit 0.614 | female share of exposure 0.368 | ever shown 1000 | hired never shown 5389
+  w 0.50 | gini of exposure 0.961 | rank correlation of exposure with merit 0.500 | female share of exposure 0.367 | ever shown 1000 | hired never shown 5389
+Gender used by the ranker: female share of the pool 0.365, of the first top 1000 0.070
+  w 0.00 | gini of exposure 0.962 | rank correlation of exposure with merit 1.000 | female share of exposure 0.058 | ever shown 1000 | hired never shown 5395
+  w 0.10 | gini of exposure 0.961 | rank correlation of exposure with merit 0.908 | female share of exposure 0.059 | ever shown 1000 | hired never shown 5395
+  w 0.25 | gini of exposure 0.961 | rank correlation of exposure with merit 0.675 | female share of exposure 0.061 | ever shown 1000 | hired never shown 5395
+  w 0.50 | gini of exposure 0.961 | rank correlation of exposure with merit 0.495 | female share of exposure 0.064 | ever shown 1000 | hired never shown 5395
+```
+
+**The shown set freezes.** Under every setting only the first 1,000 candidates are ever shown, and 5,389 candidates who were hired are never shown at all (5,395 for the gender-aware ranker). No amount of clicking among the first 1,000 changes that.
+
+**Popularity replaces merit inside the shown set.** The rank correlation between a candidate's total exposure and their merit falls from 1.000 with no popularity to 0.855 at `w = 0.10`, 0.614 at `w = 0.25` and 0.500 at `w = 0.50`. Candidates are being ordered partly by which of them happened to be clicked first.
+
+**The Gini coefficient of exposure does not show it.** It is 0.962 at `w = 0` and 0.961 at every other setting: exposure per position is fixed by the discount and the cutoff `K`, so concentration measured this way is set by the design of the list, not by the loop. A concentration metric alone would have called this system stable.
+
+**A group imbalance is frozen, not fixed.** When the ranker does not use `Gender`, women are 36.8% of the exposure and 36.5% of the pool, and the loop leaves that where it is. When it does use `Gender`, women are 7.0% of the first top 1,000 against 36.5% of the pool, and the share of exposure they receive over 30 rounds is 5.8% with no popularity and 6.4% at `w = 0.50`. The small rise is reshuffling inside the shown set. Nothing enters from below.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/popularity-bias.py`; that file is generated from the block below).
+
+```python
+import numpy as np
+from scipy.stats import spearmanr
+from faircode.benchmark import load_audit
+from faircode.models import build_model
+
+K, ROUNDS = 1000, 30
+
+def rank_of(score):
+    rank = np.empty(len(score), dtype=int)
+    rank[np.argsort(-score, kind="stable")] = np.arange(1, len(score) + 1)
+    return rank
+
+def gini(x):
+    x = np.sort(x.astype(float)); n = len(x)
+    return (2 * np.arange(1, n + 1) - n - 1).dot(x) / (n * x.sum())
+
+def simulate(merit, hired, female, w, seed):
+    """The ranker scores (1 - w) * merit + w * popularity, popularity being the share of past rounds an item was clicked."""
+    rng = np.random.default_rng(seed)
+    clicks, exposure_total = np.zeros(len(merit)), np.zeros(len(merit))
+    for r in range(1, ROUNDS + 1):
+        rank = rank_of((1 - w) * merit + w * clicks / max(r - 1, 1))
+        exposure = np.where(rank <= K, 1 / np.log2(rank + 1), 0.0)
+        exposure_total += exposure
+        # a click needs the item to be looked at (position) and, less strongly, to be relevant
+        clicks += rng.random(len(merit)) < exposure * (0.2 + 0.6 * hired)
+    shown = exposure_total > 0
+    return (gini(exposure_total), spearmanr(exposure_total[shown], merit[shown])[0],
+            (exposure_total * female).sum() / exposure_total.sum(), shown.sum(), (hired & ~shown).sum())
+
+for strategy, title in (("unawareness_proxy_removal", "Gender not used by the ranker"), ("baseline", "Gender used by the ranker")):
+    data = load_audit("AI Fair Recruitment", strategy)
+    tr, te = data.idx_train, data.idx_test
+    female, hired = data.group("gender")[te], data.y.iloc[te].to_numpy()
+    model = build_model("logistic_regression", data.random_state).fit(data.X.iloc[tr], data.y.iloc[tr])
+    merit = model.predict_proba(data.X.iloc[te])[:, 1]
+    print(f"{title}: female share of the pool {female.mean():.3f}, of the first top {K} {female[rank_of(merit) <= K].mean():.3f}")
+    for w in (0.0, 0.1, 0.25, 0.5):
+        g, rho, share, n_shown, missed = simulate(merit, hired, female, w, data.random_state)
+        print(f"  w {w:4.2f} | gini of exposure {g:.3f} | rank correlation of exposure with merit {rho:.3f} | female share of exposure {share:.3f} | ever shown {n_shown} | hired never shown {missed}")
+```
+
+## Limitations
+
+1. **It is a simulation, and its constants are assumptions.** The click probability, the popularity weight `w`, the cutoff `K` and the number of rounds are chosen, not measured. The qualitative result (a frozen shown set and a merit correlation that decays) does not depend on them, but the sizes do.
+2. **There is no exploration.** Real systems show a few random or new items to learn about them. That is the standard mitigation and it breaks the freeze, so the frozen set here is the worst case. See the mitigation below.
+3. **Relevance comes from the hire label.** If historical decisions were biased, "relevant" inherits that bias. See [Label Bias](label-bias.md).
+4. **Candidates are not independent items.** A recruiter who has looked at 1,000 people stops; a streaming service does not. The cutoff models a hard attention limit.
+5. **Clicks are simulated, so the loop is closed by construction.** On real data you would estimate how much of an item's popularity is a result of its earlier exposure, for example with [Position Bias and Click Models](position-bias-and-click-models.md).
+
+## Mitigations
+
+* Reserve a share of positions for items below the cutoff, chosen at random or by uncertainty, so that they can earn clicks.
+* Normalize clicks by exposure before they become popularity, so a click at rank 1 counts for less than a click at rank 500.
+* Rank on merit estimated from outcomes instead of clicks where outcomes exist.
+* Monitor the share of the catalog and of each group that was ever shown.
+
+## Related Concepts
+
+* [Fairness in Ranking](fairness-in-ranking.md) - exposure for one list, the quantity that accumulates here
+* [Feedback Loop Bias](feedback-loop-bias.md) - the classifier version of the same loop
+* [Two-Sided Fairness in a Marketplace](two-sided-fairness.md) - exposure for the ranked and utility for the searcher
+* [Position Bias and Click Models](position-bias-and-click-models.md) - separating position from relevance in click data
+* [Sampling Bias](sampling-bias.md) - the data you collect depends on what you showed
+* [Delayed Feedback](delayed-feedback.md) - outcomes that arrive after the ranking was used
+
+## Related Projects in This Repo
+
+* [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - the audit used for the example above
+
+## Further Reading
+
+* [Abdollahpouri, H., Mansoury, M., Burke, R., Mobasher, B. (2019): The Unfairness of Popularity Bias in Recommendation](https://arxiv.org/abs/1907.13286) - RMSE workshop at RecSys 2019; popular items are over-recommended and niche users are served worst.
+* [Singh, A., Joachims, T. (2018): Fairness of Exposure in Rankings](https://arxiv.org/abs/1802.07281) - KDD 2018; the exposure framework that popularity accumulates in.
+* [Chaney, A. J. B., Stewart, B. M., Engelhardt, B. E. (2018): How Algorithmic Confounding in Recommendation Systems Increases Homogeneity and Decreases Utility](https://arxiv.org/abs/1710.11214) - RecSys 2018; simulations of feedback in recommenders.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# What Is Two-Sided Fairness in a Marketplace?
+URL: https://www.thefaircode.xyz/explainers/two-sided-fairness.html
+Summary: Learn how to put exposure for the ranked side and nDCG for the searching side on one re-ranking sweep. On AI Fair Recruitment a shift of 0.05 lifts women from 7.0% to 36.1% of the top 1,000 while nDCG@1000 rises from 0.562 to 0.572, and only past it do the sides conflict.
+
+> *A marketplace has two sets of people to be fair to: the ones being ranked and the ones doing the searching. Helping one can cost the other, but not always, and not by much until it overshoots.*
+
+## The One-Sentence Definition
+
+**Two-sided fairness** asks a ranking to be fair to the people or items being ranked (they get a fair share of exposure) and to the people who use it (they get a good list), and recognizes that the two can pull in different directions.
+
+## Why It Matters
+
+Burke (2017) pointed out that recommenders and marketplaces are multisided: providers want exposure, consumers want relevance, and the platform has its own goals. A fairness fix aimed at one side is easy to describe as a cost to the other: "if we show more of the under-exposed group, the list gets worse for the searcher". Whether that is true is an empirical question, and it should be answered with both numbers on the same sweep, not asserted.
+
+[Fairness in Ranking](fairness-in-ranking.md) defines the ranked side's metric, exposure. This explainer adds the other side's metric, a ranking utility such as nDCG, and puts both on one curve.
+
+## Core Concept: Two Numbers on One Sweep
+
+Take a ranking and a re-ranking that has one knob. Here the knob is a constant added to the scores of the under-exposed group before sorting. For each setting of the knob, report:
+
+* **The ranked side:** the share of the top `K` that belongs to the group, and the exposure each group receives per unit of hire rate (1.0 is exposure in proportion to merit, as in Singh and Joachims 2018).
+* **The searching side:** nDCG at `K` against the true outcome, the position-discounted share of the best possible list that the re-ranking achieves. Here relevance is whether the candidate was hired.
+
+The sweep shows how far one side can be helped before the other starts to pay.
+
+## Concrete Example: AI Fair Recruitment
+
+The [AI Fair Recruitment](../AI%20Fair%20Recruitment/) audit with the baseline logistic regression, which uses `Gender`. The 23,062 test candidates are ranked, the top 1,000 are shown, and 36.5% of the pool is female. The shift column is the constant added to the female candidates' predicted hire probability before sorting.
+
+```
+AI Fair Recruitment, Gender used by the ranker: 23062 candidates, top 1000 shown, 0.365 of the pool female
+  shift | female share of top-1000 | exposure per unit of hire rate, female/male | nDCG@1000 | hired in top-1000
+   0.00 |                  0.070 |                                      0.116 |   0.562 | 568
+   0.01 |                  0.129 |                                      0.229 |   0.566 | 572
+   0.02 |                  0.183 |                                      0.350 |   0.570 | 577
+   0.03 |                  0.247 |                                      0.522 |   0.569 | 576
+   0.04 |                  0.303 |                                      0.727 |   0.573 | 581
+   0.05 |                  0.361 |                                      1.208 |   0.572 | 571
+   0.06 |                  0.423 |                                      1.691 |   0.571 | 570
+   0.08 |                  0.532 |                                      2.712 |   0.564 | 562
+   0.10 |                  0.662 |                                      4.632 |   0.560 | 558
+   0.15 |                  0.972 |                                     80.519 |   0.545 | 540
+```
+
+**With no shift, the ranked side is badly served.** Women are 7.0% of the top 1,000 against 36.5% of the pool, and receive 0.116 of men's exposure per unit of hire rate.
+
+**Both sides improve at first.** At a shift of 0.05 women are 36.1% of the top 1,000 and the exposure ratio is 1.208, close to parity. The searching side does not pay: nDCG@1000 rises from 0.562 to 0.572, and the number of hired candidates in the top 1,000 goes from 568 to 571. The best nDCG is 0.573 at a shift of 0.04, where the female share is 30.3%. The `Gender` term was not tracking hiring outcomes: the hire rates differ by under 3 points in the data (24.0% for women, 26.9% for men), far less than the scores did.
+
+**Then they conflict.** Past about 0.05 the ranked side is over-served and the searching side pays: at 0.10 women are 66.2% of the shortlist and nDCG falls to 0.560, and at 0.15 they are 97.2% and nDCG is 0.545 with 540 hired candidates. The exposure ratio per unit of hire rate runs from 1.208 at 0.05 to 80.519 at 0.15, so a target of parity (1.0) falls between 0.04 and 0.05.
+
+The lesson is the shape, not the numbers: a stretch where the sides do not conflict (the baseline ranker was unfair *and* worse for the searcher), then a point past which they do. A platform needs both curves to see where it is.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/two-sided-fairness.py`; that file is generated from the block below).
+
+```python
+import numpy as np
+from faircode.benchmark import load_audit
+from faircode.models import build_model
+
+data = load_audit("AI Fair Recruitment", "baseline")          # the ranker uses Gender, as in the baseline
+tr, te = data.idx_train, data.idx_test
+female = data.group("gender")[te]                             # 1 = female candidate (the people being ranked)
+hired = data.y.iloc[te].to_numpy()                            # relevance for the people searching: was this candidate hired
+model = build_model("logistic_regression", data.random_state).fit(data.X.iloc[tr], data.y.iloc[tr])
+score = model.predict_proba(data.X.iloc[te])[:, 1]
+K = 1000
+
+def rank_of(s):
+    rank = np.empty(len(s), dtype=int)
+    rank[np.argsort(-s, kind="stable")] = np.arange(1, len(s) + 1)
+    return rank
+
+def dcg(relevance_in_order):
+    return (relevance_in_order / np.log2(np.arange(2, len(relevance_in_order) + 2))).sum()
+
+ideal = dcg(np.sort(hired)[::-1][:K])                          # the best possible top-K list
+
+print(f"AI Fair Recruitment, Gender used by the ranker: {len(score)} candidates, top {K} shown, {female.mean():.3f} of the pool female")
+print("  shift | female share of top-%d | exposure per unit of hire rate, female/male | nDCG@%d | hired in top-%d" % (K, K, K))
+for shift in (0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.15):
+    rank = rank_of(score + shift * female)                    # re-rank: lift the under-exposed group's scores by a constant
+    exposure = np.where(rank <= K, 1 / np.log2(rank + 1), 0.0)
+    ratio = (exposure[female == 1].mean() / hired[female == 1].mean()) / (exposure[female == 0].mean() / hired[female == 0].mean())
+    top = np.argsort(rank)[:K]
+    print(f"  {shift:5.2f} | {female[top].mean():22.3f} | {ratio:42.3f} | {dcg(hired[top]) / ideal:7.3f} | {hired[top].sum():d}")
+```
+
+## Limitations
+
+1. **The shift is chosen by looking at the test set.** The sweep describes the trade-off. To deploy a setting, choose it on held-out validation data, then report on the test set.
+2. **The searching side's relevance is the hire label.** If past hiring was biased, nDCG rewards reproducing that bias and understates what the searcher gains from a fairer list. See [Label Bias](label-bias.md).
+3. **Utility here is one measure.** nDCG@1000 against hire labels says nothing about diversity, the searcher's own preferences or long-run effects. Choose the measure the searcher actually cares about.
+4. **It uses the group at ranking time.** A constant added for one group is explicit use of a protected attribute, which can be unlawful in hiring and lending. See [Disparate Treatment](disparate-treatment.md) and [Group-Specific Thresholds](group-specific-thresholds.md).
+5. **The knob is crude.** A constant shift treats every candidate in the group alike; the exposure ratio swings from 0.727 to 1.208 across 0.01 of shift because the scores are packed together near the top. Methods such as fair top-k re-ranking and amortized exposure are finer.
+
+## Related Concepts
+
+* [Fairness in Ranking](fairness-in-ranking.md) - exposure for the ranked side
+* [Fairness-Accuracy Trade-off](fairness-accuracy-tradeoff.md) - the classification version of the same question
+* [Popularity Bias](popularity-bias.md) - exposure that compounds over rounds
+* [Position Bias and Click Models](position-bias-and-click-models.md) - how clicks credit position
+* [Demographic Parity](demographic-parity.md) - the classification counterpart of equal exposure
+* [Label Bias](label-bias.md) - when the relevance label is itself biased
+
+## Related Projects in This Repo
+
+* [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - the audit used for the example above
+
+## Further Reading
+
+* [Burke, R. (2017): Multisided Fairness for Recommendation](https://arxiv.org/abs/1707.00093) - FAT/ML 2017; the case for fairness to more than one party.
+* [Singh, A., Joachims, T. (2018): Fairness of Exposure in Rankings](https://arxiv.org/abs/1802.07281) - KDD 2018; exposure proportional to merit.
+* [Zehlike, M. et al. (2017): FA*IR: A Fair Top-k Ranking Algorithm](https://arxiv.org/abs/1706.06368) - CIKM 2017; a re-ranking that guarantees a group's share of a top-k list.
+
+---
+*Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*
+
+---
+
+# How Does Position Bias Distort What a Ranking Learns?
+URL: https://www.thefaircode.xyz/explainers/position-bias-and-click-models.html
+Summary: Learn how a position-based click model and inverse propensity weighting separate position from relevance. On AI Fair Recruitment a ranker trained on raw clicks puts 0.884 of its weight on Age and reaches an AUC of 0.681, weighting recovers 0.745 against an oracle's 0.749, and a wrong exposure curve makes it worse than no correction.
+
+> *People click near the top whatever is there. A model trained on those clicks learns where things were, not what was good.*
+
+## The One-Sentence Definition
+
+**Position bias** is the tendency to click results because of where they sit in a list; a **click model** describes how likely each position is to be looked at, so that clicks can be read as evidence of relevance rather than of position.
+
+## Why It Matters
+
+Click logs look like free relevance labels: a click means somebody wanted it. But a result at rank 1 is looked at far more often than one at rank 20, so it is clicked more often at the same quality. If a ranker is trained on raw clicks, it learns to prefer whatever the previous ranker put on top.
+
+That is a fairness problem as soon as the old order correlated with a sensitive or proxy feature, because the new model turns a legacy ordering into a weight on that feature. [Popularity Bias](popularity-bias.md) is the same mechanism accumulating over time. Here the question is smaller and answerable: how to read one log without being fooled by position.
+
+## Core Concept: The Position-Based Model and Inverse Propensity Weighting
+
+The position-based click model says
+
+```
+P(click on item i at rank r) = P(examined at rank r) * P(item i is relevant)
+```
+
+Examination depends only on the rank. If it is known, an item's relevance can be estimated without bias by weighting each click by `1 / P(examined at its rank)`: a click at a position nobody looks at counts for more, a click at rank 1 counts for about one. This is inverse propensity weighting, and Joachims, Swaminathan and Schnabel (2017) showed that a ranker trained with it is unbiased for the true relevance if the propensities are right.
+
+Everything depends on that "if". The propensities have to be known or estimated, for example by randomizing a small part of the traffic, and the click model has to be a good description of how people look at a list.
+
+## Concrete Example: AI Fair Recruitment
+
+The [AI Fair Recruitment](../AI%20Fair%20Recruitment/) audit. The 23,062 test candidates are split at random into lists of 20, like pages of results shown to a recruiter. A legacy ranker orders each list mostly by `Age` (plus some experience and test score, plus noise). Clicks are simulated with the position-based model: examination is `rank^-1` (rank 1 always looked at, rank 20 one time in twenty) and relevance is the hire label, so the true relevance is known and can be used to grade the result. Three kinds of ranker are fitted on the click log of 807 lists using the same three features (`Experience_Years`, `Technical_Test_Score`, `Age`), and graded on 346 held-out lists.
+
+```
+807 training lists, click rate by position: rank 1: 0.398, rank 2: 0.182, rank 5: 0.066, rank 10: 0.037, rank 20: 0.007 | hire rate at rank 1: 0.379, at rank 20: 0.134
+true eta is 1.0
+  ranker                    | weight on Age | AUC vs hired | nDCG@5
+  raw clicks                |         0.884 |        0.681 |  0.469
+  weighted, assumed eta 0.5 |         0.471 |        0.715 |  0.498
+  weighted, assumed eta 1.0 |         0.132 |        0.745 |  0.534
+  weighted, assumed eta 2.0 |        -0.346 |        0.668 |  0.447
+  true labels (oracle)      |        -0.022 |        0.749 |  0.546
+```
+
+**Position drives the clicks.** The click rate falls from 0.398 at rank 1 to 0.007 at rank 20, and so does the hire rate at those ranks (0.379 and 0.134), because the legacy order partly follows merit.
+
+**A ranker trained on raw clicks learns the legacy order.** Its weight on `Age` is 0.884, where the label-trained oracle gives -0.022. It falls to an AUC of 0.681 against the hire label and an nDCG@5 of 0.469, against 0.749 and 0.546 for the oracle. It is worse than the oracle because it learned that old candidates were shown first.
+
+**Weighting by the exposure curve recovers the oracle.** With the true curve (`eta = 1.0`) the weight on `Age` falls to 0.132, the AUC is 0.745 and nDCG@5 is 0.534, close to the oracle's.
+
+**It depends on the propensities being right.** Assuming a flatter curve (`eta = 0.5`) removes only part of the bias (weight on `Age` 0.471, AUC 0.715). Assuming a steeper one (`eta = 2.0`) overcorrects: the weight on `Age` goes to -0.346, and the ranker is worse than with no correction at all, in AUC (0.668 against 0.681) and in nDCG@5 (0.447 against 0.469). A wrong propensity is not a small error, it can make the ranker worse than doing nothing.
+
+## Detection/Implementation Code
+
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/position-bias-and-click-models.py`; that file is generated from the block below).
+
+```python
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from faircode.benchmark import load_audit
+
+data = load_audit("AI Fair Recruitment")
+cols = ["Experience_Years", "Technical_Test_Score", "Age"]            # core features plus the proxy feature Age
+X_all = data.X_all[cols].iloc[data.idx_test].to_numpy(float)
+X_all = (X_all - X_all.mean(0)) / X_all.std(0)
+hired = data.y.iloc[data.idx_test].to_numpy()                        # true relevance, known here because we simulate the clicks
+rng = np.random.default_rng(data.random_state)
+LIST_SIZE, ETA = 20, 1.0
+
+# 1. Split the candidates into lists of 20, the way a recruiter sees a page of results.
+order = rng.permutation(len(hired))
+lists = order[: len(order) // LIST_SIZE * LIST_SIZE].reshape(-1, LIST_SIZE)
+train_lists, test_lists = lists[: len(lists) * 7 // 10], lists[len(lists) * 7 // 10:]
+
+# 2. The logging policy: a legacy ranker that sorts mostly by Age, with some merit in it.
+def log_rank(idx):
+    key = X_all[idx, 2] + 0.5 * (X_all[idx, 0] + X_all[idx, 1]) + rng.normal(0, 0.5, len(idx))
+    return np.argsort(np.argsort(-key)) + 1
+
+# 3. Position-based click model: P(click) = P(examined | rank) * P(relevant), examined = rank^-eta.
+rows, ranks, clicks = [], [], []
+for idx in train_lists:
+    rank = log_rank(idx)
+    examined = rank ** -ETA
+    clicks.append(rng.random(len(idx)) < examined * (0.05 + 0.9 * hired[idx]))
+    rows.append(idx); ranks.append(rank)
+rows, ranks, clicks = map(np.concatenate, (rows, ranks, clicks))
+print(f"{len(train_lists)} training lists, click rate by position: " +
+      ", ".join(f"rank {r}: {clicks[ranks == r].mean():.3f}" for r in (1, 2, 5, 10, 20)) +
+      f" | hire rate at rank 1: {hired[rows][ranks == 1].mean():.3f}, at rank 20: {hired[rows][ranks == 20].mean():.3f}")
+
+# 4. Rankers: trained on raw clicks, on clicks weighted by 1 / P(examined) with the right and wrong exposure curves, and on true labels.
+def fit(target, weight=None):
+    return LogisticRegression(max_iter=1000).fit(X_all[rows], target, sample_weight=weight)
+
+def ipw(eta):
+    return np.where(clicks, ranks ** eta, 1.0)                       # inverse propensity weights on the clicked rows
+
+models = {"raw clicks": fit(clicks),
+          "weighted, assumed eta 0.5": fit(clicks, ipw(0.5)),
+          "weighted, assumed eta 1.0": fit(clicks, ipw(1.0)),
+          "weighted, assumed eta 2.0": fit(clicks, ipw(2.0)),
+          "true labels (oracle)": fit(hired[rows])}
+
+def ndcg_at_5(model):
+    total = 0
+    discount = 1 / np.log2(np.arange(2, 7))
+    for idx in test_lists:
+        gains = hired[idx][np.argsort(-model.decision_function(X_all[idx]))][:5]
+        ideal = np.sort(hired[idx])[::-1][:5]
+        total += (gains * discount).sum() / max((ideal * discount).sum(), 1e-9)
+    return total / len(test_lists)
+
+test_rows = test_lists.ravel()
+print(f"true eta is {ETA}")
+print("  ranker                    | weight on Age | AUC vs hired | nDCG@5")
+for name, m in models.items():
+    print(f"  {name:25s} | {m.coef_[0][2]:13.3f} | {roc_auc_score(hired[test_rows], m.decision_function(X_all[test_rows])):12.3f} | {ndcg_at_5(m):6.3f}")
+```
+
+## Limitations
+
+1. **The propensities must be known or estimated, and the result is only as good as they are.** The `eta = 2.0` row is a ranker that is worse than the one with no correction. Estimate propensities from randomized traffic or an intervention, not from a guess.
+2. **The position-based model is a simplification.** Real users also look at what is around a result (context effects), stop after a good result (cascade behaviour), and click differently on mobile. Other click models handle some of that.
+3. **Inverse weights can have large variance.** A click at rank 20 here gets a weight of 20. With real, smaller samples, clip the weights and report intervals.
+4. **The click model only helps if clicks are caused by position and relevance.** Clicks driven by a thumbnail, a price or a name carry a bias that a position model does not remove.
+5. **The simulation knows the true relevance.** In a real log you only see clicks, so the comparison with an oracle above cannot be repeated; use a randomized holdout to measure what you cannot see.
+
+## Related Concepts
+
+* [Popularity Bias](popularity-bias.md) - the accumulation of position effects over rounds
+* [Fairness in Ranking](fairness-in-ranking.md) - the exposure measure these clicks are weighted by
+* [Two-Sided Fairness in a Marketplace](two-sided-fairness.md) - weighing exposure for the ranked against utility for the searcher
+* [Label Bias](label-bias.md) - clicks as a biased label
+* [Sampling Bias](sampling-bias.md) - the log only holds what was shown
+* [Proxy Variables](proxy-variables.md) - the feature a legacy order leaks into
+
+## Related Projects in This Repo
+
+* [`AI Fair Recruitment/`](../AI%20Fair%20Recruitment/) - the audit used for the example above
+
+## Further Reading
+
+* [Joachims, T., Swaminathan, A., Schnabel, T. (2017): Unbiased Learning-to-Rank with Biased Feedback](https://arxiv.org/abs/1608.04468) - WSDM 2017; inverse propensity weighting for clicks.
+* [Craswell, N., Zoeter, O., Taylor, M., Ramsey, B. (2008): An Experimental Comparison of Click Position-Bias Models](https://doi.org/10.1145/1341531.1341545) - WSDM 2008; the position-based and cascade models compared.
+* [Wang, X., Golbandi, N., Bendersky, M., Metzler, D., Najork, M. (2018): Position Bias Estimation for Unbiased Learning to Rank in Personal Search](https://doi.org/10.1145/3159652.3159732) - WSDM 2018; estimating propensities from a log.
 
 ---
 *Part of [The Fair Code Project](https://instagram.com/thefaircodeproject) - exposing and fixing algorithmic bias with real data and open code.*

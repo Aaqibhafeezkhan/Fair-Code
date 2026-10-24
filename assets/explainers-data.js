@@ -1190,5 +1190,37 @@ window.FAIR_CODE_EXPLAINERS = [
     "tags": [
       "metrics"
     ]
+  },
+  {
+    "slug": "popularity-bias",
+    "title": "What Is Popularity Bias?",
+    "subtitle": "Items that were shown get the clicks that keep them shown; the rest never get a chance.",
+    "summary": "Learn how a ranking that learns from clicks freezes who is shown. On AI Fair Recruitment only 1,000 of 23,062 candidates are ever shown, 5,389 hired candidates are never seen, and rank correlation of exposure with merit falls from 1.000 to 0.500 as popularity gains weight, while the Gini of exposure stays at 0.961 and misses it.",
+    "description": "A simulated popularity feedback loop on a real audit: the shown set freezes, merit stops ordering exposure, and a group imbalance is locked in.",
+    "tags": [
+      "metrics",
+      "data"
+    ]
+  },
+  {
+    "slug": "two-sided-fairness",
+    "title": "What Is Two-Sided Fairness in a Marketplace?",
+    "subtitle": "Fair to the people ranked and good for the people searching: when the two conflict.",
+    "summary": "Learn how to put exposure for the ranked side and nDCG for the searching side on one re-ranking sweep. On AI Fair Recruitment a shift of 0.05 lifts women from 7.0% to 36.1% of the top 1,000 while nDCG@1000 rises from 0.562 to 0.572, and only past it do the sides conflict.",
+    "description": "Exposure for the ranked side and nDCG for the searcher on one re-ranking sweep, and where fairness to one side starts to cost the other.",
+    "tags": [
+      "metrics"
+    ]
+  },
+  {
+    "slug": "position-bias-and-click-models",
+    "title": "How Does Position Bias Distort What a Ranking Learns?",
+    "subtitle": "Clicks near the top say where an item was, not how good it was.",
+    "summary": "Learn how a position-based click model and inverse propensity weighting separate position from relevance. On AI Fair Recruitment a ranker trained on raw clicks puts 0.884 of its weight on Age and reaches an AUC of 0.681, weighting recovers 0.745 against an oracle's 0.749, and a wrong exposure curve makes it worse than no correction.",
+    "description": "Simulated clicks from a known relevance: why a ranker trained on raw clicks learns position, how inverse propensity weighting fixes it, and its limits.",
+    "tags": [
+      "metrics",
+      "detection"
+    ]
   }
 ];

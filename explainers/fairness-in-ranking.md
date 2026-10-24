@@ -109,6 +109,8 @@ report(scores(X_fair), "mitigated (Gender removed)")
 * [Subgroup Fairness](subgroup-fairness.md) - exposure can differ for intersections the aggregate hides
 * [Label Bias](label-bias.md) - when the relevance label is itself biased
 * [Feedback Loop Bias](feedback-loop-bias.md) - ranked results shape the clicks that retrain the ranker
+* [What Is Popularity Bias?](popularity-bias.md) - exposure that compounds when a ranker learns from its own clicks
+* [What Is Two-Sided Fairness in a Marketplace?](two-sided-fairness.md) - exposure for the ranked and utility for the searcher on one sweep
 
 ## Related Projects in This Repo
 

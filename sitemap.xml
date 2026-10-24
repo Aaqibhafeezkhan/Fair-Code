@@ -42,7 +42,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/calibration.html</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/demographic-parity.html</loc>
@@ -110,7 +110,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/false-positives-vs-false-negatives.html</loc>
-    <lastmod>2026-09-19</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/supervised-learning.html</loc>
@@ -134,7 +134,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/roc-curve-auc.html</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/class-imbalance.html</loc>
@@ -146,7 +146,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/confusion-matrix.html</loc>
-    <lastmod>2026-07-28</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/protected-attribute.html</loc>
@@ -190,7 +190,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/precision-recall-curve.html</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/equal-opportunity.html</loc>
@@ -446,11 +446,23 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/auc-gaps-by-group.html</loc>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/decision-curve-analysis-by-group.html</loc>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/cost-sensitive-evaluation.html</loc>
+    <lastmod>2026-10-24</lastmod>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/popularity-bias.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/two-sided-fairness.html</loc>
+  </url>
+  <url>
+    <loc>https://www.thefaircode.xyz/explainers/position-bias-and-click-models.html</loc>
   </url>
 </urlset>

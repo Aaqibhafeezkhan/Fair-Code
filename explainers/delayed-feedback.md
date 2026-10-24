@@ -88,6 +88,7 @@ for md_g, md_o in ((10, 10), (10, 20), (20, 10), (20, 20)):
 * [Label Shift and Fairness](label-shift-and-fairness.md) - a change in base rates, which delay can mimic
 * [Feedback Loop Bias](feedback-loop-bias.md) - decisions that shape the data seen next
 * [Reject Inference](reject-inference.md) - outcomes missing for the people not selected
+* [How Does Position Bias Distort What a Ranking Learns?](position-bias-and-click-models.md) - separating position from relevance in click data
 
 ## Related Projects in This Repo
 

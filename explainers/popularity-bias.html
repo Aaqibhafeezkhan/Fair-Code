@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Is Popularity Bias? · Fair Code</title>
+<meta name="description" content="A simulated popularity feedback loop on a real audit: the shown set freezes, merit stops ordering exposure, and a group imbalance is locked in.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/popularity-bias.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="What Is Popularity Bias? · Fair Code">
+<meta property="og:description" content="A simulated popularity feedback loop on a real audit: the shown set freezes, merit stops ordering exposure, and a group imbalance is locked in.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/popularity-bias.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/popularity-bias.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="What Is Popularity Bias? · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/popularity-bias.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="What Is Popularity Bias? · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What Is Popularity Bias? · Fair Code">
+<meta name="twitter:description" content="A simulated popularity feedback loop on a real audit: the shown set freezes, merit stops ordering exposure, and a group imbalance is locked in.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/popularity-bias.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "What Is Popularity Bias?",
+      "description": "Learn how a ranking that learns from clicks freezes who is shown. On AI Fair Recruitment only 1,000 of 23,062 candidates are ever shown, 5,389 hired candidates are never seen, and rank correlation of exposure with merit falls from 1.000 to 0.500 as popularity gains weight, while the Gini of exposure stays at 0.961 and misses it.",
+      "url": "https://www.thefaircode.xyz/explainers/popularity-bias.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/popularity-bias.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What Is Popularity Bias?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Popularity bias is a feedback loop in which items that are already popular are shown more, so they collect more clicks, so they look even more popular, while items that were never shown cannot collect any."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Fairness in Ranking measures exposure for one list. A recommender or a search engine produces a new list every day, and today's clicks are tomorrow's training data. Abdollahpouri et al. (2019) showed that recommendation algorithms give popular items far more exposure than their share of interest justifies, and that users with niche tastes are served worst."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "What Is Popularity Bias?",
+          "item": "https://www.thefaircode.xyz/explainers/popularity-bias.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/popularity-bias.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">What Is Popularity Bias?</h1>
+      <p class="explainer-lede">Items that were shown get the clicks that keep them shown; the rest never get a chance.</p>
+      <p class="explainer-lede">Learn how a ranking that learns from clicks freezes who is shown. On AI Fair Recruitment only 1,000 of 23,062 candidates are ever shown, 5,389 hired candidates are never seen, and rank correlation of exposure with merit falls from 1.000 to 0.500 as popularity gains weight, while the Gini of exposure stays at 0.961 and misses it.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A ranking that learns from what people clicked will keep showing what it already showed. The items it never showed cannot earn the clicks that would move them up.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Popularity bias</strong> is a feedback loop in which items that are already popular are shown more, so they collect more clicks, so they look even more popular, while items that were never shown cannot collect any.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p><a href="fairness-in-ranking.html">Fairness in Ranking</a> measures exposure for one list. A recommender or a search engine produces a new list every day, and today&#x27;s clicks are tomorrow&#x27;s training data. Abdollahpouri et al. (2019) showed that recommendation algorithms give popular items far more exposure than their share of interest justifies, and that users with niche tastes are served worst. For a marketplace or a hiring platform the same loop applies to people: whoever is ranked low early never gets the attention that would show whether they deserved a higher rank.</p>
+<p>This is the ranking cousin of <a href="feedback-loop-bias.html">Feedback Loop Bias</a>. That explainer retrains a classifier on labels its own decisions shaped. Here the object is the <em>order of a list</em> and the quantity that compounds is <em>exposure</em>.</p>
+<h3 id="core-concept-exposure-chooses-the-data">Core Concept: Exposure Chooses the Data</h3>
+<p>Each round:</p>
+<ol><li>Rank the items by a score.</li><li>The position gives each item an exposure, here <code>1 / log2(rank + 1)</code> for the top <code>K</code> and zero below.</li><li>An item is clicked with probability exposure times how relevant it is.</li><li>The next score mixes the item&#x27;s merit with its popularity so far, the share of rounds it was clicked: <code>(1 - w) <em> merit + w </em> popularity</code>.</li></ol>
+<p>Three things follow from this loop, and none of them depends on what the merit scores are:</p>
+<ul><li><strong>The shown set freezes.</strong> An item below <code>K</code> has no clicks, so its popularity stays at zero and it cannot rise.</li><li><strong>Inside the shown set, luck replaces merit.</strong> Early clicks are partly chance, and the loop turns them into rank.</li><li><strong>Whatever group imbalance the first ranking had is locked in</strong>, because the unseen items are exactly the ones that would change it.</li></ul>
+<h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
+<p>The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit: the 23,062 test candidates are the items, <code>K</code> is 1,000, clicks are simulated from the hire label with probability <code>exposure <em> (0.2 + 0.6 </em> hired)</code>, and the simulation runs 30 rounds. Merit is the logistic regression&#x27;s predicted hire probability. <code>w</code> is the weight of popularity in the ranker. The same loop runs twice: once with a ranker that does not use <code>Gender</code> (the benchmark&#x27;s S2 feature set) and once with one that does (the baseline).</p>
+<pre><code>Gender not used by the ranker: female share of the pool 0.365, of the first top 1000 0.356
+  w 0.00 | gini of exposure 0.962 | rank correlation of exposure with merit 1.000 | female share of exposure 0.368 | ever shown 1000 | hired never shown 5389
+  w 0.10 | gini of exposure 0.961 | rank correlation of exposure with merit 0.855 | female share of exposure 0.369 | ever shown 1000 | hired never shown 5389
+  w 0.25 | gini of exposure 0.961 | rank correlation of exposure with merit 0.614 | female share of exposure 0.368 | ever shown 1000 | hired never shown 5389
+  w 0.50 | gini of exposure 0.961 | rank correlation of exposure with merit 0.500 | female share of exposure 0.367 | ever shown 1000 | hired never shown 5389
+Gender used by the ranker: female share of the pool 0.365, of the first top 1000 0.070
+  w 0.00 | gini of exposure 0.962 | rank correlation of exposure with merit 1.000 | female share of exposure 0.058 | ever shown 1000 | hired never shown 5395
+  w 0.10 | gini of exposure 0.961 | rank correlation of exposure with merit 0.908 | female share of exposure 0.059 | ever shown 1000 | hired never shown 5395
+  w 0.25 | gini of exposure 0.961 | rank correlation of exposure with merit 0.675 | female share of exposure 0.061 | ever shown 1000 | hired never shown 5395
+  w 0.50 | gini of exposure 0.961 | rank correlation of exposure with merit 0.495 | female share of exposure 0.064 | ever shown 1000 | hired never shown 5395</code></pre>
+<p><strong>The shown set freezes.</strong> Under every setting only the first 1,000 candidates are ever shown, and 5,389 candidates who were hired are never shown at all (5,395 for the gender-aware ranker). No amount of clicking among the first 1,000 changes that.</p>
+<p><strong>Popularity replaces merit inside the shown set.</strong> The rank correlation between a candidate&#x27;s total exposure and their merit falls from 1.000 with no popularity to 0.855 at <code>w = 0.10</code>, 0.614 at <code>w = 0.25</code> and 0.500 at <code>w = 0.50</code>. Candidates are being ordered partly by which of them happened to be clicked first.</p>
+<p><strong>The Gini coefficient of exposure does not show it.</strong> It is 0.962 at <code>w = 0</code> and 0.961 at every other setting: exposure per position is fixed by the discount and the cutoff <code>K</code>, so concentration measured this way is set by the design of the list, not by the loop. A concentration metric alone would have called this system stable.</p>
+<p><strong>A group imbalance is frozen, not fixed.</strong> When the ranker does not use <code>Gender</code>, women are 36.8% of the exposure and 36.5% of the pool, and the loop leaves that where it is. When it does use <code>Gender</code>, women are 7.0% of the first top 1,000 against 36.5% of the pool, and the share of exposure they receive over 30 rounds is 5.8% with no popularity and 6.4% at <code>w = 0.50</code>. The small rise is reshuffling inside the shown set. Nothing enters from below.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/popularity-bias.py</code>; that file is generated from the block below).</p>
+<pre><code class="language-python">import numpy as np
+from scipy.stats import spearmanr
+from faircode.benchmark import load_audit
+from faircode.models import build_model
+
+K, ROUNDS = 1000, 30
+
+def rank_of(score):
+    rank = np.empty(len(score), dtype=int)
+    rank[np.argsort(-score, kind=&quot;stable&quot;)] = np.arange(1, len(score) + 1)
+    return rank
+
+def gini(x):
+    x = np.sort(x.astype(float)); n = len(x)
+    return (2 * np.arange(1, n + 1) - n - 1).dot(x) / (n * x.sum())
+
+def simulate(merit, hired, female, w, seed):
+    &quot;&quot;&quot;The ranker scores (1 - w) * merit + w * popularity, popularity being the share of past rounds an item was clicked.&quot;&quot;&quot;
+    rng = np.random.default_rng(seed)
+    clicks, exposure_total = np.zeros(len(merit)), np.zeros(len(merit))
+    for r in range(1, ROUNDS + 1):
+        rank = rank_of((1 - w) * merit + w * clicks / max(r - 1, 1))
+        exposure = np.where(rank &lt;= K, 1 / np.log2(rank + 1), 0.0)
+        exposure_total += exposure
+        # a click needs the item to be looked at (position) and, less strongly, to be relevant
+        clicks += rng.random(len(merit)) &lt; exposure * (0.2 + 0.6 * hired)
+    shown = exposure_total &gt; 0
+    return (gini(exposure_total), spearmanr(exposure_total[shown], merit[shown])[0],
+            (exposure_total * female).sum() / exposure_total.sum(), shown.sum(), (hired &amp; ~shown).sum())
+
+for strategy, title in ((&quot;unawareness_proxy_removal&quot;, &quot;Gender not used by the ranker&quot;), (&quot;baseline&quot;, &quot;Gender used by the ranker&quot;)):
+    data = load_audit(&quot;AI Fair Recruitment&quot;, strategy)
+    tr, te = data.idx_train, data.idx_test
+    female, hired = data.group(&quot;gender&quot;)[te], data.y.iloc[te].to_numpy()
+    model = build_model(&quot;logistic_regression&quot;, data.random_state).fit(data.X.iloc[tr], data.y.iloc[tr])
+    merit = model.predict_proba(data.X.iloc[te])[:, 1]
+    print(f&quot;{title}: female share of the pool {female.mean():.3f}, of the first top {K} {female[rank_of(merit) &lt;= K].mean():.3f}&quot;)
+    for w in (0.0, 0.1, 0.25, 0.5):
+        g, rho, share, n_shown, missed = simulate(merit, hired, female, w, data.random_state)
+        print(f&quot;  w {w:4.2f} | gini of exposure {g:.3f} | rank correlation of exposure with merit {rho:.3f} | female share of exposure {share:.3f} | ever shown {n_shown} | hired never shown {missed}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>It is a simulation, and its constants are assumptions.</strong> The click probability, the popularity weight <code>w</code>, the cutoff <code>K</code> and the number of rounds are chosen, not measured. The qualitative result (a frozen shown set and a merit correlation that decays) does not depend on them, but the sizes do.</li><li><strong>There is no exploration.</strong> Real systems show a few random or new items to learn about them. That is the standard mitigation and it breaks the freeze, so the frozen set here is the worst case. See the mitigation below.</li><li><strong>Relevance comes from the hire label.</strong> If historical decisions were biased, &quot;relevant&quot; inherits that bias. See <a href="label-bias.html">Label Bias</a>.</li><li><strong>Candidates are not independent items.</strong> A recruiter who has looked at 1,000 people stops; a streaming service does not. The cutoff models a hard attention limit.</li><li><strong>Clicks are simulated, so the loop is closed by construction.</strong> On real data you would estimate how much of an item&#x27;s popularity is a result of its earlier exposure, for example with <a href="position-bias-and-click-models.html">Position Bias and Click Models</a>.</li></ol>
+<h3 id="mitigations">Mitigations</h3>
+<ul><li>Reserve a share of positions for items below the cutoff, chosen at random or by uncertainty, so that they can earn clicks.</li><li>Normalize clicks by exposure before they become popularity, so a click at rank 1 counts for less than a click at rank 500.</li><li>Rank on merit estimated from outcomes instead of clicks where outcomes exist.</li><li>Monitor the share of the catalog and of each group that was ever shown.</li></ul>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="fairness-in-ranking.html">Fairness in Ranking</a> - exposure for one list, the quantity that accumulates here</li><li><a href="feedback-loop-bias.html">Feedback Loop Bias</a> - the classifier version of the same loop</li><li><a href="two-sided-fairness.html">Two-Sided Fairness in a Marketplace</a> - exposure for the ranked and utility for the searcher</li><li><a href="position-bias-and-click-models.html">Position Bias and Click Models</a> - separating position from relevance in click data</li><li><a href="sampling-bias.html">Sampling Bias</a> - the data you collect depends on what you showed</li><li><a href="delayed-feedback.html">Delayed Feedback</a> - outcomes that arrive after the ranking was used</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-hiring"><code>AI Fair Recruitment/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://arxiv.org/abs/1907.13286" target="_blank" rel="noreferrer noopener">Abdollahpouri, H., Mansoury, M., Burke, R., Mobasher, B. (2019): The Unfairness of Popularity Bias in Recommendation</a> - RMSE workshop at RecSys 2019; popular items are over-recommended and niche users are served worst.</li><li><a href="https://arxiv.org/abs/1802.07281" target="_blank" rel="noreferrer noopener">Singh, A., Joachims, T. (2018): Fairness of Exposure in Rankings</a> - KDD 2018; the exposure framework that popularity accumulates in.</li><li><a href="https://arxiv.org/abs/1710.11214" target="_blank" rel="noreferrer noopener">Chaney, A. J. B., Stewart, B. M., Engelhardt, B. E. (2018): How Algorithmic Confounding in Recommendation Systems Increases Homogeneity and Decreases Utility</a> - RecSys 2018; simulations of feedback in recommenders.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

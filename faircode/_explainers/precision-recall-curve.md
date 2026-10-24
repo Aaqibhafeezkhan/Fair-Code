@@ -155,6 +155,7 @@ Two groups can have identical AP while one group's curve reaches that area throu
 * [False Positives vs. False Negatives in Medical Risk Models](false-positives-vs-false-negatives.md) - the per-threshold error breakdown that both AUC and AP average over.
 * [What Is Class Imbalance?](class-imbalance.md) - the underlying condition (skewed positive/negative ratios) that makes the ROC-vs-PR distinction matter in the first place.
 * [What Is Predictive Parity?](predictive-parity.md) - a fairness metric built directly from precision, and the COMPAS dispute over whether equalizing it is enough.
+* [What Is Decision Curve Analysis by Group?](decision-curve-analysis-by-group.md) - net benefit at each threshold, per group
 
 ## Related Projects in This Repo
 

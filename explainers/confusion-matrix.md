@@ -104,6 +104,7 @@ When two demographic groups have different base rates (prevalence) of the target
 * [Equalized Odds](equalized-odds.md) - the fairness metric that demands equal False Positive and True Positive Rates across groups.
 * [Predictive Parity](predictive-parity.md) - the fairness metric that focuses on equal Positive Predictive Value (Precision).
 * [What Is a ROC Curve and AUC?](roc-curve-auc.md) - how to evaluate a model's ranking ability across all possible thresholds, independent of a single confusion matrix.
+* [How Does Unequal Cost Change a Fairness Evaluation?](cost-sensitive-evaluation.md) - expected cost per group when errors are not equally costly
 
 ## Related Projects in This Repo
 

@@ -203,6 +203,7 @@ With fewer samples, calibration curves are noisier. Always check sample size per
 - [Equalized Odds](equalized-odds.md) - the metric that measures false positive and false negative rates across groups; often in direct conflict with calibration
 - [Fairness Metric Conflicts](fairness-metric-conflicts.md) - the mathematical proof that calibration, demographic parity, and equalized odds cannot all be satisfied simultaneously when base rates differ
 - [COMPAS/](../COMPAS/) - the audit where calibration vs. equalized odds plays out in full with real data
+- [What Is Decision Curve Analysis by Group?](decision-curve-analysis-by-group.md) - net benefit at each threshold, per group
 
 ---
 

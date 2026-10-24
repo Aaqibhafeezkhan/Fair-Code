@@ -141,6 +141,7 @@ Even a model with perfectly equalized false positive and false negative rates on
 * [Calibration](calibration.md) - why a model can assign the same risk score to equally-scored patients across groups and still be wrong in different directions for each group.
 * [What Is Predictive Parity?](predictive-parity.md) - the ProPublica vs. Northpointe COMPAS dispute, a real case where equalizing one error-based metric made another one worse.
 * [What is Disparate Treatment?](disparate-treatment.md) - relevant to the per-group threshold question raised in Limitation 2.
+* [How Does Unequal Cost Change a Fairness Evaluation?](cost-sensitive-evaluation.md) - expected cost per group when errors are not equally costly
 
 ## Related Projects in This Repo
 

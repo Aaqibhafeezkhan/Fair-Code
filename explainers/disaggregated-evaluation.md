@@ -87,6 +87,7 @@ for a in (0, 1):
 * [Bootstrap Confidence Intervals](bootstrap-confidence-intervals.md) - the interval on each slice
 * [Permutation Tests for Fairness Gaps](permutation-test-fairness-gaps.md) - the test for a gap between two slices
 * [Multiple Comparisons](multiple-comparisons.md) - what to do when you report many slices
+* [What Is an AUC Gap Between Groups?](auc-gaps-by-group.md) - the same curve computed per group, with an interval for the gap
 
 ## Related Projects in This Repo
 

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Is Decision Curve Analysis by Group? · Fair Code</title>
+<meta name="description" content="Net benefit by group against treating everyone or no one: how to read a decision curve per group and see where a model helps one group and not another.">
+<link rel="canonical" href="https://www.thefaircode.xyz/explainers/decision-curve-analysis-by-group.html">
+<meta name="author" content="Yash Kewlani">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta property="og:site_name" content="Fair Code">
+<meta property="og:locale" content="en_US">
+<meta property="og:title" content="What Is Decision Curve Analysis by Group? · Fair Code">
+<meta property="og:description" content="Net benefit by group against treating everyone or no one: how to read a decision curve per group and see where a model helps one group and not another.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.thefaircode.xyz/explainers/decision-curve-analysis-by-group.html">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og/decision-curve-analysis-by-group.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="What Is Decision Curve Analysis by Group? · Fair Code">
+<meta property="og:image" content="https://www.thefaircode.xyz/assets/og-light/decision-curve-analysis-by-group.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="What Is Decision Curve Analysis by Group? · Fair Code (light)">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="What Is Decision Curve Analysis by Group? · Fair Code">
+<meta name="twitter:description" content="Net benefit by group against treating everyone or no one: how to read a decision curve per group and see where a model helps one group and not another.">
+<meta name="twitter:image" content="https://www.thefaircode.xyz/assets/og/decision-curve-analysis-by-group.png">
+
+<link rel="icon" href="/assets/icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='32' y='18' width='13' height='64' fill='%2314171A'/><rect x='32' y='18' width='42' height='13' fill='%2314171A'/><rect x='32' y='44' width='36' height='13' fill='%234F7A5B'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem('fc-theme') || systemPref;
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<link rel="stylesheet" href="../assets/explainers.css">
+<style>
+  :root {
+    --bg: #f4f1e8;
+    --surface: #ebe7d9;
+    --border: #d9d3c0;
+    --border2: #bdb59c;
+    --accent: #a63a22;
+    --accent3: #2f6b4f;
+    --text: #36321f;
+    --muted: #7d7459;
+    --white: #1d1910;
+    --bias-track-bg: #e2dcc9;
+
+    --serif: 'Instrument Serif', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Archivo', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  html[data-theme="dark"] {
+    --bg: #15130d;
+    --surface: #1c1912;
+    --border: #2e2a1f;
+    --border2: #443e2d;
+    --accent: #cf6f49;
+    --accent3: #79b294;
+    --text: #cfc7b0;
+    --muted: #8d8367;
+    --white: #f1e9d4;
+    --bias-track-bg: #242013;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s, color 0.3s;
+  }
+  a { color: inherit; }
+  ::selection { background: var(--accent); color: var(--bg); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "DefinedTerm",
+      "author": {
+        "@type": "Person",
+        "name": "Yash Kewlani",
+        "url": "https://github.com/yakew7"
+      },
+      "name": "What Is Decision Curve Analysis by Group?",
+      "description": "Learn how net benefit compares a model with treating everyone or no one at each threshold, drawn per group. On COMPAS the model beats both defaults for the advantaged group from 0.18 to 0.37 and for the disadvantaged group from 0.32 to 0.52, so no single cutoff serves both.",
+      "url": "https://www.thefaircode.xyz/explainers/decision-curve-analysis-by-group.html",
+      "inDefinedTermSet": {
+        "@type": "DefinedTermSet",
+        "name": "Fair Code Explainers",
+        "url": "https://www.thefaircode.xyz/index.html#explainers"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "url": "https://www.thefaircode.xyz/explainers/decision-curve-analysis-by-group.html",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What Is Decision Curve Analysis by Group?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Decision curve analysis plots the net benefit of acting on a model's predictions at each threshold probability, against the two defaults of treating everyone and treating no one; drawn per group, it shows the thresholds at which the model helps each group."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does this matter for fairness?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Accuracy, AUC and error rates describe a model without saying whether using it is better than the alternatives. Vickers and Elkin (2006) proposed net benefit for exactly that question in medicine: given that a false positive has a cost, at what threshold is the model worth acting on? The threshold is not a technical setting. It encodes how many false positives you will tolerate to catch one true positive."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Fair Code",
+          "item": "https://www.thefaircode.xyz/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Explainers",
+          "item": "https://www.thefaircode.xyz/index.html#explainers"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "What Is Decision Curve Analysis by Group?",
+          "item": "https://www.thefaircode.xyz/explainers/decision-curve-analysis-by-group.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="84e0aebf-44e1-466e-b2c6-62f75e1c36c7"></script>
+</head>
+<body class="explainer-page">
+  <main class="explainer-shell is-ready" data-explainer-shell>
+    <div class="explainer-topbar">
+      <a class="explainer-back" href="../index.html#explainers">← Back to explainers</a>
+      <div class="explainer-topbar-actions">
+        <a class="explainer-source" href="https://github.com/yakew7/Fair-Code/blob/main/explainers/decision-curve-analysis-by-group.md" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+        <button class="explainer-theme-toggle" id="explainerThemeToggle" aria-label="Toggle theme" aria-pressed="false">☀</button>
+      </div>
+    </div>
+
+    <section class="explainer-hero">
+      <div class="explainer-kicker">Explainer</div>
+      <h1 class="explainer-headline">What Is Decision Curve Analysis by Group?</h1>
+      <p class="explainer-lede">The thresholds at which a model helps one group can be the ones where it fails another.</p>
+      <p class="explainer-lede">Learn how net benefit compares a model with treating everyone or no one at each threshold, drawn per group. On COMPAS the model beats both defaults for the advantaged group from 0.18 to 0.37 and for the disadvantaged group from 0.32 to 0.52, so no single cutoff serves both.</p>
+    </section>
+
+    <article class="explainer-content"><blockquote><p><em>A model can be worth using for one group at a threshold and worse than treating everyone for another group at the same threshold.</em></p></blockquote>
+<h3 id="the-one-sentence-definition">The One-Sentence Definition</h3>
+<p><strong>Decision curve analysis</strong> plots the <em>net benefit</em> of acting on a model&#x27;s predictions at each threshold probability, against the two defaults of treating everyone and treating no one; drawn per group, it shows the thresholds at which the model helps each group.</p>
+<h3 id="why-it-matters">Why It Matters</h3>
+<p>Accuracy, AUC and error rates describe a model without saying whether using it is better than the alternatives. Vickers and Elkin (2006) proposed net benefit for exactly that question in medicine: given that a false positive has a cost, at what threshold is the model worth acting on? The threshold is not a technical setting. It encodes how many false positives you will tolerate to catch one true positive.</p>
+<p>Per group, the same curve can tell a different story. A threshold that is useful for one group can be no better than flagging everyone for another, even when the model is &quot;the same&quot; for both. That is a fairness finding that a single aggregate curve, or a metric at 0.5, cannot show.</p>
+<h3 id="core-concept-net-benefit">Core Concept: Net Benefit</h3>
+<p>At threshold probability <code>t</code>, the model flags everyone whose score is at least <code>t</code>. The net benefit is</p>
+<pre><code>net benefit(t) = TP / n  -  FP / n * t / (1 - t)</code></pre>
+<p>True positives count as gains. Each false positive is a loss weighted by the odds <code>t / (1 - t)</code>: at <code>t = 0.2</code> a false positive costs a quarter of a true positive&#x27;s gain, at <code>t = 0.5</code> it costs the same. Choosing <code>t</code> is therefore the same as stating the cost ratio: acting at <code>t = 0.2</code> says a missed case is four times worse than a false alarm.</p>
+<p>Two reference lines come with it:</p>
+<ul><li><strong>Treat everyone:</strong> <code>prevalence - (1 - prevalence) * t / (1 - t)</code>, a model that flags every person.</li><li><strong>Treat no one:</strong> zero by definition.</li></ul>
+<p>The model is useful at <code>t</code> only if its net benefit is above both. Computing all three per group, with each group&#x27;s own prevalence in its treat-everyone line, gives a curve per group.</p>
+<h3 id="concrete-example-compas-race">Concrete Example: COMPAS, Race</h3>
+<p>The <a href="../index.html#project-compas">COMPAS</a> audit: the label is whether the COMPAS risk score text is High or Medium, a logistic regression on the core features (sex and marital status) predicts it, the disadvantaged group is African-American defendants. This audit models the score COMPAS issued, not whether anyone reoffended, so &quot;net benefit&quot; here measures how well the model reproduces that score. Prevalence differs a lot: 31% of the advantaged group&#x27;s test rows are positive against 59% for the disadvantaged group.</p>
+<pre><code>COMPAS - race: net benefit per 100 people at each threshold probability
+  threshold | advantaged: model  treat-all | disadvantaged: model  treat-all
+       0.15 |   19.02    19.02      |   51.81    51.81
+       0.20 |   14.72    13.95      |   48.48    48.79
+       0.25 |   12.30     8.22      |   44.53    45.38
+       0.30 |    7.79     1.66      |   41.31    41.48
+       0.35 |    2.90    -5.90      |   37.46    36.98
+       0.40 |   -2.89   -14.73      |   33.24    31.73
+       0.45 |   -9.29   -25.16      |   27.35    25.52
+       0.50 |  -17.24   -37.67      |   21.56    18.07
+advantaged    beats treat-all and treat-none at thresholds: 0.18 to 0.37
+disadvantaged beats treat-all and treat-none at thresholds: 0.32 to 0.52</code></pre>
+<p>At a threshold of 0.25 the model adds 12.30 net benefit per 100 people for the advantaged group, against 8.22 for treating them all. For the disadvantaged group at the same threshold it adds 44.53 against 45.38 for treating all of them: the model is slightly worse than flagging everyone. The useful thresholds hardly overlap: the model beats both defaults from 0.18 to 0.37 for the advantaged group and from 0.32 to 0.52 for the disadvantaged group, so below 0.32 the model is not better than &quot;flag everyone&quot; for the disadvantaged group, and above 0.37 it is not worth using for the advantaged group at all (net benefit falls below zero at 0.40).</p>
+<p>The takeaway is not that the model is fine in one range: it is that any single threshold serves one group better than the other, and that the right one depends on the cost ratio each group faces.</p>
+<h3 id="detection-implementation-code">Detection/Implementation Code</h3>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/decision-curve-analysis-by-group.py</code>; that file is generated from the block below).</p>
+<pre><code class="language-python">import numpy as np
+from faircode.benchmark import load_audit
+from faircode.models import build_model
+
+def net_benefit(y, p, t):
+    &quot;&quot;&quot;TP/n - FP/n * t/(1-t): true positives, minus false positives weighted by the odds of the threshold.&quot;&quot;&quot;
+    pred = p &gt;= t
+    return (pred &amp; (y == 1)).mean() - (pred &amp; (y == 0)).mean() * t / (1 - t)
+
+def treat_all(y, t):
+    return y.mean() - (1 - y.mean()) * t / (1 - t)
+
+def useful_ranges(y, p, grid):
+    &quot;&quot;&quot;Threshold ranges where the model beats both treating everyone and treating no one.&quot;&quot;&quot;
+    ok = [net_benefit(y, p, t) &gt; max(treat_all(y, t), 0) for t in grid]
+    ranges, start = [], None
+    for t, flag in zip(grid, ok):
+        if flag and start is None:
+            start = t
+        if not flag and start is not None:
+            ranges.append((start, prev)); start = None
+        prev = t
+    if start is not None:
+        ranges.append((start, grid[-1]))
+    return ranges
+
+data = load_audit(&quot;COMPAS&quot;)
+tr, te = data.idx_train, data.idx_test
+model = build_model(&quot;logistic_regression&quot;, data.random_state).fit(data.X.iloc[tr], data.y.iloc[tr])
+p = model.predict_proba(data.X.iloc[te])[:, 1]
+y = data.y.iloc[te].to_numpy()
+s = data.group(&quot;race&quot;)[te]                           # 1 = disadvantaged group
+grid = np.round(np.arange(0.05, 0.96, 0.01), 2)
+
+print(&quot;COMPAS - race: net benefit per 100 people at each threshold probability&quot;)
+print(&quot;  threshold | advantaged: model  treat-all | disadvantaged: model  treat-all&quot;)
+for t in (0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50):
+    row = [f&quot;{100 * f(y[s == g], p[s == g], t) if f is net_benefit else 100 * f(y[s == g], t):7.2f}&quot;
+           for g in (0, 1) for f in (net_benefit, lambda yy, *a: treat_all(yy, a[-1]))]
+    print(f&quot;  {t:9.2f} | {row[0]}  {row[1]}      | {row[2]}  {row[3]}&quot;)
+for g, name in ((0, &quot;advantaged&quot;), (1, &quot;disadvantaged&quot;)):
+    spans = &quot;, &quot;.join(f&quot;{a:.2f} to {b:.2f}&quot; for a, b in useful_ranges(y[s == g], p[s == g], grid))
+    print(f&quot;{name:13s} beats treat-all and treat-none at thresholds: {spans}&quot;)</code></pre>
+<h3 id="limitations">Limitations</h3>
+<ol><li><strong>The threshold stands in for a cost ratio you have to choose.</strong> Net benefit is only as meaningful as that ratio. A table at one threshold is a claim about costs; say what you assumed. See <a href="cost-sensitive-evaluation.html">Cost-Sensitive Evaluation</a>.</li><li><strong>It assumes calibrated probabilities.</strong> The <code>t / (1 - t)</code> weighting is exact only when scores are probabilities. An uncalibrated score gives net benefit that is not comparable across thresholds or groups. See <a href="calibration.html">Calibration</a>.</li><li><strong>It is noisy for small groups.</strong> Net benefit is a mean of a few outcomes; the curves for a group of a few hundred rows can cross by chance. Add bootstrap intervals before reading a crossing as a finding.</li><li><strong>Different prevalence changes the treat-everyone line.</strong> A group with 59% positives has a much higher default line than one with 31%, so the same model looks less useful for it. That is a real feature of the data, not a flaw of the method, but it is easy to mistake for model bias.</li><li><strong>A label that is itself a model output means the curve measures agreement with that model.</strong> In the COMPAS audit the label is the issued score. See <a href="label-bias.html">Label Bias</a>.</li></ol>
+<h3 id="related-concepts">Related Concepts</h3>
+<ul><li><a href="cost-sensitive-evaluation.html">Cost-Sensitive Evaluation</a> - choosing the threshold from costs</li><li><a href="false-positives-vs-false-negatives.html">False Positives vs. False Negatives</a> - the two errors the threshold trades off</li><li><a href="precision-recall-curve.html">Precision-Recall Curve</a> - another threshold view, also sensitive to prevalence</li><li><a href="roc-curve-auc.html">ROC Curve and AUC</a> - the threshold-free ranking summary</li><li><a href="group-specific-thresholds.html">Group-Specific Thresholds</a> - using a different cutoff per group</li><li><a href="calibration.html">Calibration</a> - what net benefit assumes</li></ul>
+<h3 id="related-projects-in-this-repo">Related Projects in This Repo</h3>
+<ul><li><a href="../index.html#project-compas"><code>COMPAS/</code></a> - the audit used for the example above</li></ul>
+<h3 id="further-reading">Further Reading</h3>
+<ul><li><a href="https://doi.org/10.1177/0272989X06295361" target="_blank" rel="noreferrer noopener">Vickers, A. J., Elkin, E. B. (2006): Decision Curve Analysis: A Novel Method for Evaluating Prediction Models</a> - Medical Decision Making 26(6); the original method.</li><li><a href="https://doi.org/10.1136/bmj.i6" target="_blank" rel="noreferrer noopener">Vickers, A. J., van Calster, B., Steyerberg, E. W. (2016): Net Benefit Approaches to the Evaluation of Prediction Models, Molecular Markers, and Diagnostic Tests</a> - BMJ 352; a short practical guide.</li><li><a href="https://www.propublica.org/article/machine-bias-risk-assessments-in-criminal-sentencing" target="_blank" rel="noreferrer noopener">Angwin, J. et al. (2016): Machine Bias</a> - ProPublica; the COMPAS analysis behind the audit&#x27;s data.</li></ul>
+<hr>
+<p><em>Part of <a href="https://instagram.com/thefaircodeproject" target="_blank" rel="noreferrer noopener">The Fair Code Project</a> - exposing and fixing algorithmic bias with real data and open code.</em></p></article>
+  </main>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById('explainerThemeToggle');
+      const html = document.documentElement;
+      const systemPref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+      function syncTheme() {
+        const current = html.getAttribute('data-theme') || systemPref;
+        toggle.textContent = current === 'light' ? '☾' : '☀';
+        toggle.setAttribute('aria-label', current === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', current === 'dark' ? 'true' : 'false');
+      }
+
+      syncTheme();
+
+      toggle.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') || systemPref;
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('fc-theme', next);
+        syncTheme();
+      });
+    })();
+  </script>
+</body>
+</html>

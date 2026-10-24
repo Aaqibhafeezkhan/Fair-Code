@@ -1158,5 +1158,37 @@ window.FAIR_CODE_EXPLAINERS = [
     "tags": [
       "metrics"
     ]
+  },
+  {
+    "slug": "auc-gaps-by-group",
+    "title": "What Is an AUC Gap Between Groups?",
+    "subtitle": "Equal ranking quality can hide unequal errors, and a threshold can hide a ranking gap.",
+    "summary": "Learn how to compute a per-group AUC, the gap between groups, and its bootstrap and DeLong intervals. See Tenant Screening, where AUCs of 0.680 and 0.672 sit beside false positive rates of 0.610 and 0.460, Healthcare Readmission, where a real 0.052 gap is invisible at a 0.5 cutoff, and Insurance Denial, where a 0.095 gap is noise.",
+    "description": "Per-group AUC and its gap with bootstrap and DeLong intervals: when equal AUC hides unequal errors, and when a threshold hides a real ranking gap.",
+    "tags": [
+      "metrics",
+      "detection"
+    ]
+  },
+  {
+    "slug": "decision-curve-analysis-by-group",
+    "title": "What Is Decision Curve Analysis by Group?",
+    "subtitle": "The thresholds at which a model helps one group can be the ones where it fails another.",
+    "summary": "Learn how net benefit compares a model with treating everyone or no one at each threshold, drawn per group. On COMPAS the model beats both defaults for the advantaged group from 0.18 to 0.37 and for the disadvantaged group from 0.32 to 0.52, so no single cutoff serves both.",
+    "description": "Net benefit by group against treating everyone or no one: how to read a decision curve per group and see where a model helps one group and not another.",
+    "tags": [
+      "metrics",
+      "detection"
+    ]
+  },
+  {
+    "slug": "cost-sensitive-evaluation",
+    "title": "How Does Unequal Cost Change a Fairness Evaluation?",
+    "subtitle": "A false positive and a false negative rarely cost the same, and can cost differently by group.",
+    "summary": "Learn how to score each group by expected cost, find the cost-optimal cutoff, and compare it with Elkan's formula and with group-specific thresholds. On Tenant Screening, a 5:1 cost ratio moves the best cutoff from 0.5 to about 0.84, and the model then costs no less than flagging nobody.",
+    "description": "Per-group expected cost under unequal false positive and false negative costs, the cost-optimal threshold, and how it relates to group-specific thresholds.",
+    "tags": [
+      "metrics"
+    ]
   }
 ];

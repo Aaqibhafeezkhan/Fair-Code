@@ -144,6 +144,7 @@ Two groups can have identical AUCs and still be treated unequally: same ranking 
 * [Calibration](calibration.md) - why AUC's blindness to the actual score values lets a well-ranked model still mean different things for different groups.
 * [What Is Predictive Parity?](predictive-parity.md) - the COMPAS dispute in full, where two defensible error-based definitions of fairness could not both hold at once.
 * [What Is a Precision-Recall Curve?](precision-recall-curve.md) - the curve to read under heavy class imbalance
+* [What Is an AUC Gap Between Groups?](auc-gaps-by-group.md) - the same curve computed per group, with an interval for the gap
 
 ## Related Projects in This Repo
 

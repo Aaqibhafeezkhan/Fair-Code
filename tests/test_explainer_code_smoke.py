@@ -37,6 +37,10 @@ def runnable_blocks():
 
 @pytest.mark.parametrize("path,block_number,code,slow", list(runnable_blocks()))
 def test_runnable_explainer_python_blocks(path, block_number, code, slow):
+    # A block that loads an audit needs the benchmark extra; the profiler CI job installs only the core package.
+    if "faircode.benchmark" in code:
+        for module in ("yaml", "sklearn"):
+            pytest.importorskip(module)
     timeout = 120 if slow else 30
     try:
         result = subprocess.run(

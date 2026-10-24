@@ -202,3 +202,22 @@ def test_xlsx_date_cells_get_the_same_labels_in_both_engines(tmp_path, tz, date1
     assert py["race"] == ["2020-01-01 00:00:00", "2021-06-15 10:30:15"]
     assert py["ethnicity"] == ["09:05:00"]
     assert js == py
+
+
+@requires_openpyxl
+def test_xlsx_numeric_header_cells_are_text_in_both_engines(tmp_path):
+    """#1045: a header cell holding the number 2020 is the column "2020" (text) in Python, as in the web engine."""
+    from faircode import profile
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append([2020, "sex"])
+    for i in range(30):
+        ws.append([i % 3, "m" if i % 2 else "f"])
+    path = _save_workbook(tmp_path, wb, "numeric_header.xlsx")
+    py = [d["name"] for d in profile(read_table(str(path)))["dimensions"]]
+    result = _run_js_parse(path)
+    assert result.returncode == 0, result.stderr
+    js = [d["name"] for d in json.loads(result.stdout)["dimensions"]]
+    assert py == js == ["2020", "sex"]
+    assert all(isinstance(name, str) for name in py)

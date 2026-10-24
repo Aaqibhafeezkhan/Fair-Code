@@ -57,12 +57,21 @@ def resolve_encoding(path: str, encoding: str | None = None) -> str:
         return "utf-8"
 
 
+def text_headers(df: pd.DataFrame) -> pd.DataFrame:
+    """Column names as text, like a CSV header and like the web engine (#1045). A workbook header cell holding the number
+    2020, or a split-orient JSON file with integer column labels, otherwise gives a column named by the integer 2020:
+    the result's dimension name is a JSON number instead of a string, and `--map`, `--cross` and `--rename` (always
+    strings) cannot match it."""
+    df.columns = [str(c) for c in df.columns]
+    return df
+
+
 def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
     suffix = Path(path).suffix.lower()
 
     if suffix == ".xlsx":
         try:
-            return pd.read_excel(path)
+            return text_headers(pd.read_excel(path))
         except ImportError as exc:
             raise RuntimeError(
                 "reading .xlsx files requires the 'openpyxl' package "

@@ -62,13 +62,13 @@ def test_array_of_primitives_js_gives_clear_error(tmp_path):
 
 def test_array_of_primitives_python_current_behavior(tmp_path):
     # pandas' read_json treats a bare array of primitives as a single-column
-    # table (column "0"). This differs from the JS engine's stricter check
+    # table (column "0", text since #1045). This differs from the JS engine's stricter check
     # above; pinning it here documents the existing behavior rather than
     # changing it, since loosening/tightening pandas' own JSON orientation
     # handling is out of scope for this fix.
     path = _write_json(tmp_path, "[1, 2, 3]")
     df = read_table(str(path))
-    assert df.to_dict(orient="list") == {0: [1, 2, 3]}
+    assert df.to_dict(orient="list") == {"0": [1, 2, 3]}
 
 
 # ── Empty object {} ───────────────────────────────────────────────────────────

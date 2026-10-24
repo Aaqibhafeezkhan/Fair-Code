@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .loaders import NUL_MESSAGE, SNIFF_SAMPLE_BYTES, _plain_parser_message, _sniff_delimiter, resolve_encoding, sniff_bom_encoding
+from .loaders import NUL_MESSAGE, SNIFF_SAMPLE_BYTES, _plain_parser_message, _sniff_delimiter, resolve_encoding, sniff_bom_encoding, text_headers
 from .loaders import read_table as _read_table_frozen
 
 
@@ -28,7 +28,7 @@ EMPTY_DATASET_MESSAGE = "dataset is empty (no header row)"   # mirrors parseCSV(
 def read_table(path: str, encoding: str | None = None) -> pd.DataFrame:
     """Read `path` ("-" for stdin) into a DataFrame; see _read_table_impl for the formats."""
     try:
-        return _read_table_impl(path, encoding)
+        return text_headers(_read_table_impl(path, encoding))
     except pd.errors.EmptyDataError:   # pandas says "No columns to parse from file"
         raise ValueError(EMPTY_DATASET_MESSAGE) from None
 

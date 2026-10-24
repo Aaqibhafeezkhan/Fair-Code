@@ -46,7 +46,7 @@ The two routes together are 17% of the gap. The rest is either a direct effect, 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 path-specific-effects.py`). Only NumPy is needed for the regressions.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/path-specific-effects.py`; that file is generated from the block below). Only NumPy is needed for the regressions.
 
 ```python
 import numpy as np

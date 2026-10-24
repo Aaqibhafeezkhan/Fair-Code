@@ -211,7 +211,7 @@ upweight the errors x5             overall 0.607 | male &lt;55 0.626 male 55+ 0.
 <ul><li><strong>A small upweight helps.</strong> At 2x the worst group improves to 0.725 and overall accuracy to 0.815.</li><li><strong>A larger one helps the worst group more and costs the rest.</strong> At 3x the worst group is at 0.742, but overall accuracy is down to 0.773 and women under 55 drop from 0.900 to 0.792.</li><li><strong>Past that it breaks.</strong> At 5x the model collapses to 0.607 overall and the worst group, now women under 55, to 0.526.</li></ul>
 <p>The &quot;worst group&quot; can change identity: at 5x it is a different group from the baseline&#x27;s. A label-free method has no way to prefer one group&#x27;s accuracy over another&#x27;s; it moves all of them.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 fairness-without-demographics.py</code>). Group labels appear only in the evaluation lines.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fairness-without-demographics.py</code>; that file is generated from the block below). Group labels appear only in the evaluation lines.</p>
 <pre><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

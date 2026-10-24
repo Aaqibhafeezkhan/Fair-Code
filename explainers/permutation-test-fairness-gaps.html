@@ -207,7 +207,7 @@ hand-written p: 0.0 | faircode.significance p: 0.0
  1000 rows: p &lt; 0.05 in 72% of 200 random samples (median p 0.013)</code></pre>
 <p>On the full test set the p-value is below 1/2000 (the resolution of 2,000 shuffles), and the interval is -0.064 to -0.037. On 1,000 rows, a 5-point gap clears p &lt; 0.05 in only 72% of samples. On 200 rows it clears it in only 17%. The gap did not change; the evidence did. The benchmark&#x27;s German Credit S2 row has a gap of -0.0914 with a p-value of 0.17 in <code>results/</code> (the current results): a bigger gap than here, measured on about 200 test rows, and not significant.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 permutation.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/permutation-test-fairness-gaps.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest

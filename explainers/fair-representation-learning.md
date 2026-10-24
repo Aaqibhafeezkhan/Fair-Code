@@ -46,7 +46,7 @@ The baseline here is standardized and fitted by scikit-learn on the S1 columns, 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fair-representation-learning.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fair-representation-learning.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

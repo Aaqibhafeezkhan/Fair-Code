@@ -55,7 +55,7 @@ That is a finding. It says that for this label the Obermeyer mechanism is not vi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 utilization-as-a-label.py`). `data.df` holds the raw rows, so columns the harness does not encode can still be used to define strata.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/utilization-as-a-label.py`; that file is generated from the block below). `data.df` holds the raw rows, so columns the harness does not encode can still be used to define strata.
 
 ```python
 import numpy as np

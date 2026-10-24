@@ -221,7 +221,7 @@ tenant_screening         race             4/6     demographic_parity, disparate_
 <p>Three worked paths from the repo&#x27;s audits:</p>
 <ul><li><strong>Tenant Screening (a flag leads to refusal):</strong> the harm is a wrongful flag, so start with the false positive rate and equalized odds, then check demographic parity.</li><li><strong>Benefits Denial (a means test):</strong> the harm is wrongly excluding eligible people, so start with equal opportunity.</li><li><strong>COMPAS (a risk score shown to a judge):</strong> the harm is a score that means different things by group, so start with predictive parity and calibration, then accept that error-rate parity cannot also hold when base rates differ.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>python3 choosing-a-fairness-metric.py</code>). It reads the benchmark&#x27;s current results; change <code>strategy</code> or <code>model</code> to look at another.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/choosing-a-fairness-metric.py</code>; that file is generated from the block below). It reads the benchmark&#x27;s current results; change <code>strategy</code> or <code>model</code> to look at another.</p>
 <pre><code class="language-python">import pandas as pd
 
 results = pd.read_csv(&quot;results/results_fairness.csv&quot;)      # the benchmark&#x27;s current results

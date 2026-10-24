@@ -43,7 +43,7 @@ So a model audited on a parity or predictive-parity criterion can fail it after 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 label-shift-and-fairness.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/label-shift-and-fairness.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

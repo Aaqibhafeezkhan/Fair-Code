@@ -48,7 +48,7 @@ None of these is the answer. They are the answers under different graphs.
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 causal-graphs-for-fairness.py`). The label column records the role the graph gives each set; change the graph and the interpretation changes with it.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/causal-graphs-for-fairness.py`; that file is generated from the block below). The label column records the role the graph gives each set; change the graph and the interpretation changes with it.
 
 ```python
 import numpy as np

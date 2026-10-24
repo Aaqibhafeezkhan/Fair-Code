@@ -39,7 +39,7 @@ The point of the accuracy column: a model can look better on the recorded labels
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 measurement-bias.py`). The function below applies a scale and/or noise to one column for one group.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/measurement-bias.py`; that file is generated from the block below). The function below applies a scale and/or noise to one column for one group.
 
 ```python
 import numpy as np

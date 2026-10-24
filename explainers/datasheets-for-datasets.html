@@ -229,7 +229,7 @@ USES
 <p>The computable answers already matter. After the audit&#x27;s two row filters 99,492 of 101,766 rows remain and the positive rate is 11.2%. Race is 74.8% Caucasian and 18.9% African American, with 2.2% recorded as <code>?</code>. The missingness table is the sharper finding: <code>weight</code> is missing for 96.9% of rows, <code>max_glu_serum</code> for 94.7% and <code>A1Cresult</code> for 83.3%, so any model that uses them is learning from the few rows where a test happened to be ordered, which is exactly the pattern <a href="missing-data-bias-ehr.html">Missing Data as Bias in EHRs</a> describes.</p>
 <p>Three questions cannot be answered from the repo: why the data was created, how it was acquired, and whether the patients consented to this use. Those unknowns are part of the dataset&#x27;s description.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 datasheets-for-datasets.py</code>). Change the folder name to produce one for another audit.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/datasheets-for-datasets.py</code>; that file is generated from the block below). Change the folder name to produce one for another audit.</p>
 <pre><code class="language-python">import pandas as pd
 from faircode.benchmark import load_audit
 

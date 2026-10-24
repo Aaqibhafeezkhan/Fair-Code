@@ -211,7 +211,7 @@ without race (and without gender and age)
 <ul><li><strong>Accuracy barely moves:</strong> AUC 0.635 with race and 0.633 without. For this model race adds almost no predictive information beyond the clinical columns.</li><li><strong>Calibration differs by group either way:</strong> African American patients have a mean predicted risk of 0.115 and an observed rate of 0.103, so the model over-predicts for them by about 1.2 points with race and 1.1 without; for other patients predicted 0.112 against observed 0.114. Removing race does not fix it, because the over-prediction comes from the other columns.</li><li><strong>Allocation shifts by under a point:</strong> the share of African American patients given a place is 11.4% with race and 11.1% without, against 9.7% for others. Of the patients who really were readmitted, 21.3% of African American patients and 20.3% of others receive a place with race, 21.3% and 20.5% without.</li></ul>
 <p>So on this model the debate is not a trade between accuracy and fairness: the variable carries almost no signal, and the group-level calibration gap exists with or without it. A model where race carried real signal would tell a different story, and the check above is how to find out.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 race-in-clinical-models.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/race-in-clinical-models.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score

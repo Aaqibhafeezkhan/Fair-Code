@@ -59,7 +59,7 @@ Three questions cannot be answered from the repo: why the data was created, how 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 datasheets-for-datasets.py`). Change the folder name to produce one for another audit.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/datasheets-for-datasets.py`; that file is generated from the block below). Change the folder name to produce one for another audit.
 
 ```python
 import pandas as pd

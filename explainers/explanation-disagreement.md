@@ -49,7 +49,7 @@ Spearman correlation between the rankings
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 explanation-disagreement.py`). It needs `shap`, which is not a dependency of this package (`pip install shap`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/explanation-disagreement.py`; that file is generated from the block below). It needs `shap`, which is not a dependency of this package (`pip install shap`).
 
 ```python
 import numpy as np

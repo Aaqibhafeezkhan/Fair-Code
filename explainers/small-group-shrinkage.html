@@ -210,7 +210,7 @@ the cell with the lowest true accuracy, [70-80)|Hispanic (72 rows): true 0.819; 
 <ul><li><strong>Shrinkage cuts the error by two thirds.</strong> The root-mean-square error against the true cell accuracy falls from 0.144 (raw) to 0.043 (shrunk), and for the eight smallest cells from 0.152 to 0.062.</li><li><strong>It also hides a gap.</strong> The cell with the lowest true accuracy (age 70 to 80, Hispanic patients, 72 rows) has a true accuracy of 0.819, 6.8 points below the pooled 0.887. Raw estimates average 0.796 (noisy, but centred on the right level) while shrunk estimates average 0.884, almost exactly the pool. In an audit of this size the raw estimate flags the cell and the shrunk one does not.</li></ul>
 <p>Use shrinkage to rank or screen many small groups with less noise, and keep the raw numbers and their intervals next to it for any cell that looks different.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 small-group-shrinkage.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/small-group-shrinkage.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

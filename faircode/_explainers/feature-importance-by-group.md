@@ -43,7 +43,7 @@ Part of the gap is mechanical. Women are a minority of the positive class in thi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 feature-importance-by-group.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/feature-importance-by-group.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

@@ -207,7 +207,7 @@ random sample                                  74                            0.2
 stratified: half under 30                     100                            0.183                  0.694 / 0.703</code></pre>
 <ul><li><strong>Narrower interval for the group that matters.</strong> The random sample holds 74 under-30s on average and gives a bootstrap interval for their accuracy 0.213 wide. The stratified one holds 100 and gives 0.183, about 14% narrower for the same 200 labels. The gain is modest because 100 is not much more than 74; a more extreme mix would narrow it further at the cost of the other group&#x27;s interval.</li><li><strong>The unweighted overall number is biased.</strong> The stratified sample&#x27;s plain accuracy is 0.694 against a true 0.709 for all 1,000 rows, because under-30s are less accurately predicted (0.663) and are over-represented. Weighting each row by its group&#x27;s population share over its sample share gives 0.703, within sampling noise of the truth.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 stratified-test-sets-for-fairness.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/stratified-test-sets-for-fairness.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.model_selection import cross_val_predict
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

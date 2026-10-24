@@ -218,7 +218,7 @@ batch size  window  drift   median batches to alert  never alerted   false alarm
       1000       6   0.06                       2.0             0%                              2%</code></pre>
 <ul><li><strong>Bigger drifts alert faster:</strong> with batches of 1,000 and a window of 3, a 0.06 drift alerts after 2 batches and a 0.03 drift after 3.</li><li><strong>Small batches are slow for small drifts:</strong> with 200 rows per batch a 0.03 drift takes a median of 11 batches and 9% of runs never alert within the 40 batches afterwards.</li><li><strong>The rule raises false alarms:</strong> between 2% and 9% of runs fire during the 20 batches before the drift, which is what a 3 standard error rule gives when it is checked at every batch. A rule that is checked weekly for a year will fire by chance.</li><li><strong>A longer window is steadier, not always better:</strong> at 1,000 rows a window of 6 gives fewer false alarms (3% and 2%) than a window of 1 (7% and 5%) and alerts about as fast for the larger drift.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 monitoring-fairness-in-production.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/monitoring-fairness-in-production.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

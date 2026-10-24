@@ -44,7 +44,7 @@ The overall ratio for the audit's hire rate is lower than the decision-stage rat
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 hiring-pipeline-adverse-impact.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/hiring-pipeline-adverse-impact.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

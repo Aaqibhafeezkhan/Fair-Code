@@ -207,7 +207,7 @@ core features + area               accuracy 0.639 | parity gap +0.0812</code></p
 <p>The 25 areas run from 15% to 89% Black among the people in them. A score that is only the training-set Black share of the person&#x27;s area recovers race with an AUC of 0.719, better than the model&#x27;s own features do (0.655). So the area is a strong proxy.</p>
 <p>Then the surprise: adding the area as one-hot columns to the recidivism model leaves accuracy unchanged at 0.639 and moves the parity gap from +0.1136 to +0.0812. The proxy is strong and the gap went down. The area carries information about recidivism that the core features were encoding through other, race-correlated columns, and giving the model the area directly changed which columns it leaned on. The lesson is not that location is safe. It is that you cannot read the effect of a proxy from how strong it is, so you have to measure both.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 geographic-proxies-and-redlining.py</code>). <code>data.df</code> holds the raw rows, so a column the harness does not encode (the area) can still be read.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/geographic-proxies-and-redlining.py</code>; that file is generated from the block below). <code>data.df</code> holds the raw rows, so a column the harness does not encode (the area) can still be read.</p>
 <pre><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression

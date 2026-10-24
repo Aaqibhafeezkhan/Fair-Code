@@ -39,7 +39,7 @@ The overall figure, 0.644 with an interval 0.116 wide, hides the spread: age-dis
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 disaggregated-evaluation.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/disaggregated-evaluation.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

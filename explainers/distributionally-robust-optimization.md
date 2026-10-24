@@ -58,7 +58,7 @@ What it did and did not do:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 dro.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/distributionally-robust-optimization.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

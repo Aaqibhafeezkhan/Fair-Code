@@ -208,7 +208,7 @@ capital.gain recorded 50% low for women        accuracy 0.812 | positive rate wo
 <ul><li><strong>True values:</strong> accuracy 0.811 and a parity gap of -0.0509, the benchmark&#x27;s S2 row in <code>results/</code> (the current results).</li><li><strong>Crediting women 15% less schooling</strong> (<code>education.num</code> scaled to 0.85) doubles the gap to -0.1089 and <em>raises</em> measured accuracy to 0.822. The error is systematic, so it encodes sex, and sex predicts the label in this data.</li><li><strong>Noisy schooling for women</strong> (noise with the column&#x27;s own standard deviation) shrinks the gap to -0.0135 and lowers accuracy to 0.799. The model has stopped trusting the column, for women and for everyone.</li><li><strong>Halving women&#x27;s recorded capital gains</strong> moves the gap only to -0.0592, because that column matters less to this model.</li></ul>
 <p>The point of the accuracy column: a model can look better on the recorded labels while it is worse for a group, because the labels never saw the true values.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 measurement-bias.py</code>). The function below applies a scale and/or noise to one column for one group.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/measurement-bias.py</code>; that file is generated from the block below). The function below applies a scale and/or noise to one column for one group.</p>
 <pre><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

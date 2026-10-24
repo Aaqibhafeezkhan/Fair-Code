@@ -54,7 +54,7 @@ So for this audit, with this score, the frontier says the cost of fairness is un
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fairness-accuracy-pareto-frontier.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-accuracy-pareto-frontier.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

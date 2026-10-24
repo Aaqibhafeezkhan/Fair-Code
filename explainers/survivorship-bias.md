@@ -43,7 +43,7 @@ The size of the distortion depends on how hard the gate is. A gate that keeps on
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 survivorship-bias.py`). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/survivorship-bias.py`; that file is generated from the block below). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.
 
 ```python
 import numpy as np

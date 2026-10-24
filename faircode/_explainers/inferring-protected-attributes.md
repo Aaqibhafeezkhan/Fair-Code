@@ -41,7 +41,7 @@ Both point the right way and are the right order of magnitude, and both understa
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 inferring-protected-attributes.py`). The true attribute is used only to score the result.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/inferring-protected-attributes.py`; that file is generated from the block below). The true attribute is used only to score the result.
 
 ```python
 import numpy as np

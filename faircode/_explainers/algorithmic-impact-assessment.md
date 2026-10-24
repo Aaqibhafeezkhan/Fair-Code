@@ -59,7 +59,7 @@ The last paragraph matters most: who reviews a flag, whether there is an appeal,
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 algorithmic-impact-assessment.py`). It reads the benchmark's current results; change the three constants at the top to assess another audit.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/algorithmic-impact-assessment.py`; that file is generated from the block below). It reads the benchmark's current results; change the three constants at the top to assess another audit.
 
 ```python
 import pandas as pd

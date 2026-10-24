@@ -210,7 +210,7 @@ S4 post-processing                    +0.000                0.007               
 <ul><li><strong>S3 in-processing and S4 post-processing close the gap; the rest barely do.</strong> The median absolute parity gap is 0.009 for S3 and 0.007 for S4 against 0.042 for S2 and 0.041 for S1. The gap is smaller than S2&#x27;s in 8 of 13 pairs for S3 and 9 of 13 for S4.</li><li><strong>S3 costs accuracy; S4 does not, in the median.</strong> S3&#x27;s median accuracy change is -0.027 and S4&#x27;s is +0.000. The medians hide the spread, so check the audit you care about.</li><li><strong>Fewer pairs stay significant:</strong> 4 of 13 for S3 and 3 of 13 for S4, against 7 of 13 for S2 and 10 of 13 for S0 (the model that uses the protected attribute directly).</li><li><strong>The needs differ.</strong> S1 and S2 need no group labels anywhere. S3 needs them while training. S4 needs them while training and again at prediction, which is the constraint that most often rules it out.</li></ul>
 <p>A short decision rule follows: if you cannot use the attribute at prediction time, choose S3; if you can and may, S4 gives the smallest gaps for the least accuracy; if neither is possible, S2 with a proxy audit is the floor, and its remaining gaps need explaining.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>python3 choosing-a-mitigation-strategy.py</code>). It reads the benchmark&#x27;s current results.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/choosing-a-mitigation-strategy.py</code>; that file is generated from the block below). It reads the benchmark&#x27;s current results.</p>
 <pre><code class="language-python">import numpy as np
 import pandas as pd
 

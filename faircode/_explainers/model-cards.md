@@ -60,7 +60,7 @@ What the card shows that the accuracy alone does not: accuracy is 0.811, but sex
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 model-cards.py`). It reads the benchmark's current results; change the three constants at the top to document another model.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/model-cards.py`; that file is generated from the block below). It reads the benchmark's current results; change the three constants at the top to document another model.
 
 ```python
 import pandas as pd

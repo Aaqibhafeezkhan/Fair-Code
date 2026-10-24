@@ -42,7 +42,7 @@ The "worst group" can change identity: at 5x it is a different group from the ba
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fairness-without-demographics.py`). Group labels appear only in the evaluation lines.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-without-demographics.py`; that file is generated from the block below). Group labels appear only in the evaluation lines.
 
 ```python
 import numpy as np

@@ -47,7 +47,7 @@ The overall reading: on this data a forest generalizes to a held-out group about
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 leave-one-group-out-evaluation.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/leave-one-group-out-evaluation.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

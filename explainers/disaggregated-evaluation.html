@@ -212,7 +212,7 @@ age 1 x gender 0             n=  73  accuracy 0.575  95% CI [0.466, 0.699]  widt
 age 1 x gender 1             n=  33  accuracy 0.667  95% CI [0.485, 0.818]  width 0.333</code></pre>
 <p>The overall figure, 0.644 with an interval 0.116 wide, hides the spread: age-disadvantaged is 0.604 against 0.671 for the advantaged group, gender-disadvantaged is 0.687 against 0.602 for the advantaged. The intersections are more extreme in both directions, and their intervals are far wider: 0.250 for 60 people and 0.333 for 33. Every one of those intervals contains the overall accuracy, so this test set cannot establish a gap between any two of them. That is the lesson, not a failing of the method: with 267 rows the audit cannot say much about any intersection.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 disaggregated-evaluation.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/disaggregated-evaluation.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

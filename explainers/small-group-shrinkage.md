@@ -39,7 +39,7 @@ Use shrinkage to rank or screen many small groups with less noise, and keep the 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 small-group-shrinkage.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/small-group-shrinkage.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

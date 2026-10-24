@@ -35,7 +35,7 @@ stratified: half under 30                     100                            0.1
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 stratified-test-sets-for-fairness.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/stratified-test-sets-for-fairness.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

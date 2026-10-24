@@ -213,7 +213,7 @@
 <p>So the downstream logistic regression is nearly gap-free while the representation is not clean. The model benefits only because it is linear. A stronger downstream model could use what the forest finds.</p>
 <p>The baseline here is standardized and fitted by scikit-learn on the S1 columns, so it is not the benchmark&#x27;s S1 row (a gap of -0.1003 in <code>results/</code>, the current results).</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 fair-representation-learning.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fair-representation-learning.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression

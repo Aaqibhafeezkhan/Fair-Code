@@ -45,7 +45,7 @@ For scale, the benchmark's classification rows for the same audit in `results/` 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 ranking.py`). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-in-ranking.py`; that file is generated from the block below). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.
 
 ```python
 import numpy as np

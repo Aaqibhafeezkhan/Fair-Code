@@ -213,7 +213,7 @@ coefficient (per standard deviation), fitted on everyone vs on survivors only
 <ul><li><strong>The base rate nearly doubles.</strong> The hire rate is 0.259 for everyone and 0.473 among the 30.1% who pass the gate.</li><li><strong>The gap widens slightly.</strong> The women-minus-men hire-rate gap is -0.0292 for everyone and -0.0354 among survivors.</li><li><strong>The gate&#x27;s own feature looks weaker.</strong> The coefficient on <code>Technical_Test_Score</code> falls from +0.97 to +0.83 in survivors, the range-restriction effect. The <code>Gender</code> coefficient moves from +0.10 to +0.08.</li></ul>
 <p>The size of the distortion depends on how hard the gate is. A gate that keeps one in three is already enough to move the base rate and the effect of the gating feature.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 survivorship-bias.py</code>). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/survivorship-bias.py</code>; that file is generated from the block below). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

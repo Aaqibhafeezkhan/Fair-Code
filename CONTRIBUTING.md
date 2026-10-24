@@ -459,6 +459,8 @@ A short sample, not a full list. README.md and llms.txt list every explainer, an
 
 The `assets/explainers-data.json` entry has `slug`, `title`, `subtitle`, `summary` and `tags`, and two optional fields the build checks: `description` (the meta description, 70 to 160 characters; when it is missing the summary is cut at the last sentence that fits, and a summary that cannot be shortened sensibly fails the build) and `seo_title` (a shorter page title when `title` plus the site name would pass 65 characters, so at most 53).
 
+If the page tells the reader to run its code, say so with the path `explainers/code/<slug>.py` in the sentence just before the python block (for example: Run from the repo root (`PYTHONPATH=. python3 explainers/code/<slug>.py`; that file is generated from the block below).). `make build-explainers` writes that file from the block, removes stale ones, and the generated-files check fails if it is out of date, so never edit it by hand.
+
 Explainers with code should run against a real audit. To opt a Python fence into the smoke test, put `# runnable` on the first nonblank line inside the fence. The test executes each marked block in a subprocess from the repository root, reports the explainer and block number on failure, and applies a timeout. Add `# slow` on the next line for examples that need the longer timeout and should be skipped by `make test-fast`; the full CI test suite still runs them. Keep setup self-contained and avoid network access.
 
  `faircode.benchmark.load_audit("Benefits Denial")` loads an audit with the same loader, encoding and train/test split as the benchmark harness, so a baseline in your explainer matches `results/`.

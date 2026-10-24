@@ -215,7 +215,7 @@ mitigated (Gender removed)
 <p>The whole-list exposure ratio for the baseline is 0.955, which looks like near parity. Only the top-1,000 cutoff shows what is happening: women get 0.107 of men&#x27;s exposure and make up 7.0% of the shortlist against 36.5% of the pool. Removing <code>Gender</code> brings the shortlist to 35.6% women. Dividing exposure by each group&#x27;s actual hire rate (24.6% for women, 26.6% for men) gives 1.099 after mitigation: women now get about 10% more exposure per unit of hire rate than men.</p>
 <p>For scale, the benchmark&#x27;s classification rows for the same audit in <code>results/</code> (the current results) show a demographic parity gap of -0.0656 for the baseline and -0.0065 without <code>Gender</code>. A 6.6 point gap in a threshold decision became a shortlist with 7% women. The classification metric understates it.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 ranking.py</code>). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fairness-in-ranking.py</code>; that file is generated from the block below). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest

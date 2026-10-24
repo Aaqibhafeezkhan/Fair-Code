@@ -33,7 +33,7 @@ Then the surprise: adding the area as one-hot columns to the recidivism model le
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 geographic-proxies-and-redlining.py`). `data.df` holds the raw rows, so a column the harness does not encode (the area) can still be read.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/geographic-proxies-and-redlining.py`; that file is generated from the block below). `data.df` holds the raw rows, so a column the harness does not encode (the area) can still be read.
 
 ```python
 import numpy as np

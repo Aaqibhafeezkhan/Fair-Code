@@ -57,7 +57,7 @@ Three worked paths from the repo's audits:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 choosing-a-fairness-metric.py`). It reads the benchmark's current results; change `strategy` or `model` to look at another.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/choosing-a-fairness-metric.py`; that file is generated from the block below). It reads the benchmark's current results; change `strategy` or `model` to look at another.
 
 ```python
 import pandas as pd

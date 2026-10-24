@@ -44,7 +44,7 @@ The final block of the output is the check that should accompany any curve like 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 partial-dependence-by-group.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/partial-dependence-by-group.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

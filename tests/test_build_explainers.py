@@ -226,7 +226,7 @@ def site(tmp_path, monkeypatch):
         "DATA_JSON": tmp_path / "assets" / "explainers-data.json", "DATA_JS": tmp_path / "assets" / "explainers-data.js",
         "SITEMAP": tmp_path / "sitemap.xml", "LLMS_FULL": tmp_path / "llms-full.txt",
         "OG_DIR": tmp_path / "assets" / "og", "OG_LIGHT_DIR": tmp_path / "assets" / "og-light",
-        "PACKAGE_MIRROR_DIR": tmp_path / "faircode" / "_explainers",
+        "PACKAGE_MIRROR_DIR": tmp_path / "faircode" / "_explainers", "CODE_DIR": tmp_path / "explainers" / "code",
     }.items():
         monkeypatch.setattr(script, name, value)
     monkeypatch.setattr(script, "_git_lastmod", lambda relpath: "2026-01-02")
@@ -341,3 +341,69 @@ def test_a_page_title_or_description_out_of_range_stops_the_build(site):
     (root / "assets" / "explainers-data.json").write_text(json.dumps(entries), encoding="utf-8")
     with pytest.raises(ValueError, match="meta description"):
         script.main()
+
+
+# ── The runnable code of each explainer, as a file (#1125) ───────────────────────────────────
+
+CODE_MD = """## Detection Code
+
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/sample-topic.py`; that file is generated from the block below).
+
+```python
+# runnable
+# slow
+import math
+
+print(math.sqrt(16))
+```
+
+```python
+print("a second block that is not the one named above")
+```
+"""
+
+
+def test_extract_code_takes_the_block_after_the_named_path_without_the_markers():
+    script = importlib.import_module("scripts.build_explainers")
+    code = script.extract_code("sample-topic", CODE_MD)
+    assert code.startswith("# Generated from explainers/sample-topic.md by scripts/build_explainers.py")
+    assert "import math" in code and "print(math.sqrt(16))" in code
+    assert "# runnable" not in code and "# slow" not in code and "second block" not in code
+    assert code.endswith("\n") and not code.endswith("\n\n")
+    compile(code, "sample-topic.py", "exec")
+
+
+def test_extract_code_is_none_without_a_pointer_and_an_error_without_a_block():
+    script = importlib.import_module("scripts.build_explainers")
+    assert script.extract_code("sample-topic", "## Detection Code\n\n```python\nprint(1)\n```\n") is None
+    with pytest.raises(ValueError, match="no python block"):
+        script.extract_code("sample-topic", "Run explainers/code/sample-topic.py now.\n")
+
+
+def test_the_build_writes_code_files_and_removes_stale_ones(site):
+    script, root, _ = site
+    (root / "explainers" / "sample-topic.md").write_text(CODE_MD, encoding="utf-8")
+    stale = root / "explainers" / "code" / "removed-topic.py"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("print('old')\n", encoding="utf-8")
+    script.main()
+    written = root / "explainers" / "code" / "sample-topic.py"
+    assert written.is_file() and "import math" in written.read_text(encoding="utf-8")
+    assert not (root / "explainers" / "code" / "other-topic.py").exists()
+    assert not stale.exists()
+
+
+def test_every_code_file_in_the_repo_is_current_and_compiles():
+    script = importlib.import_module("scripts.build_explainers")
+    pointed = 0
+    for md in sorted((REPO_ROOT / "explainers").glob("*.md")):
+        text = md.read_text(encoding="utf-8")
+        expected = script.extract_code(md.stem, text)
+        target = REPO_ROOT / "explainers" / "code" / f"{md.stem}.py"
+        if expected is None:
+            assert not target.exists(), f"{target.name} has no explainer pointing at it"
+            continue
+        pointed += 1
+        assert target.read_text(encoding="utf-8") == expected, f"{target.name} is stale: run make build-explainers"
+        compile(expected, target.name, "exec")
+    assert pointed >= 40

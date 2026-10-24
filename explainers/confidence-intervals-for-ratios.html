@@ -209,7 +209,7 @@ COMPAS gradient boosting, Black vs White        1564/1804  vs     1/1444  ratio 
 <ul><li><strong>A stable ratio gives agreement.</strong> On Benefits Denial women are selected at 0.535 times the rate of men; the percentile bootstrap gives [0.441, 0.642] and the delta method [0.443, 0.646].</li><li><strong>A near-zero denominator breaks both.</strong> The gradient-boosting model with race as a feature selects 1 of 1,444 White defendants. The ratio is 1,252. The percentile bootstrap says [314, 1,271] (it cannot exceed what one selected row allows, so its upper end is falsely tight and it drops resamples where the denominator is zero), and the delta method says [176, 8,882]. The truth is that a ratio built on one row is not estimable.</li><li><strong>The intervals converge as the denominator grows.</strong> At 3 selected rows the two methods give [91, 656] and [69, 662]; at 30 they give [15.4, 32.9] and [14.9, 30.5], close to each other and to a usable answer.</li></ul>
 <p>So the fix for the benchmark was not a better interval. It was a rule: with fewer than about 30 selected rows in the denominator group, report no ratio.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 confidence-intervals-for-ratios.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/confidence-intervals-for-ratios.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from scipy.stats import norm
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

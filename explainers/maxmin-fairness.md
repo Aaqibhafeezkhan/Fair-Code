@@ -52,7 +52,7 @@ Three things to notice:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 maxmin.py`). `_load_dataset` is the loader the benchmark harness uses, so the split matches `results/`.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/maxmin-fairness.py`; that file is generated from the block below). `_load_dataset` is the loader the benchmark harness uses, so the split matches `results/`.
 
 ```python
 import numpy as np

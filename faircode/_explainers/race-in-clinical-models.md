@@ -41,7 +41,7 @@ So on this model the debate is not a trade between accuracy and fairness: the va
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 race-in-clinical-models.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/race-in-clinical-models.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

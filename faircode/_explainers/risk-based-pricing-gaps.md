@@ -37,7 +37,7 @@ For comparison, the same audit's approve-or-deny parity gap in `results/` (the c
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 risk-based-pricing-gaps.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/risk-based-pricing-gaps.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

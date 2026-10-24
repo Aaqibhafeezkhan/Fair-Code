@@ -38,7 +38,7 @@ If the model is meant to run on admission, the disposition column is a leak and 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 discharge-leakage-in-readmission-models.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/discharge-leakage-in-readmission-models.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

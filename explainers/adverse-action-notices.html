@@ -224,7 +224,7 @@ duration          -0.05</code></pre>
 <p>Two things stand out. The headline reason is the same for both age groups (<code>checking_status</code>, 62% each), so a quick look at the top reason would find nothing. But the second layer differs: <code>personal_status</code> is the main reason for 12% of the under-30s declined against 6% of the others, and across an applicant&#x27;s top two reasons it appears 15 points more often for the under-30s. In this dataset <code>personal_status</code> is the Statlog attribute that combines sex and marital status, so for a real lender a reason code of that kind would be a red flag in itself.</p>
 <p>The age gap in declines is also visible: 24% of under-30s are declined against 15% of the rest. The benchmark&#x27;s S2 row for this audit in <code>results/</code> (the current results) gives the same direction, a parity gap of -0.0914, but with a 95% interval of -0.218 to +0.041 and a p-value of 0.17, because the test set is only 200 rows.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 adverse-action-notices.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/adverse-action-notices.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression

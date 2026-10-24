@@ -210,7 +210,7 @@ probability-weighted:           parity gap -0.0885</code></pre>
 <ul><li><strong>Hard labels:</strong> -0.0920, about 8% smaller in size than the truth.</li><li><strong>Probability-weighted:</strong> -0.0885, about 12% smaller.</li></ul>
 <p>Both point the right way and are the right order of magnitude, and both understate the gap. In this run the hard labels happened to do slightly better than the weighted estimate; that is one dataset and one reader, not a rule.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 inferring-protected-attributes.py</code>). The true attribute is used only to score the result.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/inferring-protected-attributes.py</code>; that file is generated from the block below). The true attribute is used only to score the result.</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score

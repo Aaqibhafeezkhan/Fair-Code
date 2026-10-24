@@ -53,7 +53,7 @@ The age gap in declines is also visible: 24% of under-30s are declined against 1
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 adverse-action-notices.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/adverse-action-notices.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

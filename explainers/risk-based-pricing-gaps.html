@@ -209,7 +209,7 @@ gradient boosting  quoted amount, under 30 minus 30 and over: -477 (-13%), 95% i
 <p>In the data, under-30s received 513 less on average (3,277 against 3,790). Both models quote a smaller amount to the under-30s too: 233 less (7%) from the linear regression and 477 less (13%) from gradient boosting. The intervals say how much to read into that: [-802, +308] and [-1,039, +94] both include zero. With 200 test rows the data cannot separate a real 13% gap from noise, which is the situation <a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a> describes.</p>
 <p>For comparison, the same audit&#x27;s approve-or-deny parity gap in <code>results/</code> (the current results, S2 strategy) is -0.0914 with an interval of -0.218 to +0.041. Both are the same direction and both are inconclusive on this sample, and neither alone would show the other.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 risk-based-pricing-gaps.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/risk-based-pricing-gaps.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression

@@ -13188,7 +13188,7 @@ Three things to notice:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 maxmin.py`). `_load_dataset` is the loader the benchmark harness uses, so the split matches `results/`.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/maxmin-fairness.py`; that file is generated from the block below). `_load_dataset` is the loader the benchmark harness uses, so the split matches `results/`.
 
 ```python
 import numpy as np
@@ -13345,7 +13345,7 @@ What it did and did not do:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 dro.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/distributionally-robust-optimization.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -13490,7 +13490,7 @@ For scale, the benchmark's classification rows for the same audit in `results/` 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 ranking.py`). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-in-ranking.py`; that file is generated from the block below). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.
 
 ```python
 import numpy as np
@@ -13622,7 +13622,7 @@ The second block in the output is the same method on [Benefits Denial](../Benefi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 reweighing.py`). `load_audit` gives the same loader, encoding and train/test split the benchmark harness uses, so the baseline row matches `results/`.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/reweighing.py`; that file is generated from the block below). `load_audit` gives the same loader, encoding and train/test split the benchmark harness uses, so the baseline row matches `results/`.
 
 ```python
 import numpy as np
@@ -13733,7 +13733,7 @@ The benchmark's S2 baseline in `results/` (the current results) is the same mode
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 thresholds.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/group-specific-thresholds.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -13854,7 +13854,7 @@ On the full test set the p-value is below 1/2000 (the resolution of 2,000 shuffl
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 permutation.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/permutation-test-fairness-gaps.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -13991,7 +13991,7 @@ The `alpha = 0` row is the benchmark's S2 baseline in `results/` (the current re
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 adversarial-debiasing.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/adversarial-debiasing.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -14122,7 +14122,7 @@ Three things to read off the table:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fairness-regularization.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-regularization.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -14246,7 +14246,7 @@ The baseline here is standardized and fitted by scikit-learn on the S1 columns, 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fair-representation-learning.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fair-representation-learning.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -14367,7 +14367,7 @@ The point of the accuracy column: a model can look better on the recorded labels
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 measurement-bias.py`). The function below applies a scale and/or noise to one column for one group.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/measurement-bias.py`; that file is generated from the block below). The function below applies a scale and/or noise to one column for one group.
 
 ```python
 import numpy as np
@@ -14483,7 +14483,7 @@ Two cautions. This model has only three features, so its absolute accuracy is lo
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 aggregation-bias.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/aggregation-bias.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -14597,7 +14597,7 @@ The size of the distortion depends on how hard the gate is. A gate that keeps on
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 survivorship-bias.py`). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/survivorship-bias.py`; that file is generated from the block below). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.
 
 ```python
 import numpy as np
@@ -14705,7 +14705,7 @@ The overall figure, 0.644 with an interval 0.116 wide, hides the spread: age-dis
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 disaggregated-evaluation.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/disaggregated-evaluation.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -14823,7 +14823,7 @@ The overall reading: on this data a forest generalizes to a held-out group about
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 leave-one-group-out-evaluation.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/leave-one-group-out-evaluation.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -14956,7 +14956,7 @@ Three worked paths from the repo's audits:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 choosing-a-fairness-metric.py`). It reads the benchmark's current results; change `strategy` or `model` to look at another.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/choosing-a-fairness-metric.py`; that file is generated from the block below). It reads the benchmark's current results; change `strategy` or `model` to look at another.
 
 ```python
 import pandas as pd
@@ -15075,7 +15075,7 @@ What the card shows that the accuracy alone does not: accuracy is 0.811, but sex
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 model-cards.py`). It reads the benchmark's current results; change the three constants at the top to document another model.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/model-cards.py`; that file is generated from the block below). It reads the benchmark's current results; change the three constants at the top to document another model.
 
 ```python
 import pandas as pd
@@ -15204,7 +15204,7 @@ Three questions cannot be answered from the repo: why the data was created, how 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 datasheets-for-datasets.py`). Change the folder name to produce one for another audit.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/datasheets-for-datasets.py`; that file is generated from the block below). Change the folder name to produce one for another audit.
 
 ```python
 import pandas as pd
@@ -15342,7 +15342,7 @@ The last paragraph matters most: who reviews a flag, whether there is an appeal,
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 algorithmic-impact-assessment.py`). It reads the benchmark's current results; change the three constants at the top to assess another audit.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/algorithmic-impact-assessment.py`; that file is generated from the block below). It reads the benchmark's current results; change the three constants at the top to assess another audit.
 
 ```python
 import pandas as pd
@@ -15448,7 +15448,7 @@ Both point the right way and are the right order of magnitude, and both understa
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 inferring-protected-attributes.py`). The true attribute is used only to score the result.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/inferring-protected-attributes.py`; that file is generated from the block below). The true attribute is used only to score the result.
 
 ```python
 import numpy as np
@@ -15565,7 +15565,7 @@ The "worst group" can change identity: at 5x it is a different group from the ba
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fairness-without-demographics.py`). Group labels appear only in the evaluation lines.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-without-demographics.py`; that file is generated from the block below). Group labels appear only in the evaluation lines.
 
 ```python
 import numpy as np
@@ -15688,7 +15688,7 @@ The age gap in declines is also visible: 24% of under-30s are declined against 1
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 adverse-action-notices.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/adverse-action-notices.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -15799,7 +15799,7 @@ Then the surprise: adding the area as one-hot columns to the recidivism model le
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 geographic-proxies-and-redlining.py`). `data.df` holds the raw rows, so a column the harness does not encode (the area) can still be read.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/geographic-proxies-and-redlining.py`; that file is generated from the block below). `data.df` holds the raw rows, so a column the harness does not encode (the area) can still be read.
 
 ```python
 import numpy as np
@@ -15909,7 +15909,7 @@ For comparison, the same audit's approve-or-deny parity gap in `results/` (the c
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 risk-based-pricing-gaps.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/risk-based-pricing-gaps.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -16022,7 +16022,7 @@ So on this model the debate is not a trade between accuracy and fairness: the va
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 race-in-clinical-models.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/race-in-clinical-models.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -16149,7 +16149,7 @@ That is a finding. It says that for this label the Obermeyer mechanism is not vi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 utilization-as-a-label.py`). `data.df` holds the raw rows, so columns the harness does not encode can still be used to define strata.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/utilization-as-a-label.py`; that file is generated from the block below). `data.df` holds the raw rows, so columns the harness does not encode can still be used to define strata.
 
 ```python
 import numpy as np
@@ -16257,7 +16257,7 @@ If the model is meant to run on admission, the disposition column is a leak and 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 discharge-leakage-in-readmission-models.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/discharge-leakage-in-readmission-models.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -16380,7 +16380,7 @@ The takeaway is not that small audits are useless. It is that the size of the sa
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 seed-and-split-sensitivity.py`). `load_audit(folder, random_state=seed)` keeps the manifest's own split recipe and changes only the seed.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/seed-and-split-sensitivity.py`; that file is generated from the block below). `load_audit(folder, random_state=seed)` keeps the manifest's own split recipe and changes only the seed.
 
 ```python
 import numpy as np
@@ -16481,7 +16481,7 @@ the benchmark split (200 test rows) gap -0.0914
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 cross-validation-for-fairness.py`). `StratifiedKFold` takes the cell code as its label.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/cross-validation-for-fairness.py`; that file is generated from the block below). `StratifiedKFold` takes the cell code as its label.
 
 ```python
 import numpy as np
@@ -16597,7 +16597,7 @@ stratified: half under 30                     100                            0.1
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 stratified-test-sets-for-fairness.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/stratified-test-sets-for-fairness.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -16721,7 +16721,7 @@ Part of the gap is mechanical. Women are a minority of the positive class in thi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 feature-importance-by-group.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/feature-importance-by-group.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -16830,7 +16830,7 @@ The final block of the output is the check that should accompany any curve like 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 partial-dependence-by-group.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/partial-dependence-by-group.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -16950,7 +16950,7 @@ Spearman correlation between the rankings
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 explanation-disagreement.py`). It needs `shap`, which is not a dependency of this package (`pip install shap`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/explanation-disagreement.py`; that file is generated from the block below). It needs `shap`, which is not a dependency of this package (`pip install shap`).
 
 ```python
 import numpy as np
@@ -17082,7 +17082,7 @@ The overall ratio for the audit's hire rate is lower than the decision-stage rat
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 hiring-pipeline-adverse-impact.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/hiring-pipeline-adverse-impact.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -17206,7 +17206,7 @@ correlated stages, 0.95 at each: unconditional stage ratios 0.948 0.952 0.948 0.
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 compounding-disparities.py`). It needs only NumPy.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/compounding-disparities.py`; that file is generated from the block below). It needs only NumPy.
 
 ```python
 import numpy as np
@@ -17335,7 +17335,7 @@ So the scores are fine as predictors and the decision is not consistent with the
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 differential-validity.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/differential-validity.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -17475,7 +17475,7 @@ Healthcare Readmission and AI Fair Recruitment can detect gaps of 0.02 or less, 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 minimum-detectable-gap.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/minimum-detectable-gap.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -17590,7 +17590,7 @@ Use shrinkage to rank or screen many small groups with less noise, and keep the 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 small-group-shrinkage.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/small-group-shrinkage.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -17727,7 +17727,7 @@ So the fix for the benchmark was not a better interval. It was a rule: with fewe
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 confidence-intervals-for-ratios.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/confidence-intervals-for-ratios.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -17866,7 +17866,7 @@ batch size  window  drift   median batches to alert  never alerted   false alarm
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 monitoring-fairness-in-production.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/monitoring-fairness-in-production.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -17998,7 +17998,7 @@ So a model audited on a parity or predictive-parity criterion can fail it after 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 label-shift-and-fairness.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/label-shift-and-fairness.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -18113,7 +18113,7 @@ mean days to readmission (group, others)  naive gap      naive rates  share of p
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 delayed-feedback.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/delayed-feedback.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -18234,7 +18234,7 @@ None of these is the answer. They are the answers under different graphs.
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 causal-graphs-for-fairness.py`). The label column records the role the graph gives each set; change the graph and the interpretation changes with it.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/causal-graphs-for-fairness.py`; that file is generated from the block below). The label column records the role the graph gives each set; change the graph and the interpretation changes with it.
 
 ```python
 import numpy as np
@@ -18357,7 +18357,7 @@ The two routes together are 17% of the gap. The rest is either a direct effect, 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 path-specific-effects.py`). Only NumPy is needed for the regressions.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/path-specific-effects.py`; that file is generated from the block below). Only NumPy is needed for the regressions.
 
 ```python
 import numpy as np
@@ -18496,7 +18496,7 @@ deterministic group thresholds (match TPR) accuracy 0.640 | TPR white 0.725 blac
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 randomized-post-processing.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/randomized-post-processing.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -18660,7 +18660,7 @@ So for this audit, with this score, the frontier says the cost of fairness is un
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fairness-accuracy-pareto-frontier.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-accuracy-pareto-frontier.py`; that file is generated from the block below).
 
 ```python
 import numpy as np
@@ -18795,7 +18795,7 @@ A short decision rule follows: if you cannot use the attribute at prediction tim
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 choosing-a-mitigation-strategy.py`). It reads the benchmark's current results.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/choosing-a-mitigation-strategy.py`; that file is generated from the block below). It reads the benchmark's current results.
 
 ```python
 import numpy as np

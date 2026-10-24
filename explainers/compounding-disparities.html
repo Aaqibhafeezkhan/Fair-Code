@@ -210,7 +210,7 @@
 correlated stages, 0.95 at each: unconditional stage ratios 0.948 0.952 0.948 0.944, their product 0.808, whole funnel 0.811</code></pre>
 <ul><li><strong>The measured stage ratios match what was put in</strong> (0.953, 0.943, 0.950, 0.952 for an input of 0.95) within sampling noise.</li><li><strong>The product of the four equals the whole-funnel ratio.</strong> 0.95 per stage gives 0.813; 0.90 gives 0.666; 0.85 gives 0.521. Any input of 0.95 or below keeps every stage above 0.9 and still leaves the funnel near or below the threshold.</li><li><strong>Correlated stages behave the same here.</strong> When the pass decision at each stage depends on a shared underlying ability, the unconditional stage ratios multiply to 0.808 and the funnel ratio is 0.811, close but not identical, which is the case where the product of unconditional ratios is only an approximation.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>python3 compounding-disparities.py</code>). It needs only NumPy.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/compounding-disparities.py</code>; that file is generated from the block below). It needs only NumPy.</p>
 <pre><code class="language-python">import numpy as np
 
 rng = np.random.default_rng(0)

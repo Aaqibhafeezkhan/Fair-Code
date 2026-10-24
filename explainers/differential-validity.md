@@ -46,7 +46,7 @@ So the scores are fine as predictors and the decision is not consistent with the
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 differential-validity.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/differential-validity.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

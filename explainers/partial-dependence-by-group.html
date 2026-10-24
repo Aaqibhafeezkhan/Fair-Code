@@ -214,7 +214,7 @@ test rows actually observed at each value (the curve is only supported where the
 <ul><li><strong>The curves have the same shape.</strong> Probability of income above $50K climbs from 0.123 (men) and 0.079 (women) at 6 years to 0.621 and 0.596 at 16 years.</li><li><strong>The gap shrinks as schooling rises.</strong> Women&#x27;s curve is 0.044 below men&#x27;s at 6 years and 0.025 below at 16, so more schooling closes some of the gap but not all of it. The model gives a woman with a doctorate-level education less than a man with the same education, averaged over each group&#x27;s own capital gains and losses and other columns.</li><li><strong>The ends are thinly supported.</strong> There are 17 women in the test rows at 16 years and 59 at 6 years, against 1,420 men at 9 years, so the right end of the women&#x27;s curve rests on very few rows.</li></ul>
 <p>The final block of the output is the check that should accompany any curve like this: the number of rows behind each point.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 partial-dependence-by-group.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/partial-dependence-by-group.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.inspection import partial_dependence
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

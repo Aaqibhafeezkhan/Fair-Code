@@ -219,7 +219,7 @@ native.country (random_forest)
 <p>For most groups, removing them from training changes accuracy on them by a point or less. The largest drops are 4.5 points for the 67 American Indian or Eskimo test rows, 3.3 points for the 30 Philippines rows, and 2.0 for United States, the largest group. The two largest drops are in groups of 67 and 30 rows, where one or two rows move accuracy by more than a point, so treat them as a prompt to check, not a result.</p>
 <p>The overall reading: on this data a forest generalizes to a held-out group about as well as it does to a random sample. That is a finding worth stating, because it supports the assumption that groups seen cover groups unseen. On an audit whose groups differ more, it would not.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 leave-one-group-out-evaluation.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/leave-one-group-out-evaluation.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

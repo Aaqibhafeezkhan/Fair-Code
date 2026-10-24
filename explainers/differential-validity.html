@@ -217,7 +217,7 @@ one model for everyone (no Gender input), test rows: predicted hire probability 
 <ul><li><strong>Validity is equal.</strong> Each score has an AUC of about 0.74 to 0.75 for both groups: for example technical test 0.743 for men and 0.748 for women (interval 0.743 to 0.753). The scores rank candidates equally well within each group.</li><li><strong>Prediction is not.</strong> At the same technical score band, women are hired 0.9 to 4.0 points less often: 0.107 against 0.138 at 20 to 39, 0.340 against 0.376 at 60 to 79, 0.482 against 0.522 at 80 to 99, with 8,000 or more women in every band, so these are not noise.</li><li><strong>A model that ignores gender inherits the mismatch.</strong> Trained on all candidates without a gender input, it predicts a hire probability of 0.265 for women and 0.254 for men on the test rows, while the observed rates are 0.246 and 0.266: it over-predicts for women by about 2 points and under-predicts for men by about 1, the signature of one regression line that does not fit both groups.</li></ul>
 <p>So the scores are fine as predictors and the decision is not consistent with them across groups. The outcome here is the audit&#x27;s historical hiring decision, so this is evidence about the decision, not about job performance.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 differential-validity.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/differential-validity.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score

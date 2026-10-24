@@ -37,7 +37,7 @@ mean days to readmission (group, others)  naive gap      naive rates  share of p
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 delayed-feedback.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/delayed-feedback.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

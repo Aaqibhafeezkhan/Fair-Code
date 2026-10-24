@@ -40,7 +40,7 @@ correlated stages, 0.95 at each: unconditional stage ratios 0.948 0.952 0.948 0.
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 compounding-disparities.py`). It needs only NumPy.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/compounding-disparities.py`; that file is generated from the block below). It needs only NumPy.
 
 ```python
 import numpy as np

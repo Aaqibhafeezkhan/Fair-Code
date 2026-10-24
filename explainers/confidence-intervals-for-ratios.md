@@ -39,7 +39,7 @@ So the fix for the benchmark was not a better interval. It was a rule: with fewe
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 confidence-intervals-for-ratios.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/confidence-intervals-for-ratios.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

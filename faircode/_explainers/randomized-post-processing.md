@@ -59,7 +59,7 @@ deterministic group thresholds (match TPR) accuracy 0.640 | TPR white 0.725 blac
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 randomized-post-processing.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/randomized-post-processing.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

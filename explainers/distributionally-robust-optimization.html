@@ -216,7 +216,7 @@ test group sizes [3710  650 1859  294]</code></pre>
 <p>What it did and did not do:</p>
 <ul><li><strong>The worst group improved</strong> (male 55+ log-loss 0.593 to 0.539-0.549) at almost no cost to overall accuracy.</li><li><strong>The other groups paid for it.</strong> Female under 55 went from 0.320 to 0.375-0.409. The adversary put 83% of the weight on male 55+ at <code>eta=2.0</code> and nearly 0% on women, which is what over-hedging looks like.</li><li><strong>Parity got worse</strong> (-0.0509 to as far as -0.0697). DRO never looked at it. If sex parity is the legal standard, S3&#x27;s constraint is the tool, and DRO is not.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 dro.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/distributionally-robust-optimization.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest

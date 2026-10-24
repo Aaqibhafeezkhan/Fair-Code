@@ -36,7 +36,7 @@ On the full test set the p-value is below 1/2000 (the resolution of 2,000 shuffl
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 permutation.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/permutation-test-fairness-gaps.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

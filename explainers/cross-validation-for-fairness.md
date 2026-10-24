@@ -31,7 +31,7 @@ the benchmark split (200 test rows) gap -0.0914
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 cross-validation-for-fairness.py`). `StratifiedKFold` takes the cell code as its label.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/cross-validation-for-fairness.py`; that file is generated from the block below). `StratifiedKFold` takes the cell code as its label.
 
 ```python
 import numpy as np

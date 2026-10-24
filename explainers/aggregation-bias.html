@@ -212,7 +212,7 @@ coefficient per standard deviation: pooled | White defendants only | Black defen
 <p>Fitting each group separately lifts accuracy from 0.569 to 0.680 for White defendants (11.1 points) and from 0.575 to 0.631 for Black defendants (5.6 points). The coefficient on <code>Sex_Code_Text</code> is -0.12 in one group and +0.12 in the other, while the pooled model puts it near zero (+0.03): the average of two opposite effects.</p>
 <p>Two cautions. This model has only three features, so its absolute accuracy is low whatever the grouping; the comparison is the point. And a separate model per race needs the race at prediction time, which brings the legal problems discussed in <a href="group-specific-thresholds.html">Group-Specific Thresholds</a>.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 aggregation-bias.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/aggregation-bias.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

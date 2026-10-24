@@ -227,7 +227,7 @@
 <p>Reading it as an assessor: four of the six metrics are significant, the flagged-rate gap is +0.114 with an interval of +0.088 to +0.138, and the mitigation table shows what the benchmark&#x27;s strategies leave behind. Both in-processing (+0.017, p = 0.178) and post-processing (-0.005, p = 0.689) get the demographic parity gap to a level the test cannot distinguish from zero; removing the race column and the proxies alone does not (+0.114).</p>
 <p>The last paragraph matters most: who reviews a flag, whether there is an appeal, the legal basis for using this data and when the measurement is repeated are not in any results file, and an assessment that leaves them blank has not been completed.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>python3 algorithmic-impact-assessment.py</code>). It reads the benchmark&#x27;s current results; change the three constants at the top to assess another audit.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/algorithmic-impact-assessment.py</code>; that file is generated from the block below). It reads the benchmark&#x27;s current results; change the three constants at the top to assess another audit.</p>
 <pre><code class="language-python">import pandas as pd
 
 AUDIT, STRATEGY, MODEL = &quot;tenant_screening&quot;, &quot;unawareness_proxy_removal&quot;, &quot;logistic_regression&quot;

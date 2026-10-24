@@ -37,7 +37,7 @@ The benchmark's S2 baseline in `results/` (the current results) is the same mode
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 thresholds.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/group-specific-thresholds.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

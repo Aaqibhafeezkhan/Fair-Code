@@ -59,7 +59,7 @@ Healthcare Readmission and AI Fair Recruitment can detect gaps of 0.02 or less, 
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 minimum-detectable-gap.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/minimum-detectable-gap.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

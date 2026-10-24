@@ -211,7 +211,7 @@ alpha  2.0: accuracy 0.637 | parity gap +0.0469 | race recoverable from the scor
 alpha  4.0: accuracy 0.628 | parity gap +0.0296 | race recoverable from the score, AUC 0.529</code></pre>
 <p>The <code>alpha = 0</code> row is the benchmark&#x27;s S2 baseline in <code>results/</code> (the current results): 0.639 accuracy and a parity gap of +0.1139 (this run: +0.1136, because it is trained by gradient descent rather than scikit-learn&#x27;s solver). Raising <code>alpha</code> to 4.0 cuts the gap to +0.0296 for 1.1 points of accuracy, and the adversary&#x27;s ability to recover race from the score falls from an AUC of 0.598 toward chance (0.5). For comparison, the benchmark&#x27;s S3 row (Fairlearn&#x27;s <code>ExponentiatedGradient</code>) has a gap of +0.0172 at 0.626 accuracy, and its S4 row (<code>ThresholdOptimizer</code>) has -0.0054 at 0.639.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 adversarial-debiasing.py</code>).</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/adversarial-debiasing.py</code>; that file is generated from the block below).</p>
 <pre><code class="language-python">import numpy as np
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

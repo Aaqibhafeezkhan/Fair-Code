@@ -227,7 +227,7 @@ UCI Adult Census Income, features: the audit&#x27;s core columns only (no protec
 <p>Everything under &quot;Overall performance&quot; and &quot;Per-group results&quot; is read from the CSV, including the intervals and the significance flags. The narrative sections (intended use, training data, limits) are the part a person has to write, and they matter as much: the first line of &quot;Intended use&quot; says this is an audit artefact, not for real decisions.</p>
 <p>What the card shows that the accuracy alone does not: accuracy is 0.811, but sex and race have significant parity gaps (-0.051 and -0.042), the age gap (+0.028) is significant in the other direction, and national origin is not significant at all.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>python3 model-cards.py</code>). It reads the benchmark&#x27;s current results; change the three constants at the top to document another model.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/model-cards.py</code>; that file is generated from the block below). It reads the benchmark&#x27;s current results; change the three constants at the top to document another model.</p>
 <pre><code class="language-python">import pandas as pd
 
 AUDIT, STRATEGY, MODEL = &quot;benefits_denial&quot;, &quot;unawareness_proxy_removal&quot;, &quot;logistic_regression&quot;

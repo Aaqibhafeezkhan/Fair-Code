@@ -45,7 +45,7 @@ Three things to read off the table:
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 fairness-regularization.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/fairness-regularization.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

@@ -30,6 +30,7 @@ DATA_JSON = ROOT / "assets" / "explainers-data.json"
 DATA_JS = ROOT / "assets" / "explainers-data.js"
 SITEMAP = ROOT / "sitemap.xml"
 LLMS_FULL = ROOT / "llms-full.txt"
+CODE_DIR = ROOT / "explainers" / "code"      # the runnable block of each explainer, extracted by build_code_files (#1125)
 OG_DIR = ROOT / "assets" / "og"
 OG_LIGHT_DIR = ROOT / "assets" / "og-light"
 
@@ -716,6 +717,43 @@ def build_llms_full(entries):
     return "\n".join(parts) + "\n"
 
 
+CODE_HEADER = "# Generated from explainers/{slug}.md by scripts/build_explainers.py. Edit the markdown, not this file.\n"
+_FENCE = re.compile(r"^```python[^\n]*\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
+
+
+def extract_code(slug, markdown_text):
+    """The python block an explainer tells the reader to run, or None. An explainer points at its file with the
+    path `explainers/code/<slug>.py` in the text; the first python fence after that mention is the source (#1125).
+    The `# runnable` and `# slow` markers that opt a block into the smoke tests are left out of the file."""
+    marker = f"explainers/code/{slug}.py"
+    at = markdown_text.find(marker)
+    if at < 0:
+        return None
+    match = _FENCE.search(markdown_text, at)
+    if not match:
+        raise ValueError(f"{slug}: the text names {marker} but no python block follows it")
+    lines = [line for line in match.group(1).splitlines() if line.strip() not in {"# runnable", "# slow"}]
+    return CODE_HEADER.format(slug=slug) + "\n".join(lines).strip("\n") + "\n"
+
+
+def build_code_files(entries):
+    """Writes explainers/code/<slug>.py for every explainer that points at one, and removes stale files, so a
+    reader can run what the page shows."""
+    CODE_DIR.mkdir(parents=True, exist_ok=True)
+    wanted = {}
+    for entry in entries:
+        code = extract_code(entry["slug"], (EXPLAINERS_DIR / f"{entry['slug']}.md").read_text(encoding="utf-8"))
+        if code is not None:
+            wanted[f"{entry['slug']}.py"] = code
+    for existing in CODE_DIR.glob("*.py"):
+        if existing.name not in wanted:
+            existing.unlink()
+    for name, code in wanted.items():
+        (CODE_DIR / name).write_text(code, encoding="utf-8")
+    return sorted(wanted)
+
+
+
 def build_package_mirror(entries):
     """Copies assets/explainers-data.json -> faircode/_explainers/data.json
     and every explainers/<slug>.md -> faircode/_explainers/<slug>.md, so the
@@ -776,9 +814,10 @@ def main():
     SITEMAP.write_text(build_sitemap(entries), encoding="utf-8")
     LLMS_FULL.write_text(build_llms_full(entries), encoding="utf-8")
     build_package_mirror(entries)
+    code_files = build_code_files(entries)
 
     print(f"Generated {len(entries)} explainer pages, assets/explainers-data.js, "
-          "sitemap.xml, llms-full.txt, and faircode/_explainers/ (MCP package mirror)")
+          f"sitemap.xml, llms-full.txt, faircode/_explainers/ (MCP package mirror) and {len(code_files)} files in explainers/code/")
 
 
 if __name__ == "__main__":

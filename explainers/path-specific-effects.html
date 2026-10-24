@@ -214,7 +214,7 @@ direct + indirect  = total      (exactly, for a linear model)</code></pre>
 <ul><li><strong>Total effect -0.1788</strong> (interval -0.186 to -0.170): women are about 18 points less likely to be above the line after age.</li><li><strong>Through schooling: -0.0025</strong>, interval -0.006 to +0.0005, which includes zero. In this data women have about as much schooling as men on average, so little of the gap runs through it.</li><li><strong>Through hours worked: -0.0272</strong> (interval -0.029 to -0.025): about 15% of the total, because women work fewer hours in this data.</li><li><strong>Direct effect -0.1491:</strong> the 83% left over after removing the two accepted paths. If schooling and hours are the only acceptable routes, that is the gap to explain.</li></ul>
 <p>The two routes together are 17% of the gap. The rest is either a direct effect, discrimination, or the effect of mediators not listed, such as occupation, marital status or unmeasured factors, and the analysis cannot say which.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 path-specific-effects.py</code>). Only NumPy is needed for the regressions.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/path-specific-effects.py</code>; that file is generated from the block below). Only NumPy is needed for the regressions.</p>
 <pre><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

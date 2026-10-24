@@ -89,6 +89,7 @@ TEXT_GLOBS = [
     "faircode/_explainers/data.json",
     "faircode/_results_frozen/*.csv",
     "faircode/_results_current/*.csv",
+    "explainers/code/*.py",
 ]
 
 _JSONLD_DATE_LINE = re.compile(

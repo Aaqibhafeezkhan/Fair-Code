@@ -45,7 +45,7 @@ The second block in the output is the same method on [Benefits Denial](../Benefi
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 reweighing.py`). `load_audit` gives the same loader, encoding and train/test split the benchmark harness uses, so the baseline row matches `results/`.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/reweighing.py`; that file is generated from the block below). `load_audit` gives the same loader, encoding and train/test split the benchmark harness uses, so the baseline row matches `results/`.
 
 ```python
 import numpy as np

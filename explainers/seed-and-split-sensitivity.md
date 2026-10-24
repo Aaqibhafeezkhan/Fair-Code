@@ -47,7 +47,7 @@ The takeaway is not that small audits are useless. It is that the size of the sa
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 seed-and-split-sensitivity.py`). `load_audit(folder, random_state=seed)` keeps the manifest's own split recipe and changes only the seed.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/seed-and-split-sensitivity.py`; that file is generated from the block below). `load_audit(folder, random_state=seed)` keeps the manifest's own split recipe and changes only the seed.
 
 ```python
 import numpy as np

@@ -215,7 +215,7 @@ Benefits Denial - sex, 30 different seeds for the split
 <p><strong>Benefits Denial (32,561 rows, 6,513 in the test set)</strong> shows the reverse. The gap is -0.0509 for the benchmark seed and -0.0542 on average with a standard deviation of 0.0063, it is significant in all 30 splits, and its sign never changes.</p>
 <p>The takeaway is not that small audits are useless. It is that the size of the sampling noise is itself a result: with 200 test rows the gap&#x27;s seed-to-seed spread is as large as the effect.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
-<p>Run from the repo root (<code>PYTHONPATH=. python3 seed-and-split-sensitivity.py</code>). <code>load_audit(folder, random_state=seed)</code> keeps the manifest&#x27;s own split recipe and changes only the seed.</p>
+<p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/seed-and-split-sensitivity.py</code>; that file is generated from the block below). <code>load_audit(folder, random_state=seed)</code> keeps the manifest&#x27;s own split recipe and changes only the seed.</p>
 <pre><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

@@ -41,7 +41,7 @@ A short decision rule follows: if you cannot use the attribute at prediction tim
 
 ## Detection/Implementation Code
 
-Run from the repo root (`python3 choosing-a-mitigation-strategy.py`). It reads the benchmark's current results.
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/choosing-a-mitigation-strategy.py`; that file is generated from the block below). It reads the benchmark's current results.
 
 ```python
 import numpy as np

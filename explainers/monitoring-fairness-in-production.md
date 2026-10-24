@@ -49,7 +49,7 @@ batch size  window  drift   median batches to alert  never alerted   false alarm
 
 ## Detection/Implementation Code
 
-Run from the repo root (`PYTHONPATH=. python3 monitoring-fairness-in-production.py`).
+Run from the repo root (`PYTHONPATH=. python3 explainers/code/monitoring-fairness-in-production.py`; that file is generated from the block below).
 
 ```python
 import numpy as np

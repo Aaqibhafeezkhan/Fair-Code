@@ -235,3 +235,12 @@ def test_limit_must_be_positive(tmp_path, capsys):
     with pytest.raises(SystemExit):
         dr.main(["--current", str(tmp_path / "cur"), "--reference", str(tmp_path / "ref"), "--limit", "0"])
     assert "--limit must be at least 1" in capsys.readouterr().err
+def test_unknown_audit_suggests_valid_name(capsys):
+    result = dr.main(["--audit", "German Credit Lending"])
+
+    output = capsys.readouterr().err
+
+    assert result == 2
+    assert "unknown audit(s)" in output
+    assert "german_credit_lending" in output
+    assert "Did you mean" in output

@@ -24,7 +24,14 @@ strategy, model, metric. A row present on one side only is reported as `only_cur
 `only_reference` (a new audit, strategy or metric, or one that was dropped) and always counts as
 flagged. A row on both sides is `moved` when |current - reference| > --threshold (default 0.01),
 else `unchanged`. A value that is empty on one side only (e.g. an AUC row's missing interval)
-counts as moved. Reads only; it never writes to either directory.
+counts as moved.
+
+A row whose value is empty on one side while that side's `note` column explains why (for example
+`advantaged_selection_too_rare`, the disparate impact ratio withheld when the advantaged group is almost
+never selected, #1132) is `withheld`, not `moved`: the benchmark chose not to report a number. It is
+listed in its own block with both sides' notes, counted separately in `--summary`, and counts as
+flagged for `--fail-on-change` because what the harness reports changed. A row withheld on both sides
+is `unchanged`. Reads only; it never writes to either directory.
 """
 from __future__ import annotations
 
@@ -71,14 +78,16 @@ def diff_table(current: pd.DataFrame, reference: pd.DataFrame, keys: list[str],
     `sample` is `same` or `different` (with `sample_sizes` giving both), otherwise `unknown`.
     """
     def index(df):
-        out, sizes = {}, {}
+        out, sizes, notes = {}, {}, {}
         for _, row in df.iterrows():
             key = tuple(str(row[k]) for k in keys)
             out[key] = row["value"]
             sizes[key] = _sizes(row, size_columns or [])
-        return out, sizes
+            note = row["note"] if "note" in row.index else None
+            notes[key] = None if note is None or pd.isna(note) or not str(note).strip() else str(note)
+        return out, sizes, notes
 
-    (cur, cur_sizes), (ref, ref_sizes) = index(current), index(reference)
+    (cur, cur_sizes, cur_notes), (ref, ref_sizes, ref_notes) = index(current), index(reference)
     rows = []
     for key in sorted(set(cur) | set(ref)):
         entry = dict(zip(keys, key))
@@ -98,6 +107,10 @@ def diff_table(current: pd.DataFrame, reference: pd.DataFrame, keys: list[str],
             entry["status"], entry["delta"] = "only_reference", None
         elif entry["current"] is None and entry["reference"] is None:
             entry["status"], entry["delta"] = "unchanged", 0.0
+        elif (entry["current"] is None and cur_notes.get(key)) or (entry["reference"] is None and ref_notes.get(key)):
+            entry["status"], entry["delta"] = "withheld", None
+            entry["withheld"] = {"current": cur_notes.get(key) if entry["current"] is None else None,
+                                 "reference": ref_notes.get(key) if entry["reference"] is None else None}
         elif entry["current"] is None or entry["reference"] is None:
             entry["status"], entry["delta"] = "moved", None
         else:
@@ -146,9 +159,10 @@ def summarize(diff: dict) -> dict:
         per_audit = {}
         for r in rows:
             s = per_audit.setdefault(r["audit"], {"audit": r["audit"], "compared": 0, "flagged": 0,
-                                                  "max_abs_delta": None, "different_sample": 0})
+                                                  "max_abs_delta": None, "different_sample": 0, "withheld": 0})
             s["compared"] += 1
             s["flagged"] += _flagged(r)
+            s["withheld"] += r["status"] == "withheld"
             s["different_sample"] += r.get("sample") == "different"
             if r["delta"] is not None and (s["max_abs_delta"] is None or abs(r["delta"]) > s["max_abs_delta"]):
                 s["max_abs_delta"] = abs(r["delta"])
@@ -209,7 +223,7 @@ def render_summary(summary: dict) -> str:
         for s in audits:
             largest = "n/a" if s["max_abs_delta"] is None else f"{s['max_abs_delta']:.4f}"
             lines.append(f"  {s['audit']}: {s['compared']} compared, {s['flagged']} flagged, "
-                         f"{s['different_sample']} on different test sets, largest |delta| {largest}")
+                         f"{s['withheld']} withheld, {s['different_sample']} on different test sets, largest |delta| {largest}")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
@@ -227,8 +241,15 @@ def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESH
         lines.append(f"{kind}: {len(rows)} rows compared, {len(flagged)} flagged "
                      f"(moved by more than {threshold:g}, or present on one side only), "
                      f"{different} measured on different test sets")
+        withheld = []
         for r in rows if show_all else flagged:
             label = " / ".join(r[k] for k in keys)
+            if r["status"] == "withheld":
+                notes = r["withheld"]
+                side = lambda name, value: (f"{name} withheld ({notes[name]})" if notes[name]
+                                            else f"{name} {value:.4f}")
+                withheld.append(f"  ! {label}: {side('reference', r['reference'])}, {side('current', r['current'])}")
+                continue
             if r["status"] == "only_current":
                 detail = f"only in results/ (current {r['current']:.4f})" if r["current"] is not None else "only in results/"
             elif r["status"] == "only_reference":
@@ -245,6 +266,9 @@ def render(diff: dict, show_all: bool = False, threshold: float = DEFAULT_THRESH
                 detail += f" [different test set: reference {sizes['reference']}, current {sizes['current']}]"
                 mark = "~" if mark == " " else mark
             lines.append(f"  {mark} {label}: {detail}")
+        if withheld:
+            lines.append(f"  withheld ({len(withheld)} rows where the benchmark chose not to report a value, with its reason):")
+            lines.extend(withheld)
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 

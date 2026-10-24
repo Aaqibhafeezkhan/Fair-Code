@@ -115,19 +115,19 @@ def test_summary_counts_rows_and_largest_delta_per_audit(tmp_path, capsys):
     assert dr.main([*args, "--summary", "--json"]) == 0
     summary = json.loads(capsys.readouterr().out)["fairness"]
     assert [s["audit"] for s in summary] == ["a", "b"]
-    assert summary[0] == {"audit": "a", "compared": 1, "flagged": 0, "max_abs_delta": 0.0, "different_sample": 0}
+    assert summary[0] == {"audit": "a", "compared": 1, "flagged": 0, "max_abs_delta": 0.0, "different_sample": 0, "withheld": 0}
     assert (summary[1]["compared"], summary[1]["flagged"]) == (2, 2)
     assert summary[1]["max_abs_delta"] == pytest.approx(0.2)
 
     assert dr.main([*args, "--summary", "--audit", "b"]) == 0
     out = capsys.readouterr().out
-    assert "b: 2 compared, 2 flagged, 0 on different test sets, largest |delta| 0.2000" in out
+    assert "b: 2 compared, 2 flagged, 0 withheld, 0 on different test sets, largest |delta| 0.2000" in out
     assert "a:" not in out
 
 
 def test_summary_largest_delta_is_none_without_numeric_deltas():
     diff = {"fairness": [{"audit": "a", "status": "only_current", "delta": None}]}
-    assert dr.summarize(diff) == {"fairness": [{"audit": "a", "compared": 1, "flagged": 1, "max_abs_delta": None, "different_sample": 0}]}
+    assert dr.summarize(diff) == {"fairness": [{"audit": "a", "compared": 1, "flagged": 1, "max_abs_delta": None, "different_sample": 0, "withheld": 0}]}
 
 
 SIZE_FAIR_COLS = FAIR_COLS + ["n_disadvantaged", "n_advantaged"]
@@ -165,3 +165,53 @@ def test_different_test_sets_show_in_the_text_json_and_summary(tmp_path):
     assert dr.summarize(diff)["performance"][0]["different_sample"] == 1
     assert "1 on different test sets" in dr.render_summary(dr.summarize(diff))
     assert json.loads(json.dumps(diff))["performance"][0]["sample"] == "different"
+
+
+# ── Rows the benchmark withheld on purpose (#1132) ───────────────────────────────────────────
+
+def _with_notes(rows):
+    return pd.DataFrame(rows, columns=FAIR_COLS + ["note"])
+
+
+def test_a_value_withheld_with_a_note_is_withheld_not_moved():
+    ref = _with_notes([["a", "b", "lr", "race", "disparate_impact_ratio", 627.18, None]])
+    cur = _with_notes([["a", "b", "lr", "race", "disparate_impact_ratio", None, "advantaged_selection_too_rare"]])
+    (row,) = dr.diff_table(cur, ref, dr.KINDS["fairness"][1])
+    assert row["status"] == "withheld" and row["delta"] is None
+    assert row["withheld"] == {"current": "advantaged_selection_too_rare", "reference": None}
+    assert dr._flagged(row)
+
+
+def test_withheld_on_the_reference_side_and_on_both_sides():
+    keys = dr.KINDS["fairness"][1]
+    note = "advantaged_selection_too_rare"
+    ref = _with_notes([["a", "b", "lr", "race", "disparate_impact_ratio", None, note]])
+    cur = _with_notes([["a", "b", "lr", "race", "disparate_impact_ratio", 1.2, None]])
+    (row,) = dr.diff_table(cur, ref, keys)
+    assert row["status"] == "withheld" and row["withheld"] == {"current": None, "reference": note}
+    both = _with_notes([["a", "b", "lr", "race", "disparate_impact_ratio", None, note]])
+    (same,) = dr.diff_table(both, both, keys)
+    assert same["status"] == "unchanged"
+
+
+def test_an_empty_value_without_a_note_is_still_moved():
+    ref = _with_notes([["a", "b", "lr", "race", "m", 0.5, None]])
+    cur = _with_notes([["a", "b", "lr", "race", "m", None, None]])
+    (row,) = dr.diff_table(cur, ref, dr.KINDS["fairness"][1])
+    assert row["status"] == "moved"
+
+
+def test_withheld_rows_have_their_own_block_and_summary_count(tmp_path, capsys):
+    note = "advantaged_selection_too_rare"
+    _write(tmp_path / "ref", _fair([["a", "baseline", "lr", "sex", "disparate_impact_ratio", 80.0]]))
+    cur = _fair([["a", "baseline", "lr", "sex", "disparate_impact_ratio", None]])
+    cur["note"] = note
+    _write(tmp_path / "cur", cur)
+    args = ["--current", str(tmp_path / "cur"), "--reference", str(tmp_path / "ref"), "--kind", "fairness"]
+    assert dr.main(args) == 0
+    out = capsys.readouterr().out
+    assert "withheld (1 rows where the benchmark chose not to report a value" in out
+    assert f"reference 80.0000, current withheld ({note})" in out
+    assert dr.main(args + ["--summary"]) == 0
+    assert "1 withheld" in capsys.readouterr().out
+    assert dr.main(args + ["--fail-on-change"]) == 1

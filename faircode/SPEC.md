@@ -613,7 +613,7 @@ rows flagged, rows on different test sets, largest absolute delta); both work wi
 has a `sample` field: `same` when both files report the same group sizes (fairness: `n_disadvantaged` and
 `n_advantaged`; performance: `n`), `different` when they differ (the two runs were scored on different test
 rows, so the delta mixes a model change with a change in who was tested; `sample_sizes` holds both), and
-`unknown` when a size is missing or the row is on one side only. It only reads both directories.
+`unknown` when a size is missing or the row is on one side only. A row whose value is empty on one side while that side's `note` explains why (the disparate impact ratio withheld as `advantaged_selection_too_rare`, #1132) has the status `withheld`, with `withheld` holding both notes: it is listed in its own block, counted separately by `--summary`, and counts as flagged for `--fail-on-change`; a row withheld on both sides is `unchanged`. The text and summary output start with both sides' provenance (`results/PROVENANCE.json`, or the frozen `MANIFEST.md`) and the library versions that differ (#1129). It only reads both directories.
 
 ### Loading an audit in code
 

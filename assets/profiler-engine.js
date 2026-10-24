@@ -632,6 +632,22 @@
     });
   }
 
+  function xlsxHeaderText(value) {
+    if (typeof value === 'boolean') return value ? 'True' : 'False';
+    return value === null || value === undefined ? '' : String(value);
+  }
+
+  function normalizeXlsxBooleanHeaderCells(sheet) {
+    if (!sheet['!ref']) return;
+    var range = global.XLSX.utils.decode_range(sheet['!ref']);
+    for (var c = range.s.c; c <= range.e.c; c++) {
+      var cell = sheet[global.XLSX.utils.encode_cell({ r: range.s.r, c: c })];
+      if (cell && cell.t === 'b' && typeof cell.v === 'boolean') {
+        cell.w = xlsxHeaderText(cell.v);
+      }
+    }
+  }
+
   async function parseXLSX(arrayBuffer) {
     await loadSheetJS();
 
@@ -649,6 +665,7 @@
     var date1904 = !!(workbook.Workbook && workbook.Workbook.WBProps &&
                       workbook.Workbook.WBProps.date1904);
     stringifyXlsxDateCells(sheet, date1904);
+    normalizeXlsxBooleanHeaderCells(sheet);
     var records = global.XLSX.utils.sheet_to_json(sheet, { defval: null, raw: true });
 
     if (records.length === 0) {
@@ -658,7 +675,7 @@
       // read the raw header row instead of erroring, to match.
       var headerRow = global.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true })[0] || [];
       var columns = headerRow.map(function (h) {
-        return h === null || h === undefined ? '' : String(h);
+        return xlsxHeaderText(h);
       });
       return { table: { columns: columns, rows: [] }, ignoredSheets: workbook.SheetNames.slice(1), sheetName: sheetName };
     }

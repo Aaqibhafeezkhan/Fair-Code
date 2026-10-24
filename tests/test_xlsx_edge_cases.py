@@ -221,3 +221,22 @@ def test_xlsx_numeric_header_cells_are_text_in_both_engines(tmp_path):
     js = [d["name"] for d in json.loads(result.stdout)["dimensions"]]
     assert py == js == ["2020", "sex"]
     assert all(isinstance(name, str) for name in py)
+
+
+@requires_openpyxl
+def test_xlsx_boolean_header_cells_match_python_text_in_both_engines(tmp_path):
+    """#1143: boolean headers use Python's "True"/"False" spelling, without changing text headers."""
+    from faircode import profile
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append([True, False, "TRUE", "FALSE", "sex"])
+    for i in range(30):
+        ws.append([i % 3, (i + 1) % 2, i % 2, (i + 1) % 2, "m" if i % 2 else "f"])
+    path = _save_workbook(tmp_path, wb, "boolean_header.xlsx")
+    py = [d["name"] for d in profile(read_table(str(path)))["dimensions"]]
+    result = _run_js_parse(path)
+    assert result.returncode == 0, result.stderr
+    js = [d["name"] for d in json.loads(result.stdout)["dimensions"]]
+    assert py == js == ["True", "False", "TRUE", "FALSE", "sex"]
+    assert all(isinstance(name, str) for name in py)

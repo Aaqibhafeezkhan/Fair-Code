@@ -50,7 +50,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/feedback-loop-bias.html</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/label-bias.html</loc>
@@ -230,7 +230,7 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/fairness-accuracy-tradeoff.html</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/treatment-equality.html</loc>
@@ -458,11 +458,14 @@
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/popularity-bias.html</loc>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/two-sided-fairness.html</loc>
+    <lastmod>2026-10-24</lastmod>
   </url>
   <url>
     <loc>https://www.thefaircode.xyz/explainers/position-bias-and-click-models.html</loc>
+    <lastmod>2026-10-24</lastmod>
   </url>
 </urlset>

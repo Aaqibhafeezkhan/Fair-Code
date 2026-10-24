@@ -444,6 +444,12 @@ A short sample, not a full list. README.md and llms.txt list every explainer, an
 | `randomized-post-processing.md` | The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows. |
 | `fairness-accuracy-pareto-frontier.md` | A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark's five strategies sit against it. |
 | `choosing-a-mitigation-strategy.md` | Choosing among the five mitigation strategies from the benchmark's results: what each needs, the median accuracy cost and the gap left, over 13 pairs. |
+| `auc-gaps-by-group.md` | Per-group AUC and its gap with bootstrap and DeLong intervals: when equal AUC hides unequal errors, and when a threshold hides a real ranking gap. |
+| `decision-curve-analysis-by-group.md` | Net benefit by group against treating everyone or no one: how to read a decision curve per group and see where a model helps one group and not another. |
+| `cost-sensitive-evaluation.md` | Per-group expected cost under unequal false positive and false negative costs, the cost-optimal threshold, and how it relates to group-specific thresholds. |
+| `popularity-bias.md` | A simulated popularity feedback loop on a real audit: the shown set freezes, merit stops ordering exposure, and a group imbalance is locked in. |
+| `two-sided-fairness.md` | Exposure for the ranked side and nDCG for the searcher on one re-ranking sweep, and where fairness to one side starts to cost the other. |
+| `position-bias-and-click-models.md` | Simulated clicks from a known relevance: why a ranker trained on raw clicks learns position, how inverse propensity weighting fixes it, and its limits. |
 
 ### A good explainer should include
 

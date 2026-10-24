@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 52 | 55 | 64 | 8 | 30K+ | 20 | 7 | 108 | ✅ every push/PR |
+| 53 | 55 | 64 | 8 | 30K+ | 20 | 7 | 108 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -45,7 +45,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 ## Phase 1 - Bias Glossary and Beginner Explainers ✅
 
-**Status: Foundational library complete - 108 explainers published, past the original 60+ target and the 90+ goal, working toward 120+**
+**Status: Foundational library complete - 114 explainers published, past the original 60+ target and the 90+ goal, working toward 120+**
 
 Build the foundational vocabulary and explain core fairness concepts clearly enough for a non-technical reader.
 
@@ -134,6 +134,12 @@ Build the foundational vocabulary and explain core fairness concepts clearly eno
 - [x] Randomized Post-Processing
 - [x] Fairness-Accuracy Pareto Frontier
 - [x] Choosing a Mitigation Strategy
+- [x] What Is an AUC Gap Between Groups?
+- [x] What Is Decision Curve Analysis by Group?
+- [x] How Does Unequal Cost Change a Fairness Evaluation?
+- [x] What Is Popularity Bias?
+- [x] What Is Two-Sided Fairness in a Marketplace?
+- [x] How Does Position Bias Distort What a Ranking Learns?
 
 ---
 
@@ -265,7 +271,7 @@ a fresh run of results.
 
 **Prerequisites that can start now** (nothing below waits for the submission date):
 
-- [ ] **Fresh full benchmark run on the current lockfile** - rerun `faircode benchmark` on `requirements-lock.txt` and refresh `results/` (tracked in [#1068](https://github.com/yakew7/Fair-Code/issues/1068)). This is the run the paper will be built on, so doing it early shows what moved.
+- [x] **Fresh full benchmark run on the current lockfile** - rerun `faircode benchmark` on `requirements-lock.txt` and refresh `results/` (tracked in [#1068](https://github.com/yakew7/Fair-Code/issues/1068)). This is the run the paper will be built on, so doing it early shows what moved.
 - [x] **Compare it with the earlier snapshot** - `python3 scripts/diff_results.py` lists every row that moved against `paper/results-frozen/`; explain each flagged row before it goes into a manuscript.
 - [x] **Decide how library bumps are handled** - Dependabot groups the harmless updates and keeps `numpy`, `pandas`, `scikit-learn`, `scipy`, `fairlearn` and `matplotlib` as one PR each, with a benchmark diff before merging (see [CONTRIBUTING.md](CONTRIBUTING.md#dependency-updates)).
 - [ ] **Choose the target venue** - a maintainer decision, to be written here. It sets the page limit, the artifact and reproducibility requirements, and the submission window, so it comes before any manuscript writing. Candidates to weigh are a fairness-and-accountability conference, a datasets-and-benchmarks track, or a journal.

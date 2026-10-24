@@ -367,7 +367,13 @@ Fair-Code/
 │   ├── path-specific-effects.md
 │   ├── randomized-post-processing.md
 │   ├── fairness-accuracy-pareto-frontier.md
-│   └── choosing-a-mitigation-strategy.md
+│   ├── choosing-a-mitigation-strategy.md
+│   ├── auc-gaps-by-group.md
+│   ├── decision-curve-analysis-by-group.md
+│   ├── cost-sensitive-evaluation.md
+│   ├── popularity-bias.md
+│   ├── two-sided-fairness.md
+│   └── position-bias-and-click-models.md
 │
 ├── .pre-commit-config.yaml              # em-dash/broken-links/ruff + build-explainers pre-push hooks
 ├── CHANGELOG.md
@@ -858,10 +864,10 @@ features = [
 
 ## Explainers
 
-108 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
+114 short, plain-language write-ups of individual fairness concepts, each with runnable detection code. The healthcare-focused ones are called out above in [Healthcare AI Bias Focus](#healthcare-ai-bias-focus).
 
 <details>
-<summary><strong>Show all 108 explainers →</strong></summary>
+<summary><strong>Show all 114 explainers →</strong></summary>
 
 | Explainer | What it covers |
 |-----------|----------------|
@@ -973,6 +979,12 @@ features = [
 | [Randomized Post-Processing](explainers/randomized-post-processing.md) | The linear programme for randomized equalized-odds post-processing on Tenant Screening: gap 0.149 down to under 0.02, with random decisions in a few rows. |
 | [Fairness-Accuracy Pareto Frontier](explainers/fairness-accuracy-pareto-frontier.md) | A sweep of 1,681 threshold pairs on Tenant Screening gives a nearly flat frontier, and shows where the benchmark's five strategies sit against it. |
 | [Choosing a Mitigation Strategy](explainers/choosing-a-mitigation-strategy.md) | Choosing among the five mitigation strategies from the benchmark's results: what each needs, the median accuracy cost and the gap left, over 13 pairs. |
+| [What Is an AUC Gap Between Groups?](explainers/auc-gaps-by-group.md) | Per-group AUC and its gap with bootstrap and DeLong intervals: when equal AUC hides unequal errors, and when a threshold hides a real ranking gap. |
+| [What Is Decision Curve Analysis by Group?](explainers/decision-curve-analysis-by-group.md) | Net benefit by group against treating everyone or no one: how to read a decision curve per group and see where a model helps one group and not another. |
+| [How Does Unequal Cost Change a Fairness Evaluation?](explainers/cost-sensitive-evaluation.md) | Per-group expected cost under unequal false positive and false negative costs, the cost-optimal threshold, and how it relates to group-specific thresholds. |
+| [What Is Popularity Bias?](explainers/popularity-bias.md) | A simulated popularity feedback loop on a real audit: the shown set freezes, merit stops ordering exposure, and a group imbalance is locked in. |
+| [What Is Two-Sided Fairness in a Marketplace?](explainers/two-sided-fairness.md) | Exposure for the ranked side and nDCG for the searcher on one re-ranking sweep, and where fairness to one side starts to cost the other. |
+| [How Does Position Bias Distort What a Ranking Learns?](explainers/position-bias-and-click-models.md) | Simulated clicks from a known relevance: why a ranker trained on raw clicks learns position, how inverse propensity weighting fixes it, and its limits. |
 
 </details>
 
@@ -1350,7 +1362,7 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [ ] LLM bias audit
 
 <details>
-<summary><strong>Show 111 completed items →</strong></summary>
+<summary><strong>Show 117 completed items →</strong></summary>
 
 - [x] COMPAS Criminal Justice Bias
 - [x] AI Fair Recruitment Bias
@@ -1461,6 +1473,12 @@ This copies `results/` into a snapshot alongside a `MANIFEST.md` recording the e
 - [x] Explainer: Randomized Post-Processing
 - [x] Explainer: Fairness-Accuracy Pareto Frontier
 - [x] Explainer: Choosing a Mitigation Strategy
+- [x] Explainer: What Is an AUC Gap Between Groups?
+- [x] Explainer: What Is Decision Curve Analysis by Group?
+- [x] Explainer: How Does Unequal Cost Change a Fairness Evaluation?
+- [x] Explainer: What Is Popularity Bias?
+- [x] Explainer: What Is Two-Sided Fairness in a Marketplace?
+- [x] Explainer: How Does Position Bias Distort What a Ranking Learns?
 - [x] Fairness audit web dashboard - [Open Dataset Profiler](#open-dataset-profiler)
 - [x] Bias detection utility library (`faircode/` module)
 
@@ -1480,14 +1498,14 @@ The full public roadmap - with phases, completion status, and content schedule -
 
 | Metric | Count |
 |--------|------:|
-| GitHub Stars | 52 |
+| GitHub Stars | 53 |
 | External Contributors | 54 |
 | Forks | 64 |
 | Watching | 8 |
 | Combined Social Reach (Instagram + LinkedIn) | 30K+ |
 | Countries Reached (Website Visitors) | 20 |
 | Code Audits Published | 7 |
-| Explainers Published | 108 |
+| Explainers Published | 114 |
 
 Tracked weekly in [METRICS.md](METRICS.md).
 

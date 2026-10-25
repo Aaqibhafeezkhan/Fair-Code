@@ -123,6 +123,19 @@ def test_parse_table_honors_escaped_pipe_inside_a_cell():
     assert body_rows == [["IPW", "w(X) = P(S = 1 | X)"]]
 
 
+def test_render_markdown_gives_every_table_header_a_column_scope():
+    # #1172: screen readers tie a cell to its column header only reliably
+    # when the <th> has scope="col". assets/explainers-ui.js renders the same.
+    script = importlib.import_module("scripts.build_explainers")
+
+    html = script.render_markdown("| Group | Rate |\n| --- | --- |\n| A | 0.5 |\n", set())
+
+    assert '<thead><tr><th scope="col">Group</th><th scope="col">Rate</th></tr></thead>' in html
+    assert "<th>" not in html
+    js = (REPO_ROOT / "assets" / "explainers-ui.js").read_text(encoding="utf-8")
+    assert '`<th scope="col">${inlineMarkdown(cell)}</th>`' in js
+
+
 def test_render_markdown_offsets_heading_levels_by_one():
     # The explainer page's hero already renders a real <h1>, so the markdown
     # body's headings are shifted down one level (h1 -> h2, capped at h6).

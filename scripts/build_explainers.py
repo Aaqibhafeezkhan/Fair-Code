@@ -218,7 +218,7 @@ def render_markdown(markdown_text, known_slugs):
             flush_list()
             flush_quote()
             headers, body_rows, next_index = table
-            header_html = "".join(f"<th>{inline_markdown(cell, known_slugs)}</th>" for cell in headers)
+            header_html = "".join(f'<th scope="col">{inline_markdown(cell, known_slugs)}</th>' for cell in headers)
             body_html = "".join(
                 "<tr>" + "".join(f"<td>{inline_markdown(cell, known_slugs)}</td>" for cell in row) + "</tr>"
                 for row in body_rows

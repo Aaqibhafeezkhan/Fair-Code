@@ -201,7 +201,7 @@
 <p>This is called <strong>proxy discrimination</strong>, and it&#x27;s one of the hardest problems in algorithmic fairness.</p>
 <hr>
 <h3 id="common-proxy-variables">Common Proxy Variables</h3>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Feature</th><th>Protected Attribute It Encodes</th><th>Why</th></tr></thead><tbody><tr><td>Zip code</td><td>Race</td><td>Historical redlining segregated neighborhoods by race. Zip codes still reflect this.</td></tr><tr><td>Custody status</td><td>Race</td><td>Over-policing of Black communities leads to disproportionate pretrial detention.</td></tr><tr><td>Name</td><td>Gender / Ethnicity</td><td>Names encode gender and ethnicity with high accuracy.</td></tr><tr><td>College attended</td><td>Socioeconomic background</td><td>Elite colleges remain heavily stratified by class and race.</td></tr><tr><td>Credit score</td><td>Race / Class</td><td>Credit histories reflect historical exclusion from banking.</td></tr><tr><td>Prior arrests</td><td>Race</td><td>Arrest records reflect over-policing, not actual crime rates.</td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Feature</th><th scope="col">Protected Attribute It Encodes</th><th scope="col">Why</th></tr></thead><tbody><tr><td>Zip code</td><td>Race</td><td>Historical redlining segregated neighborhoods by race. Zip codes still reflect this.</td></tr><tr><td>Custody status</td><td>Race</td><td>Over-policing of Black communities leads to disproportionate pretrial detention.</td></tr><tr><td>Name</td><td>Gender / Ethnicity</td><td>Names encode gender and ethnicity with high accuracy.</td></tr><tr><td>College attended</td><td>Socioeconomic background</td><td>Elite colleges remain heavily stratified by class and race.</td></tr><tr><td>Credit score</td><td>Race / Class</td><td>Credit histories reflect historical exclusion from banking.</td></tr><tr><td>Prior arrests</td><td>Race</td><td>Arrest records reflect over-policing, not actual crime rates.</td></tr></tbody></table></div>
 <hr>
 <h3 id="real-world-proof-compas-analysis">Real-World Proof: COMPAS Analysis</h3>
 <p>We tested this directly using the <a href="https://github.com/propublica/compas-analysis" target="_blank" rel="noreferrer noopener">ProPublica COMPAS dataset</a>.</p>
@@ -217,7 +217,7 @@ X = pd.get_dummies(df[[
     &#x27;MaritalStatus&#x27;
 ]])</code></pre>
 <p><strong>Results:</strong></p>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Group</th><th>High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>87.16%</td></tr><tr><td>White defendants</td><td>0.40%</td></tr><tr><td><strong>Fairness gap</strong></td><td><strong>86.77%</strong></td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Group</th><th scope="col">High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>87.16%</td></tr><tr><td>White defendants</td><td>0.40%</td></tr><tr><td><strong>Fairness gap</strong></td><td><strong>86.77%</strong></td></tr></tbody></table></div>
 <hr>
 <p><strong>Step 2 - Remove race only (naive approach):</strong></p>
 <p>Many developers stop here. They drop <code>race_binary</code> and assume the model is now fair. Dropping race alone already takes the gap from 86.77% down to 18.38% - most of the signal was riding on race directly. But it isn&#x27;t fully fixed: <code>CustodyStatus</code> is still acting as a racial proxy, and its own marginal contribution beyond race is the remaining ~2.7 points down to 15.69% once it&#x27;s removed too (see Step 3).</p>
@@ -230,9 +230,9 @@ X = pd.get_dummies(df[[
     # CustodyStatus removed ✓ (proxy for race)
 ]])</code></pre>
 <p><strong>Results:</strong></p>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Group</th><th>High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>84.71%</td></tr><tr><td>White defendants</td><td>69.02%</td></tr><tr><td><strong>Fairness gap</strong></td><td><strong>15.69%</strong></td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Group</th><th scope="col">High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>84.71%</td></tr><tr><td>White defendants</td><td>69.02%</td></tr><tr><td><strong>Fairness gap</strong></td><td><strong>15.69%</strong></td></tr></tbody></table></div>
 <h4 id="summary">Summary</h4>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Approach</th><th>Fairness Gap</th><th>Reduction</th></tr></thead><tbody><tr><td>Biased model</td><td>86.77%</td><td>-</td></tr><tr><td>Remove race only</td><td>18.38%</td><td>79%</td></tr><tr><td>Remove race + proxy</td><td>15.69%</td><td><strong>82%</strong></td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Approach</th><th scope="col">Fairness Gap</th><th scope="col">Reduction</th></tr></thead><tbody><tr><td>Biased model</td><td>86.77%</td><td>-</td></tr><tr><td>Remove race only</td><td>18.38%</td><td>79%</td></tr><tr><td>Remove race + proxy</td><td>15.69%</td><td><strong>82%</strong></td></tr></tbody></table></div>
 <p><strong>Removing the protected attribute alone is not enough. You must audit every feature for correlation with protected attributes.</strong></p>
 <hr>
 <h3 id="how-to-detect-proxy-variables">How to Detect Proxy Variables</h3>

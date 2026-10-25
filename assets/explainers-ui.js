@@ -131,7 +131,7 @@
     const headers = splitRow(rows[0]);
     const bodyRows = rows.slice(2).map(splitRow);
 
-    const headerHtml = headers.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join('');
+    const headerHtml = headers.map(cell => `<th scope="col">${inlineMarkdown(cell)}</th>`).join('');
     const bodyHtml = bodyRows.map(row => `<tr>${row.map(cell => `<td>${inlineMarkdown(cell)}</td>`).join('')}</tr>`).join('');
 
     return {

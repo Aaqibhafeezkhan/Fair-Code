@@ -351,7 +351,7 @@ for group, code in [(&quot;African-American&quot;, 1), (&quot;Caucasian&quot;, 0
     high_risk_rate = preds.mean() * 100
     print(f&quot;{group} high-risk flag rate: {high_risk_rate:.2f}%&quot;)</code></pre>
 <p><strong>Results - biased policy (race + custody_status included):</strong></p>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Group</th><th>High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>87.16%</td></tr><tr><td>White defendants</td><td>0.40%</td></tr><tr><td><strong>Fairness gap</strong></td><td><strong>86.77%</strong></td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Group</th><th scope="col">High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>87.16%</td></tr><tr><td>White defendants</td><td>0.40%</td></tr><tr><td><strong>Fairness gap</strong></td><td><strong>86.77%</strong></td></tr></tbody></table></div>
 <p>The policy did not contain a rule that said &quot;flag Black defendants.&quot; It learned from historical reoffense records in which policing patterns, pretrial detention rates, and charge severity were all racially stratified. The reward signal encoded that stratification. The policy reproduced it.</p>
 <hr>
 <h3 id="how-to-detect-when-an-rl-adjacent-policy-is-biased">How to Detect When an RL-Adjacent Policy Is Biased</h3>
@@ -411,8 +411,8 @@ X_train_f, X_test_f, y_train_f, y_test_f = train_test_split(
 model_fair = RandomForestClassifier(random_state=42)
 model_fair.fit(X_train_f, y_train_f)</code></pre>
 <p><strong>Results - mitigated policy (race + proxy removed):</strong></p>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Group</th><th>High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>84.71%</td></tr><tr><td>White defendants</td><td>69.02%</td></tr><tr><td><strong>New fairness gap</strong></td><td><strong>15.69%</strong></td></tr></tbody></table></div>
-<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th>Approach</th><th>Fairness Gap</th><th>Reduction</th></tr></thead><tbody><tr><td>Biased policy</td><td>86.77%</td><td>-</td></tr><tr><td>Remove race only (keep custody_status)</td><td>18.38%</td><td>79%</td></tr><tr><td>Remove race + custody_status</td><td>15.69%</td><td><strong>82%</strong></td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Group</th><th scope="col">High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>84.71%</td></tr><tr><td>White defendants</td><td>69.02%</td></tr><tr><td><strong>New fairness gap</strong></td><td><strong>15.69%</strong></td></tr></tbody></table></div>
+<div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Approach</th><th scope="col">Fairness Gap</th><th scope="col">Reduction</th></tr></thead><tbody><tr><td>Biased policy</td><td>86.77%</td><td>-</td></tr><tr><td>Remove race only (keep custody_status)</td><td>18.38%</td><td>79%</td></tr><tr><td>Remove race + custody_status</td><td>15.69%</td><td><strong>82%</strong></td></tr></tbody></table></div>
 <p>The policy architecture did not change. The training procedure did not change. Only the state representation changed - and most of the discriminatory behaviour disappeared.</p>
 <hr>
 <h3 id="second-case-recommendation-systems-and-feedback-loops">Second Case: Recommendation Systems and Feedback Loops</h3>

@@ -24,7 +24,8 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr }}
+  # Keep smoke runs separate from full reruns; unrelated label events get a no-op group.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr }}-${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'rerun-benchmark')) && 'full' || (github.event_name == 'pull_request' && github.event.action != 'labeled') && 'smoke' || 'noop' }}
   cancel-in-progress: true
 
 jobs:

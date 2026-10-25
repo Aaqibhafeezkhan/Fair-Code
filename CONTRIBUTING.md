@@ -550,6 +550,8 @@ python3 scripts/diff_results.py --current /tmp/bump-results --reference results 
 
 If rows moved, say so in the PR and refresh `results/` in the same PR or an immediate follow-up; if nothing moved, say that. Do not touch `paper/results-frozen/`. The rerun is slow, so it is not an automatic check. Add the `rerun-benchmark` label to the PR (or run the *Benchmark diff* workflow from the Actions tab with the PR number) and `.github/workflows/benchmark-diff.yml` reruns the full benchmark on that PR's lockfile and comments the diff, with no commit and no change to `paper/results-frozen/`.
 
+Observed on a throwaway pull request (#1142, 2026-10-24): the `refs/pull/N/merge` checkout and the locked install worked, the full benchmark took about 34 minutes on a hosted `ubuntu-latest` runner (the job limit is 120), and the comment was posted. The runner uses Python 3.12 and the reference results were made on 3.13, so the comment lists the library versions that differ; a row that moved with only a Python change is not a library effect. The moved-rows section lists at most 100 rows per kind and is cut at 50,000 characters, well under GitHub's 65,536 limit. A change to the workflow or to `scripts/diff_results.py` also runs a smoke job on one small audit before it can merge.
+
 ---
 
 ## 11. How to submit

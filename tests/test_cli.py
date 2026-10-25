@@ -3,7 +3,9 @@ import csv
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
+import shlex
 import sys
 
 import pandas as pd
@@ -14,6 +16,14 @@ from faircode.cli import main
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SMALL_AUDIT = REPO_ROOT / "German Credit Lending" / "audit.yaml"
+
+
+def _repo_python_env(root):
+    env = os.environ.copy()
+    inherited = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = os.pathsep.join(filter(None, [str(root), inherited]))
+    return env
+
 
 requires_openpyxl = pytest.mark.skipif(
     importlib.util.find_spec("openpyxl") is None,
@@ -1474,14 +1484,69 @@ def test_python_dash_m_faircode_runs_the_cli():
     assert bad.returncode == 2
     # #1096: only the console script that belongs to this interpreter counts; a stray `faircode` on PATH
     # may be installed for another Python and cannot import this checkout.
-    import os
     import shutil
+
     exe_dir = Path(sys.executable).parent   # bin/ in a venv, the install root (with Scripts/) for a Windows system Python
     script = shutil.which("faircode", path=os.pathsep.join([str(exe_dir), str(exe_dir / "Scripts")]))
     if script:   # the installed console script behaves the same
-        assert subprocess.run([script, "--version"], capture_output=True, text=True).returncode == 0
+        result = subprocess.run(
+            [script, "--version"],
+            capture_output=True,
+            text=True,
+            env=_repo_python_env(root),
+        )
+        assert result.returncode == 0
     else:
         print(f"no faircode console script next to {sys.executable}; skipping the console-script check")
+
+
+@pytest.mark.skipif(
+    os.name == "nt", reason="stale-script fixture uses a POSIX launcher"
+)
+def test_stale_console_script_imports_the_checkout(tmp_path, monkeypatch):
+    import subprocess
+    import sysconfig
+    from faircode import __version__
+
+    root = Path(__file__).resolve().parent.parent
+    script = tmp_path / "faircode"
+    script.write_text(
+        f"#!/bin/sh\nexec {shlex.quote(sys.executable)} -S -c 'from faircode.cli import main; main()' \"$@\"\n"
+    )
+    script.chmod(0o755)
+    site_paths = sysconfig.get_paths()
+    monkeypatch.setenv(
+        "PYTHONPATH", os.pathsep.join({site_paths["purelib"], site_paths["platlib"]})
+    )
+    command = [str(script), "--version"]
+    stale = subprocess.run(
+        command, capture_output=True, text=True, cwd=tmp_path, env=os.environ.copy()
+    )
+    assert stale.returncode != 0 and "No module named 'faircode'" in stale.stderr
+    shadow = tmp_path / "shadow"
+    package = shadow / "faircode"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("")
+    (package / "cli.py").write_text("def main(): print('shadow package')\n")
+    monkeypatch.setenv(
+        "PYTHONPATH", os.pathsep.join([str(shadow), os.environ["PYTHONPATH"]])
+    )
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        env=_repo_python_env(root),
+    )
+    assert result.returncode == 0 and __version__ in (result.stdout + result.stderr)
+    invalid = subprocess.run(
+        [str(script), "profile", "--no-such-flag"],
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+        env=_repo_python_env(root),
+    )
+    assert invalid.returncode == 2 and "unrecognized arguments" in invalid.stderr
 
 
 @pytest.mark.parametrize("flags,message", [

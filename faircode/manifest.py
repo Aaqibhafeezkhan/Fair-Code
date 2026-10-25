@@ -224,6 +224,13 @@ def load_manifest(path) -> Manifest:
     path = Path(path)
     with open(path) as f:
         data = yaml.safe_load(f)
+    if not isinstance(data, dict):
+        # An empty file parses to None, and a file passed by mistake (a CSV,
+        # say) to a string; both used to die inside data.get() (#1177).
+        raise ValueError(
+            f"{path}: the manifest must be a mapping of keys to values, "
+            f"got {type(data).__name__}"
+        )
     return Manifest.from_dict(data, path)
 
 

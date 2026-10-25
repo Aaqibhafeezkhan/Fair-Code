@@ -1132,6 +1132,38 @@ def test_cli_benchmark_malformed_manifest_returns_2_with_clean_error(monkeypatch
     captured = capsys.readouterr()
     assert "error: bad_audit/audit.yaml: 'target'" in captured.err
 
+def test_cli_benchmark_empty_manifest_returns_2_with_clean_error(tmp_path, capsys):
+    """#1177: an empty manifest used to raise AttributeError."""
+    pytest.importorskip("sklearn", reason="benchmark extra required")
+    pytest.importorskip("fairlearn", reason="benchmark extra required")
+    pytest.importorskip("yaml", reason="benchmark extra required")
+
+    empty = tmp_path / "empty.yaml"
+    empty.write_text("")
+    exit_code = main(["benchmark", str(empty), "--no-plots"])
+
+    assert exit_code == 2
+    captured = capsys.readouterr()
+    assert f"error: {empty}:" in captured.err
+    assert "must be a mapping" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_benchmark_non_mapping_manifest_returns_2_with_clean_error(tmp_path, capsys):
+    """#1177: a CSV passed by mistake used to raise AttributeError."""
+    pytest.importorskip("sklearn", reason="benchmark extra required")
+    pytest.importorskip("fairlearn", reason="benchmark extra required")
+    pytest.importorskip("yaml", reason="benchmark extra required")
+
+    path = tmp_path / "tiny.csv"
+    path.write_text("name,title\ntoy,Toy\n")
+    exit_code = main(["benchmark", str(path), "--no-plots"])
+
+    assert exit_code == 2
+    captured = capsys.readouterr()
+    assert "must be a mapping" in captured.err
+    assert "Traceback" not in captured.err
+
 
 @pytest.mark.skipif(not SMALL_AUDIT.is_file(), reason="German Credit Lending fixture not found")
 @pytest.mark.slow   # trains models end to end (about 15 s); `make test-fast` skips it (#910)

@@ -96,6 +96,19 @@ def test_empty_protected_attributes_raises(tmp_path):
         load_manifest(path)
 
 
+def test_an_empty_manifest_raises_a_mapping_error(tmp_path):
+    path = tmp_path / "audit.yaml"
+    path.write_text("")
+    with pytest.raises(ValueError, match="must be a mapping"):
+        load_manifest(path)
+
+
+def test_a_manifest_that_is_not_a_mapping_raises(tmp_path):
+    path = tmp_path / "audit.yaml"
+    path.write_text("a,b\n1,2\n")
+    with pytest.raises(ValueError, match="must be a mapping"):
+        load_manifest(path)
+
 def test_unknown_target_method_fails_loudly():
     spec = TargetSpec(column="x", method="not_a_real_method")
     df = pd.DataFrame({"x": [1, 2, 3]})

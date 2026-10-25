@@ -106,8 +106,7 @@ def test_baseline_demographic_parity_gap_is_a_plausible_fraction(result):
 
 
 # ── write_report() / --no-plots (#210) ──────────────────────────────────────
-# write_report() itself is frozen (CLAUDE.md) - these only call it, they never
-# modify faircode/benchmark.py.
+# These exercise report writing without running the full seven-audit sweep.
 
 @pytest.fixture(scope="module")
 def result_dfs(result):

@@ -291,6 +291,28 @@ def test_run_benchmark_seeds_global_random_state(monkeypatch):
 # A malformed manifest or degenerate dataset used to propagate a raw
 # yaml.YAMLError/KeyError/sklearn ValueError all the way to the CLI with no
 # indication of which manifest was responsible.
+def test_run_benchmark_names_the_manifest_once_in_validation_errors(tmp_path):
+    # #1179: Manifest.from_dict already prefixes its own errors with the
+    # manifest path, so run_benchmark must not add a second copy.
+    audit_dir = tmp_path / "Empty Audit"
+    audit_dir.mkdir()
+    (audit_dir / "audit.yaml").write_text(
+        "name: empty\n"
+        "target:\n  column: y\n  method: equals\n  value: '1'\n"
+        "protected_attributes: []\n"
+        "core_features: [age]\n"
+    )
+
+    manifest_path = str(audit_dir / "audit.yaml")
+    with pytest.raises(ValueError) as excinfo:
+        run_benchmark(root=str(tmp_path), n_resamples=N_RESAMPLES,
+                      n_permutations=N_PERMUTATIONS)
+
+    message = str(excinfo.value)
+    assert message.count(manifest_path) == 1
+    assert "protected_attributes must have at least one entry" in message
+
+
 def test_run_benchmark_wraps_malformed_yaml_with_manifest_path(tmp_path):
     audit_dir = tmp_path / "Bad Audit"
     audit_dir.mkdir()

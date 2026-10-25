@@ -404,3 +404,31 @@ html[data-theme="dark"] .explainer-page {
   .explainer-grid { grid-template-columns: 1fr; }
   .explainer-card-link { padding: 22px 20px 18px; }
 }
+
+/* Skip link (#1170): hidden until focused, same as the one on index.html. */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  background: var(--bg);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.explainer-hero:focus { outline: none; }

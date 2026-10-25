@@ -281,6 +281,21 @@ def test_the_markdown_becomes_html_and_internal_links_resolve(site):
     assert "<table" in html and "<pre" in html
 
 
+def test_every_page_starts_with_a_skip_link_to_the_content(site):
+    # #1170 (WCAG 2.4.1): the first focusable element skips the top bar and
+    # lands on the hero, which has the matching id and can take focus.
+    script, root, entries = site
+    script.main()
+    for e in entries:
+        html = (root / "explainers" / f"{e['slug']}.html").read_text(encoding="utf-8")
+        body = html.split('<body class="explainer-page">', 1)[1]
+        first_focusable = re.search(r"<(a|button)\b[^>]*>", body).group(0)
+        assert first_focusable == '<a class="skip-link" href="#explainer-start">'
+        assert '<section class="explainer-hero" id="explainer-start" tabindex="-1">' in body
+    css = (REPO_ROOT / "assets" / "explainers.css").read_text(encoding="utf-8")
+    assert ".skip-link:focus" in css
+
+
 def test_the_sitemap_lists_the_site_pages_and_each_explainer_with_lastmod(site):
     script, root, _ = site
     script.main()

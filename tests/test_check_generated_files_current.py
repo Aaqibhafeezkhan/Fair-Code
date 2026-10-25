@@ -1,14 +1,17 @@
 """Tests for scripts/check_generated_files_current.py.
 
-main() operates on the real repo ROOT/TEXT_GLOBS/DATA_JSON by design (it's a
-CI gate, not a library function), so these tests monkeypatch those module
-globals to point at an isolated tmp_path tree and fake out the `git`
-subprocess calls, rather than standing up a real git repository - the
-behavior under test is the comparison/flagging logic itself, not git.
+Most tests point main() at an isolated tmp_path tree and fake out the `git`
+subprocess calls. A focused temporary Git repository also exercises the
+fresh-build copy and builder failure path end to end.
 """
 
 import importlib
 import json
+import os
+import subprocess
+from contextlib import ExitStack
+
+import pytest
 
 from PIL import Image
 
@@ -49,6 +52,92 @@ def _empty_repo(tmp_path, monkeypatch, script):
     monkeypatch.setattr(script, "ROOT", tmp_path)
     monkeypatch.setattr(script, "DATA_JSON", data_json)
     monkeypatch.setattr(script, "TEXT_GLOBS", [])
+
+
+def _git_repo(root, *, failing_builder=False, require_new_assets=False):
+    root.mkdir()
+    (root / ".gitignore").write_text("ignored.txt\n", encoding="utf-8")
+    (root / "tracked.txt").write_text("committed content\n", encoding="utf-8")
+    scripts = root / "scripts"
+    scripts.mkdir()
+    if failing_builder:
+        builder = "import sys\nprint('builder-specific failure', file=sys.stderr)\nsys.exit(7)\n"
+    elif require_new_assets:
+        builder = (
+            "from pathlib import Path\n"
+            "assert Path('explainers/new-explainer.md').is_file()\n"
+            "assert Path('assets/og/new-explainer.png').is_file()\n"
+            "assert Path('assets/og-light/new-explainer.png').is_file()\n"
+        )
+    else:
+        builder = "pass\n"
+    (scripts / "build_explainers.py").write_text(builder, encoding="utf-8")
+    (scripts / "generate_og_images.py").write_text("pass\n", encoding="utf-8")
+    (scripts / "freeze_paper_results.py").write_text(
+        "def mirror_for_mcp(): pass\ndef mirror_current_for_mcp(): pass\n",
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "init", "--quiet"], cwd=root, check=True)
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    env = os.environ | {
+        "GIT_AUTHOR_NAME": "Fair-Code tests",
+        "GIT_AUTHOR_EMAIL": "tests@example.invalid",
+        "GIT_COMMITTER_NAME": "Fair-Code tests",
+        "GIT_COMMITTER_EMAIL": "tests@example.invalid",
+    }
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "test fixture"],
+        cwd=root,
+        env=env,
+        check=True,
+    )
+    return root
+
+
+def test_fresh_build_copies_new_files_but_not_ignored_files_and_keeps_tracked_edits(
+    tmp_path, monkeypatch
+):
+    script = _script()
+    root = _git_repo(tmp_path / "repo", require_new_assets=True)
+    (root / "tracked.txt").write_text("unstaged edit\n", encoding="utf-8")
+    explainer = root / "explainers" / "new-explainer.md"
+    explainer.parent.mkdir()
+    explainer.write_text("# New explainer\n", encoding="utf-8")
+    for theme in ("og", "og-light"):
+        image = root / "assets" / theme / "new-explainer.png"
+        image.parent.mkdir(parents=True)
+        image.write_bytes(b"new image asset")
+    (root / "ignored.txt").write_text("must not be copied\n", encoding="utf-8")
+    monkeypatch.setattr(script, "ROOT", root)
+
+    with ExitStack() as stack:
+        fresh = script._fresh_build_dir(stack)
+
+        assert (fresh / "tracked.txt").read_text(encoding="utf-8") == "unstaged edit\n"
+        assert (fresh / "explainers/new-explainer.md").read_text(encoding="utf-8") == (
+            "# New explainer\n"
+        )
+        assert (
+            fresh / "assets/og/new-explainer.png"
+        ).read_bytes() == b"new image asset"
+        assert (
+            fresh / "assets/og-light/new-explainer.png"
+        ).read_bytes() == b"new image asset"
+        assert not (fresh / "ignored.txt").exists()
+
+
+def test_fresh_build_prints_builder_stderr_and_preserves_failure_status(
+    tmp_path, monkeypatch, capsys
+):
+    script = _script()
+    root = _git_repo(tmp_path / "repo", failing_builder=True)
+    monkeypatch.setattr(script, "ROOT", root)
+
+    with ExitStack() as stack, pytest.raises(subprocess.CalledProcessError) as error:
+        script._fresh_build_dir(stack)
+
+    assert error.value.returncode == 7
+    assert "builder-specific failure" in capsys.readouterr().err
 
 
 def test_text_globs_covers_the_results_frozen_mcp_mirror():

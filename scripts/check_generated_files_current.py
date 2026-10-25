@@ -51,11 +51,11 @@ verifies the *generator* satisfies that in a temp directory, so this
 script checks the same thing for what's actually committed.
 
 This script is self-sufficient: it builds a fresh copy of the site itself
-(via `git worktree`, with every currently tracked file's working-tree
-content copied on top of the HEAD checkout, so uncommitted edits to an
-already-tracked source file are what gets built) and compares the real
-working tree against that regeneration - not against what's committed at
-HEAD. Editing an explainer's .md without running `make build-explainers`
+(via `git worktree`, with every tracked file and every untracked,
+non-ignored file's working-tree content copied on top of the HEAD checkout,
+so both edits to existing files and brand new files are what gets built) and
+compares the real working tree against that regeneration - not against what's
+committed at HEAD. Editing an explainer's .md without running `make build-explainers`
 afterward is exactly the case this now catches; it no longer needs to run
 after CI's own build_explainers.py/generate_og_images.py steps to be
 meaningful, though CI still runs it there too.
@@ -126,15 +126,11 @@ def _fresh_build_dir(stack):
     actually on disk right now - not from HEAD. `git worktree add` gives a
     checkout backed by the same object database/history as ROOT (so
     git-log-derived dates in build_explainers.py resolve identically to a
-    regeneration done in ROOT itself), then every currently tracked file's
-    *working-tree* content is copied on top of that HEAD checkout, so
-    uncommitted edits to an already-tracked source file are what gets
-    built - exactly the scenario in the bug report this fixes. A brand new,
-    never-`git add`-ed file isn't covered by that overlay (there's nothing
-    to `git ls-files` yet), which matches this script's pre-existing
-    handling of that case below (falls through to "not produced by a fresh
-    regeneration", since a file with no source in the fresh build can't
-    have been generated there).
+    regeneration done in ROOT itself), then every tracked file's
+    *working-tree* content and every untracked, non-ignored file are copied
+    on top of that HEAD checkout, so edits and new explainer files/assets
+    are all included in the build. Ignored files stay out of the fresh
+    checkout.
 
     `stack` is an ExitStack the caller uses to guarantee the worktree is
     cleaned up even if a later step raises.
@@ -152,7 +148,14 @@ def _fresh_build_dir(stack):
     tracked = subprocess.run(
         ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
     ).stdout.splitlines()
-    for rel in tracked:
+    untracked = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.splitlines()
+    for rel in tracked + untracked:
         if not rel.strip():
             continue
         src, dst = ROOT / rel, tmp / rel
@@ -167,7 +170,12 @@ def _fresh_build_dir(stack):
          "from scripts.freeze_paper_results import mirror_for_mcp, mirror_current_for_mcp; "
          "mirror_for_mcp(); mirror_current_for_mcp()"],
     ):
-        subprocess.run(cmd, cwd=tmp, check=True, capture_output=True, text=True)
+        try:
+            subprocess.run(cmd, cwd=tmp, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:
+            if exc.stderr:
+                print(exc.stderr, file=sys.stderr, end="")
+            raise
 
     return tmp
 

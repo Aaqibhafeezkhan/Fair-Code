@@ -66,6 +66,31 @@ def test_only_the_newest_weekly_row_is_compared(tmp_path):
     assert any(p.startswith("stars disagree") and "W43" in p for p in check.check(_site(tmp_path, metrics=stale)))
 
 
+def test_each_weekly_figure_reports_a_metrics_disagreement(tmp_path):
+    latest = "| 2026-W43 | 51 | 63 | 8 | 54 | 30K+ total | 20 | 28 | 7 total |"
+    cases = (
+        (1, "stars", "52"),
+        (2, "forks", "64"),
+        (3, "watching", "9"),
+        (4, "contributors", "55"),
+        (5, "social", "31K+ total"),
+        (6, "countries", "21"),
+        (8, "audits", "8"),
+    )
+
+    for column, figure, value in cases:
+        cells = latest.strip("|").split("|")
+        cells[column] = f" {value} "
+        metrics = METRICS.replace(latest, "|" + "|".join(cells) + "|")
+        problems = check.check(_site(tmp_path, metrics=metrics))
+
+        assert any(
+            problem.startswith(f"{figure} disagree")
+            and "METRICS.md (latest weekly row, 2026-W43)" in problem
+            for problem in problems
+        ), figure
+
+
 def test_readme_external_contributors_is_expected_one_below_the_total(tmp_path):
     assert check.check(_site(tmp_path)) == []
     problems = check.check(_site(tmp_path, readme=README.replace("| 53 |", "| 54 |")))
@@ -90,3 +115,103 @@ def test_missing_rows_are_reported_not_ignored(tmp_path):
 
 def test_the_real_repo_agrees():
     assert check.check() == []
+
+
+def test_readme_missing_traction_row_is_reported():
+    text = README.replace("| GitHub Stars | 51 |\n", "")
+
+    observations, problems = check.readme_observations(text)
+
+    assert not any(figure == "stars" for figure, _, _ in observations)
+    assert problems == ["README.md: no Traction table row for 'GitHub Stars'"]
+
+
+def test_roadmap_header_without_a_data_row_is_reported():
+    text = check.ROADMAP_HEADER + "\n|---|---|---|---|---|---|---|\n"
+
+    assert check.roadmap_observations(text) == (
+        [],
+        ["ROADMAP.md: no 'Current traction' table found"],
+    )
+
+
+def test_metrics_missing_badges_and_weekly_rows_are_reported():
+    observations, problems = check.metrics_observations("no metrics here\n")
+
+    assert observations == []
+    assert problems == [
+        "METRICS.md: no Stars badge",
+        "METRICS.md: no Contributors badge",
+        "METRICS.md: no Forks badge",
+        "METRICS.md: no Watching badge",
+        "METRICS.md: no Countries badge",
+        "METRICS.md: no weekly row found",
+    ]
+
+
+def test_weekly_row_skips_empty_and_dash_cells():
+    incomplete = METRICS.replace(
+        "| 2026-W43 | 51 | 63 | 8 | 54 | 30K+ total | 20 | 28 | 7 total |",
+        "| 2026-W43 | 51 | - |  | 54 | 30K+ total | 20 | 28 | 7 total |",
+    )
+    observations, problems = check.metrics_observations(incomplete)
+
+    assert problems == []
+    weekly = [item for item in observations if "latest weekly row" in item[1]]
+    assert {figure for figure, _, _ in weekly} == {
+        "stars",
+        "contributors",
+        "social",
+        "countries",
+        "audits",
+    }
+
+
+def test_truncated_weekly_row_keeps_available_figures():
+    text = "| 2026-W43 | 51 |\n"
+
+    observations, problems = check.metrics_observations(text)
+
+    assert problems == [
+        "METRICS.md: no Stars badge",
+        "METRICS.md: no Contributors badge",
+        "METRICS.md: no Forks badge",
+        "METRICS.md: no Watching badge",
+        "METRICS.md: no Countries badge",
+    ]
+    assert observations == [("stars", "METRICS.md (latest weekly row, 2026-W43)", "51")]
+
+
+def test_completed_items_counts_until_end_of_file_without_details_closer():
+    text = "Show 2 completed items\n- [x] One\n- [x] Two\n"
+
+    assert check.completed_items(text) == (2, 2)
+
+
+def test_check_reports_missing_completed_items_summary(tmp_path):
+    problems = check.check(
+        _site(tmp_path, readme="README without a completed-items section")
+    )
+
+    assert "README.md: no 'Show N completed items' summary found" in problems
+
+
+def test_main_reports_success_and_failure(monkeypatch, capsys):
+    monkeypatch.setattr(check, "check", lambda: [])
+    assert check.main() == 0
+    assert "Traction figures agree" in capsys.readouterr().out
+
+    monkeypatch.setattr(check, "check", lambda: ["stars disagree"])
+    assert check.main() == 1
+    assert "stars disagree" in capsys.readouterr().err
+
+
+def test_script_entry_point_exits_with_the_checker_result():
+    import runpy
+
+    try:
+        runpy.run_path(str(Path(check.__file__)), run_name="__main__")
+    except SystemExit as exc:
+        assert exc.code == 0
+    else:
+        raise AssertionError("script entry point did not exit")

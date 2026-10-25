@@ -368,11 +368,93 @@ def write_provenance(out_dir, runs) -> Path:
     return path
 
 
+def _validate_existing_result_outputs(out_dir, requested_audits, provenance) -> None:
+    """Validate existing results before report writes to prevent partial replacement."""
+    out_dir = Path(out_dir)
+    paths = {name: out_dir / name for name in RESULT_FILES}
+    provenance_path = out_dir / PROVENANCE_FILE
+    if not any(path.exists() for path in paths.values()) and not provenance_path.exists():
+        return
+
+    missing = [name for name in RESULT_FILES if not paths[name].exists()]
+    if missing:
+        raise ValueError(
+            "existing benchmark output is incomplete (missing " + ", ".join(missing)
+            + "); refusing to overwrite it. Restore the files or choose a new --out directory."
+        )
+
+    audit_sets = {}
+    for name, path in paths.items():
+        try:
+            table = pd.read_csv(path)
+        except (OSError, UnicodeError, ValueError, pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+            raise ValueError(
+                f"existing benchmark output is malformed ({name}: {exc}); refusing to overwrite it. "
+                "Restore the file or choose a new --out directory."
+            ) from exc
+        if table.empty or "audit" not in table or table["audit"].isna().any():
+            raise ValueError(
+                f"existing benchmark output is malformed ({name} has no usable audit rows); "
+                "refusing to overwrite it. Restore the file or choose a new --out directory."
+            )
+        audit_sets[name] = set(table["audit"].astype(str))
+
+    existing_audits = audit_sets[RESULT_FILES[0]]
+    if any(audits != existing_audits for audits in audit_sets.values()):
+        raise ValueError(
+            "existing benchmark result files contain different audit sets; refusing to overwrite them. "
+            "Restore a consistent result set or choose a new --out directory."
+        )
+
+    if provenance_path.exists():
+        try:
+            record = json.loads(provenance_path.read_text(encoding="utf-8"))
+            if not isinstance(record, dict):
+                raise ValueError("provenance is not a JSON object")
+            if record.get("schema") != 1 or not isinstance(record.get("files"), dict):
+                raise ValueError("unsupported or incomplete provenance record")
+            if not isinstance(record.get("runs"), list):
+                raise ValueError("missing run records")
+            for name, path in paths.items():
+                if record["files"].get(name) != _sha256(path):
+                    raise ValueError(f"{name} does not match its recorded hash")
+            recorded_audits = set()
+            for run in record["runs"]:
+                if not isinstance(run, dict) or not isinstance(run.get("audits"), list):
+                    raise ValueError("malformed run audit list")
+                recorded_audits.update(run["audits"])
+            if recorded_audits != existing_audits:
+                raise ValueError("recorded audits do not match the result files")
+        except (OSError, UnicodeError, json.JSONDecodeError, ValueError, TypeError) as exc:
+            raise ValueError(
+                f"existing benchmark provenance is malformed or inconsistent ({exc}); "
+                "refusing to overwrite it. Restore the files or choose a new --out directory."
+            ) from exc
+        if provenance is None:
+            raise ValueError(
+                "existing benchmark output has provenance but this report does not; "
+                "refusing to leave stale provenance. Supply provenance or choose a new --out directory."
+            )
+
+    other_audits = existing_audits - requested_audits
+    if other_audits:
+        names = ", ".join(sorted(other_audits))
+        raise ValueError(
+            f"existing benchmark output contains results for other audits ({names}); "
+            "refusing to overwrite them. Run all audits or choose a new --out directory."
+        )
+
+
 def write_report(fairness_df: pd.DataFrame, performance_df: pd.DataFrame, out_dir,
                  make_plots: bool = True, plot_metric: str = "demographic_parity_diff", provenance=None):
     """Write results_fairness.csv, results_performance.csv, and a summary.csv
     to out_dir, plus (if make_plots) render figures/*.png via faircode.figures.
     With `provenance` (a dict from collect_provenance) also write PROVENANCE.json (#1129)."""
+    fairness_audits = set(fairness_df["audit"].astype(str)) if "audit" in fairness_df else set()
+    performance_audits = set(performance_df["audit"].astype(str)) if "audit" in performance_df else set()
+    if fairness_audits != performance_audits:
+        raise ValueError("benchmark result tables contain different audit sets; refusing to write output")
+    _validate_existing_result_outputs(out_dir, fairness_audits, provenance)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     fairness_df.to_csv(out_dir / "results_fairness.csv", index=False)

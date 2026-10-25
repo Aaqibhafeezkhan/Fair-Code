@@ -292,8 +292,13 @@ def run_benchmark(root=".", audits=None, n_resamples=2000, n_permutations=2000):
             # or a degenerate dataset (e.g. filtered down to 0 rows, which
             # sklearn's train_test_split rejects with its own ValueError)
             # would otherwise propagate as a raw, manifest-path-less
-            # traceback all the way to the CLI.
-            raise ValueError(f"{path}: {exc}") from exc
+            # traceback all the way to the CLI. Validation errors raised by
+            # Manifest.from_dict already name the manifest, so prefix only
+            # the ones that do not (#1179).
+            message = str(exc)
+            if not message.startswith(str(path)):
+                message = f"{path}: {message}"
+            raise ValueError(message) from exc
         all_fairness.extend(fairness_rows)
         all_performance.extend(performance_rows)
     return pd.DataFrame(all_fairness), pd.DataFrame(all_performance)

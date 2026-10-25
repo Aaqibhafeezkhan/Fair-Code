@@ -70,13 +70,13 @@ def treat_all(y, t):
 def useful_ranges(y, p, grid):
     """Threshold ranges where the model beats both treating everyone and treating no one."""
     ok = [net_benefit(y, p, t) > max(treat_all(y, t), 0) for t in grid]
-    ranges, start = [], None
+    ranges, start, last = [], None, None
     for t, flag in zip(grid, ok):
         if flag and start is None:
             start = t
         if not flag and start is not None:
-            ranges.append((start, prev)); start = None
-        prev = t
+            ranges.append((start, last)); start = None
+        last = t
     if start is not None:
         ranges.append((start, grid[-1]))
     return ranges

@@ -116,6 +116,51 @@ def test_the_closes_of_a_pull_request_come_from_the_event_payload(tmp_path):
     assert script.pull_request_closes({"GITHUB_EVENT_NAME": "pull_request", "GITHUB_EVENT_PATH": str(tmp_path / "missing.json")}) == set()
 
 
+def test_a_malformed_pull_request_event_is_ignored(tmp_path):
+    payload = tmp_path / "event.json"
+    payload.write_text("not json", encoding="utf-8")
+    assert script.pull_request_closes({"GITHUB_EVENT_NAME": "pull_request", "GITHUB_EVENT_PATH": str(payload)}) == set()
+
+
+def test_load_states_skips_when_gh_is_missing_or_the_issue_query_fails(monkeypatch):
+    monkeypatch.setattr(script.shutil, "which", lambda _name: None)
+    assert script.load_states(None) is None
+
+    class Failed:
+        returncode = 1
+
+    monkeypatch.setattr(script.shutil, "which", lambda _name: "/usr/bin/gh")
+    monkeypatch.setattr(script.subprocess, "run", lambda *args, **kwargs: Failed())
+    assert script.load_states(None) is None
+
+
+def test_load_states_merges_pull_requests_when_available(monkeypatch):
+    class Result:
+        def __init__(self, returncode, stdout):
+            self.returncode = returncode
+            self.stdout = stdout
+
+    results = iter((
+        Result(0, '[{"number": 1, "state": "OPEN"}]'),
+        Result(0, '[{"number": 2, "state": "MERGED"}]'),
+    ))
+    monkeypatch.setattr(script.shutil, "which", lambda _name: "/usr/bin/gh")
+    monkeypatch.setattr(script.subprocess, "run", lambda *args, **kwargs: next(results))
+    assert script.load_states(None) == {1: "open", 2: "merged"}
+
+
+def test_load_states_keeps_issue_states_when_the_pull_request_query_fails(monkeypatch):
+    class Result:
+        def __init__(self, returncode, stdout):
+            self.returncode = returncode
+            self.stdout = stdout
+
+    results = iter((Result(0, '[{"number": 1, "state": "CLOSED"}]'), Result(1, "")))
+    monkeypatch.setattr(script.shutil, "which", lambda _name: "/usr/bin/gh")
+    monkeypatch.setattr(script.subprocess, "run", lambda *args, **kwargs: next(results))
+    assert script.load_states(None) == {1: "closed"}
+
+
 def _docs(tmp_path, monkeypatch):
     issues = tmp_path / "issues.json"
     issues.write_text(json.dumps([{"number": n, "state": s.upper()} for n, s in STATES.items()]))

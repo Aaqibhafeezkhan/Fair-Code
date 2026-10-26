@@ -12,9 +12,10 @@ keeps one issue up to date, and nothing in `make lint` or a pull request depends
     python3 scripts/check_external_links.py --fail-on-broken # exit 1 when something is broken (off by default)
 
 Each URL is requested with a browser-like user agent and a timeout (HEAD first, then GET when the server does
-not allow HEAD). 2xx and 3xx (after redirects) are fine. 404, 410 and a name that does not resolve are
-broken. Everything else (403, 429, 5xx, timeouts, refused connections) is unknown: it is listed but never
-counted as broken, because it usually means the site blocks scripts or is down for a moment.
+not allow HEAD). A 404 gets one retry with a fuller browser-like user agent. For a DOI URL blocked with 403,
+the DOI handle API is used to distinguish a registered identifier from a missing one. Other 404, 410 and a
+name that does not resolve are broken. Everything else (403, 429, 5xx, timeouts, refused connections) is
+unknown: it is listed but never counted as broken, because it usually means the site blocks scripts or is down.
 """
 from __future__ import annotations
 
@@ -26,11 +27,16 @@ import socket
 import ssl
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 USER_AGENT = "Mozilla/5.0 (compatible; FairCodeLinkCheck/1.0; +https://github.com/yakew7/Fair-Code)"
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 FairCodeLinkCheck/1.0"
+)
 LINK = re.compile(r"\]\((https?://[^)\s]+)\)")
 BARE = re.compile(r"<(https?://[^>\s]+)>")
 SKIP_HOSTS = {"localhost", "127.0.0.1", "example.com", "www.example.com"}
@@ -77,8 +83,37 @@ def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
             with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
                 return "ok", str(response.status)
         except urllib.error.HTTPError as error:
+            if error.code == 404:
+                retry_method = "GET" if method == "HEAD" else method
+                retry = urllib.request.Request(
+                    url, method=retry_method,
+                    headers={"User-Agent": BROWSER_USER_AGENT, "Accept": "*/*"},
+                )
+                try:
+                    with urllib.request.urlopen(retry, timeout=timeout, context=_ssl_context()) as response:
+                        return "ok", str(response.status)
+                except urllib.error.HTTPError as retry_error:
+                    if retry_error.code in BROKEN_STATUSES:
+                        return "broken", str(retry_error.code)
+                    if retry_error.code == 403:
+                        doi = _extract_doi(url)
+                        if doi:
+                            return _check_doi(doi, timeout)
+                    if retry_error.code in (405, 501) and method == "HEAD":
+                        continue
+                    return "unknown", str(retry_error.code)
+                except urllib.error.URLError as retry_error:
+                    if isinstance(retry_error.reason, socket.gaierror):
+                        return "broken", "name does not resolve"
+                    return "unknown", str(retry_error.reason)
+                except (TimeoutError, OSError) as retry_error:
+                    return "unknown", type(retry_error).__name__
             if error.code in BROKEN_STATUSES:
                 return "broken", str(error.code)
+            if error.code == 403:
+                doi = _extract_doi(url)
+                if doi:
+                    return _check_doi(doi, timeout)
             if error.code in (405, 501) and method == "HEAD":
                 continue                      # the server does not allow HEAD: try GET
             return "unknown", str(error.code)
@@ -89,6 +124,35 @@ def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
         except (TimeoutError, OSError) as error:
             return "unknown", type(error).__name__
     return "unknown", "no response"
+
+
+def _extract_doi(url: str) -> str | None:
+    path = urllib.parse.unquote(urllib.parse.urlsplit(url).path)
+    match = re.search(r"10\.\d{4,9}/[^\s?#]+", path, re.IGNORECASE)
+    return match.group().rstrip(".,;:)]}") if match else None
+
+
+def _check_doi(doi: str, timeout: float) -> tuple[str, str]:
+    endpoint = f"https://doi.org/api/handles/{urllib.parse.quote(doi, safe='/')}"
+    request = urllib.request.Request(endpoint, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            return "broken", "DOI not found"
+        return "unknown", f"DOI resolver HTTP {error.code}"
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
+        return "unknown", f"DOI resolver {type(error).__name__}"
+
+    code = result.get("responseCode")
+    if code == 1:
+        return "ok", "DOI exists"
+    if code == 100:
+        return "broken", "DOI not found"
+    if code == 200:
+        return "broken", "DOI has no resolution values"
+    return "unknown", f"DOI resolver response {code}"
 
 
 def run(urls: dict[str, list[str]], limit: int | None = None, workers: int = 8, timeout: float = 15.0) -> dict:

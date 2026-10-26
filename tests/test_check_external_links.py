@@ -2,8 +2,10 @@
 
 import http.server
 import importlib
+import io
 import json
 import threading
+import urllib.error
 
 import pytest
 
@@ -11,9 +13,18 @@ script = importlib.import_module("scripts.check_external_links")
 
 
 class _Handler(http.server.BaseHTTPRequestHandler):
+    requests = []
+
     def _respond(self):
-        code = {"/ok": 200, "/gone": 404, "/removed": 410, "/blocked": 403, "/slow-down": 429, "/down": 503,
-                "/nohead": 200}.get(self.path, 404)
+        user_agent = self.headers.get("User-Agent", "")
+        self.requests.append((self.path, self.command, user_agent))
+        if self.path == "/always404":
+            code = 404
+        elif self.path == "/kaggle":
+            code = 200 if "Chrome/" in user_agent and "FairCodeLinkCheck/1.0" in user_agent else 404
+        else:
+            code = {"/ok": 200, "/gone": 404, "/removed": 410, "/blocked": 403, "/slow-down": 429, "/down": 503,
+                    "/nohead": 200}.get(self.path, 404)
         if self.path == "/nohead" and self.command == "HEAD":
             code = 405
         if self.path == "/redirect":
@@ -45,6 +56,78 @@ def server():
                                        ("/down", "unknown")])
 def test_each_status_class(server, path, kind):
     assert script.check_url(server + path, timeout=5)[0] == kind
+
+
+def test_404_retries_once_with_project_browser_user_agent(server):
+    _Handler.requests.clear()
+
+    assert script.check_url(server + "/kaggle", timeout=5) == ("ok", "200")
+
+    requests = [request for request in _Handler.requests if request[0] == "/kaggle"]
+    assert [(request[1], request[2]) for request in requests] == [
+        ("HEAD", script.USER_AGENT),
+        ("GET", script.BROWSER_USER_AGENT),
+    ]
+    assert len(requests) == 2
+
+
+def test_404_stays_broken_after_the_single_retry(server):
+    _Handler.requests.clear()
+
+    assert script.check_url(server + "/always404", timeout=5) == ("broken", "404")
+    assert len([request for request in _Handler.requests if request[0] == "/always404"]) == 2
+
+
+@pytest.mark.parametrize(
+    "resolver_body,expected",
+    [
+        (b'{"responseCode": 1}', ("ok", "DOI exists")),
+        (b'{"responseCode": 100}', ("broken", "DOI not found")),
+        (b'{"responseCode": 200}', ("broken", "DOI has no resolution values")),
+        (b'{"responseCode": 2}', ("unknown", "DOI resolver response 2")),
+    ],
+)
+def test_403_doi_page_uses_handle_resolver(monkeypatch, resolver_body, expected):
+    calls = []
+
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return resolver_body
+
+    def fake_urlopen(request, **_kwargs):
+        calls.append(request.full_url)
+        if request.full_url.startswith("https://doi.org/api/handles/"):
+            return Response()
+        raise urllib.error.HTTPError(request.full_url, 403, "blocked", {}, io.BytesIO())
+
+    monkeypatch.setattr(script.urllib.request, "urlopen", fake_urlopen)
+
+    assert script.check_url("https://publisher.example/doi/10.1234/example", timeout=1) == expected
+    assert calls == [
+        "https://publisher.example/doi/10.1234/example",
+        "https://doi.org/api/handles/10.1234/example",
+    ]
+
+
+def test_missing_doi_is_broken_when_resolver_returns_404(monkeypatch):
+    def fake_urlopen(request, **_kwargs):
+        if request.full_url.startswith("https://doi.org/api/handles/"):
+            raise urllib.error.HTTPError(request.full_url, 404, "missing", {}, io.BytesIO())
+        raise urllib.error.HTTPError(request.full_url, 403, "blocked", {}, io.BytesIO())
+
+    monkeypatch.setattr(script.urllib.request, "urlopen", fake_urlopen)
+
+    assert script.check_url("https://publisher.example/doi/10.1234/missing", timeout=1) == (
+        "broken", "DOI not found"
+    )
 
 
 def test_a_name_that_does_not_resolve_is_broken_and_a_refused_connection_is_unknown():

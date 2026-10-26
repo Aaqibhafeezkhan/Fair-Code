@@ -209,7 +209,7 @@
 <p>To actually fix the bias, you have to measure it first, identify the proxies, and remove the protected attribute <em>and</em> the proxies together. When Audit 05 drops the proxies as well, the sex gap drops by 53%.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>This snippet demonstrates why &quot;fairness through unawareness&quot; fails. It drops the protected attribute, trains a model on the remaining &quot;neutral&quot; features, and then asks that model to predict the dropped attribute. If the model succeeds, the protected signal is still there.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score

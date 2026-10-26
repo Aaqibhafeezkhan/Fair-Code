@@ -197,13 +197,13 @@
 <p>The four-fifths rule in the US Uniform Guidelines on Employee Selection Procedures (29 CFR 1607) compares the selection rate of a group with the rate of the group with the highest rate. It is applied to a selection procedure, and employers often have several: a résumé screen, a test, an interview, an offer. A single end-to-end ratio tells you whether the whole process has an adverse impact but not which step produced it, and a step that does nothing wrong can sit next to one that does.</p>
 <p>Stage by stage numbers show where to look. They also keep an audit honest about which step the model in question is. The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit models the last decision, and the stages before it, as the next example shows, may be perfectly balanced.</p>
 <h3 id="core-concept-conditional-ratios-one-per-stage">Core Concept: Conditional Ratios, One Per Stage</h3>
-<pre><code>for each stage, among the people who reached it:
+<pre tabindex="0" aria-label="Scrollable code block"><code>for each stage, among the people who reached it:
     rate_women = share of women who pass,  rate_others = share of others who pass
     ratio = rate_women / rate_others,  with a bootstrap interval</code></pre>
 <p>The ratio is conditional on reaching the stage, so a stage&#x27;s number is not changed by what happened before it, except through who is left. The whole-funnel ratio is the product of the conditional ratios, which is why small stage gaps matter: see <a href="compounding-disparities.html">Compounding Disparities</a>. A statistical test or an interval belongs next to each ratio (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>); a ratio computed on a few hundred people can move a lot.</p>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p><a href="../index.html#project-hiring">AI Fair Recruitment</a>: 115,309 candidates (men and women). The funnel is illustrative: four stages built from the audit&#x27;s own score columns with a cut-off of 30 at each (skill screen, aptitude test, technical test, interview), each passing about 70% of the people who reach it, then the audit&#x27;s actual hiring decision among those who passed all four. Women are the disadvantaged group; &quot;others&quot; are men.</p>
-<pre><code>stage              reached  women pass  others pass     four-fifths ratio (95% interval)
+<pre tabindex="0" aria-label="Scrollable code block"><code>stage              reached  women pass  others pass     four-fifths ratio (95% interval)
 skill screen        115309       0.700        0.701              0.999 [0.990, 1.007]
 aptitude test        80767       0.699        0.696              1.004 [0.995, 1.013]
 technical test       56325       0.697        0.699              0.997 [0.987, 1.009]
@@ -216,7 +216,7 @@ hires in the data overall: 29816 (10486 of them would not have passed all four c
 <p>The overall ratio for the audit&#x27;s hire rate is lower than the decision-stage ratio (women 0.240, men 0.269 across all 115,309 candidates, a ratio of 0.891), so the final decision is where the audit&#x27;s gap sits, and a check that only looked at tests would have found nothing.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/hiring-pipeline-adverse-impact.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 
 data = load_audit(&quot;AI Fair Recruitment&quot;)

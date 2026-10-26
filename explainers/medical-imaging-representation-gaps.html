@@ -207,7 +207,7 @@
 <p>Both papers make the same point from different mechanisms: an aggregate accuracy or AUC computed on a test set drawn from the same skewed source as the training data cannot detect either failure. Detecting them requires a per-group breakdown and, for the shortcut case, testing on data collected somewhere the shortcut wasn&#x27;t present.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Two checks that a single aggregate AUC hides: a per-group performance gap, and a proxy check for whether a non-clinical variable (site, device) is entangled with the label closely enough to be a plausible shortcut.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.metrics import roc_auc_score
 from scipy.stats import chi2_contingency
 

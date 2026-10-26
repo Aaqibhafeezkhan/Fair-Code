@@ -206,7 +206,7 @@
 <hr>
 <h3 id="the-formal-definition">The Formal Definition</h3>
 <p>Dwork et al. formalise individual fairness using a <strong>task-specific similarity metric</strong> <code>d(x, y)</code> over individuals, and a <strong>distance metric</strong> <code>D(f(x), f(y))</code> over model outputs. The requirement is:</p>
-<pre><code>For any two individuals x and y:
+<pre tabindex="0" aria-label="Scrollable code block"><code>For any two individuals x and y:
 D(f(x), f(y)) ≤ L · d(x, y)</code></pre>
 <p>Where:</p>
 <ul><li><code>f(x)</code> and <code>f(y)</code> are the model&#x27;s predictions for individuals <code>x</code> and <code>y</code></li><li><code>d(x, y)</code> is how different the two individuals are on task-relevant features</li><li><code>D(f(x), f(y))</code> is how different the model&#x27;s outputs are</li><li><code>L</code> is a Lipschitz constant bounding the ratio</li></ul>
@@ -219,7 +219,7 @@ D(f(x), f(y)) ≤ L · d(x, y)</code></pre>
 <div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Feature</th><th scope="col">Candidate A (Female)</th><th scope="col">Candidate B (Male)</th></tr></thead><tbody><tr><td>Experience Years</td><td>8</td><td>8</td></tr><tr><td>Technical Test Score</td><td>84</td><td>84</td></tr><tr><td><strong>Biased model prediction</strong></td><td><strong>0 - rejected</strong></td><td><strong>1 - hired</strong></td></tr></tbody></table></div>
 <p><code>d(A, B)</code> on task-relevant features: <strong>zero</strong> - they are identical. <code>D(f(A), f(B))</code> on model output: <strong>1</strong> - opposite decisions.</p>
 <p>This violates individual fairness: equal inputs, unequal outputs. Group-level metrics catch the aggregate pattern (a 4.03pp gender hire-rate gap). Individual fairness makes explicit why: these two specific people, who are the same on every dimension that should matter, received opposite verdicts.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -271,7 +271,7 @@ print(f&quot;Violation rate: {len(violations)/len(matched)*100:.1f}%&quot;)
 <p>Individual fairness has no single universal metric - it requires defining what &quot;similar&quot; means for the task. The three practical approaches are: matched-pair testing, Lipschitz testing, and consistency scoring.</p>
 <h4 id="1-matched-pair-consistency-test">1. Matched-pair consistency test</h4>
 <p>The most interpretable approach: find pairs of individuals who are identical (or very close) on task-relevant features and measure how often the model gives them different predictions.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.metrics.pairwise import euclidean_distances
 import numpy as np
 
@@ -327,7 +327,7 @@ def individual_fairness_audit(
     }</code></pre>
 <h4 id="2-lipschitz-consistency-score-counterfactual-perturbation">2. Lipschitz consistency score (counterfactual perturbation)</h4>
 <p>This approach measures how much the model&#x27;s output changes when you make small, demographic-only changes to an individual&#x27;s record - keeping all task-relevant features fixed.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 
 def lipschitz_consistency_score(model, X_test, group_col, other_group_val, feature_names):
@@ -372,7 +372,7 @@ def lipschitz_consistency_score(model, X_test, group_col, other_group_val, featu
     }</code></pre>
 <h4 id="3-consistency-metric-zemel-et-al">3. Consistency metric (Zemel et al.)</h4>
 <p>The consistency metric from Zemel et al. (2013) formalises the matched-pair idea as a single number: for each individual, find their <em>k</em> nearest neighbours on task-relevant features and measure how often the model agrees with itself across the neighbourhood.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 
@@ -426,7 +426,7 @@ def consistency_score(X, y_pred, feature_cols, k=5):
 <h3 id="the-similarity-metric-problem">The Similarity Metric Problem</h3>
 <p>Individual fairness has one foundational difficulty: the framework requires a <strong>task-specific similarity metric</strong> <code>d(x, y)</code>, and defining a fair one is not a technical problem - it is a normative one.</p>
 <p>Who decides that two people are &quot;similar enough&quot; to deserve similar treatment? The features included in <code>d</code> define what the task considers relevant. If the definition embeds a biased standard - for example, treating years-at-current-employer as a task-relevant merit signal when it structurally disadvantages career-changers and parents returning from leave - the individual fairness framework will certify those decisions as consistent, even though the similarity metric itself was discriminatory.</p>
-<pre><code class="language-python"># Similarity metric embeds the bias
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Similarity metric embeds the bias
 d_biased = [&#x27;experience_years&#x27;, &#x27;tenure_current_employer&#x27;]
 # &#x27;tenure_current_employer&#x27; disadvantages anyone who took a career break -
 # disproportionately women. Two people who are equally productive are

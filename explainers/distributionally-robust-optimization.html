@@ -197,14 +197,14 @@
 <p><a href="mitigation-strategies.html">Mitigation Strategies</a> describes this repo&#x27;s in-processing strategy, S3: Fairlearn&#x27;s <code>ExponentiatedGradient</code>. It optimizes accuracy subject to a fairness constraint such as demographic parity. That has two requirements: you decide on the metric before training, and the constraint must be about the group you thought to check.</p>
 <p>If the group that is actually harmed is not the one you constrained, a parity constraint does nothing for it. DRO has no parity target at all. It asks for a model whose loss does not blow up on any group, which can help when the harmed subgroup is one you did not think of, as long as it is among the groups you can define and measure.</p>
 <h3 id="core-concept-min-max-instead-of-constrained-minimization">Core Concept: Min-Max Instead of Constrained Minimization</h3>
-<pre><code>constraint (S3):  minimize loss   subject to   parity gap &lt;= epsilon
+<pre tabindex="0" aria-label="Scrollable code block"><code>constraint (S3):  minimize loss   subject to   parity gap &lt;= epsilon
 group DRO:        minimize   max over weightings q of   sum_g q_g * loss(g)</code></pre>
 <p>The inner maximum is an adversary that moves weight onto the group with the highest loss. The outer minimum is the model fitting against that adversary. In the simplified loop below, the adversary updates its weights exponentially:</p>
-<pre><code>q_g  &lt;-  q_g * exp(eta * loss_g)      then renormalize</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>q_g  &lt;-  q_g * exp(eta * loss_g)      then renormalize</code></pre>
 <p><code>eta</code> is the free parameter. A small <code>eta</code> is a mild hedge. A large <code>eta</code> lets the adversary put almost all the weight on one group, and the model over-hedges against it. A related idea, <a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a>, uses hard error and fixed weight steps. DRO uses a smooth loss and a soft, exponentially updated weighting.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p>Same audit and feature set as the other explainers in this group: <a href="../index.html#project-benefits">Benefits Denial</a>, logistic regression on the core features, benchmark split. Four groups this time: sex crossed with age (55 and over).</p>
-<pre><code>baseline     accuracy 0.811 | per-group log-loss male &lt;55 0.482 male 55+ 0.593 female &lt;55 0.320 female 55+ 0.315 | worst 0.593 | sex parity gap -0.0509
+<pre tabindex="0" aria-label="Scrollable code block"><code>baseline     accuracy 0.811 | per-group log-loss male &lt;55 0.482 male 55+ 0.593 female &lt;55 0.320 female 55+ 0.315 | worst 0.593 | sex parity gap -0.0509
 DRO eta=0.5  accuracy 0.807 | per-group log-loss male &lt;55 0.481 male 55+ 0.549 female &lt;55 0.375 female 55+ 0.360 | worst 0.549 | sex parity gap -0.0569
              adversary&#x27;s group weights [0.325 0.573 0.054 0.048]
 DRO eta=1.0  accuracy 0.810 | per-group log-loss male &lt;55 0.485 male 55+ 0.542 female &lt;55 0.396 female 55+ 0.379 | worst 0.542 | sex parity gap -0.0697
@@ -218,7 +218,7 @@ test group sizes [3710  650 1859  294]</code></pre>
 <ul><li><strong>The worst group improved</strong> (male 55+ log-loss 0.593 to 0.539-0.549) at almost no cost to overall accuracy.</li><li><strong>The other groups paid for it.</strong> Female under 55 went from 0.320 to 0.375-0.409. The adversary put 83% of the weight on male 55+ at <code>eta=2.0</code> and nearly 0% on women, which is what over-hedging looks like.</li><li><strong>Parity got worse</strong> (-0.0509 to as far as -0.0697). DRO never looked at it. If sex parity is the legal standard, S3&#x27;s constraint is the tool, and DRO is not.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/distributionally-robust-optimization.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest
 from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses

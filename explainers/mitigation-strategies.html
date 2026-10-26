@@ -209,7 +209,7 @@
 <p><strong>The constraint-based methods (S3, S4) land at or below S2, and stop being statistically significant.</strong> S3&#x27;s gap is actually slightly negative (-1.4 points) and S4&#x27;s is 2.3 points - both with confidence intervals that cross zero and p-values well above 0.05. Both strategies converge to roughly the same residual gap that simple proxy removal already reached, not a dramatically better one. That convergence is the basis for treating this residual as a floor characteristic of the data and task, rather than a limitation of any one specific mitigation method - three different approaches (drop proxies, constrain training, adjust thresholds) independently landing in the same place is stronger evidence than any one of them alone.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Compares a metric across mitigation stages and flags whether later strategies actually helped, using the same held-out predictions pattern the other explainers in this repo use.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 
 def summarize_mitigation_ladder(results_df, audit, metric, protected_attribute, model=&quot;logistic_regression&quot;):

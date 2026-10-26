@@ -197,11 +197,11 @@
 <p><a href="fairness-accuracy-tradeoff.html">Fairness-Accuracy Trade-off</a> shows one mitigation moving a gap and an accuracy. A single before-and-after hides two questions. Was the &quot;after&quot; the best available at its gap, or would a different method have kept more accuracy? And how steep is the trade-off: how many points of accuracy does each point of gap cost?</p>
 <p>The frontier answers both. Enumerate many candidate rules, keep the non-dominated ones, and plot or tabulate them. A method that lies well inside the frontier is leaving accuracy on the table; a frontier that is nearly flat says the trade-off is small. Martinez, Bertran and Sapiro (2020) treat this as multi-objective optimization.</p>
 <h3 id="core-concept-non-dominated-points">Core Concept: Non-Dominated Points</h3>
-<pre><code>a point (accuracy a, gap g) is on the frontier if no other point has  a&#x27; &gt;= a  and  g&#x27; &lt;= g  with one strict</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>a point (accuracy a, gap g) is on the frontier if no other point has  a&#x27; &gt;= a  and  g&#x27; &lt;= g  with one strict</code></pre>
 <p>For a fixed score you can generate candidates by sweeping the decision rule: a threshold for each group on a grid. A frontier of a fixed score only covers what thresholds can do; a different training method (a different score) can lie off it.</p>
 <h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
 <p><a href="../index.html#project-tenant">Tenant Screening</a>: the S2 logistic regression scores, a 41 by 41 grid of threshold pairs (one per group, 0.20 to 0.80), evaluated on the benchmark&#x27;s test rows, giving 1,681 candidate rules. Then the benchmark&#x27;s five strategies from <code>results/</code> (the current results) are placed against it.</p>
-<pre><code>1681 threshold pairs, 8 on the accuracy-gap frontier
+<pre tabindex="0" aria-label="Scrollable code block"><code>1681 threshold pairs, 8 on the accuracy-gap frontier
 single threshold 0.5:  accuracy 0.639, gap 0.114
 
 the frontier, smallest gap first
@@ -225,7 +225,7 @@ the benchmark&#x27;s strategies on the same audit (benchmark split, so the numbe
 <p>So for this audit, with this score, the frontier says the cost of fairness is under a point of accuracy. In other audits it is steeper, which is why the shape matters more than any single point.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fairness-accuracy-pareto-frontier.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

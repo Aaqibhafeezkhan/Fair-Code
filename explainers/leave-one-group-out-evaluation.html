@@ -197,13 +197,13 @@
 <p>A random test split is drawn from the same population as the training data, so every group is represented in both. Real deployments are not so tidy: a model built in one region gets used in another, a model trained before a policy change meets applicants after it, a group that was rare in training turns out to be common in use.</p>
 <p>Holding a group out simulates that. It is a close relative of the <a href="distribution-shift.html">distribution shifts</a> that wreck models in production, and of the worst-group evaluations behind benchmarks like WILDS. It is also an honest check on a quiet assumption: that the groups you did see are enough to cover the groups you did not.</p>
 <h3 id="core-concept-hold-out-the-group-not-random-rows">Core Concept: Hold Out the Group, Not Random Rows</h3>
-<pre><code>for each group g:
+<pre tabindex="0" aria-label="Scrollable code block"><code>for each group g:
     train on everyone except g
     test on g, and compare with the model trained on everyone</code></pre>
 <p>The comparison that matters is the drop in accuracy on <code>g</code>: the cost of never having seen it. A large drop means the model leans on the group&#x27;s presence. A drop near zero means either that other groups cover it, or that the model barely depends on whatever distinguishes it. The groups should be real axes of variation (a region, a site, a time period), not an arbitrary label.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: a random forest on every column of the audit (race and native country included, so the model can use the group), the benchmark&#x27;s split, with each race and each of the four most common native countries held out in turn.</p>
-<pre><code>race (random_forest)
+<pre tabindex="0" aria-label="Scrollable code block"><code>race (random_forest)
   held-out group       test rows  with it  without it   change
   Amer-Indian-Eskimo          67    0.910       0.866   -0.045
   Asian-Pac-Islander         196    0.847       0.837   -0.010
@@ -221,7 +221,7 @@ native.country (random_forest)
 <p>The overall reading: on this data a forest generalizes to a held-out group about as well as it does to a random sample. That is a finding worth stating, because it supports the assumption that groups seen cover groups unseen. On an audit whose groups differ more, it would not.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/leave-one-group-out-evaluation.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

@@ -197,13 +197,13 @@
 <p><a href="feature-importance-by-group.html">Feature Importance by Group</a> says how much a model uses a feature for each group. Partial dependence says what the model does with it. Two groups can have the same importance for schooling and very different curves: one rises steeply with years of education, the other barely, or one starts higher and stays higher.</p>
 <p>The curve also tells you something importance cannot: the size of a gap at a given value of the feature. If the model predicts a lower probability for one group at every level of education with the other columns averaged over that group&#x27;s own rows, the difference is the model&#x27;s, not only the data&#x27;s.</p>
 <h3 id="core-concept-set-the-feature-average-over-the-group">Core Concept: Set the Feature, Average Over the Group</h3>
-<pre><code>for each value v in the grid:
+<pre tabindex="0" aria-label="Scrollable code block"><code>for each value v in the grid:
     set the feature to v for every row of the group, leaving the other columns as they are
     average the model&#x27;s predicted probability over those rows</code></pre>
 <p>One implementation detail matters a great deal. scikit-learn&#x27;s default for tree models (<code>method=&quot;recursion&quot;</code>) does not use the rows you pass; it averages over the training data&#x27;s leaf weights, so the curve is identical for every group. Use <code>method=&quot;brute&quot;</code> to average over the rows of the group.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: the same gradient-boosted model as the previous explainer, with years of schooling (<code>education.num</code>) varied from 6 to 16.</p>
-<pre><code>average predicted probability of &#x27;income above $50K&#x27; as education.num varies
+<pre tabindex="0" aria-label="Scrollable code block"><code>average predicted probability of &#x27;income above $50K&#x27; as education.num varies
  education.num       6       9      10      12      13      14      16
            men   0.123   0.196   0.222   0.267   0.381   0.486   0.621
          women   0.079   0.152   0.179   0.225   0.342   0.452   0.596
@@ -216,7 +216,7 @@ test rows actually observed at each value (the curve is only supported where the
 <p>The final block of the output is the check that should accompany any curve like this: the number of rows behind each point.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/partial-dependence-by-group.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.inspection import partial_dependence
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

@@ -209,7 +209,7 @@
 <p>Audit 01 in this repo models COMPAS&#x27;s own high/medium risk label from the ProPublica dataset (3,254 test records), with race as the protected attribute; it does not predict an independent two-year recidivism outcome. Its baseline models are ordinary, unremarkable rankers: the logistic-regression baseline lands at an <strong>AUC of 0.68</strong>, and the random forest at <strong>0.69</strong> (frozen figures from <code>paper/results-frozen/summary.csv</code> and <code>results_performance.csv</code>).</p>
 <p>That number sits squarely in the &quot;weak&quot; band - the model barely out-ranks a coin flip. But the documented harm in COMPAS was never really about <em>overall</em> ranking quality. It was about what happened at the operating threshold: Black defendants who did not go on to reoffend were labeled high-risk at nearly twice the rate of comparable white defendants. That is a false-positive-rate gap - a single point on the ROC curve, read separately for each group - and the aggregate AUC of 0.68 averages straight over it.</p>
 <p>Plot a separate ROC curve for each group and the story changes. The two curves can diverge, and even when their <em>areas</em> are similar, the groups can sit at very different points along their own curves at one shared threshold. Neither of those facts is visible in a single pooled AUC:</p>
-<pre><code class="language-python">per_group_auc(compas_df, y_true_col=&quot;two_year_recid&quot;,
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">per_group_auc(compas_df, y_true_col=&quot;two_year_recid&quot;,
               y_score_col=&quot;risk_score&quot;, group_col=&quot;race&quot;)
 #         auc     n
 # White  0.69  1800
@@ -218,7 +218,7 @@
 <p>This is illustrative output, not a published result of Audit 01, but it shows the trap: a small AUC gap (here 3 points) can look benign while a large false-positive-rate gap hides underneath it at the deployed threshold. AUC is the wrong instrument for that question - you need a per-group, per-threshold view, which is what <a href="equalized-odds.html">Equalized Odds</a> formalizes.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Computes AUC within each group (so a low-AUC subgroup cannot hide inside a high overall number), and returns the per-group ROC points so you can overlay the curves and see where they diverge.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, roc_curve
 

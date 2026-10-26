@@ -198,11 +198,11 @@
 <p>It is also the mirror of <a href="simpsons-paradox.html">Simpson&#x27;s Paradox</a> and of <a href="subgroup-fairness.html">Subgroup Fairness</a>: a trend in the aggregate that is not the trend inside each group.</p>
 <h3 id="core-concept-pooled-versus-separate-models">Core Concept: Pooled Versus Separate Models</h3>
 <p>The check is cheap. Fit one model on everyone and one model per group, and compare on each group&#x27;s own test rows:</p>
-<pre><code>pooled model on group g&#x27;s test rows      vs      model fitted on group g&#x27;s training rows only</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>pooled model on group g&#x27;s test rows      vs      model fitted on group g&#x27;s training rows only</code></pre>
 <p>If the separate models are clearly better for a group, the relationship differs by group and a single set of coefficients cannot express both. Comparing the coefficients shows how: a coefficient that is positive in one group and negative in the other is the extreme case.</p>
 <h3 id="concrete-example-compas">Concrete Example: COMPAS</h3>
 <p><a href="../index.html#project-compas">COMPAS</a>: the target is whether the COMPAS risk text is High or Medium, the features are the audit&#x27;s core and proxy columns with race left out, logistic regression, the benchmark&#x27;s split. Groups are White and Black defendants.</p>
-<pre><code>accuracy on the test rows of each group
+<pre tabindex="0" aria-label="Scrollable code block"><code>accuracy on the test rows of each group
   White defendants  pooled model 0.569 | model fitted on that group only 0.680
   Black defendants  pooled model 0.575 | model fitted on that group only 0.631
 
@@ -214,7 +214,7 @@ coefficient per standard deviation: pooled | White defendants only | Black defen
 <p>Two cautions. This model has only three features, so its absolute accuracy is low whatever the grouping; the comparison is the point. And a separate model per race needs the race at prediction time, which brings the legal problems discussed in <a href="group-specific-thresholds.html">Group-Specific Thresholds</a>.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/aggregation-bias.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

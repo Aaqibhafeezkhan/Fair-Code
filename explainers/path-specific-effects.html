@@ -198,14 +198,14 @@
 <p>Nabi and Shpitser (2018) and Chiappa (2019) develop this for fairness; the simplest, mediation analysis with a linear model, is enough to show the idea.</p>
 <h3 id="core-concept-total-direct-and-indirect-effects">Core Concept: Total, Direct and Indirect Effects</h3>
 <p>With a linear model and mediators <code>M</code> between the attribute <code>A</code> and the outcome <code>Y</code>:</p>
-<pre><code>total effect       = coefficient of A in  Y ~ A + (controls)
+<pre tabindex="0" aria-label="Scrollable code block"><code>total effect       = coefficient of A in  Y ~ A + (controls)
 direct effect      = coefficient of A in  Y ~ A + M + (controls)
 indirect via M_i   = (coefficient of A in  M_i ~ A + controls)  *  (coefficient of M_i in Y ~ A + M + controls)
 direct + indirect  = total      (exactly, for a linear model)</code></pre>
 <p>The direct effect is the part not through the mediators you listed. Whether to call it &quot;unfair&quot; depends on whether you think the listed mediators are the whole of what is acceptable, and that is the assumption to state.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: the effect of being a woman on the probability of income above $50K, adjusting for age, with two mediators treated as acceptable paths: years of schooling (<code>education.num</code>) and hours worked per week. 300 bootstrap resamples give the intervals.</p>
-<pre><code>effect of being a woman on P(income above $50K), adjusting for age; linear model; 32,561 rows
+<pre tabindex="0" aria-label="Scrollable code block"><code>effect of being a woman on P(income above $50K), adjusting for age; linear model; 32,561 rows
   total effect:                      -0.1788  [-0.1861, -0.1702]
   indirect, through education.num    -0.0025  [-0.0056, +0.0005]
   indirect, through hours.per.week   -0.0272  [-0.0294, -0.0249]
@@ -216,7 +216,7 @@ direct + indirect  = total      (exactly, for a linear model)</code></pre>
 <p>The two routes together are 17% of the gap. The rest is either a direct effect, discrimination, or the effect of mediators not listed, such as occupation, marital status or unmeasured factors, and the analysis cannot say which.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/path-specific-effects.py</code>; that file is generated from the block below). Only NumPy is needed for the regressions.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 
 data = load_audit(&quot;Benefits Denial&quot;)

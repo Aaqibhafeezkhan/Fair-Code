@@ -202,7 +202,7 @@
 <p>Section 3 is exactly what the benchmark produces, so it can be generated.</p>
 <h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
 <p>This is the measurement section of an assessment for the <a href="../index.html#project-tenant">Tenant Screening</a> audit, generated from the benchmark&#x27;s <code>results/</code> (the current results) for the S2 logistic regression. Sections 1, 2 and 6 are written by a person; the script prints what it can compute and says what it cannot.</p>
-<pre><code>Impact assessment, measurement section: tenant_screening (logistic_regression, unawareness_proxy_removal)
+<pre tabindex="0" aria-label="Scrollable code block"><code>Impact assessment, measurement section: tenant_screening (logistic_regression, unawareness_proxy_removal)
 
 1. Who is affected: rental applicants, grouped here by race (Black vs White). Intersections: not measured by this audit.
 2. Decision: the model flags an applicant as likely to reoffend within three years; a flag leads to refusal in the framing of the audit.
@@ -229,7 +229,7 @@
 <p>The last paragraph matters most: who reviews a flag, whether there is an appeal, the legal basis for using this data and when the measurement is repeated are not in any results file, and an assessment that leaves them blank has not been completed.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/algorithmic-impact-assessment.py</code>; that file is generated from the block below). It reads the benchmark&#x27;s current results; change the three constants at the top to assess another audit.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 AUDIT, STRATEGY, MODEL = &quot;tenant_screening&quot;, &quot;unawareness_proxy_removal&quot;, &quot;logistic_regression&quot;
 fair = pd.read_csv(&quot;results/results_fairness.csv&quot;)          # the benchmark&#x27;s current results

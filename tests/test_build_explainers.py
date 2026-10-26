@@ -1,5 +1,6 @@
 import importlib
 import json
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -20,6 +21,26 @@ def test_explainers_ui_js_stays_in_render_parity_with_build_explainers():
     # lookbehind regex (#956); tests/test_js_no_lookbehind.py checks it against Python's re.split.
     assert "const splitUnescaped" in js and "text[i] === '|'" in js
     assert r"replace(/\\\|/g, '|')" in js
+
+
+def test_code_blocks_are_focusable_in_both_renderers():
+    script = importlib.import_module("scripts.build_explainers")
+    html = script.render_markdown("```python\nprint('ok')\n```\n", set())
+
+    assert '<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">' in html
+    js = (REPO_ROOT / "assets" / "explainers-ui.js").read_text(encoding="utf-8")
+    assert '<pre tabindex="0" aria-label="Scrollable code block"><code${codeLang ?' in js
+
+
+def test_every_generated_code_block_is_keyboard_focusable():
+    code_blocks = [
+        tag
+        for page in (REPO_ROOT / "explainers").glob("*.html")
+        for tag in re.findall(r"<pre\b[^>]*>", page.read_text(encoding="utf-8"))
+    ]
+
+    assert code_blocks
+    assert all('tabindex="0"' in tag and 'aria-label="Scrollable code block"' in tag for tag in code_blocks)
 
 
 def test_build_package_mirror_copies_data_and_markdown(tmp_path, monkeypatch):
@@ -167,7 +188,7 @@ def test_render_markdown_flushes_lists_quotes_rules_and_code():
     assert "<ol><li>numbered item</li></ol>" in html
     assert "<blockquote><p>quoted line</p></blockquote>" in html
     assert "<hr>" in html
-    assert '<pre><code class="language-python">print(&#x27;ok&#x27;)</code></pre>' in html
+    assert '<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">print(&#x27;ok&#x27;)</code></pre>' in html
 
 
 def test_resolve_link_target_handles_unknown_markdown_and_project_paths():
@@ -238,8 +259,6 @@ def test_every_explainer_description_is_between_70_and_160_characters():
 
 
 # ── The whole build, on a two-explainer fixture (#1110) ──────────────────────────────────────
-
-import re  # noqa: E402 - grouped with the fixture that uses it
 
 import pytest  # noqa: E402
 

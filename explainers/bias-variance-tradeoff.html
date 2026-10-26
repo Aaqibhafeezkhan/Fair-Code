@@ -208,7 +208,7 @@
 <p>If we train a highly complex model (like an unconstrained Random Forest or deep neural network), it might start combining 15 different features - memorizing that &quot;people who play golf, went to State University, and know C++&quot; are great hires. This is <strong>overfitting</strong>. Since men make up the majority of the training data, the model memorizes male-specific career trajectories. When a highly qualified woman applies with a slightly different background, the model rejects her because she doesn&#x27;t match the hyper-specific, memorized majority pattern. The model generalizes beautifully for men, but fails terribly for women.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>You can detect if high variance is hurting a minority group by comparing the model&#x27;s accuracy on the training set versus the test set, broken down by demographic group. A large train-test gap for the minority group indicates the model overfit the majority and generalized poorly to the minority.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.metrics import accuracy_score
 
 def check_variance_by_group(model, X_train, y_train, X_test, y_test, group_col):

@@ -197,14 +197,14 @@
 <p>Constraint-based methods such as the benchmark&#x27;s S3 (<code>ExponentiatedGradient</code>) enforce a gap limit. A regularizer is the soft version: no hard limit, just a price. That makes the trade-off visible as a curve you can read before choosing a point on it, and it works with any model you can train with gradients.</p>
 <p>The catch is that decisions are thresholded, and a threshold is not differentiable. The penalty has to be written on something smooth, usually the predicted probabilities. A smooth gap and the real gap are different numbers, and the difference decides whether the method works.</p>
 <h3 id="core-concept-loss-plus-a-weighted-gap">Core Concept: Loss Plus a Weighted Gap</h3>
-<pre><code>total loss  =  log-loss  +  lambda * (soft gap)^2
+<pre tabindex="0" aria-label="Scrollable code block"><code>total loss  =  log-loss  +  lambda * (soft gap)^2
 
 soft gap    =  mean predicted probability for the disadvantaged group
                - mean predicted probability for the advantaged group</code></pre>
 <p>Squaring the gap makes it differentiable and treats a positive gap and a negative one alike. <code>lambda</code> is the price: at 0 you get the ordinary model, and as it grows the optimizer is willing to give up more accuracy to shrink the gap. The idea is the &quot;prejudice remover&quot; regularizer of Kamishima and colleagues, applied here to demographic parity.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: predicted above $50K income is the &quot;ineligible&quot; flag, women are the disadvantaged group, logistic regression on the audit&#x27;s core features, the benchmark&#x27;s split. Implemented with plain NumPy gradient descent.</p>
-<pre><code>  lambda  accuracy  soft gap  thresholded gap
+<pre tabindex="0" aria-label="Scrollable code block"><code>  lambda  accuracy  soft gap  thresholded gap
        0     0.811   -0.0340          -0.0509
        1     0.811   -0.0332          -0.0516
       10     0.810   -0.0272          -0.0454
@@ -216,7 +216,7 @@ soft gap    =  mean predicted probability for the disadvantaged group
 <ul><li><strong>Small penalties do nothing.</strong> At <code>lambda = 1</code> the thresholded gap is -0.0516, no better than the baseline.</li><li><strong>The two gaps differ.</strong> At <code>lambda = 0</code> the soft gap is -0.0340 and the thresholded gap is -0.0509. The penalty shrinks the first one directly and the second one only through it.</li><li><strong>Equalizing costs accuracy, and it accelerates.</strong> The thresholded gap reaches +0.0010 at <code>lambda = 1000</code>, at 0.770 accuracy, 4.1 points below the baseline, and past that the gap does not move while accuracy keeps falling.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fairness-regularization.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 
 data = load_audit(&quot;Benefits Denial&quot;)             # S2 feature set: core features, no protected columns

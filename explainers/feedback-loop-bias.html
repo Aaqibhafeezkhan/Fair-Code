@@ -211,7 +211,7 @@
 <p>The flaw is structural. Arrest data doesn&#x27;t measure crime - it measures <em>policing</em>. Areas that receive more police patrols generate more arrests, not because more crime happens there, but because more enforcement is present. When that arrest data is used to train the next iteration of the model, those over-policed areas appear even more dangerous.</p>
 <p>A 2019 analysis by Rashida Richardson, Jason Schultz, and Kate Crawford documented what they called &quot;dirty data&quot; - cases where predictive policing systems were trained on data generated during periods of documented police misconduct, racial profiling, and corruption. The model learned the misconduct as signal.</p>
 <h4 id="the-feedback-loop-in-pseudocode">The Feedback Loop in Pseudocode</h4>
-<pre><code class="language-python"># Iteration 1
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Iteration 1
 model_v1 = train(historical_arrest_data)
 patrol_zones = model_v1.predict_high_risk()  # Over-predicts Zone A
 
@@ -226,7 +226,7 @@ patrol_zones_v2 = model_v2.predict_high_risk()  # Zone A flagged at higher confi
 <hr>
 <h3 id="detection-measuring-prediction-drift-across-retraining-cycles">Detection: Measuring Prediction Drift Across Retraining Cycles</h3>
 <p>Unlike proxy variables, feedback loop bias can&#x27;t be caught by a single chi-squared test. You need to track how predictions shift across retraining cycles.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -310,7 +310,7 @@ results = simulate_feedback_loop(
 
 print_feedback_report(results, group_col=&#x27;Ethnic_Code_Text&#x27;)</code></pre>
 <p><strong>Actual output:</strong></p>
-<pre><code>African-American: 0.6653 at every cycle (1 through 5)
+<pre tabindex="0" aria-label="Scrollable code block"><code>African-American: 0.6653 at every cycle (1 through 5)
 Caucasian:        0.5039 at every cycle (1 through 5)
 Gap:              0.1614, unchanged across all 5 cycles</code></pre>
 <p><strong>What to look for:</strong> If the gap between groups <em>grows</em> across cycles without any new discriminatory features being added, you have a feedback loop. A stable or shrinking gap means the loop is not compounding - which is exactly what this particular reproduction shows: on this dataset, with this coarse a feature set (sex, custody status, marital status), the scrutiny-driven label noise isn&#x27;t strong enough to shift the retrained model&#x27;s decision boundary in only 5 cycles, so the group gap stays perfectly flat. That is not evidence the mechanism is fake - the real-world predictive-policing case above is well documented - it&#x27;s evidence that compounding depends on the retraining loop actually being sensitive to the perturbed labels, which has to be checked empirically rather than assumed.</p>
@@ -322,7 +322,7 @@ Gap:              0.1614, unchanged across all 5 cycles</code></pre>
 <h3 id="mitigation-strategies">Mitigation Strategies</h3>
 <p>Feedback loop bias requires interventions at the <em>deployment</em> level, not just the training level.</p>
 <p><strong>1. Monitor group prediction rates across retraining cycles.</strong> If one group&#x27;s flagging rate is increasing iteration-over-iteration without a corresponding change in ground truth, the loop is amplifying. Automate this check before every retrain.</p>
-<pre><code class="language-python">def flag_feedback_drift(results, threshold=0.05):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def flag_feedback_drift(results, threshold=0.05):
     &quot;&quot;&quot;
     Flag if the gap between groups increases by more than
     `threshold` across retraining cycles.

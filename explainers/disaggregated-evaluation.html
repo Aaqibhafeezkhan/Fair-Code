@@ -200,7 +200,7 @@
 <ol><li><strong>Pick the slices.</strong> The protected attributes one at a time, and the intersections of them (<a href="intersectional-bias.html">Intersectional Bias</a>, <a href="subgroup-fairness.html">Subgroup Fairness</a>).</li><li><strong>Compute each metric per slice</strong>, not just accuracy: error rates, selection rate, calibration.</li><li><strong>Attach an interval</strong> to each, by bootstrap (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>), and state a minimum group size below which you only report the interval, not the point estimate.</li><li><strong>Compare slices to the whole, and to each other,</strong> using the interval, not the gap alone (<a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a>).</li></ol>
 <h3 id="concrete-example-insurance-denial">Concrete Example: Insurance Denial</h3>
 <p><a href="../index.html#project-insurance">Insurance Denial</a>: logistic regression on the audit&#x27;s core features, the benchmark&#x27;s split (267 test rows), groups by age and gender and their four intersections. Each row has a bootstrap 95% interval from 2,000 resamples.</p>
-<pre><code>overall accuracy 0.644
+<pre tabindex="0" aria-label="Scrollable code block"><code>overall accuracy 0.644
 
 everyone                     n= 267  accuracy 0.644  95% CI [0.584, 0.700]  width 0.116
 age: advantaged              n= 161  accuracy 0.671  95% CI [0.596, 0.745]  width 0.149
@@ -214,7 +214,7 @@ age 1 x gender 1             n=  33  accuracy 0.667  95% CI [0.485, 0.818]  widt
 <p>The overall figure, 0.644 with an interval 0.116 wide, hides the spread: age-disadvantaged is 0.604 against 0.671 for the advantaged group, gender-disadvantaged is 0.687 against 0.602 for the advantaged. The intersections are more extreme in both directions, and their intervals are far wider: 0.250 for 60 people and 0.333 for 33. Every one of those intervals contains the overall accuracy, so this test set cannot establish a gap between any two of them. That is the lesson, not a failing of the method: with 267 rows the audit cannot say much about any intersection.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/disaggregated-evaluation.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model
 

@@ -202,7 +202,7 @@
 <p>The first creates unfairness the true data does not contain. The second hides the true gap and degrades the group&#x27;s predictions. Neither shows up as a missing value.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p>This is a simulation, because the real measurement process is not in the data: we inject mis-measurement into one column for women only and watch what changes. <a href="../index.html#project-benefits">Benefits Denial</a>, logistic regression on the audit&#x27;s core columns, the benchmark&#x27;s split. The predicted-positive flag means &quot;income above $50K, so ineligible&quot;.</p>
-<pre><code>true values                                    accuracy 0.811 | positive rate women 0.059 men 0.109 | parity gap -0.0509
+<pre tabindex="0" aria-label="Scrollable code block"><code>true values                                    accuracy 0.811 | positive rate women 0.059 men 0.109 | parity gap -0.0509
 education.num credited 15% low for women       accuracy 0.822 | positive rate women 0.040 men 0.149 | parity gap -0.1089
 education.num noisy for women (sd 1.0x)        accuracy 0.799 | positive rate women 0.075 men 0.088 | parity gap -0.0135
 capital.gain recorded 50% low for women        accuracy 0.812 | positive rate women 0.053 men 0.112 | parity gap -0.0592</code></pre>
@@ -210,7 +210,7 @@ capital.gain recorded 50% low for women        accuracy 0.812 | positive rate wo
 <p>The point of the accuracy column: a model can look better on the recorded labels while it is worse for a group, because the labels never saw the true values.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/measurement-bias.py</code>; that file is generated from the block below). The function below applies a scale and/or noise to one column for one group.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model
 

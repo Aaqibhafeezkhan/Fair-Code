@@ -204,13 +204,13 @@
 <hr>
 <h3 id="the-three-part-loop-every-rl-system-runs">The Three-Part Loop Every RL System Runs</h3>
 <p>Every reinforcement learning system - from a toy grid-world to a production-scale parole risk model - runs the same fundamental loop:</p>
-<pre><code>Observe state  →  Take action  →  Receive reward  →  Update policy</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>Observe state  →  Take action  →  Receive reward  →  Update policy</code></pre>
 <p>Repeat this across thousands or millions of interactions, and the agent learns a <strong>policy</strong>: a mapping from states to actions that maximises cumulative reward. The tragedy is that &quot;maximises reward&quot; means &quot;maximises the specific scalar you defined&quot; - not fairness, not accuracy, not justice.</p>
 <hr>
 <h3 id="part-1-state-action-and-policy">Part 1: State, Action, and Policy</h3>
 <p>The agent observes the world as a <strong>state</strong>, chooses an <strong>action</strong>, and updates its <strong>policy</strong> - the internal rulebook that maps states to actions.</p>
 <h4 id="what-these-look-like-in-practice">What These Look Like in Practice</h4>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 
 # In a parole decision system:
 state = {
@@ -240,7 +240,7 @@ def sigmoid(z):
 <p>The weights are everything. A high weight on <code>custody_status</code> means the agent has learned that pretrial detention predicts its reward signal - not because custody status is a fair input, but because it correlates with reoffense rates that were themselves shaped by selective policing.</p>
 <h4 id="the-policy-update">The Policy Update</h4>
 <p>After each interaction, the agent adjusts its weights in the direction that increases expected future reward. The most common update rule is a variant of gradient ascent on the expected return:</p>
-<pre><code class="language-python">def policy_gradient_step(weights, log_prob_gradient, reward, baseline, learning_rate=0.01):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def policy_gradient_step(weights, log_prob_gradient, reward, baseline, learning_rate=0.01):
     &quot;&quot;&quot;
     REINFORCE update: move weights in the direction that makes
     rewarded actions more probable.
@@ -255,7 +255,7 @@ def sigmoid(z):
 <hr>
 <h3 id="part-2-the-reward-function">Part 2: The Reward Function</h3>
 <p>The reward function is the most consequential design decision in any RL system. It is also the most politically loaded.</p>
-<pre><code class="language-python">def parole_reward(action, outcome):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def parole_reward(action, outcome):
     &quot;&quot;&quot;
     A simplified reward function for a parole decision agent.
     Every number here is a value judgment.
@@ -274,7 +274,7 @@ def sigmoid(z):
 <p>This asymmetry has a direct consequence: the agent will hold defendants at the margin more aggressively, because the penalty for a missed reoffense is ten times the penalty for a wrongful hold. Who lives &quot;at the margin&quot;? Whoever the state already treated as high-risk. The reward function launders that judgment as optimisation.</p>
 <h4 id="reward-hacking">Reward Hacking</h4>
 <p>Agents optimise the specified reward signal, not the intended objective. When these diverge, the result is <strong>reward hacking</strong>.</p>
-<pre><code class="language-python"># Intended objective:
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Intended objective:
 # Accurately predict who will reoffend, regardless of demographics.
 
 # Reward signal:
@@ -291,7 +291,7 @@ def sigmoid(z):
 <hr>
 <h3 id="part-3-the-credit-assignment-problem">Part 3: The Credit Assignment Problem</h3>
 <p>RL&#x27;s hardest technical challenge is also its deepest fairness problem: how do you attribute an outcome to the decision that caused it when the outcome arrives much later?</p>
-<pre><code class="language-python">def discounted_return(rewards, gamma=0.95):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def discounted_return(rewards, gamma=0.95):
     &quot;&quot;&quot;
     Discount future rewards by gamma at each step.
     A reward received 10 steps from now is worth gamma^10 ≈ 0.60 of its face value.
@@ -317,7 +317,7 @@ def sigmoid(z):
 <h3 id="real-world-case-compas-as-an-rl-adjacent-system">Real-World Case: COMPAS as an RL-Adjacent System</h3>
 <p>COMPAS (Correctional Offender Management Profiling for Alternative Sanctions) is deployed in 46 US states to produce risk scores used in bail, sentencing, and parole decisions. While it was trained with supervised methods, it exhibits the structural features of an RL policy: it maps defendant profiles to risk scores (actions) that determine release or detention (consequences), and it was calibrated on historical reoffense data (rewards) generated by a selectively enforcing system.</p>
 <p>ProPublica&#x27;s 2016 analysis of the COMPAS dataset demonstrates what a biased reward signal produces:</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
@@ -357,7 +357,7 @@ for group, code in [(&quot;African-American&quot;, 1), (&quot;Caucasian&quot;, 0
 <hr>
 <h3 id="how-to-detect-when-an-rl-adjacent-policy-is-biased">How to Detect When an RL-Adjacent Policy Is Biased</h3>
 <h4 id="step-1-measure-demographic-parity">Step 1 - Measure Demographic Parity</h4>
-<pre><code class="language-python">def fairness_gap(model, X_test, df_test, protected_col, group_a, group_b):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def fairness_gap(model, X_test, df_test, protected_col, group_a, group_b):
     &quot;&quot;&quot;
     Measure the difference in positive prediction rates between two groups.
     In RL terms: how differently does the policy behave across states
@@ -379,7 +379,7 @@ gap, rate_black, rate_white = fairness_gap(
 print(f&quot;Fairness gap: {gap * 100:.2f}%&quot;)
 # Actual output: Fairness gap: 86.77%</code></pre>
 <h4 id="step-2-audit-the-state-representation-for-proxy-variables">Step 2 - Audit the State Representation for Proxy Variables</h4>
-<pre><code class="language-python">import scipy.stats as stats
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import scipy.stats as stats
 
 def proxy_check(df, feature, protected_attribute):
     &quot;&quot;&quot;
@@ -397,7 +397,7 @@ print(f&quot;CustodyStatus ~ Ethnic_Code_Text: chi2={chi2:.2f}, p={p:.4f}&quot;)
 # Actual output: chi2=315.89, p=0.0000 - well below 0.05, confirming CustodyStatus
 # carries racial signal and should be removed</code></pre>
 <h4 id="step-3-remove-proxies-and-retrain">Step 3 - Remove Proxies and Retrain</h4>
-<pre><code class="language-python">features_fair = [
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">features_fair = [
     # race_binary removed ✓
     &quot;Sex_Code_Text&quot;,
     &quot;MaritalStatus&quot;,
@@ -418,7 +418,7 @@ model_fair.fit(X_train_f, y_train_f)</code></pre>
 <hr>
 <h3 id="second-case-recommendation-systems-and-feedback-loops">Second Case: Recommendation Systems and Feedback Loops</h3>
 <p>YouTube&#x27;s recommendation engine, documented in a 2019 Mozilla Foundation report on algorithmic amplification, is trained with RL using watch time as the primary reward signal. This creates a well-documented dynamic:</p>
-<pre><code class="language-python"># Simplified RL recommendation loop
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Simplified RL recommendation loop
 
 def recommendation_reward(user_action, content_type):
     &quot;&quot;&quot;

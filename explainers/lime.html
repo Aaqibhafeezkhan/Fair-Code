@@ -202,7 +202,7 @@
 <p>The key word is <strong>local</strong>. LIME never claims to explain the model&#x27;s global behavior - only what it&#x27;s doing in the small region around one specific input. This is also LIME&#x27;s central trade-off against SHAP: SHAP&#x27;s Shapley-value approach comes with mathematical guarantees (the contributions sum exactly to the prediction, and satisfy specific consistency properties from game theory); LIME&#x27;s surrogate model is only an <em>approximation</em> of the real model&#x27;s local behavior, and how good that approximation is depends entirely on how the perturbation sampling and neighborhood weighting were configured. Run LIME twice on the same prediction with different random perturbation samples, and the resulting feature-importance ranking can shift - a stability problem SHAP&#x27;s exact computation (for tree models) doesn&#x27;t share.</p>
 <h3 id="concrete-example-compas-audit-01">Concrete Example: COMPAS - Audit 01</h3>
 <p>Applying LIME to a single high-risk COMPAS prediction, using the same biased feature set (race included) as <a href="shap-values.html">SHAP Values</a>&#x27;s own COMPAS example, illustrates what a local explanation looks like in practice - this is the actual output of the Detection Code below, for test row 0 (predicted probability 52.8% high-risk, predicted class: high risk):</p>
-<pre><code>--- LIME EXPLANATION FOR ONE PREDICTION (predicted: high risk) ---
+<pre tabindex="0" aria-label="Scrollable code block"><code>--- LIME EXPLANATION FOR ONE PREDICTION (predicted: high risk) ---
 
 Feature                                Local weight
 ------------------------------------------------------
@@ -213,7 +213,7 @@ MaritalStatus_Separated &lt;= 0.00        +0.0411
 CustodyStatus_Probation &lt;= 0.00        +0.0339</code></pre>
 <p>For this one individual (who is African-American, <code>race_binary = 1</code>), LIME&#x27;s local surrogate says race is the single largest local contributor toward the &quot;high risk&quot; prediction, consistent with what SHAP&#x27;s <em>aggregate</em> analysis found across many predictions in the SHAP explainer&#x27;s own example. That agreement is reassuring, but it&#x27;s also the exception worth watching for: LIME&#x27;s local weights are computed fresh for every single prediction, so a different individual&#x27;s flagged decision could show a completely different feature ranking even under the identical model, since each explanation only reflects the neighborhood immediately around that one input.</p>
 <h3 id="detection-code">Detection Code</h3>
-<pre><code class="language-python">import lime
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import lime
 import lime.lime_tabular
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier

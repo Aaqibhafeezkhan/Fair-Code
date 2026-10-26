@@ -212,7 +212,7 @@
 <p>The COMPAS audit in this repository demonstrates a proxy form of target leakage. <code>CustodyStatus</code> - a feature describing whether a defendant is currently in custody - correlates with race at p &lt; 0.001 and with the recidivism label at p &lt; 0.001. It is not a neutral operational variable. It encodes the outcome of a prior criminal justice interaction, which itself encodes historical over-policing of Black communities. Including it in the model achieves an 86.77% Black/White fairness gap in positive prediction rates.</p>
 <p>This is the structural form of leakage: a feature that looks like a legitimate input but whose predictive power comes from downstream effects of the very outcome being predicted.</p>
 <p>Removing <code>CustodyStatus</code> alongside the protected race attribute reduces the gap to 15.69% - an 82% reduction.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
@@ -240,12 +240,12 @@ for label, feats in [(&quot;With leakage (race + CustodyStatus)&quot;, FEATURES_
     print(f&quot;{label}: Black flagged {black_rate:.2%}, White flagged {white_rate:.2%}, &quot;
           f&quot;gap {black_rate - white_rate:.2%}&quot;)</code></pre>
 <p><strong>Actual output:</strong></p>
-<pre><code>With leakage (race + CustodyStatus): Black flagged 87.16%, White flagged 0.40%, gap 86.77%
+<pre tabindex="0" aria-label="Scrollable code block"><code>With leakage (race + CustodyStatus): Black flagged 87.16%, White flagged 0.40%, gap 86.77%
 Without leakage: Black flagged 84.71%, White flagged 69.02%, gap 15.69%</code></pre>
 <p>The leaked model&#x27;s fairness gap is inflated by the leaking feature; removing <code>CustodyStatus</code> alongside <code>race_binary</code> cuts the gap by 82% (matching <code>COMPAS/unfair.py</code>/<code>COMPAS/fair.py</code> exactly, since this <em>is</em> that same recipe). The residual 15.69% gap - discussed further in <a href="ml-bias.html">What Is Machine Learning Bias?</a> - shows leakage removal narrows a gap but doesn&#x27;t always close it.</p>
 <hr>
 <h3 id="detection-code">Detection Code</h3>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from scipy.stats import pointbiserialr, chi2_contingency
 from sklearn.model_selection import train_test_split

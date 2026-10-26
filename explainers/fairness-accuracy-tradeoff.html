@@ -205,7 +205,7 @@
 <p><strong>S2 and S4 show it isn&#x27;t a strict, monotonic trade.</strong> S2 has a smaller fairness gap than S1 (11.5 vs. 17.2 points) at essentially the same accuracy (57.2% vs. 57.1%) - a case where fairness improved with no meaningful accuracy cost. S4 recovers some accuracy back from S3 (55.7% vs. 53.9%) while its fairness gap stays statistically indistinguishable from S3&#x27;s. The frontier isn&#x27;t a straight line where every fairness point costs a fixed accuracy price; some steps are close to free, and some are expensive, which is exactly why both numbers need checking at every step rather than assuming the relationship is linear.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Pairs each strategy&#x27;s fairness gap with its accuracy so a table can&#x27;t report one without the other.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 
 def fairness_accuracy_tradeoff(fairness_df, performance_df, audit, fairness_metric,

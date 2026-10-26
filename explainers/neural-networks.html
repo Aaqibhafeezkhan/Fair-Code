@@ -204,14 +204,14 @@
 <hr>
 <h3 id="the-three-part-loop-every-network-runs">The Three-Part Loop Every Network Runs</h3>
 <p>Every neural network - from a two-layer hiring classifier to a billion-parameter language model - runs the same fundamental loop:</p>
-<pre><code>Forward pass  →  Compute loss  →  Backward pass (update weights)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>Forward pass  →  Compute loss  →  Backward pass (update weights)</code></pre>
 <p>Repeat this thousands of times on your training data, and the network learns. The tragedy is that &quot;learns&quot; means &quot;learns to replicate patterns in the training data&quot; - including patterns that encode race, gender, or class.</p>
 <hr>
 <h3 id="part-1-the-forward-pass">Part 1: The Forward Pass</h3>
 <p>The forward pass is how the network turns an input into a prediction.</p>
 <h4 id="neurons-and-weights">Neurons and Weights</h4>
 <p>Each neuron takes a set of inputs, multiplies each by a <strong>weight</strong>, sums them, then passes the result through an <strong>activation function</strong>.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 
 def neuron(inputs, weights, bias):
     &quot;&quot;&quot;
@@ -232,7 +232,7 @@ def relu(z):
 <p>The weight is everything. A high weight on <code>zip_code</code> means the network has learned that zip code is predictive - not because zip codes are fair inputs, but because zip codes correlate with whatever outcome existed in the training data, which was shaped by decades of redlining.</p>
 <h4 id="layers">Layers</h4>
 <p>A single neuron can only draw a straight line through the data. Layers stack neurons in sequence, letting each layer learn more abstract representations of the input.</p>
-<pre><code>Input Layer        Hidden Layer 1      Hidden Layer 2      Output Layer
+<pre tabindex="0" aria-label="Scrollable code block"><code>Input Layer        Hidden Layer 1      Hidden Layer 2      Output Layer
 ─────────────      ──────────────      ──────────────      ────────────
 [age          ]    [pattern_A    ]     [pattern_X    ]     
 [zip_code     ] →  [pattern_B    ]  →  [pattern_Y    ]  →  [high_risk: 0.87]
@@ -242,7 +242,7 @@ def relu(z):
 <hr>
 <h3 id="part-2-computing-loss">Part 2: Computing Loss</h3>
 <p>After a forward pass, the network has a prediction. It compares that prediction to the true label using a <strong>loss function</strong>.</p>
-<pre><code class="language-python">def binary_cross_entropy(y_true, y_pred):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def binary_cross_entropy(y_true, y_pred):
     &quot;&quot;&quot;
     The standard loss function for binary classification.
     Returns a number that measures how wrong the prediction was.
@@ -266,7 +266,7 @@ loss = binary_cross_entropy(y_true=0, y_pred=0.87)
 <hr>
 <h3 id="part-3-the-backward-pass-backpropagation">Part 3: The Backward Pass (Backpropagation)</h3>
 <p>This is where the network learns. After computing the loss, it works backwards through every layer, calculating how much each weight contributed to the error and nudging it in the direction that reduces loss.</p>
-<pre><code class="language-python">def gradient_descent_step(weights, gradients, learning_rate=0.01):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def gradient_descent_step(weights, gradients, learning_rate=0.01):
     &quot;&quot;&quot;
     Update every weight by a small amount in the direction that reduces loss.
     This is the core of how a network learns.
@@ -278,7 +278,7 @@ loss = binary_cross_entropy(y_true=0, y_pred=0.87)
 <p>We tested this directly using the <a href="../index.html#project-hiring">AI Fair Recruitment dataset</a>.</p>
 <h4 id="what-we-did">What We Did</h4>
 <p><strong>Step 1 - Biased model (gender + declared proxy <code>Age</code> included):</strong></p>
-<pre><code class="language-python">features = [
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">features = [
     &#x27;Gender&#x27;,
     &#x27;Age&#x27;,            # declared proxy in audit.yaml
     &#x27;Experience_Years&#x27;,
@@ -289,7 +289,7 @@ loss = binary_cross_entropy(y_true=0, y_pred=0.87)
 <p>The network didn&#x27;t contain a rule that said &quot;prefer men.&quot; It learned from historical hiring data in which men were hired more. The weights encoded that pattern. The bias was invisible - buried in floating-point numbers across hidden layers.</p>
 <hr>
 <p><strong>Step 2 - Remove gender + proxy (our fix):</strong></p>
-<pre><code class="language-python">features = [
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">features = [
     # Gender removed ✓
     # Age removed ✓  (declared proxy in audit.yaml)
     &#x27;Experience_Years&#x27;,
@@ -304,7 +304,7 @@ loss = binary_cross_entropy(y_true=0, y_pred=0.87)
 <p>Neural networks are not fully interpretable, but you can probe them.</p>
 <h4 id="shap-values-attributing-predictions-to-features">SHAP Values: Attributing Predictions to Features</h4>
 <p>SHAP (SHapley Additive exPlanations) decomposes any prediction into a contribution from each input feature.</p>
-<pre><code class="language-python">import shap
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import shap
 from sklearn.ensemble import RandomForestClassifier
 
 model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -320,7 +320,7 @@ shap_values = explainer.shap_values(X_test)
 # ...</code></pre>
 <p>If a protected attribute or its known proxy appears at the top of the SHAP rankings, the model is using it - regardless of what the feature list says it&#x27;s &quot;supposed&quot; to be doing.</p>
 <h4 id="feature-importance-coarser-but-faster">Feature Importance: Coarser But Faster</h4>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 importances = pd.Series(
     model.feature_importances_,
@@ -335,7 +335,7 @@ print(importances)
 <p>Any feature at the top that you know correlates with a protected attribute is a proxy variable. Remove it and retrain.</p>
 <hr>
 <h3 id="the-architecture-in-one-diagram">The Architecture in One Diagram</h3>
-<pre><code>RAW FEATURES             HIDDEN LAYERS              PREDICTION
+<pre tabindex="0" aria-label="Scrollable code block"><code>RAW FEATURES             HIDDEN LAYERS              PREDICTION
 ────────────────         ───────────────────────    ──────────────────────
 age ──────────────┐
 zip_code ─────────┤      [weighted sum]    [weighted sum]

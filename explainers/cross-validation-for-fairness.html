@@ -199,13 +199,13 @@
 <ol><li><strong>Define a cell</strong> for each combination of group and label (here: under 30 or not, good or bad credit, four cells).</li><li><strong>Split with stratification on the cell,</strong> so each fold holds about a fifth of every cell.</li><li><strong>Pool the out-of-fold predictions</strong> and compute the gap on all rows.</li><li><strong>Repeat with different seeds</strong> and report the spread of the pooled gap, and the spread of the per-fold gaps as a measure of how unstable a single fold is.</li></ol>
 <h3 id="concrete-example-german-credit-lending">Concrete Example: German Credit Lending</h3>
 <p><a href="../index.html#project-credit">German Credit Lending</a>: 1,000 applicants, the disadvantaged group is under 30, logistic regression on the core columns. Plain 5-fold is compared with 5-fold stratified by group and label, each repeated 20 times with different shuffles.</p>
-<pre><code>plain 5-fold                       pooled gap -0.0593 (sd across repeats 0.0108) | sd of the 5 fold gaps 0.0564 | smallest group-by-label cell in any test fold: 18 rows
+<pre tabindex="0" aria-label="Scrollable code block"><code>plain 5-fold                       pooled gap -0.0593 (sd across repeats 0.0108) | sd of the 5 fold gaps 0.0564 | smallest group-by-label cell in any test fold: 18 rows
 5-fold stratified by group and label pooled gap -0.0645 (sd across repeats 0.0094) | sd of the 5 fold gaps 0.0552 | smallest group-by-label cell in any test fold: 27 rows
 the benchmark split (200 test rows) gap -0.0914</code></pre>
 <ul><li><strong>The pooled gap is more stable and less extreme than the single split.</strong> The benchmark split gives -0.0914 on its 200 test rows. Pooling all 1,000 held-out predictions gives about -0.059 (plain) or -0.065 (stratified), with a standard deviation across repeats of about 0.01. The single split is one of the unlucky draws from the previous explainer&#x27;s 30-seed spread.</li><li><strong>A single fold is very noisy.</strong> The standard deviation of the five per-fold gaps is 0.056 under both schemes. Any one fold&#x27;s gap tells you little.</li><li><strong>Stratifying protects the small cells.</strong> With plain folds the smallest group-by-label cell in any test fold dropped to 18 rows; with stratified folds it never went below 27. Both schemes give similar pooled gaps here, but the stratified one cannot produce a fold in which a cell is almost empty.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/cross-validation-for-fairness.py</code>; that file is generated from the block below). <code>StratifiedKFold</code> takes the cell code as its label.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.model_selection import KFold, StratifiedKFold
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

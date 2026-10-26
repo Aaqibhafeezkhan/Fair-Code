@@ -203,7 +203,7 @@
 <h3 id="concrete-example-healthcare-readmission-audit-06">Concrete Example: Healthcare Readmission - Audit 06</h3>
 <p>Audit 06 in this repo predicts 30-day hospital readmission risk from the Diabetes 130-US Hospitals dataset (101,766 records), with race and age as protected attributes and <code>payer_code</code>, <code>discharge_disposition_id</code>, and <code>number_inpatient</code> as identified proxies.</p>
 <p>Dropping the protected attributes and their proxies moved the audit&#x27;s demographic parity gaps in different directions per attribute: race actually widened from 0.01% to 0.06%, while age fell from 0.31% to 0.06% (an ~80% reduction). Those numbers describe how often each group was flagged as high risk overall. They say nothing about whether the model&#x27;s mistakes, when it made them, fell more heavily on one group&#x27;s missed cases than the other&#x27;s. That second question needs a group-by-group breakdown of false positive and false negative rates, not just the flag rate:</p>
-<pre><code class="language-python">gaps = error_rate_gaps(
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">gaps = error_rate_gaps(
     readmission_df,
     y_true_col=&quot;readmitted&quot;,
     y_pred_col=&quot;predicted_high_risk&quot;,
@@ -219,7 +219,7 @@ print(gaps)
 <p>The fix in both cases is the same: check false positive and false negative rates by group directly, using a metric like Equalized Odds, instead of stopping at the aggregate flag rate.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Computes false positive and false negative rates per group, and sweeps candidate thresholds to find the one that minimizes a cost-weighted total error, letting the analyst encode that a missed case is worse than a false alarm.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 

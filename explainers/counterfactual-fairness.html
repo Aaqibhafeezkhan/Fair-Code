@@ -208,7 +208,7 @@
 <p>Let:</p>
 <ul><li><code>A</code> be the protected attribute (e.g. race, sex)</li><li><code>X</code> be the observed features (e.g. zip code, credit history, income)</li><li><code>U</code> be the unobserved background variables (the individual&#x27;s &quot;circumstances&quot; independent of <code>A</code>)</li><li><code>Ŷ</code> be the model&#x27;s prediction</li></ul>
 <p>A predictor <code>Ŷ</code> is <strong>counterfactually fair</strong> if, for every individual and every value of the protected attribute <code>a&#x27;</code>:</p>
-<pre><code>P(Ŷ_{A←a}(U) = y | X = x, A = a) = P(Ŷ_{A←a&#x27;}(U) = y | X = x, A = a)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Ŷ_{A←a}(U) = y | X = x, A = a) = P(Ŷ_{A←a&#x27;}(U) = y | X = x, A = a)</code></pre>
 <p>Plain English: the probability of prediction <code>y</code> for this individual is the same whether we set their group membership to <code>a</code> (the real world) or to <code>a&#x27;</code> (the counterfactual). The subscript notation <code>A←a&#x27;</code> means &quot;intervene on A, setting it to a&#x27;&quot;, following do-calculus notation.</p>
 <p>The critical term is <code>U</code> - the unobserved background variables. These represent everything about the person that is causally independent of their demographic group: their intrinsic ability, their choices given their circumstances, their effort. A counterfactually fair model makes predictions based only on <code>U</code> - the factors the person controls - not on <code>A</code> or on features that <code>A</code> caused.</p>
 <p><strong>Three categories of features</strong> emerge from the causal graph:</p>
@@ -221,13 +221,13 @@
 <div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Group</th><th scope="col">High-Risk Flag Rate</th></tr></thead><tbody><tr><td>Black defendants</td><td>87.16%</td></tr><tr><td>White defendants</td><td>0.40%</td></tr><tr><td><strong>Fairness Gap</strong></td><td><strong>86.77pp</strong></td></tr></tbody></table></div>
 <p>Now ask the counterfactual question. Take a Black defendant with 3 prior arrests. Ask: <em>if this person had been white, with the same underlying behaviour and the same 3 prior arrests, would their risk score be the same?</em></p>
 <p>The answer is no - and the reason is <code>CustodyStatus</code>, which the <a href="proxy-variables.html">proxy variables explainer</a> identifies as the key proxy. Black communities have been subject to historical over-policing: for the same underlying behaviour, Black individuals are arrested at higher rates than white individuals. Prior arrest count is therefore not causally independent of race - it is partly <em>caused</em> by race, via differential policing. A model trained on prior arrests is therefore using a variable that race, in part, caused.</p>
-<pre><code>Race ──→ Policing intensity ──→ Arrest rate ──→ Prior arrests ──→ Risk score</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>Race ──→ Policing intensity ──→ Arrest rate ──→ Prior arrests ──→ Risk score</code></pre>
 <p><code>Prior arrests</code> is downstream of <code>Race</code> in the causal graph. A counterfactually fair model cannot use it directly - or must adjust for the part of the variance in prior arrests that race caused.</p>
 <p>This is the structural explanation for why removing race from the COMPAS feature set did not remove the racial bias. The bias had already been absorbed into the features race caused.</p>
 <hr>
 <h3 id="how-to-detect-it-in-python">How to Detect It in Python</h3>
 <p>Exact counterfactual fairness requires a specified causal graph and is computationally involved. The practical audit below uses a tractable approximation: train a model, then simulate counterfactual individuals by flipping their protected attribute and re-deriving causally downstream features, and measure how often predictions change.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -336,7 +336,7 @@ for race_group in [&#x27;White&#x27;, &#x27;Black&#x27;]:
 #   Black applicants whose decision flips: 75/245 (30.6%)</code></pre>
 <p>A 31.5% violation rate means about one in three applicants would receive a different loan decision if they had been born into the other racial group - with everything causally independent (income, personal behaviour) held constant. In this run, White and Black applicants flip at nearly identical rates (32.1% vs. 30.6%), so the violation itself isn&#x27;t concentrated in one group here - what it shows is that <code>neighbourhood</code>/<code>credit_score</code> still move the outcome for a large share of applicants purely because of a causally-upstream group label, for either group. That is still the operational signature of a model that is, at the causal level, making race-based decisions - counterfactual fairness flags the causal dependence on race regardless of which direction it currently cuts in a given sample.</p>
 <h4 id="the-fix-use-only-causally-independent-features">The fix: use only causally independent features</h4>
-<pre><code class="language-python"># ── Train a counterfactually fair model ──────────────────────────────────────
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># ── Train a counterfactually fair model ──────────────────────────────────────
 # Drop neighbourhood and credit_score - both causally downstream of race.
 # Keep only income, which is causally independent of race in this model.
 
@@ -365,7 +365,7 @@ print(f&quot;Fair model violation rate: {len(violations_fair)/len(cf_df)*100:.1f
 <h3 id="the-causal-graph-requirement">The Causal Graph Requirement</h3>
 <p>Counterfactual fairness has one non-negotiable prerequisite: you must specify a causal graph. This is not a limitation that can be engineered away - it is a feature of the framework, because the question it asks (<em>what would have happened?</em>) is inherently causal, not statistical.</p>
 <p>In practice, the graph is specified from domain knowledge and documented assumptions. For the lending example above:</p>
-<pre><code>Race ──→ Neighbourhood ──→ Credit Score ──→ Approval
+<pre tabindex="0" aria-label="Scrollable code block"><code>Race ──→ Neighbourhood ──→ Credit Score ──→ Approval
   │                                           ↑
   │                    Income ────────────────┘
   │                      ↑

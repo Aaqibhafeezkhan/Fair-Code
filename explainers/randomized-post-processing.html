@@ -198,14 +198,14 @@
 <p>That gives an exact answer and an uncomfortable one. Two applicants with the same score and group can get different decisions because of a random draw.</p>
 <h3 id="core-concept-a-linear-programme-over-score-bins">Core Concept: A Linear Programme Over Score Bins</h3>
 <p>Divide scores into bins. For each group and bin, the variable <code>q</code> is the probability of a positive decision. The group&#x27;s true positive rate is the sum of <code>q</code> weighted by how many true positives fall in each bin, and likewise for false positives. Choose all <code>q</code> to maximize accuracy subject to the two groups having the same true positive rate and the same false positive rate. It is a small linear programme.</p>
-<pre><code>maximize   accuracy(q)
+<pre tabindex="0" aria-label="Scrollable code block"><code>maximize   accuracy(q)
 subject to TPR(group 0; q) = TPR(group 1; q)
            FPR(group 0; q) = FPR(group 1; q)
            0 &lt;= q &lt;= 1</code></pre>
 <p>Most of the <code>q</code> come out as 0 or 1 (an ordinary threshold). Only the bin where the cut-off falls needs a fractional value, and the coarser the score, the more it matters.</p>
 <h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
 <p><a href="../index.html#project-tenant">Tenant Screening</a>: logistic regression scores, the disadvantaged group is Black applicants, the rules are fitted on the benchmark&#x27;s training rows and evaluated on its test rows. The score is cut into 4, 6 and 20 bins to show what coarseness does.</p>
-<pre><code>one threshold at 0.5                     accuracy 0.639 | TPR white 0.725 black 0.809 | FPR white 0.460 black 0.609 | equalized-odds gap 0.1486
+<pre tabindex="0" aria-label="Scrollable code block"><code>one threshold at 0.5                     accuracy 0.639 | TPR white 0.725 black 0.809 | FPR white 0.460 black 0.609 | equalized-odds gap 0.1486
 
 4 score bins: 2 of 8 probabilities are strictly between 0 and 1
   white: 0.00 0.48 1.00 1.00
@@ -229,7 +229,7 @@ deterministic group thresholds (match TPR) accuracy 0.640 | TPR white 0.725 blac
 <ul><li><strong>A single threshold of 0.5 is far from equal odds:</strong> true positive rate 0.725 for White and 0.809 for Black applicants, false positive rate 0.460 against 0.609, an equalized-odds gap of 0.149.</li><li><strong>The programme closes it almost entirely:</strong> gaps of 0.015, 0.009 and 0.020 at 4, 6 and 20 bins, at an accuracy of 0.633 to 0.638 against 0.639. The cost is under a point.</li><li><strong>Few probabilities are fractional.</strong> Two of 8, 12 or 40 are strictly between 0 and 1; the rest are plain thresholds, so the randomness is concentrated in one score range for one group.</li><li><strong>People get different decisions on different draws:</strong> between two draws 5.9% (4 bins), 4.1% (6) and 1.2% (20) of rows change. A finer score confines the randomness to fewer people.</li><li><strong>A deterministic pair of thresholds does about as well here:</strong> equalized-odds gap 0.0133 at accuracy 0.640, because the group ROC curves are close enough that the threshold pair nearly reaches the target. Randomization matters when no pair gets there.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/randomized-post-processing.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from scipy.optimize import linprog
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

@@ -197,11 +197,11 @@
 <p>A disaggregated audit reports a number for every group and intersection, and the smallest groups produce the most extreme numbers by chance. A group of 30 can show 70% or 100% accuracy with no real difference from the rest. Reading those raw numbers as findings creates false alarms, and discarding small groups hides the people an audit exists to protect.</p>
 <p>Empirical-Bayes shrinkage is the standard way to estimate many small rates at once. It improves the estimate of each group on average, and it is the same idea as the Stein estimator. The catch for fairness is that &quot;pulled toward the pool&quot; means &quot;pulled away from the group&#x27;s own distinct level&quot;, so a real gap in a small group is partly hidden by the method meant to stabilize it.</p>
 <h3 id="core-concept-a-weighted-average-with-a-data-driven-weight">Core Concept: A Weighted Average With a Data-Driven Weight</h3>
-<pre><code>shrunk_rate(group) = (successes + k * pooled_rate) / (rows + k)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>shrunk_rate(group) = (successes + k * pooled_rate) / (rows + k)</code></pre>
 <p><code>k</code> acts like a number of imaginary rows at the pooled rate. It is estimated from how much the raw group rates vary beyond what binomial noise explains: if they vary a lot, <code>k</code> is small and groups keep their own rates; if they vary little, <code>k</code> is large and everything is pulled to the pool. Groups with more rows than <code>k</code> are barely moved.</p>
 <h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
 <p><a href="../index.html#project-readmission">Healthcare Readmission</a>: a logistic regression&#x27;s accuracy on 20,000 test rows is the &quot;population&quot;, split into age band by race cells. Cells with fewer than 30 population rows are left out, leaving 29 whose true accuracy is known. Then 300 small audits of 600 randomly chosen rows each estimate every cell&#x27;s accuracy two ways and are scored against the truth.</p>
-<pre><code>29 cells of at least 30 rows; sizes from 30 to 4124; true accuracy from 0.819 to 1.000
+<pre tabindex="0" aria-label="Scrollable code block"><code>29 cells of at least 30 rows; sizes from 30 to 4124; true accuracy from 0.819 to 1.000
 
 error (RMSE against the true cell accuracy) from a 600-row audit, averaged over 300 audits
   all 29 cells:        raw 0.144 | shrunk 0.043
@@ -212,7 +212,7 @@ the cell with the lowest true accuracy, [70-80)|Hispanic (72 rows): true 0.819; 
 <p>Use shrinkage to rank or screen many small groups with less noise, and keep the raw numbers and their intervals next to it for any cell that looks different.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/small-group-shrinkage.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

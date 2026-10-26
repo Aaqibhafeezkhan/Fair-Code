@@ -198,12 +198,12 @@
 <p>That is a fairness problem as soon as the old order correlated with a sensitive or proxy feature, because the new model turns a legacy ordering into a weight on that feature. <a href="popularity-bias.html">Popularity Bias</a> is the same mechanism accumulating over time. Here the question is smaller and answerable: how to read one log without being fooled by position.</p>
 <h3 id="core-concept-the-position-based-model-and-inverse-propensity-weighting">Core Concept: The Position-Based Model and Inverse Propensity Weighting</h3>
 <p>The position-based click model says</p>
-<pre><code>P(click on item i at rank r) = P(examined at rank r) * P(item i is relevant)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(click on item i at rank r) = P(examined at rank r) * P(item i is relevant)</code></pre>
 <p>Examination depends only on the rank. If it is known, an item&#x27;s relevance can be estimated without bias by weighting each click by <code>1 / P(examined at its rank)</code>: a click at a position nobody looks at counts for more, a click at rank 1 counts for about one. This is inverse propensity weighting, and Joachims, Swaminathan and Schnabel (2017) showed that a ranker trained with it is unbiased for the true relevance if the propensities are right.</p>
 <p>Everything depends on that &quot;if&quot;. The propensities have to be known or estimated, for example by randomizing a small part of the traffic, and the click model has to be a good description of how people look at a list.</p>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p>The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit. The 23,062 test candidates are split at random into lists of 20, like pages of results shown to a recruiter. A legacy ranker orders each list mostly by <code>Age</code> (plus some experience and test score, plus noise). Clicks are simulated with the position-based model: examination is <code>rank^-1</code> (rank 1 always looked at, rank 20 one time in twenty) and relevance is the hire label, so the true relevance is known and can be used to grade the result. Three kinds of ranker are fitted on the click log of 807 lists using the same three features (<code>Experience_Years</code>, <code>Technical_Test_Score</code>, <code>Age</code>), and graded on 346 held-out lists.</p>
-<pre><code>807 training lists, click rate by position: rank 1: 0.398, rank 2: 0.182, rank 5: 0.066, rank 10: 0.037, rank 20: 0.007 | hire rate at rank 1: 0.379, at rank 20: 0.134
+<pre tabindex="0" aria-label="Scrollable code block"><code>807 training lists, click rate by position: rank 1: 0.398, rank 2: 0.182, rank 5: 0.066, rank 10: 0.037, rank 20: 0.007 | hire rate at rank 1: 0.379, at rank 20: 0.134
 true eta is 1.0
   ranker                    | weight on Age | AUC vs hired | nDCG@5
   raw clicks                |         0.884 |        0.681 |  0.469
@@ -217,7 +217,7 @@ true eta is 1.0
 <p><strong>It depends on the propensities being right.</strong> Assuming a flatter curve (<code>eta = 0.5</code>) removes only part of the bias (weight on <code>Age</code> 0.471, AUC 0.715). Assuming a steeper one (<code>eta = 2.0</code>) overcorrects: the weight on <code>Age</code> goes to -0.346, and the ranker is worse than with no correction at all, in AUC (0.668 against 0.681) and in nDCG@5 (0.447 against 0.469). A wrong propensity is not a small error, it can make the ranker worse than doing nothing.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/position-bias-and-click-models.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit

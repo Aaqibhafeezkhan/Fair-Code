@@ -221,7 +221,7 @@
 <hr>
 <h3 id="detection-code-how-to-calculate-it-in-python">Detection Code: How to Calculate It in Python</h3>
 <p>The 80% rule is one of the cheapest fairness checks you can run. No external library required.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 def disparate_impact_ratio(df, prediction_col, group_col, positive_label=1):
     &quot;&quot;&quot;
@@ -250,7 +250,7 @@ def disparate_impact_ratio(df, prediction_col, group_col, positive_label=1):
     }</code></pre>
 <h4 id="applying-it-to-the-hiring-audit">Applying it to the hiring audit</h4>
 <p>Drop this into <code>AI Fair Recruitment/unfair.py</code> right after the predictions are generated:</p>
-<pre><code class="language-python">test_results[&quot;Gender&quot;] = df.loc[X_test.index, &quot;Gender&quot;].values
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">test_results[&quot;Gender&quot;] = df.loc[X_test.index, &quot;Gender&quot;].values
 
 result = disparate_impact_ratio(
     df=test_results,
@@ -272,7 +272,7 @@ print(result)
 <p>Run the same snippet against <code>fair.py</code> and the ratio climbs to <strong>0.989</strong> - passing.</p>
 <h4 id="using-fairlearn">Using Fairlearn</h4>
 <p>The same metric is available out-of-the-box in <a href="https://fairlearn.org/" target="_blank" rel="noreferrer noopener">Fairlearn</a>:</p>
-<pre><code class="language-python">from fairlearn.metrics import demographic_parity_ratio
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from fairlearn.metrics import demographic_parity_ratio
 
 ratio = demographic_parity_ratio(
     y_true=y_test,

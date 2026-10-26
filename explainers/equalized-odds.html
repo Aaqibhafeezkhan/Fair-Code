@@ -216,7 +216,7 @@
 <p>The model isn&#x27;t just wrong more often for Black defendants. It&#x27;s wrong in a specific <em>direction</em> - over-flagging them as high-risk. Equalized Odds catches this because it checks both error types, not just overall accuracy.</p>
 <hr>
 <h3 id="how-to-detect-it-in-python">How to Detect It in Python</h3>
-<pre><code class="language-python">from fairlearn.metrics import MetricFrame, true_positive_rate, false_positive_rate
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from fairlearn.metrics import MetricFrame, true_positive_rate, false_positive_rate
 import pandas as pd
 
 # Load your data
@@ -240,7 +240,7 @@ print(frame.by_group)
 print(&quot;\nDifferences:&quot;)
 print(frame.difference())</code></pre>
 <p>Example output (this exact recipe, this exact seed; a <code>RandomForestClassifier</code> with a fixed seed is not guaranteed bit-identical across CPU architectures and BLAS backends, so the last digit can move on other machines - see <a href="reject-inference.html">reject-inference.md</a> for the same caveat):</p>
-<pre><code>                  TPR   FPR
+<pre tabindex="0" aria-label="Scrollable code block"><code>                  TPR   FPR
 Black Defendants  0.73  0.61
 White Defendants  0.64  0.43
 
@@ -249,7 +249,7 @@ TPR    0.08
 FPR    0.18</code></pre>
 <p>Large differences in either metric indicate an Equalized Odds violation. Run this on every protected attribute in your dataset before deployment.</p>
 <p>Install dependency:</p>
-<pre><code class="language-bash">pip install fairlearn</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-bash">pip install fairlearn</code></pre>
 <hr>
 <h3 id="the-math">The Math</h3>
 <p>Equalized Odds requires two conditions to hold simultaneously:</p>

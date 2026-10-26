@@ -205,7 +205,7 @@
 <p>What more plausibly moved the gap instead is the model&#x27;s fitted coefficients, not a proxy reconstructing race: with race unavailable, <code>LogisticRegression</code> refits every remaining coefficient from scratch, and even a modest, imperfect correlate can get reweighted differently once it&#x27;s the only remaining signal touching group membership - without that correlate ever reconstructing race well enough to clear a 0.75 bar. <code>faircode/strategies.py</code>&#x27;s next strategy, <code>unawareness_proxy_removal</code> (S2), goes further and drops the explicitly-listed proxy features too - see <a href="mitigation-strategies.html">Mitigation Strategies</a> for how that step, and the constraint-based strategies after it, actually move this specific gap.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Checks whether dropping a column actually reduces its correlation with the rest of the feature set, instead of assuming it does.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 

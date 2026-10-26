@@ -204,7 +204,7 @@
 <p>That &quot;realistically make&quot; qualifier is where most of the actual difficulty lives. A mathematically nearest counterfactual might suggest lowering age by ten years or changing a protected attribute - technically the smallest edit, and completely useless as advice. Real counterfactual-explanation methods constrain the search to <em>actionable</em> features (income, employment length, outstanding debt) and hold immutable ones (age, race, past history that can&#x27;t be un-happened) fixed.</p>
 <h3 id="concrete-example-german-credit-lending-audit-03">Concrete Example: German Credit Lending - Audit 03</h3>
 <p>For an applicant denied credit by the baseline model, a counterfactual search over actionable features illustrates the difference from a feature-attribution explanation:</p>
-<pre><code>--- ORIGINAL APPLICATION (predicted: denied) ---
+<pre tabindex="0" aria-label="Scrollable code block"><code>--- ORIGINAL APPLICATION (predicted: denied) ---
 credit_amount: 4,800
 duration: 36
 employment: 1&lt;=X&lt;4
@@ -218,7 +218,7 @@ existing_credits: 1             (-1)</code></pre>
 <p>Where a SHAP or LIME explanation would report <em>how much</em> each feature contributed to the denial, the counterfactual explanation says something directly actionable instead: shorten the requested loan term by a year and close one existing credit line, and this specific model would have approved the application. That&#x27;s the kind of statement an adverse-action notice is meant to contain, and it&#x27;s a fundamentally different output than a feature-importance ranking.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>A minimal from-scratch nearest-counterfactual search over actionable features only, holding immutable ones fixed - the same constraint real counterfactual-explanation tooling (like <code>dice-ml</code>) enforces, implemented directly rather than as a library wrapper.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

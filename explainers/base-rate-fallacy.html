@@ -203,16 +203,16 @@
 <p>Let Y represent the true binary outcome (0 or 1), and Ŷ represent the model&#x27;s prediction (0 or 1). Define:</p>
 <ul><li>Base Rate (Prevalence), p = P(Y = 1)</li><li>True Positive Rate (Sensitivity), TPR = P(Ŷ = 1 | Y = 1)</li><li>False Positive Rate (1 - Specificity), FPR = P(Ŷ = 1 | Y = 0)</li></ul>
 <p>The Positive Predictive Value (PPV), which measures the proportion of positive predictions that are actual positive cases, is calculated as:</p>
-<pre><code>PPV = P(Y = 1 | Ŷ = 1) = (TPR * p) / (TPR * p + FPR * (1 - p))</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>PPV = P(Y = 1 | Ŷ = 1) = (TPR * p) / (TPR * p + FPR * (1 - p))</code></pre>
 <h4 id="prevalence-impact-on-reliability">Prevalence Impact on Reliability</h4>
 <p>To see how background prevalence dictates prediction reliability, consider a screening model with fixed TPR = 0.90 and FPR = 0.10 evaluated across varying base rates (p):</p>
 <div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Base Rate (p)</th><th scope="col">True Positives (TPR * p)</th><th scope="col">False Positives (FPR * (1 - p))</th><th scope="col">PPV (P(Y = 1 | Ŷ = 1))</th><th scope="col">False Discovery Rate (1 - PPV)</th></tr></thead><tbody><tr><td><strong>1%</strong></td><td>0.0090</td><td>0.0990</td><td><strong>8.33%</strong></td><td><strong>91.67%</strong></td></tr><tr><td><strong>5%</strong></td><td>0.0450</td><td>0.0950</td><td><strong>32.14%</strong></td><td><strong>67.86%</strong></td></tr><tr><td><strong>10%</strong></td><td>0.0900</td><td>0.0900</td><td><strong>50.00%</strong></td><td><strong>50.00%</strong></td></tr><tr><td><strong>30%</strong></td><td>0.2700</td><td>0.0700</td><td><strong>79.41%</strong></td><td><strong>20.59%</strong></td></tr><tr><td><strong>50%</strong></td><td>0.4500</td><td>0.0500</td><td><strong>90.00%</strong></td><td><strong>10.00%</strong></td></tr></tbody></table></div>
 <p>At a 1% base rate, <strong>over 91% of flagged individuals are false alarms</strong>, despite the model having 90% sensitivity and 90% specificity.</p>
 <h4 id="the-chouldechova-impossibility-identity">The Chouldechova Impossibility Identity</h4>
 <p>When evaluating models across demographic groups A and B, Chouldechova (2017) demonstrated that the false positive rate (FPR), false negative rate (FNR), positive predictive value (PPV), and base rate (p) are linked by a strict identity:</p>
-<pre><code>FPR = (p / (1 - p)) * ((1 - PPV) / PPV) * (1 - FNR)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>FPR = (p / (1 - p)) * ((1 - PPV) / PPV) * (1 - FNR)</code></pre>
 <p>If a model satisfies <strong>predictive parity</strong> (PPV_A = PPV_B) and has equal false negative rates (FNR_A = FNR_B), but the base rates differ (p_A != p_B), then:</p>
-<pre><code>p_A / (1 - p_A) != p_B / (1 - p_B)  =&gt;  FPR_A != FPR_B</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>p_A / (1 - p_A) != p_B / (1 - p_B)  =&gt;  FPR_A != FPR_B</code></pre>
 <p>The false positive rates <strong>must</strong> differ between the groups. Equalizing predictive parity across groups with unequal base rates mathematically guarantees an unequal distribution of false alarms.</p>
 <h3 id="concrete-example-compas-audit-01">Concrete Example: COMPAS - Audit 01</h3>
 <p>The COMPAS recidivism audit in this repository (<code>COMPAS/</code>) uses the ProPublica two-year recidivism dataset, evaluating predictions across racial groups.</p>
@@ -222,7 +222,7 @@
 <ol><li><strong>Northpointe checked Predictive Parity</strong>: They demonstrated that a high-risk score produced comparable Positive Predictive Value across racial groups (~63% to 65%). Given a high-risk flag, the probability of reoffending was nearly identical regardless of race.</li><li><strong>ProPublica checked Equalized Odds / False Positive Rates</strong>: They demonstrated that Black defendants who did not reoffend were flagged as high-risk at nearly double the rate of non-reoffending white defendants (44.9% vs. 23.5%).</li></ol>
 <p>Both analyses were mathematically accurate. Northpointe&#x27;s predictive parity was held up as evidence of model neutrality, while ProPublica&#x27;s error-rate disparity demonstrated systemic unequal harm. Neither side acknowledged that because the base rates differed, satisfying predictive parity <em>forced</em> the false positive rate gap to exist. The model could not be adjusted to fix ProPublica&#x27;s complaint without destroying Northpointe&#x27;s proof of fairness, unless the underlying base rates were equalized first.</p>
 <p>The 51.4%/39.4% base rates and the PPV/FPR figures above are ProPublica&#x27;s own published numbers from their original two-year-outcome analysis file - a different file from this repo&#x27;s <code>COMPAS/compas-scores-raw.csv</code>, which has no independent recidivism-outcome column to compute a base rate from at all. The same mechanic is directly reproducible in this repo on <a href="../index.html#project-credit">German Credit Lending</a>, where <code>class</code> (good/bad credit history) is a real recorded label:</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 df = pd.read_csv(&quot;German Credit Lending/credit_customers.csv&quot;)
 df[&quot;is_young&quot;] = (df[&quot;age&quot;] &lt; 30).astype(int)
@@ -232,14 +232,14 @@ base_rates = df.groupby(&quot;is_young&quot;)[&quot;good_credit&quot;].mean()
 print(&quot;Good-Credit Base Rates by Group:&quot;)
 print(base_rates)</code></pre>
 <p><strong>Actual output:</strong></p>
-<pre><code>is_young
+<pre tabindex="0" aria-label="Scrollable code block"><code>is_young
 0    0.740859
 1    0.630728
 Name: good_credit, dtype: float64</code></pre>
 <p>Older applicants (<code>is_young=0</code>) have a good-credit base rate of 74.1%, younger applicants (<code>is_young=1</code>) 63.1% - an 11.0-point base-rate gap, the same shape of disparity the ProPublica base rates show, just verifiable end to end against a file this repo actually ships.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>The following Python module computes group-level base rates, PPV, FPR, and FNR, and quantifies the Chouldechova trade-off gap to detect when base rate disparities are driving fairness metric conflicts.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

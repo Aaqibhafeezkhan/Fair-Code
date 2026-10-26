@@ -210,7 +210,7 @@
 <h3 id="real-world-proof-every-unfair-py-in-this-repo">Real-World Proof: Every <code>unfair.py</code> in This Repo</h3>
 <p>Every biased model in this repo is a disparate treatment example. The protected attribute is a direct model input. The outcome gap is the downstream disparate impact. They are the same model - looked at through two different legal lenses.</p>
 <h4 id="compas-unfair-py">COMPAS - <code>unfair.py</code></h4>
-<pre><code class="language-python"># DISPARATE TREATMENT: Race is a direct model feature
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># DISPARATE TREATMENT: Race is a direct model feature
 # (compas-scores-raw.csv has no raw `race` column - `race_binary` is
 # derived from the real `Ethnic_Code_Text` column, exactly as unfair.py does)
 df[&#x27;race_binary&#x27;] = df[&#x27;Ethnic_Code_Text&#x27;].map({&#x27;African-American&#x27;: 1, &#x27;Caucasian&#x27;: 0})
@@ -222,11 +222,11 @@ X = pd.get_dummies(df[[
 ]])</code></pre>
 <p>Race is an explicit input. The model is permitted to use race as a predictive signal. That is disparate treatment. The resulting 86.77pp gap between Black and White defendants is the disparate impact it produces.</p>
 <h4 id="ai-fair-recruitment-unfair-py">AI Fair Recruitment - <code>unfair.py</code></h4>
-<pre><code class="language-python"># DISPARATE TREATMENT: Gender and Age are direct model features
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># DISPARATE TREATMENT: Gender and Age are direct model features
 features = [&#x27;Gender&#x27;, &#x27;Age&#x27;, &#x27;Experience_Years&#x27;, &#x27;Technical_Test_Score&#x27;]</code></pre>
 <p><code>Gender</code> is a direct input. <code>Age</code> is both an input and a proxy for gender (women in the dataset more often have career gaps, so age encodes gender signal twice over - once directly, once through correlation). The model was <em>designed</em> to see these attributes. The 4.03pp hire rate gap (21.62% vs 17.59%) is the disparate impact.</p>
 <h4 id="the-fix-what-removing-disparate-treatment-looks-like">The Fix - What Removing Disparate Treatment Looks Like</h4>
-<pre><code class="language-python"># fair.py: protected attribute and its proxy removed
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># fair.py: protected attribute and its proxy removed
 features = [&#x27;Experience_Years&#x27;, &#x27;Technical_Test_Score&#x27;]
 # Gender removed ✓  - eliminates disparate treatment
 # Age removed ✓     - eliminates proxy-based disparate treatment</code></pre>
@@ -234,7 +234,7 @@ features = [&#x27;Experience_Years&#x27;, &#x27;Technical_Test_Score&#x27;]
 <hr>
 <h3 id="detection-code">Detection Code</h3>
 <h4 id="audit-whether-protected-attributes-are-in-the-feature-set">Audit whether protected attributes are in the feature set</h4>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 # Standard protected attributes under US federal law
 PROTECTED_ATTRIBUTES = {
@@ -286,7 +286,7 @@ disparate_treatment_audit(features_fair)
 # ✓ No protected attributes detected in feature set.
 #   Run a proxy variable audit next - see proxy-variables.md</code></pre>
 <h4 id="check-a-trained-sklearn-model-s-feature-list">Check a trained sklearn model&#x27;s feature list</h4>
-<pre><code class="language-python">from sklearn.pipeline import Pipeline
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.pipeline import Pipeline
 
 def audit_sklearn_model(model, feature_names, protected=PROTECTED_ATTRIBUTES):
     &quot;&quot;&quot;
@@ -320,7 +320,7 @@ model.fit(X_train, y_train)
 
 audit_sklearn_model(model, feature_cols)</code></pre>
 <h4 id="the-full-two-stage-check-treatment-impact">The full two-stage check: treatment → impact</h4>
-<pre><code class="language-python">def full_discrimination_audit(feature_columns, y_true, y_pred, group_series):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def full_discrimination_audit(feature_columns, y_true, y_pred, group_series):
     &quot;&quot;&quot;
     Stage 1: Disparate treatment - are protected attributes in the feature set?
     Stage 2: Disparate impact   - does the outcome gap exceed the four-fifths threshold?
@@ -347,7 +347,7 @@ audit_sklearn_model(model, feature_cols)</code></pre>
 <p>Removing the protected attribute stops <em>direct</em> disparate treatment. It does not stop <em>indirect</em> disparate treatment - where a correlated feature serves as a stand-in for the protected attribute the model is no longer permitted to see.</p>
 <p>Courts have recognised this. In <em>Watson v. Fort Worth Bank &amp; Trust</em> (1988), the Supreme Court held that facially neutral criteria that serve as proxies for protected characteristics can constitute disparate treatment - not just disparate impact - when the intent to use them as substitutes can be shown.</p>
 <p>In algorithmic systems, proving intent is difficult. But the structure of indirect disparate treatment is mechanical and detectable:</p>
-<pre><code class="language-python">from scipy.stats import chi2_contingency
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from scipy.stats import chi2_contingency
 
 def proxy_treatment_check(df, feature_col, protected_col, threshold=0.05):
     &quot;&quot;&quot;

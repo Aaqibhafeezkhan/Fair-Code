@@ -198,12 +198,12 @@
 <p>Plain <a href="demographic-parity.html">demographic parity</a> requires <code>P(Y_hat = 1 | G = A) = P(Y_hat = 1 | G = B)</code> unconditionally. Two things go wrong with that in practice:</p>
 <ul><li>It is satisfied by a model that is equally useless for everyone (predict the base rate, ignore the features), so passing it is not evidence of a good model.</li><li>It is violated by a model that legitimately uses a lawful, non-proxy factor - years of experience in a hiring model, loan amount in a credit model - that happens to correlate with a protected group. The violation may be entirely explained by that factor, not by the protected attribute.</li></ul>
 <p>Conditional demographic parity is the standard refinement for the second problem. You pick one or more conditioning factors <code>L</code> that you are willing to treat as a legitimate basis for outcome differences, stratify the population by <code>L</code>, and check demographic parity <em>within</em> each stratum:</p>
-<pre><code>P(Y_hat = 1 | G = A, L = l) = P(Y_hat = 1 | G = B, L = l)   for every level l</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Y_hat = 1 | G = A, L = l) = P(Y_hat = 1 | G = B, L = l)   for every level l</code></pre>
 <p>If the groups reach parity within every stratum of <code>L</code>, the aggregate gap was &quot;explained by <code>L</code>&quot;. If a gap persists within strata, <code>L</code> does not account for it.</p>
 <p>This is a real, commonly used construction - it is the fairness analogue of adding a control variable to a regression, and it is close to what US disparate-impact analysis does when it asks whether a challenged practice is &quot;job related and consistent with business necessity&quot;. It is not a synonym for plain demographic parity, and it is not the same as <a href="intersectional-bias.html">intersectional</a> or <a href="subgroup-fairness.html">subgroup</a> fairness, which stratify by <em>other protected attributes</em> to find hidden gaps rather than by a legitimate factor to explain one.</p>
 <h3 id="how-it-works">How It Works</h3>
 <p>Start from the identity that makes the aggregate gap decomposable. For each group <code>g</code>:</p>
-<pre><code>P(Y_hat = 1 | G = g) = sum over l of  P(L = l | G = g) * P(Y_hat = 1 | G = g, L = l)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Y_hat = 1 | G = g) = sum over l of  P(L = l | G = g) * P(Y_hat = 1 | G = g, L = l)</code></pre>
 <p>The aggregate rate is a weighted average of within-stratum rates, weighted by how group <code>g</code> is distributed across the strata of <code>L</code>. Subtracting the two groups&#x27; aggregate rates gives a gap with two sources: different within-stratum rates (<code>P(Y_hat = 1 | G = g, L = l)</code> differs by <code>g</code>), and different stratum weights (<code>P(L = l | G = g)</code> differs by <code>g</code>).</p>
 <p>Conditional demographic parity zeroes out the second source by construction: it only compares groups at the same value of <code>L</code>. What is left is the within-stratum gap. A sample-size-weighted average of the within-stratum gaps is the part of the aggregate gap that stratifying on <code>L</code> does <em>not</em> remove.</p>
 <p>The catch is entirely in the choice of <code>L</code>. If <code>L</code> is a genuine exogenous factor, the within-stratum gap is the disparity net of a real confounder. If <code>L</code> is a <a href="proxy-variables.html">proxy</a> for the protected attribute, conditioning on it absorbs the discrimination into the &quot;legitimate&quot; term and the within-stratum gap understates the real harm. CDP gives you a knob; it does not tell you where to set it.</p>
@@ -220,7 +220,7 @@
 <p>Sample-weighted within-stratum gap: roughly <strong>+2 pp</strong>, and inside the single largest stratum the sign reverses (women 0.9 points ahead). Conditioning on marital status makes most of the aggregate gap disappear.</p>
 <h4 id="the-two-answers-disagree-and-that-is-the-point">The two answers disagree, and that is the point</h4>
 <p>Same protected attribute, same dataset, same +19.6 pp aggregate. Condition on education and the gap stands. Condition on marital status and it nearly vanishes. CDP did not resolve the fairness question - it moved it to a new one: <em>is marital status a legitimate basis for a 20-point income difference between men and women, or is it a proxy for a sex-role division of unpaid labor that the outcome variable should not be conditioned on?</em> That is a normative and legal question, not a statistical one, and CDP&#x27;s output is only as defensible as the answer to it. (This is the same aggregate-vs-stratified divergence covered from the other direction in <a href="simpsons-paradox.html">Simpson&#x27;s Paradox</a>.)</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 
 df = pd.read_csv(&quot;Benefits Denial/adult.csv&quot;)
@@ -247,7 +247,7 @@ for col in (&quot;education.num&quot;, &quot;marital.status&quot;):
 # condition on marital.status  : weighted within-stratum gap = +0.0243</code></pre>
 <h3 id="detection-code">Detection Code</h3>
 <p>The following module computes the unconditional demographic parity gap, the conditional (within-stratum) gap for a chosen legitimate factor, and the fraction of the unconditional gap that conditioning explains away.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

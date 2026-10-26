@@ -198,13 +198,13 @@
 <p>The risk is the word &quot;cannot&quot;. It is only as strong as the reader you tested against, and that makes this the method where testing the claim matters most.</p>
 <h3 id="core-concept-remove-the-directions-that-predict-the-group">Core Concept: Remove the Directions That Predict the Group</h3>
 <p>The simplest version is a linear projection. Fit a linear reader that predicts the group from the features, take its direction, and project every row onto the space orthogonal to it. Repeat on the result: the first projection removes the most obvious signal and the next reader finds what was left. This is iterative nullspace projection (Ravfogel and colleagues), and it is a linear-algebra cousin of the learned representations of Zemel and colleagues.</p>
-<pre><code>for k rounds:
+<pre tabindex="0" aria-label="Scrollable code block"><code>for k rounds:
     reader = linear model predicting the group from the current features
     remove the reader&#x27;s direction from every row</code></pre>
 <p>After <code>k</code> rounds a linear reader can do no better than chance. Whether any reader can is the question the example answers.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: the features are the audit&#x27;s core and proxy columns with the sex column removed (marital status, relationship, occupation and the rest, which do carry sex), standardized. The group is sex; the model is logistic regression on the cleaned rows.</p>
-<pre><code>columns: [&#x27;workclass&#x27;, &#x27;education&#x27;, &#x27;education.num&#x27;, &#x27;capital.gain&#x27;, &#x27;capital.loss&#x27;, &#x27;marital.status&#x27;, &#x27;occupation&#x27;, &#x27;relationship&#x27;, &#x27;hours.per.week&#x27;, &#x27;fnlwgt&#x27;]
+<pre tabindex="0" aria-label="Scrollable code block"><code>columns: [&#x27;workclass&#x27;, &#x27;education&#x27;, &#x27;education.num&#x27;, &#x27;capital.gain&#x27;, &#x27;capital.loss&#x27;, &#x27;marital.status&#x27;, &#x27;occupation&#x27;, &#x27;relationship&#x27;, &#x27;hours.per.week&#x27;, &#x27;fnlwgt&#x27;]
 0 directions removed: accuracy 0.821 | parity gap -0.1336 | sex recoverable, AUC: linear reader 0.862, random forest 0.915
 1 directions removed: accuracy 0.806 | parity gap -0.0480 | sex recoverable, AUC: linear reader 0.598, random forest 0.912
 2 directions removed: accuracy 0.800 | parity gap -0.0259 | sex recoverable, AUC: linear reader 0.513, random forest 0.897
@@ -215,7 +215,7 @@
 <p>The baseline here is standardized and fitted by scikit-learn on the S1 columns, so it is not the benchmark&#x27;s S1 row (a gap of -0.1003 in <code>results/</code>, the current results).</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fair-representation-learning.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score

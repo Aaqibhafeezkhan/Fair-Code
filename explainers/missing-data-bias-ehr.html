@@ -203,14 +203,14 @@
 <p>The practical test is not &quot;how much is missing&quot; but &quot;does the missingness rate differ by group, and does that difference track something structural rather than clinical.&quot;</p>
 <h3 id="concrete-example-healthcare-readmission-audit-06">Concrete Example: Healthcare Readmission - Audit 06</h3>
 <p>Audit 06&#x27;s underlying dataset, Diabetes 130-US Hospitals (101,766 encounters), is a well-known case of exactly this pattern - and the numbers below come from reading the CSV already in this repo, not from a benchmark run or a frozen result:</p>
-<pre><code class="language-text">Column               Overall missing   Caucasian   African American   Gap
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-text">Column               Overall missing   Caucasian   African American   Gap
 weight                     96.9%          96.2%          99.4%        3.2 pts
 payer_code                 39.6%          37.5%          48.2%       10.7 pts
 medical_specialty          49.0%          50.9%          43.0%        7.9 pts</code></pre>
 <p><code>weight</code> is missing for nearly everyone - it was rarely recorded in outpatient workflow regardless of group, which is a genuine (if extreme) case of a field that is close to useless everywhere rather than a fairness problem on its own. <code>payer_code</code> is different: it is far more often missing for African American patients (48.2%) than Caucasian patients (37.5%), a 10.7-point gap on a column this repo&#x27;s own <code>audit.yaml</code> already flags as a proxy for insurance access, not clinical severity - a model reading a missing payer code as &quot;nothing to flag&quot; is simply less informed about that group&#x27;s coverage situation than it is for the majority group. <code>medical_specialty</code> runs the other direction (Caucasian patients are <em>more</em> often missing a specialist referral), which is exactly why this needs to be checked column by column and group by group rather than assumed: unequal missingness does not always point the same way, and assuming a single direction is itself a way to miss it.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Computes the missingness rate per column, per group, so a column that is quietly less complete for one group cannot hide inside an overall missingness percentage.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 
 def missingness_by_group(df, group_col, missing_values=(&quot;?&quot;, &quot;&quot;, &quot;Unknown/Invalid&quot;)):

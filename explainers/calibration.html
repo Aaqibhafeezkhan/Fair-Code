@@ -207,7 +207,7 @@
 <p>This is the <a href="https://arxiv.org/abs/1703.00056" target="_blank" rel="noreferrer noopener">Chouldechova (2017)</a> result in practice: <strong>when base rates differ between groups, you cannot simultaneously achieve calibration and equal false positive/false negative rates.</strong> You have to choose. COMPAS chose calibration. ProPublica measured the error rates. Both were right about what they measured.</p>
 <p>Reproducing Northpointe&#x27;s and ProPublica&#x27;s exact tables takes ProPublica&#x27;s independent <em>two-year recidivism outcome</em> - whether a defendant was actually rearrested within two years - matched against COMPAS&#x27;s own score. This repo&#x27;s <code>COMPAS/compas-scores-raw.csv</code> is the raw score file only: it has <code>ScoreText</code>/<code>DecileScore</code> (what COMPAS predicted) but no such outcome column to check those scores against, so the calibration gap above can&#x27;t be reproduced from this file alone.</p>
 <p>What this repo <em>can</em> verify directly is the same concept - do predicted probabilities match real outcome rates across groups? - on an audit that has both a model&#x27;s own predicted probabilities and a genuine historical outcome: <a href="../index.html#project-credit">German Credit Lending</a>, where <code>class</code> (good/bad credit history) is a real recorded label, not a derived score.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -250,7 +250,7 @@ for group, label in [(1, &#x27;Young (&lt;30)&#x27;), (0, &#x27;Older (30+)&#x27
 <hr>
 <h3 id="how-to-measure-calibration">How to Measure Calibration</h3>
 <p>Calibration is measured by comparing predicted probabilities to actual outcome rates within prediction bins. The standard approach is a <strong>calibration curve</strong> (also called a reliability diagram).</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from sklearn.calibration import calibration_curve
 import matplotlib.pyplot as plt
@@ -320,7 +320,7 @@ feature_cols = [&#x27;checking_status&#x27;, &#x27;duration&#x27;, &#x27;credit_
 results = measure_calibration_by_group(df, feature_cols, &#x27;target&#x27;, &#x27;is_young&#x27;)
 calibration_gap(results)</code></pre>
 <p><strong>Actual output:</strong></p>
-<pre><code>0: Mean Absolute Calibration Error = 0.0964
+<pre tabindex="0" aria-label="Scrollable code block"><code>0: Mean Absolute Calibration Error = 0.0964
 1: Mean Absolute Calibration Error = 0.0559</code></pre>
 <p>(group <code>0</code> = older/30+, group <code>1</code> = young/&lt;30, matching the worked example above exactly - this function is the reusable version of the same computation.)</p>
 <p>A perfectly calibrated model produces a diagonal line from (0, 0) to (1, 1). A model that is calibrated for one group but not another will show one group&#x27;s curve hugging the diagonal while the other curves away - the gap between those curves is the differential calibration.</p>

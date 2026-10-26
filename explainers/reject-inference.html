@@ -200,7 +200,7 @@
 <p>High-stakes predictive models - in credit scoring, automated hiring, tenant screening, and insurance underwriting - are almost never trained on a random sample of the general population. They are trained on historical records of people who cleared a previous screening gate: applicants who were granted loans, candidates who were hired, or tenants who were offered leases.</p>
 <p>This creates a fundamental missing data problem. For approved applicants (<code>S = 1</code>), the ground-truth outcome <code>Y</code> (such as loan repayment, job performance, or tenancy duration) is eventually observed. For rejected applicants (<code>S = 0</code>), the outcome is completely unobserved. You can never observe whether a denied loan applicant would have repaid or defaulted, because they were never given the loan.</p>
 <p>Training a model strictly on approved applicants introduces <strong>sample selection bias</strong> (a form of survivorship bias). The conditional distribution of outcomes among approved borrowers, <code>P(Y | X, S = 1)</code>, does not match the distribution in the full applicant population, <code>P(Y | X)</code>. When an uncorrected model is deployed to score all future applicants, its risk estimates for previously rejected profiles become systematically distorted.</p>
-<pre><code>                      +------------------------------------+
+<pre tabindex="0" aria-label="Scrollable code block"><code>                      +------------------------------------+
                       |    Full Applicant Population (U)   |
                       +-----------------+------------------+
                                         |
@@ -232,7 +232,7 @@
 <h3 id="concrete-example-german-credit-lending-audit-03">Concrete Example: German Credit Lending - Audit 03</h3>
 <p><a href="../index.html#project-credit"><code>German Credit Lending/credit_customers.csv</code></a> is the dataset behind Audit 03 in this repository. Its <code>class</code> column contains exactly two values across all 1,000 rows: <code>good</code> (700 rows) and <code>bad</code> (300 rows).</p>
 <p>There is no third value for &quot;denied&quot; or &quot;rejected.&quot; Every single individual in <code>credit_customers.csv</code> cleared an initial credit approval gate before the dataset was assembled. It is, by construction, a <strong>reject-inference dataset</strong>.</p>
-<pre><code>German Credit Sample Breakdown:
+<pre tabindex="0" aria-label="Scrollable code block"><code>German Credit Sample Breakdown:
 +-------------------------------------------------------------+
 | Total Observed Rows: 1,000 (100% Approved / Booked Loans)   |
 +------------------------------+------------------------------+
@@ -249,7 +249,7 @@
 <h3 id="detection-and-mitigation-code">Detection and Mitigation Code</h3>
 <p>Because rejected applicants leave no outcome rows in standard CSV files, demonstrating reject inference requires either a controlled simulation comparing a selection-gated model against full-population ground truth, or applying IPW and Soft Parceling corrections when unlabeled applicant logs exist.</p>
 <p>The following standalone script simulates a complete applicant pool, applies a biased historical selection gate, and compares three models: an uncorrected baseline model, an IPW-reweighted model, and a Soft-Parceled model.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -375,7 +375,7 @@ if __name__ == &quot;__main__&quot;:
     print(&quot;=== Reject Inference Correction Benchmark (Evaluated on Full Population U) ===&quot;)
     print(results_df.to_string())</code></pre>
 <h4 id="script-execution-output">Script Execution Output</h4>
-<pre><code>=== Reject Inference Correction Benchmark (Evaluated on Full Population U) ===
+<pre tabindex="0" aria-label="Scrollable code block"><code>=== Reject Inference Correction Benchmark (Evaluated on Full Population U) ===
                        Population AUC  Population Accuracy  Older Approval Rate  Younger Approval Rate  Age Fairness Gap
 Naive (Approved Only)          0.9460               0.8851               0.5413                 0.5366            0.0047
 IPW Reweighted                 0.9456               0.8813               0.5514                 0.5453            0.0062

@@ -201,7 +201,7 @@
 <p>The assumed graph for the example below is <code>sex -&gt; education, hours, occupation, marital status -&gt; income</code>, <code>sex -&gt; income</code> directly, and <code>age</code> as a common cause. It is an assumption, written down so it can be argued about.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: a linear-probability regression of &quot;income above $50K&quot; on being a woman, with different adjustment sets. The coefficient on sex is the gap that remains after adjusting.</p>
-<pre><code>women 33.1% of the rows; income above $50K: women 0.109, men 0.306
+<pre tabindex="0" aria-label="Scrollable code block"><code>women 33.1% of the rows; income above $50K: women 0.109, men 0.306
 
 adjusting for                           sex coefficient   what the graph says it is
 nothing                                         -0.1963   the total gap
@@ -216,7 +216,7 @@ all of them                                     -0.0432   everything we have</co
 <p>None of these is the answer. They are the answers under different graphs.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/causal-graphs-for-fairness.py</code>; that file is generated from the block below). The label column records the role the graph gives each set; change the graph and the interpretation changes with it.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

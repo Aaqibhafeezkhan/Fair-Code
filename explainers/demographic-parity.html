@@ -203,10 +203,10 @@
 <p>But it also matters to understand what it <em>doesn&#x27;t</em> catch - because a model can satisfy demographic parity while still being deeply unfair in other ways. See the Limitations section.</p>
 <hr>
 <h3 id="the-formal-definition">The Formal Definition</h3>
-<pre><code>P(Ŷ = 1 | Group = A) = P(Ŷ = 1 | Group = B)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Ŷ = 1 | Group = A) = P(Ŷ = 1 | Group = B)</code></pre>
 <p>The model&#x27;s positive prediction rate must be equal across groups. That&#x27;s it. The metric makes no claim about whether the predictions are correct - only that the <em>rate</em> of positive predictions is equalised.</p>
 <p>In practice, you rarely demand perfect equality. The EEOC&#x27;s <strong>four-fifths rule</strong> treats any selection rate below 80% of the highest group&#x27;s rate as evidence of adverse impact:</p>
-<pre><code>P(Ŷ = 1 | Group = B) / P(Ŷ = 1 | Group = A) ≥ 0.80</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Ŷ = 1 | Group = B) / P(Ŷ = 1 | Group = A) ≥ 0.80</code></pre>
 <p>A ratio below 0.80 triggers scrutiny. A ratio above 0.80 passes. The 80% threshold is a legal convention, not a mathematical optimum.</p>
 <hr>
 <h3 id="real-world-proof-hiring-bias">Real-World Proof: Hiring Bias</h3>
@@ -219,7 +219,7 @@
 <hr>
 <h3 id="detection-code">Detection Code</h3>
 <h4 id="measure-demographic-parity-gap">Measure demographic parity gap</h4>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 def demographic_parity_audit(df, prediction_col, group_col, positive_label=1):
     &quot;&quot;&quot;
@@ -254,7 +254,7 @@ def demographic_parity_audit(df, prediction_col, group_col, positive_label=1):
 # df[&#x27;predicted_hire&#x27;] = model.predict(X_test)  # substitute your trained model and its X_test
 # demographic_parity_audit(df, prediction_col=&#x27;predicted_hire&#x27;, group_col=&#x27;Gender&#x27;)</code></pre>
 <h4 id="compute-across-multiple-protected-attributes-at-once">Compute across multiple protected attributes at once</h4>
-<pre><code class="language-python">def multi_group_parity_audit(y_pred, groups_df, positive_label=1):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def multi_group_parity_audit(y_pred, groups_df, positive_label=1):
     &quot;&quot;&quot;
     Run demographic parity audit for every column in groups_df simultaneously.
     Useful when auditing for race, gender, and age in a single pass.
@@ -282,7 +282,7 @@ def demographic_parity_audit(df, prediction_col, group_col, positive_label=1):
 #     status = &#x27;✓&#x27; if result[&#x27;passes_eeoc&#x27;] else &#x27;✗&#x27;
 #     print(f&quot;{attr}: gap={result[&#x27;gap&#x27;]:.4f}, 4/5 ratio={result[&#x27;four_fifths_ratio&#x27;]:.4f} {status}&quot;)</code></pre>
 <h4 id="visualise-the-gap">Visualise the gap</h4>
-<pre><code class="language-python">import matplotlib.pyplot as plt
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import matplotlib.pyplot as plt
 
 def plot_parity_gap(rates_df, group_col, rate_col=&#x27;positive_rate&#x27;, title=&#x27;Demographic Parity&#x27;):
     fig, ax = plt.subplots(figsize=(8, 4))

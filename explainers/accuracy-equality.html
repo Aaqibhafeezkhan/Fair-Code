@@ -203,7 +203,7 @@
 <p>A 3.5-point accuracy gap (African-American defendants scored slightly <em>less</em> accurately overall) looks like a minor, borderline-significant footnote. It sits right next to a 92.6-point Equalized Odds gap on the exact same model and dataset - <code>faircode/metrics.py</code>&#x27;s own <code>note</code> field for that row reads <code>driven_by_tpr_gap</code>, meaning the true-positive-rate gap between the two groups is enormous. Reporting only Accuracy Equality here would describe this model as nearly fair. It is not: African-American defendants who did not reoffend were flagged as high-risk at a far higher rate than Caucasian defendants who did not reoffend, a disparity Accuracy Equality&#x27;s single blended number cannot see because the two error types are canceling each other out in the total.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Computes Accuracy Equality alongside Equalized Odds so a hidden gap can&#x27;t cancel out unnoticed.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

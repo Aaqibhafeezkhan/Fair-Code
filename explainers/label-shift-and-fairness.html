@@ -198,12 +198,12 @@
 <p>So a monitor that sees a parity gap or a precision gap move after a change in base rate does not have evidence that the model got worse. The fairness metric that looks alarming may simply be tracking the base rate. See <a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a> for why metrics that mix classes cannot all hold when base rates differ.</p>
 <h3 id="core-concept-reweight-the-classes-inside-one-group">Core Concept: Reweight the Classes Inside One Group</h3>
 <p>You can see the effect without waiting for new data. Give each positive row in a group the weight <code>new rate / old rate</code> and each negative row <code>(1 - new rate) / (1 - old rate)</code>, which changes the group&#x27;s base rate to the target while keeping the features-given-label distribution. Recompute the metrics on the weighted rows.</p>
-<pre><code>TPR, FPR           unchanged (they are within-class)
+<pre tabindex="0" aria-label="Scrollable code block"><code>TPR, FPR           unchanged (they are within-class)
 selection rate     moves with the base rate
 precision (PPV)    moves with the base rate</code></pre>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: the S2 logistic regression and its test rows. Women&#x27;s base rate for &quot;income above $50K&quot; is 0.111 in the data and men&#x27;s is 0.305. We change women&#x27;s base rate from 0.05 to 0.40, leaving men alone, and recompute four group gaps.</p>
-<pre><code>women&#x27;s base rate in the test rows 0.111; men&#x27;s 0.305
+<pre tabindex="0" aria-label="Scrollable code block"><code>women&#x27;s base rate in the test rows 0.111; men&#x27;s 0.305
 
  women base rate  parity gap   TPR gap   FPR gap  precision gap
            0.050     -0.0683   +0.0181   -0.0004        -0.4443
@@ -215,7 +215,7 @@ precision (PPV)    moves with the base rate</code></pre>
 <p>So a model audited on a parity or predictive-parity criterion can fail it after a pure label shift, and one audited on equal opportunity or equalized odds cannot.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/label-shift-and-fairness.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model
 

@@ -201,7 +201,7 @@
 <p>Simpson&#x27;s Paradox does not tell you which view is correct. It only tells you that the aggregate and the disaggregated pictures disagree, which means the aggregate number alone cannot be trusted as a fairness finding without knowing why they disagree.</p>
 <h3 id="how-it-works">How It Works</h3>
 <p>Let <code>Y</code> be a binary outcome (1 = the favorable outcome), <code>G</code> a protected group, and <code>S</code> a stratifying variable with levels <code>s</code>. The aggregate rate for a group is a weighted average of its within-stratum rates, where the weights are how that group is distributed across strata:</p>
-<pre><code>P(Y = 1 | G = g) = sum over s of  P(S = s | G = g) * P(Y = 1 | G = g, S = s)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Y = 1 | G = g) = sum over s of  P(S = s | G = g) * P(Y = 1 | G = g, S = s)</code></pre>
 <p>Two things vary between groups in that sum: the within-stratum rates <code>P(Y = 1 | G = g, S = s)</code>, and the stratum weights <code>P(S = s | G = g)</code>. The aggregate gap between two groups blends both. If the weights differ enough, the weight term can dominate and the aggregate gap stops reflecting the within-stratum rates at all.</p>
 <h4 id="a-minimal-reversal">A minimal reversal</h4>
 <p>Consider a hiring screen with two departments. Within each department the callback rate for Group A is higher than for Group B:</p>
@@ -216,7 +216,7 @@
 <p>Collapsed to just married vs not-married, the gap shrinks from +19.6 pp to <strong>+3.0 pp</strong> (married) and <strong>+3.9 pp</strong> (not married). And inside <code>Married-civ-spouse</code> - nearly half the data - the sign <strong>reverses</strong>: women are 0.9 points ahead.</p>
 <p>The mechanism is the stratum weights. Women are 52% of the &quot;not married&quot; pool, which has an overall high-income rate of 6.5%, but only 12% of the &quot;married&quot; pool, which has an overall rate of 43.7%. The aggregate comparison places most men in the high-earning stratum and splits women toward the low-earning one, so roughly 16 of the 19.6 aggregate points come from <em>where</em> each group sits, not from a within-stratum difference in outcome rates.</p>
 <p>Whether <code>marital.status</code> is a legitimate thing to condition on here is a separate, normative question - see <a href="conditional-demographic-parity.html">Conditional Demographic Parity</a> and the Limitations section below. The point Simpson&#x27;s Paradox makes is narrower: the +19.6 pp aggregate figure, reported on its own, describes the dataset&#x27;s composition at least as much as it describes any disparity in outcomes.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 df = pd.read_csv(&quot;Benefits Denial/adult.csv&quot;)
 df[&quot;high_income&quot;] = (df[&quot;income&quot;] == &quot;&gt;50K&quot;).astype(int)
@@ -236,7 +236,7 @@ print(&quot;married-civ-spouse:&quot;, sex_gap(married))
 # (0.4458, 0.4550, -0.0092)  &lt;- sign reversed</code></pre>
 <h3 id="detection-code">Detection Code</h3>
 <p>The following module compares a rate gap computed in aggregate against the same gap computed within each stratum of a chosen variable, and reports whether the aggregate sign matches the strata, whether it is inflated, or whether it reverses.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

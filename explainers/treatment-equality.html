@@ -203,7 +203,7 @@
 <p>(Positive-rate check against the frozen <code>demographic_parity_diff</code> for this exact model/split: (975+575)/1,788 = 86.7% vs. (2+15)/1,466 = 1.2%, an 85.5-point gap - matching <code>paper/results-frozen/results_fairness.csv</code> exactly, confirming this is the same baseline run.)</p>
 <p>The two groups&#x27; <em>individual</em> false-negative and false-positive counts are the same kind of numbers Equalized Odds already compares - what Treatment Equality adds is the ratio between them, and here it is extreme in both directions at once. This baseline model predicts &quot;high risk&quot; for the overwhelming majority of African-American defendants and almost none of the Caucasian defendants (the 85.5-point demographic parity gap above), so its errors on each group are lopsided in opposite ways: African-American defendants&#x27; errors are almost entirely false positives (FN:FP of 0.13 - the model rarely clears someone it should have flagged, but very often flags someone it shouldn&#x27;t), while Caucasian defendants&#x27; errors are almost entirely false negatives (FN:FP of 31.0 - the model almost never wrongly flags anyone, but very often wrongly clears someone). A 0.13-vs-31.0 ratio gap is not a subtle statistical artifact; it is the direct arithmetic consequence of a model that essentially never predicts &quot;high risk&quot; for one group and reports it as two completely different kinds of unreliable, one per group.</p>
 <h3 id="detection-code">Detection Code</h3>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

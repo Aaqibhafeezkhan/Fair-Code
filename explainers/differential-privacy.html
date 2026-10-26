@@ -201,7 +201,7 @@
 <p>The result, documented by Bagdasaryan, Poursaeed and Shmatikov (2019), is that the accuracy drop from adding DP is &quot;not borne equally&quot;: it is substantially larger for underrepresented classes and subgroups, and <strong>if the original model was already unfair, DP makes it more unfair</strong>. This is the same shape as <a href="fairness-accuracy-tradeoff.html">the fairness-accuracy trade-off</a> - closing one gap opens another - except the axis being traded against fairness is privacy, not overall accuracy.</p>
 <h3 id="how-it-works">How It Works</h3>
 <p>DP-SGD replaces the plain gradient step with:</p>
-<pre><code>1. compute per-example gradients g_i for the minibatch
+<pre tabindex="0" aria-label="Scrollable code block"><code>1. compute per-example gradients g_i for the minibatch
 2. clip:   g_i  &lt;-  g_i / max(1, ||g_i|| / C)          # cap the L2 norm at C
 3. sum, then add noise:   g  &lt;-  (sum_i g_i  +  N(0, sigma^2 C^2 I)) / B
 4. step:   w  &lt;-  w - lr * g</code></pre>
@@ -216,7 +216,7 @@
 <p>The relevance to this repo: every audit here is built around a protected group that is, in its dataset, the smaller or worse-served one (younger applicants, minority defendants, one insurance tier). Those are precisely the groups DP-SGD costs the most accuracy. &quot;We added a privacy guarantee&quot; is therefore not evidence of &quot;we did not make the fairness gap worse&quot; - it needs its own per-group check.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p>The literature finding is about deep models on skewed image and text data. Does it show up in one of this repo&#x27;s audits? <a href="../index.html#project-benefits">Benefits Denial</a>: a logistic regression on the audit&#x27;s five core columns (sex and race are not inputs), trained with the DP-SGD recipe above, with the benchmark&#x27;s split. The noise multiplier is the only thing that changes; no privacy accountant is run, so no epsilon is claimed for any row.</p>
-<pre><code class="language-python"># runnable
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># runnable
 import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 
@@ -264,7 +264,7 @@ for sigma in (0, 8, 32, 64, 128, 256):
     print(f&quot;{sigma:17.1f} {mean[&#x27;overall&#x27;]:8.3f} {mean[&#x27;men&#x27;]:7.3f} {mean[&#x27;women&#x27;]:7.3f} {mean[&#x27;women_55plus&#x27;]:10.3f} {mean[&#x27;gap&#x27;]:+11.4f}&quot;)
 print(f&quot;\ntest rows: {(~women[test]).sum()} men, {women[test].sum()} women, {(women &amp; age55)[test].sum()} women aged 55 or over&quot;)</code></pre>
 <p>Output (mean of 5 seeds):</p>
-<pre><code> noise multiplier  overall     men   women  women 55+  parity gap   (mean of 5 seeds)
+<pre tabindex="0" aria-label="Scrollable code block"><code> noise multiplier  overall     men   women  women 55+  parity gap   (mean of 5 seeds)
               0.0    0.811   0.767   0.900      0.896     -0.0531
               8.0    0.810   0.766   0.900      0.899     -0.0505
              32.0    0.805   0.758   0.898      0.899     -0.0480
@@ -278,7 +278,7 @@ test rows: 4360 men, 2153 women, 294 women aged 55 or over</code></pre>
 <p>So here the disparate effect reported by Bagdasaryan and colleagues is not visible for sex. That is a statement about a small linear model on a large tabular audit, not about deep models: it is the regime where the noise is small relative to the signal, and the minority is not a distinct sub-population that the model needs separate parameters for. It is also why the synthetic example below, where the minority follows a different rule, is built the way it is.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>A self-contained, dependency-light DP-SGD toy: per-example gradient clipping plus Gaussian noise on a logistic model, with a per-group accuracy readout, run across a sweep of noise multipliers. It is illustrative - it shows the <em>mechanism</em>, not a calibrated epsilon.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 
 
 def make_imbalanced_data(n=6000, minority_frac=0.10, seed=0):

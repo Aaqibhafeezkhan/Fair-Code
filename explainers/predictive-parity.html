@@ -200,7 +200,7 @@
 <h3 id="predictive-parity-vs-equalized-odds">Predictive Parity vs Equalized Odds</h3>
 <p>Predictive parity is a <strong>sufficiency</strong> metric: it conditions on the <em>prediction</em> and asks whether that prediction means the same thing across groups. Equalized Odds (see <a href="equalized-odds.html">explainers/equalized-odds.md</a>) is a <strong>separation</strong> metric: it conditions on the <em>true outcome</em> and asks whether error rates match.</p>
 <div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Metric</th><th scope="col">Conditions on</th><th scope="col">Question it asks</th></tr></thead><tbody><tr><td>Demographic Parity</td><td>nothing (prior)</td><td>Are positive predictions handed out at the same rate?</td></tr><tr><td>Equalized Odds</td><td>true label</td><td>Given the actual outcome, are error rates equal?</td></tr><tr><td>Predictive Parity</td><td>predicted label</td><td>Given a positive prediction, is it equally trustworthy?</td></tr></tbody></table></div>
-<pre><code>PPV(group) = TP(group) / (TP(group) + FP(group))
+<pre tabindex="0" aria-label="Scrollable code block"><code>PPV(group) = TP(group) / (TP(group) + FP(group))
 
 Predictive Parity holds when:  PPV(group a) ≈ PPV(group b)</code></pre>
 <p>Chouldechova (2017) proved the mechanism algebraically: if predictive parity holds but the base rate of the outcome differs between two groups, the false positive rate and false negative rate cannot be equal across those same groups. It is not a modeling flaw. It is an identity that follows directly from the definitions once base rates diverge.</p>
@@ -208,7 +208,7 @@ Predictive Parity holds when:  PPV(group a) ≈ PPV(group b)</code></pre>
 <p>The <a href="../index.html#project-compas">COMPAS</a> audit in this repo uses the same ProPublica recidivism dataset at the center of the 2016 &quot;Machine Bias&quot; investigation, where race is the protected attribute - but this repo&#x27;s <code>COMPAS/compas-scores-raw.csv</code> has no independent two-year re-offense outcome to check predictive parity against (per <code>COMPAS/audit.yaml</code>, its target is <code>ScoreText</code>, COMPAS&#x27;s own risk label). The real-world 2016 controversy - which <em>is</em> about actual two-year re-offense, from ProPublica&#x27;s own separate analysis file - unfolded exactly as follows:</p>
 <p>ProPublica and Northpointe (COMPAS&#x27;s vendor) checked different fairness criteria on that dataset and both were internally correct. ProPublica&#x27;s reading, an error-rate check, found the false positive rate for Black defendants was roughly double that of white defendants: Black defendants who did not reoffend were flagged high-risk far more often. Northpointe&#x27;s reading, a predictive-parity check, found PPV was close across race: a &quot;high risk&quot; label corresponded to actual reoffending at a similar rate for both groups. Northpointe presented that second result as proof the tool was not biased.</p>
 <p>The same mechanism is directly reproducible in this repo on <a href="../index.html#project-credit">German Credit Lending</a>, where <code>class</code> (good/bad credit history) is a real recorded label a model can actually be scored against:</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -241,14 +241,14 @@ ppv_by_age, gap = predictive_parity_gap(
     predictions, y_true=&quot;target&quot;, y_pred=&quot;is_good_credit_pred&quot;, group_col=&quot;is_young&quot;
 )</code></pre>
 <p><strong>Actual output</strong> (<code>is_young</code>: 1 = under 30, 0 = 30+):</p>
-<pre><code>PPV by group:
+<pre tabindex="0" aria-label="Scrollable code block"><code>PPV by group:
   0: 78.76%
   1: 73.08%
 Predictive Parity Gap: 5.68%</code></pre>
 <p>A real, if modest, predictive-parity gap - a &quot;good credit&quot; flag is a little more trustworthy for older applicants than younger ones. The COMPAS case above is the more dramatic historical illustration of the same trade-off (PPV close, FPR far apart), just not one this repo&#x27;s own file can recompute end to end.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Compute Positive Predictive Value per group, then pair it with a base-rate check, since a small PPV gap next to a large base-rate gap is the signature Chouldechova identified.</p>
-<pre><code class="language-python"># runnable
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># runnable
 import pandas as pd
 
 

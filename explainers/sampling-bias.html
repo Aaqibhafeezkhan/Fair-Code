@@ -213,7 +213,7 @@
 <hr>
 <h3 id="simulating-sampling-bias">Simulating Sampling Bias</h3>
 <p>The following example simulates what happens when you train on an unbalanced sample and test on a balanced one. This mirrors the real-world failure mode exactly.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
@@ -267,7 +267,7 @@ print(f&quot;Positive rate gap: {abs(results.loc[&#x27;A&#x27;,&#x27;positive_ra
 <p><strong>What you&#x27;ll see:</strong> both groups end up with near-perfect, nearly identical accuracy (~0.998-1.000) - accuracy alone hides the problem entirely. The real distortion shows up in the positive rate: Group B, the undersampled group, gets predicted &quot;hired&quot; noticeably less often than Group A (about an 8-point gap), despite having nearly identical underlying skill scores. The bias is entirely a function of who was in the training data, not who deserves to be hired - and it is invisible to an accuracy-only check.</p>
 <hr>
 <h3 id="how-to-detect-sampling-bias">How to Detect Sampling Bias</h3>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from scipy.stats import chi2_contingency
 
 def audit_representation(df, group_col, expected_proportions=None):
@@ -314,7 +314,7 @@ print(result)
 <p>Detecting sampling bias is step one. Fixing it requires one of the following strategies, chosen based on how severe the imbalance is and how much data you can realistically collect:</p>
 <p><strong>1. Collect more data</strong> - the cleanest fix. Go get more samples from underrepresented groups before training. Not always possible, but always preferable when it is.</p>
 <p><strong>2. Oversample</strong> - repeat underrepresented examples during training so the model sees them more often. Simple and effective for moderate imbalances.</p>
-<pre><code class="language-python">from sklearn.utils import resample
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.utils import resample
 
 minority = train[train[&#x27;group&#x27;] == &#x27;B&#x27;]
 majority = train[train[&#x27;group&#x27;] == &#x27;A&#x27;]
@@ -322,12 +322,12 @@ majority = train[train[&#x27;group&#x27;] == &#x27;A&#x27;]
 minority_upsampled = resample(minority, replace=True, n_samples=len(majority), random_state=42)
 balanced_train = pd.concat([majority, minority_upsampled])</code></pre>
 <p><strong>3. Apply sample weights</strong> - tell the model to penalize errors on underrepresented groups more heavily. Works well when you can&#x27;t change the dataset itself.</p>
-<pre><code class="language-python">from sklearn.utils.class_weight import compute_sample_weight
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.utils.class_weight import compute_sample_weight
 
 weights = compute_sample_weight(&#x27;balanced&#x27;, y=y_train)
 clf.fit(X_train, y_train, sample_weight=weights)</code></pre>
 <p><strong>4. Stratified splits</strong> - always split train/test data in a way that preserves group proportions. Prevents the test set itself from being biased.</p>
-<pre><code class="language-python">from sklearn.model_selection import train_test_split
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=df[&#x27;group&#x27;], random_state=42

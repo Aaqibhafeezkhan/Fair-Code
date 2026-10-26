@@ -202,7 +202,7 @@
 <p>The sweep shows how far one side can be helped before the other starts to pay.</p>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p>The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit with the baseline logistic regression, which uses <code>Gender</code>. The 23,062 test candidates are ranked, the top 1,000 are shown, and 36.5% of the pool is female. The shift column is the constant added to the female candidates&#x27; predicted hire probability before sorting.</p>
-<pre><code>AI Fair Recruitment, Gender used by the ranker: 23062 candidates, top 1000 shown, 0.365 of the pool female
+<pre tabindex="0" aria-label="Scrollable code block"><code>AI Fair Recruitment, Gender used by the ranker: 23062 candidates, top 1000 shown, 0.365 of the pool female
   shift | female share of top-1000 | exposure per unit of hire rate, female/male | nDCG@1000 | hired in top-1000
    0.00 |                  0.070 |                                      0.116 |   0.562 | 568
    0.01 |                  0.129 |                                      0.229 |   0.566 | 572
@@ -220,7 +220,7 @@
 <p>The lesson is the shape, not the numbers: a stretch where the sides do not conflict (the baseline ranker was unfair <em>and</em> worse for the searcher), then a point past which they do. A platform needs both curves to see where it is.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/two-sided-fairness.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit
 from faircode.models import build_model
 

@@ -198,11 +198,11 @@
 <p>Reweighing needs neither. It is one line before <code>fit</code>: pass <code>sample_weight</code>. Every estimator that accepts weights can use it, and the data itself is not edited, which is why it is popular when you cannot change the model or may not alter records.</p>
 <h3 id="core-concept-weights-from-expected-over-observed">Core Concept: Weights From Expected Over Observed</h3>
 <p>For group <code>s</code> and label <code>y</code>, the weight is the count you would expect if the two were independent divided by the count you actually see:</p>
-<pre><code>weight(s, y) = P(s) * P(y) / P(s, y)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>weight(s, y) = P(s) * P(y) / P(s, y)</code></pre>
 <p>A cell that is over-represented gets weight below 1. An under-represented cell gets weight above 1. In the weighted data the positive rate is the same in both groups, so a model that only learns from the labels has no gap to copy. The method is from Kamiran and Calders (2012).</p>
 <h3 id="concrete-example-german-credit-lending">Concrete Example: German Credit Lending</h3>
 <p>The <a href="../index.html#project-credit">German Credit Lending</a> audit: positive is a good credit rating, the disadvantaged group is age under 30, logistic regression, core features only, benchmark split.</p>
-<pre><code>German Credit Lending - age
+<pre tabindex="0" aria-label="Scrollable code block"><code>German Credit Lending - age
   weights per (group, label): {(0, 0): 1.176, (0, 1): 0.94, (1, 0): 0.802, (1, 1): 1.119}
   baseline   accuracy 0.700 | positive rate disadvantaged 0.710 advantaged 0.802 | parity gap -0.0914
   reweighing accuracy 0.695 | positive rate disadvantaged 0.826 advantaged 0.809 | parity gap +0.0169
@@ -216,7 +216,7 @@ Benefits Denial - sex
 <p>The second block in the output is the same method on <a href="../index.html#project-benefits">Benefits Denial</a>, sex as the attribute. The weights are doing something (women with high income get 2.206x weight), but the parity gap does not move: -0.0509 before, -0.0523 after. The features still separate the groups, and the model keeps using them.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/reweighing.py</code>; that file is generated from the block below). <code>load_audit</code> gives the same loader, encoding and train/test split the benchmark harness uses, so the baseline row matches <code>results/</code>.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model
 

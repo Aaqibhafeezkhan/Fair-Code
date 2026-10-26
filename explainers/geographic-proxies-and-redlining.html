@@ -200,7 +200,7 @@
 <ol><li><strong>How much of the attribute does it reveal?</strong> Predict the protected attribute from the location alone, on held-out rows. An AUC well above 0.5 means the location is a proxy. Compare with the model&#x27;s other features to see whether it is the main route.</li><li><strong>What does it do to the gap?</strong> Train the decision model with and without the location and compare the parity gap and accuracy. A strong proxy does not guarantee a wider gap: the location may also carry legitimate signal, and its net effect on decisions can go either way.</li></ol>
 <h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
 <p><a href="../index.html#project-tenant">Tenant Screening</a> has <code>Residence_PUMA</code>, a Census public-use microdata area, for each person. It is not one of the audit&#x27;s features. The group is Black applicants, the model is logistic regression on the core features, and the split is the benchmark&#x27;s.</p>
-<pre><code>25 areas, share of Black residents by area runs from 0.15 to 0.89
+<pre tabindex="0" aria-label="Scrollable code block"><code>25 areas, share of Black residents by area runs from 0.15 to 0.89
 race recovered from the area alone: AUC 0.719 (0.5 is chance)
 race recovered from the model&#x27;s own features: AUC 0.655
 core features                      accuracy 0.639 | parity gap +0.1136
@@ -209,7 +209,7 @@ core features + area               accuracy 0.639 | parity gap +0.0812</code></p
 <p>Then the surprise: adding the area as one-hot columns to the recidivism model leaves accuracy unchanged at 0.639 and moves the parity gap from +0.1136 to +0.0812. The proxy is strong and the gap went down. The area carries information about recidivism that the core features were encoding through other, race-correlated columns, and giving the model the area directly changed which columns it leaned on. The lesson is not that location is safe. It is that you cannot read the effect of a proxy from how strong it is, so you have to measure both.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/geographic-proxies-and-redlining.py</code>; that file is generated from the block below). <code>data.df</code> holds the raw rows, so a column the harness does not encode (the area) can still be read.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score

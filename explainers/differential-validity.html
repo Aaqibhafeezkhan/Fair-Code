@@ -201,7 +201,7 @@
 <p>Here the outcome is the audit&#x27;s hiring decision, which is a decision, not a measure of job performance. That makes the second check a measure of how the decision treats equal scores, not of whether the score is a good predictor of work.</p>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p><a href="../index.html#project-hiring">AI Fair Recruitment</a>: 115,309 candidates, women against men, with the audit&#x27;s hiring decision as the outcome and four score columns.</p>
-<pre><code>does each score predict being hired equally well for women and for men? (AUC of the score alone)
+<pre tabindex="0" aria-label="Scrollable code block"><code>does each score predict being hired equally well for women and for men? (AUC of the score alone)
   Technical_Test_Score   men 0.743 | women 0.748 (95% interval 0.743-0.753)
   Interview_Score        men 0.746 | women 0.747 (95% interval 0.742-0.752)
   Skill_Score            men 0.744 | women 0.747 (95% interval 0.742-0.752)
@@ -219,7 +219,7 @@ one model for everyone (no Gender input), test rows: predicted hire probability 
 <p>So the scores are fine as predictors and the decision is not consistent with them across groups. The outcome here is the audit&#x27;s historical hiring decision, so this is evidence about the decision, not about job performance.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/differential-validity.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

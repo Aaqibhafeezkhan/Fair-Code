@@ -43,6 +43,39 @@ def test_requirements_lock_versions_satisfy_pyproject_minimums():
         )
 
 
+def test_every_project_dependency_is_locked_or_documented_as_excluded():
+    root = Path(__file__).resolve().parents[1]
+    pyproject_text = (root / "pyproject.toml").read_text(encoding="utf-8")
+    lock_text = (root / "requirements-lock.txt").read_text(encoding="utf-8")
+
+    core_section = re.search(r"(?ms)^\[project\]\s*(.*?)(?=^\[project\.optional-dependencies\])", pyproject_text)
+    optional_section = re.search(r"(?ms)^\[project\.optional-dependencies\]\s*(.*?)(?=^\[)", pyproject_text)
+    assert core_section is not None and optional_section is not None
+    dependency_arrays = re.findall(
+        r"(?ms)^\s*dependencies\s*=\s*\[(.*?)^\s*\]", core_section.group(1)
+    )
+    dependency_arrays.extend(
+        re.findall(r"(?ms)^\s*[A-Za-z0-9_-]+\s*=\s*\[(.*?)\]", optional_section.group(1))
+    )
+    declared = set()
+    for array in dependency_arrays:
+        for requirement in re.findall(r'[\"\']([^\"\']+)[\"\']', array):
+            match = re.match(r"([A-Za-z0-9_.-]+)", requirement)
+            assert match is not None, f"could not parse dependency requirement: {requirement}"
+            declared.add(normalize_dependency(match.group(1)))
+    locked = {
+        normalize_dependency(name)
+        for name in re.findall(r"^([A-Za-z0-9_.-]+)==", lock_text, re.MULTILINE)
+    }
+    excluded = {
+        normalize_dependency(name)
+        for name in re.findall(r"^#   ([A-Za-z0-9_.-]+) - .+", lock_text, re.MULTILINE)
+    }
+
+    assert declared - locked == excluded
+    assert excluded, "document intentional exclusions in requirements-lock.txt"
+
+
 def version_tuple(version):
     return tuple(int(part) for part in version.split("."))
 

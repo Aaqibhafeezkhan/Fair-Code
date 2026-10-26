@@ -63,6 +63,30 @@ GLOBAL_SEED = 42
 
 def _load_dataset(manifest):
     df = pd.read_csv(manifest.dataset_path, low_memory=False)
+    required_columns = [
+        manifest.target.column,
+        *(row_filter.column for row_filter in manifest.row_filters),
+        *(pa.column for pa in manifest.protected_attributes),
+        *manifest.core_features,
+        *manifest.proxy_features,
+    ]
+    missing_columns = list(
+        dict.fromkeys(column for column in required_columns if column not in df.columns)
+    )
+    if missing_columns:
+        available = ", ".join(repr(column) for column in df.columns)
+        details = []
+        for column in missing_columns:
+            detail = repr(column)
+            suggestion = difflib.get_close_matches(column, df.columns, n=1, cutoff=0.6)
+            if suggestion:
+                detail += f" (did you mean {suggestion[0]!r}?)"
+            details.append(detail)
+        raise ValueError(
+            f"dataset {manifest.dataset_path.name!r} is missing column(s): "
+            f"{', '.join(details)}. Available columns: {available}."
+        )
+
     for row_filter in manifest.row_filters:
         df = row_filter.apply(df)
     df = df.reset_index(drop=True)

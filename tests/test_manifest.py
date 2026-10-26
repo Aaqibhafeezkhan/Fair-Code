@@ -78,7 +78,7 @@ def test_missing_required_target_raises(tmp_path):
     data = _minimal_manifest_dict()
     del data["target"]
     path = _write_manifest(tmp_path, data)
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="manifest is missing required .*target.*section; add it to audit.yaml"):
         load_manifest(path)
 
 
@@ -86,7 +86,15 @@ def test_missing_required_name_raises(tmp_path):
     data = _minimal_manifest_dict()
     del data["name"]
     path = _write_manifest(tmp_path, data)
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="manifest is missing required name field; add it to audit.yaml"):
+        load_manifest(path)
+
+
+def test_missing_dataset_path_has_an_actionable_error(tmp_path):
+    data = _minimal_manifest_dict(dataset={})
+    path = _write_manifest(tmp_path, data)
+
+    with pytest.raises(ValueError, match="dataset section is missing required 'path'; add it to audit.yaml"):
         load_manifest(path)
 
 

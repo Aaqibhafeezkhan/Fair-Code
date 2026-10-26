@@ -201,10 +201,27 @@ class Manifest:
     def from_dict(cls, data: dict, manifest_path: Path) -> "Manifest":
         audit_dir = manifest_path.parent
         row_filters = [RowFilter(**rf) for rf in data.get("row_filters", [])]
+        if "target" not in data:
+            raise ValueError("manifest is missing required 'target' section; add it to audit.yaml")
         target = TargetSpec(**data["target"])
+        if "protected_attributes" not in data:
+            raise ValueError("manifest is missing required 'protected_attributes' list; add it to audit.yaml")
         protected = [ProtectedAttribute(**pa) for pa in data["protected_attributes"]]
         if not protected:
             raise ValueError(f"{manifest_path}: protected_attributes must have at least one entry")
+        required = {
+            "name": "name field",
+            "dataset": "'dataset' section",
+            "core_features": "'core_features' list",
+        }
+        missing = [description for key, description in required.items() if key not in data]
+        if missing:
+            raise ValueError(
+                "manifest is missing required " + ", ".join(missing)
+                + f"; add {'them' if len(missing) > 1 else 'it'} to audit.yaml"
+            )
+        if not isinstance(data["dataset"], dict) or "path" not in data["dataset"]:
+            raise ValueError("manifest dataset section is missing required 'path'; add it to audit.yaml")
         return cls(
             name=data["name"],
             title=data.get("title", data["name"]),

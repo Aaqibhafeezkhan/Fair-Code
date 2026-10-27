@@ -16,7 +16,6 @@ alive = np.ones(len(df), dtype=bool)
 def ratio_with_interval(passed, reached, n_boot=500):
     """Women's selection rate divided by everyone else's, among the people who reached the stage, with a bootstrap interval."""
     w, m = reached & (women == 1), reached & (women == 0)
-    rate = lambda mask, rows: passed[rows][mask[rows]].mean()
     point = passed[w].mean() / passed[m].mean()
     idx_w, idx_m = np.flatnonzero(w), np.flatnonzero(m)
     boots = [passed[rng.choice(idx_w, len(idx_w))].mean() / passed[rng.choice(idx_m, len(idx_m))].mean() for _ in range(n_boot)]

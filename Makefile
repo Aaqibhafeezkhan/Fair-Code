@@ -55,7 +55,7 @@ lint:  ## Enforce the em-dash-free rule + check for broken doc links + issue num
 	$(PY) scripts/check_explainer_count.py
 	$(PY) scripts/check_explainer_structure.py
 	$(PY) scripts/check_traction.py
-	ruff check faircode scripts tests
+	ruff check faircode scripts tests explainers/code
 
 audits:  ## Run every audit's unfair.py/fair.py + the CLI smoke tests (mirrors audits.yml's required run-audits job, plus profiler/benchmark-harness's CLI steps)
 	@set -e; \

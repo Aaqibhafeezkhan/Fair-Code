@@ -1,5 +1,4 @@
 # Generated from explainers/feature-importance-by-group.md by scripts/build_explainers.py. Edit the markdown, not this file.
-import numpy as np
 from sklearn.inspection import permutation_importance
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

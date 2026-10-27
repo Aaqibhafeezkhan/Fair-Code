@@ -46,7 +46,6 @@ Part of the gap is mechanical. Women are a minority of the positive class in thi
 Run from the repo root (`PYTHONPATH=. python3 explainers/code/feature-importance-by-group.py`; that file is generated from the block below).
 
 ```python
-import numpy as np
 from sklearn.inspection import permutation_importance
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

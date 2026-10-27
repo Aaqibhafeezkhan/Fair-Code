@@ -87,7 +87,7 @@ def report(score, name):
     print(f"{name}\n  female share of the top {K}: {female[top].mean():.3f} (pool {female.mean():.3f})"
           f"\n  exposure ratio female/male, whole list: {whole[female == 1].mean() / whole[female == 0].mean():.3f}"
           f"\n  exposure ratio female/male, top {K} only: {cut[female == 1].mean() / cut[female == 0].mean():.3f}"
-          f"\n  exposure per unit of hire rate, female/male: "
+          "\n  exposure per unit of hire rate, female/male: "
           f"{(cut[female == 1].mean() / hired[female == 1].mean()) / (cut[female == 0].mean() / hired[female == 0].mean()):.3f}")
 
 report(scores(X_biased), "baseline (Gender is a feature)")

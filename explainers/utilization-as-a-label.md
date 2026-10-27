@@ -58,7 +58,6 @@ That is a finding. It says that for this label the Obermeyer mechanism is not vi
 Run from the repo root (`PYTHONPATH=. python3 explainers/code/utilization-as-a-label.py`; that file is generated from the block below). `data.df` holds the raw rows, so columns the harness does not encode can still be used to define strata.
 
 ```python
-import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

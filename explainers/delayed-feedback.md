@@ -59,7 +59,6 @@ def monitored_gap(mean_delay_group, mean_delay_others, today=90):
     delay = np.minimum(delay, 29.9)
     seen_positive = (y == 1) & (discharge + delay <= today)
     window_closed = discharge + 30 <= today
-    known_negative = (y == 0) & window_closed
     # a naive monitor counts every discharged patient and treats every outcome it has not seen as "no"
     naive = {g: seen_positive[group == g].mean() for g in (True, False)}
     # a careful monitor only counts patients whose 30-day window is closed

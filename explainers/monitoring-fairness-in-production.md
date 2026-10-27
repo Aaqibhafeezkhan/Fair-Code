@@ -90,7 +90,7 @@ def batches_until_alert(batch, window, drift, drift_at=20, n_batches=60, z=3):
             return b - drift_at + 1 if b >= drift_at else -1       # -1 = a false alarm before the drift
     return None
 
-print(f"\nalert rule: the gap over the last W batches is more than 3 standard errors from the launch value")
+print("\nalert rule: the gap over the last W batches is more than 3 standard errors from the launch value")
 print(f"{'batch size':>10} {'window':>7} {'drift':>6} {'median batches to alert':>25} {'never alerted':>14} {'false alarms before the drift':>31}")
 for batch, window in ((200, 3), (500, 3), (1000, 3), (2000, 3), (1000, 1), (1000, 6)):
     for drift in (0.03, 0.06):

@@ -50,7 +50,6 @@ The overall reading: on this data a forest generalizes to a held-out group about
 Run from the repo root (`PYTHONPATH=. python3 explainers/code/leave-one-group-out-evaluation.py`; that file is generated from the block below).
 
 ```python
-import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

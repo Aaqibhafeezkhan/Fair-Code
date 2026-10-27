@@ -15,7 +15,7 @@ repos:
 
       - id: ruff
         name: ruff (unused imports, undefined names, redefinitions)
-        entry: ruff check faircode scripts tests
+        entry: ruff check faircode scripts tests explainers/code
         language: system
         pass_filenames: false
         always_run: true

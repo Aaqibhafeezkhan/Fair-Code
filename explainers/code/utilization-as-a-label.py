@@ -1,5 +1,4 @@
 # Generated from explainers/utilization-as-a-label.md by scripts/build_explainers.py. Edit the markdown, not this file.
-import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

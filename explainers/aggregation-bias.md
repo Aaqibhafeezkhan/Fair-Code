@@ -44,7 +44,6 @@ Two cautions. This model has only three features, so its absolute accuracy is lo
 Run from the repo root (`PYTHONPATH=. python3 explainers/code/aggregation-bias.py`; that file is generated from the block below).
 
 ```python
-import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

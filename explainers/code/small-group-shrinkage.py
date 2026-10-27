@@ -49,7 +49,7 @@ for _ in range(300):
     small_raw.append(np.sqrt(np.mean((raw[small] - truth[small]) ** 2))); small_shrunk.append(np.sqrt(np.mean((shrunk[small] - truth[small]) ** 2)))
     estimates.append((raw[worst], shrunk[worst]))
 
-print(f"\nerror (RMSE against the true cell accuracy) from a 600-row audit, averaged over 300 audits")
+print("\nerror (RMSE against the true cell accuracy) from a 600-row audit, averaged over 300 audits")
 print(f"  all {len(cells)} cells:        raw {np.mean(raw_err):.3f} | shrunk {np.mean(shrunk_err):.3f}")
 print(f"  the smallest {small.sum()} cells:   raw {np.mean(small_raw):.3f} | shrunk {np.mean(small_shrunk):.3f}")
 mean_raw, mean_shrunk = np.mean(estimates, axis=0)

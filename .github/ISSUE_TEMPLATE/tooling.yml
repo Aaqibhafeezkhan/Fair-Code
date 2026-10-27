@@ -1,0 +1,53 @@
+name: Tooling or docs request
+description: A script, CI, test or documentation change that is not an audit or explainer
+labels: ["tooling"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for scripts, CI, tests and docs. Name the file, say what is missing or wrong, and say how we will know it is done.
+
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The file or files the change is in.
+      placeholder: e.g. scripts/check_external_links.py
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-gap
+    attributes:
+      label: Current gap
+      description: What is missing or wrong today. Paste a command and its output if you can reproduce it.
+      placeholder: |
+        e.g. An ignored URL that is later removed from every document stays in the ignore list and nothing reports it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-approach
+    attributes:
+      label: Suggested approach
+      description: How you would fix it. Optional if you are not sure yet.
+      placeholder: e.g. Report ignored URLs that no checked file contains as stale ignore entries.
+    validations:
+      required: false
+
+  - type: textarea
+    id: done-when
+    attributes:
+      label: Done when
+      description: What has to be true for the issue to be closed, such as a passing test or a command's output.
+      placeholder: e.g. A test shows a stale entry listed, and the weekly issue mentions the count.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before you submit
+      options:
+        - label: My contribution is em-dash-free - I used hyphens ( - ) instead of em dashes in all files
+          required: true

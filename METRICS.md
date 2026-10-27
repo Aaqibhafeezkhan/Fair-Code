@@ -2,9 +2,9 @@
 
 # Fair Code - Metrics Tracker
 
-![Stars](https://img.shields.io/badge/Stars-53-brightgreen?style=flat-square&logo=github)
-![Contributors](https://img.shields.io/badge/Contributors-55-blue?style=flat-square)
-![Forks](https://img.shields.io/badge/Forks-64-orange?style=flat-square)
+![Stars](https://img.shields.io/badge/Stars-54-brightgreen?style=flat-square&logo=github)
+![Contributors](https://img.shields.io/badge/Contributors-58-blue?style=flat-square)
+![Forks](https://img.shields.io/badge/Forks-67-orange?style=flat-square)
 ![Watching](https://img.shields.io/badge/Watching-8-yellow?style=flat-square)
 ![Explainers](https://img.shields.io/badge/Explainers-114-blueviolet?style=flat-square)
 ![Countries](https://img.shields.io/badge/Countries-20-informational?style=flat-square)
@@ -48,6 +48,7 @@ Weekly snapshot of project health. Updated every Friday.
 | 2026-W41 | 49 | 55 | 8 | 50 | 30K+ total | 20 | 72 | 7 total |
 | 2026-W42 | 51 | 58 | 8 | 53 | 30K+ total | 20 | 123 | 7 total |
 | 2026-W43 | 53 | 64 | 8 | 55 | 30K+ total | 20 | 76 | 7 total |
+| 2026-W44 | 54 | 67 | 8 | 58 | 30K+ total | 20 | 7 | 7 total |
 
 > **2026-W27 - v1.2.0 shipped:** Open Dataset Profiler (CLI + client-side web tool) released; 23 explainers total.
 >
@@ -128,16 +129,18 @@ Weekly snapshot of project health. Updated every Friday.
 > **2026-W43 (Friday) - the twelfth sweep: fifteen issues fixed and twenty-six new explainers:** nine explainer issues shipped 26 explainers, each run on a repo audit (#1099 minimum detectable gap, small-group shrinkage, confidence intervals for ratios; #1100 monitoring fairness in production, label shift, delayed feedback; #1101 causal graphs, path-specific effects; #1102 randomized post-processing, the fairness-accuracy Pareto frontier, choosing a mitigation strategy; #1114 adverse action notices, geographic proxies, pricing gaps; #1115 race in clinical models, utilization as a label, discharge leakage; #1116 seed and split sensitivity, cross-validation, stratified test sets; #1117 feature importance by group, partial dependence by group, explanation disagreement; #1119 hiring pipeline adverse impact, compounding disparities, differential validity); explainer count `82 → 108`, past the 90+ target (new target 120+). `disparate_impact_ratio` is no longer reported when the advantaged group has fewer than 30 selected rows (#1094): COMPAS and Healthcare Readmission were rerun and every other row reproduced exactly, with 37 of 195 ratio rows now annotated. Every explainer page has a meta description of 70 to 160 characters and a title within 65 (#1104, #1105), a Limitations section on the four that lacked one (#1108), at least two inbound links (#1107), and the build has tests (#1110). Contributor PRs closed #1095 to #1097, #1106, #1109, #1111 to #1113 and #1118; [@dxnnystyles](https://github.com/dxnnystyles) is a new contributor. Stars `51 → 52`, forks `63 → 64`, contributors `54 → 55` (live GitHub numbers); watching, countries and social reach unchanged. Issues closed (55) is the 40 closed since 2026-10-19 plus the fifteen this batch closes on merge.
 >
 > **2026-W43 (Saturday) - the thirteenth sweep: fourteen issues fixed and six new explainers:** the explainers now ship the code they quote as `explainers/code/<slug>.py` (#1125), `results/PROVENANCE.json` records what produced `results/` and `diff_results.py` reads it (#1129), shows withheld ratios as withheld (#1132) and takes `--limit` (#1131), `AuditData.group()` replaces the hand-written masks (#1133), a weekly workflow reports dead external links (#1127), the dead links and a stray "coming soon" are fixed (#1126, #1128), the structure check has no known exceptions left (#1130), numeric `.xlsx` and JSON column labels are text in Python as in the web engine (#1045), and JSON `"NA"` and `""` are values in the web engine as in Python (#1036). Two explainer issues shipped six explainers (#1137 AUC gaps by group, decision curve analysis by group, cost-sensitive evaluation; #1134 popularity bias, two-sided fairness, position bias and click models), each run on a repo audit; explainer count `108 → 114`. Stars `52 → 53` (live GitHub numbers); forks and contributors unchanged at 64 and 55. Issues closed (76) is the 62 closed since 2026-10-19 plus the fourteen this batch closes on merge.
+>
+> **2026-W44 (Tuesday) - the fourteenth sweep: tooling and contributor records:** six issues fixed - an ignore list for the external-link check (#1174), the dead NIJ dataset link (#1175, #1186), OG images that are not rewritten when they already exist (#1144), `scripts/check_contributors.py` (#1149) and `check_traction.py --live` with a weekly workflow (#1148). #1152 (logistic regression convergence) was closed as not planned for now, with the audits left alone. `--live` found the traction figures a few days behind GitHub, so stars `53 → 54`, forks `64 → 67` and contributors `55 → 58` are now the live numbers. CONTRIBUTORS.md is updated through PR #1191 with three new contributors (@bfs2021, @d4rshnn, @mohakmanjrekar) and new counts for @dxnnystyles (3 → 15 PRs) and @minutechreview (10 → 13). Nineteen new tooling issues are open (#1192-#1210), three of them pinned. Issues closed (7) counts the issues closed since 2026-10-26.
 ---
 
 ## Targets
 
 | Metric | Current | Target | Timeline |
 |--------|--------:|-------:|----------|
-| Stars | 53 | 50+ | End of 2026 |
-| Forks | 64 | 75+ | End of 2026 |
+| Stars | 54 | 50+ | End of 2026 |
+| Forks | 67 | 75+ | End of 2026 |
 | Watching | 8 | 12+ | End of 2026 |
-| Contributors | 55 | 20+ | End of 2026 |
+| Contributors | 58 | 20+ | End of 2026 |
 | Social reach | 30K+ | 40K+ | End of 2026 |
 | Countries reached | 20 | 20+ | End of 2026 |
 | Issues closed | 55 (this week, since 2026-10-19) | Track weekly | Ongoing |

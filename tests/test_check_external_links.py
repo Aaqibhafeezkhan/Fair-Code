@@ -156,4 +156,32 @@ def test_main_reports_without_failing_unless_asked(server, tmp_path, capsys):
     capsys.readouterr()
     assert script.main([str(doc), "--timeout", "5", "--json", "--limit", "2", "--check-local"]) == 0
     report = json.loads(capsys.readouterr().out)
-    assert report["checked"] == 2 and set(report) == {"checked", "ok", "broken", "unknown"}
+    assert report["checked"] == 2 and set(report) == {"checked", "ok", "broken", "unknown", "ignored"}
+
+
+def test_ignore_list_skips_a_url_and_reports_it(server, tmp_path, capsys):
+    doc = tmp_path / "doc.md"
+    doc.write_text(f"[ok]({server}/ok) [gone]({server}/gone)\n", encoding="utf-8")
+    ignore = tmp_path / "ignore.txt"
+    ignore.write_text(f"# a comment\n\n{server}/gone needs a login\n", encoding="utf-8")
+    assert script.main([str(doc), "--timeout", "5", "--check-local", "--ignore-file", str(ignore)]) == 0
+    out = capsys.readouterr().out
+    assert "0 broken" in out and "1 ignored" in out and "(needs a login)" in out
+    assert script.main([str(doc), "--timeout", "5", "--check-local", "--json", "--ignore-file", str(ignore)]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["checked"] == 1 and [item["url"] for item in report["ignored"]] == [f"{server}/gone"]
+    assert report["ignored"][0]["files"] == [str(doc)]
+
+
+def test_ignore_list_requires_a_reason_and_tolerates_a_missing_file(tmp_path):
+    bad = tmp_path / "ignore.txt"
+    bad.write_text("https://example.org/a\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="ignore.txt:1"):
+        script.load_ignore_list(bad)
+    assert script.load_ignore_list(tmp_path / "missing.txt") == {}
+
+
+def test_the_committed_ignore_list_parses_and_names_the_two_known_links():
+    ignored = script.load_ignore_list()
+    assert "https://github.com/TanishGoyal-Dev" in ignored
+    assert "https://github.com/yakew7/Fair-Code/security/code-scanning" in ignored

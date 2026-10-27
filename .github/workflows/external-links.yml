@@ -52,7 +52,8 @@ jobs:
           import json, os
           report = json.load(open(os.environ["RUNNER_TEMP"] + "/report.json"))
           lines = [f"The weekly external link check found {len(report['broken'])} broken link(s) among {report['checked']} checked "
-                   f"({len(report['unknown'])} more could not be verified: blocked, rate limited or unreachable).", ""]
+                   f"({len(report['unknown'])} more could not be verified: blocked, rate limited or unreachable; "
+                   f"{len(report['ignored'])} listed in `scripts/external-links-ignore.txt` were skipped).", ""]
           for item in report["broken"]:
               lines.append(f"- `{item['detail']}` {item['url']} (in {', '.join('`' + f + '`' for f in item['files'][:5])})")
           lines += ["", "Find the current address of each source (or replace it), run `make build-explainers`, and this issue closes "

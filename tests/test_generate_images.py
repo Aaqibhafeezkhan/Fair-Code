@@ -161,3 +161,55 @@ def test_generate_og_images(tmp_path, monkeypatch):
                     assert image.size == (1200, 630)
     finally:
         shutil.rmtree(test_root, ignore_errors=True)
+
+
+def _scratch_themes(script, monkeypatch, tmp_path):
+    monkeypatch.setitem(script.THEMES["dark"], "out_dir", tmp_path / "og")
+    monkeypatch.setitem(script.THEMES["light"], "out_dir", tmp_path / "og-light")
+    for colors in script.THEMES.values():
+        colors["out_dir"].mkdir(parents=True, exist_ok=True)
+
+
+def test_an_existing_card_is_skipped_unless_forced(tmp_path, monkeypatch):
+    # #1144: PNG bytes differ per Pillow/zlib build, so only a missing PNG is rendered by default.
+    script = importlib.import_module("scripts.generate_og_images")
+    _scratch_themes(script, monkeypatch, tmp_path)
+    kwargs = dict(kicker="Kicker", title="A title", subtitle="A subtitle.")
+
+    assert script.render_card_both_themes("one", force=False, **kwargs) == 2
+    dark, light = tmp_path / "og" / "one.png", tmp_path / "og-light" / "one.png"
+    dark.write_bytes(b"sentinel")                      # not a valid PNG: a re-render would replace it
+    light.unlink()
+
+    assert script.render_card_both_themes("one", force=False, **kwargs) == 1
+    assert dark.read_bytes() == b"sentinel" and light.is_file()
+    assert script.render_card_both_themes("one", force=True, **kwargs) == 2
+    assert dark.read_bytes() != b"sentinel"
+
+
+def test_main_leaves_existing_cards_alone_and_force_rewrites_them(tmp_path, monkeypatch, capsys):
+    script = importlib.import_module("scripts.generate_og_images")
+    test_root = Path(tempfile.mkdtemp(dir=script.ROOT, prefix=".tmp-test-"))
+    try:
+        monkeypatch.setitem(script.THEMES["dark"], "out_dir", test_root / "og")
+        monkeypatch.setitem(script.THEMES["light"], "out_dir", test_root / "og-light")
+        monkeypatch.setattr(script, "DATA_JSON", test_root / "explainers.json")
+        script.DATA_JSON.write_text(json.dumps([{"slug": "first", "title": "First", "summary": "One."}]), encoding="utf-8")
+
+        script.main()
+        assert "Wrote 8 of 8" in capsys.readouterr().out
+        sentinel = test_root / "og" / "first.png"
+        sentinel.write_bytes(b"sentinel")
+
+        script.DATA_JSON.write_text(json.dumps([{"slug": "first", "title": "First", "summary": "One."},
+                                                {"slug": "second", "title": "Second", "summary": "Two."}]), encoding="utf-8")
+        script.main()
+        assert "Wrote 2 of 10" in capsys.readouterr().out
+        assert sentinel.read_bytes() == b"sentinel"
+        assert (test_root / "og" / "second.png").is_file() and (test_root / "og-light" / "second.png").is_file()
+
+        script.main(force=True)
+        assert "Wrote 10 of 10" in capsys.readouterr().out
+        assert sentinel.read_bytes() != b"sentinel"
+    finally:
+        shutil.rmtree(test_root, ignore_errors=True)

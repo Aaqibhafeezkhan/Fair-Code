@@ -71,6 +71,7 @@ make setup-browser     # once: install Playwright + Chromium for the browser smo
 make test-browser      # open profiler.html, benchmark.html and index.html in Chromium; fails on any console error
 make coverage          # test suite with pytest-cov line coverage (informational, not a CI gate)
 make build-explainers  # regenerate explainer pages, sitemap, and OG images (dark + light) after editing explainers/*.md
+python3 scripts/generate_og_images.py --force  # re-render every existing OG image (by default a card whose PNG exists is skipped, so adding one explainer changes only its two PNGs); use after changing the card design or an explainer's title or summary
 make fix-explainer-count  # correct any stale "N explainers" mention in README/CONTRIBUTORS/METRICS/ROADMAP after adding/removing an explainer
 make key-fold         # regenerate the JS case-folding table (assets/profiler-engine.js KEY_FOLD) after a Unicode upgrade
 make favicons          # regenerate favicon.ico, apple-touch-icon.png, icon-{192,512}.png after editing logo.svg

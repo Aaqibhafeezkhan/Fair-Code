@@ -208,7 +208,7 @@
 <p>We tested this directly using the <a href="https://github.com/propublica/compas-analysis" target="_blank" rel="noreferrer noopener">ProPublica COMPAS dataset</a>.</p>
 <h4 id="what-we-did">What We Did</h4>
 <p><strong>Step 1 - Biased model (includes race + proxies):</strong></p>
-<pre><code class="language-python"># compas-scores-raw.csv has no raw `race`/`sex` columns - race_binary is
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># compas-scores-raw.csv has no raw `race`/`sex` columns - race_binary is
 # derived from Ethnic_Code_Text, exactly as unfair.py does
 df[&#x27;race_binary&#x27;] = df[&#x27;Ethnic_Code_Text&#x27;].map({&#x27;African-American&#x27;: 1, &#x27;Caucasian&#x27;: 0})
 X = pd.get_dummies(df[[
@@ -224,7 +224,7 @@ X = pd.get_dummies(df[[
 <p>Many developers stop here. They drop <code>race_binary</code> and assume the model is now fair. Dropping race alone already takes the gap from 86.77% down to 18.38% - most of the signal was riding on race directly. But it isn&#x27;t fully fixed: <code>CustodyStatus</code> is still acting as a racial proxy, and its own marginal contribution beyond race is the remaining ~2.7 points down to 15.69% once it&#x27;s removed too (see Step 3).</p>
 <hr>
 <p><strong>Step 3 - Remove race AND known proxies (our fix):</strong></p>
-<pre><code class="language-python">X = pd.get_dummies(df[[
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">X = pd.get_dummies(df[[
     &#x27;Sex_Code_Text&#x27;,
     &#x27;MaritalStatus&#x27;
     # Race removed ✓
@@ -237,7 +237,7 @@ X = pd.get_dummies(df[[
 <p><strong>Removing the protected attribute alone is not enough. You must audit every feature for correlation with protected attributes.</strong></p>
 <hr>
 <h3 id="how-to-detect-proxy-variables">How to Detect Proxy Variables</h3>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from scipy.stats import chi2_contingency
 
 def check_proxy(df, feature, protected_attr):

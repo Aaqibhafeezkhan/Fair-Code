@@ -206,7 +206,7 @@
 <p>Audit 06 predicts 30-day hospital readmission from the Diabetes 130-US Hospitals dataset (101,766 records). Readmission is rare: only <strong>11.2%</strong> of patients in the dataset were readmitted within 30 days - the other 88.8% were not.</p>
 <p>The baseline logistic regression model&#x27;s frozen performance numbers (<code>paper/results-frozen/results_performance.csv</code>) look reasonable at a glance: <strong>88.7% accuracy</strong> and an <strong>AUC of 0.62</strong>. Its <strong>F1 score - the harmonic mean of precision and recall - is 0.039.</strong> F1 stays low because AUC never had to reckon with the base rate: sweeping every threshold shows the model <em>can</em> rank cases somewhat sensibly (AUC 0.62, better than a coin flip), but at the threshold that actually gets deployed, the number of false positives it generates is large relative to the tiny pool of true positives, so precision collapses. The random forest and gradient boosting baselines show the same pattern (AUC 0.65 and 0.67, F1 of 0.021 and 0.024) - this isn&#x27;t one unlucky model family, it&#x27;s the base rate.</p>
 <p>None of this is fairness-specific yet - it&#x27;s the same trap for everyone in the dataset. The fairness question is whether it traps one group worse than another:</p>
-<pre><code class="language-python">gaps = per_group_average_precision(
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">gaps = per_group_average_precision(
     readmission_df, y_true_col=&quot;readmitted&quot;,
     y_score_col=&quot;risk_score&quot;, group_col=&quot;race&quot;,
 )
@@ -218,7 +218,7 @@ print(gaps)
 <p>This is illustrative output, not a published result of Audit 06, but it shows the shape of the problem: the Black subgroup has a <em>higher</em> true readmission rate (0.142 vs. 0.108) yet a <em>lower</em> average precision (0.09 vs. 0.14) - the model&#x27;s flags are less trustworthy for exactly the group that needs the flag more often. A pooled AUC, computed the way <a href="roc-curve-auc.html">ROC Curve and AUC</a> describes, would not surface this: it would need a per-group breakdown to catch a ranking gap, and even then it wouldn&#x27;t show how badly precision degrades once class imbalance is factored back in per group.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Computes average precision within each group (never just pooled, for the same reason <a href="roc-curve-auc.html">per-group AUC</a> matters), alongside each group&#x27;s own base rate - the number every AP score needs to be read against, since AP is not comparable across groups with different base rates the way a 0-to-1 accuracy scale might tempt you to assume.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, precision_recall_curve
 

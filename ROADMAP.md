@@ -27,7 +27,7 @@ Fair Code is an open-source responsible AI platform explaining algorithmic bias,
 
 | Stars | Contributors | Forks | Watching | Social Reach | Countries | Audits | Explainers | CI |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| 53 | 55 | 64 | 8 | 30K+ | 20 | 7 | 108 | ✅ every push/PR |
+| 54 | 58 | 67 | 8 | 30K+ | 20 | 7 | 108 | ✅ every push/PR |
 
 > The earlier paper freeze has lifted - the real paper, with fresh results, is now planned for next
 > year. `paper/results-frozen/` (tag `v1.0-paper`, commit `bbef2ba`) is kept as a reference snapshot.
@@ -247,11 +247,13 @@ Go deeper on measurement - fairness dashboards, interactive notebooks, and stati
 - [x] Label and number parity between the engines: float-looking codes, booleans, `1.0`, large integers, exponents and the order of labels outside the BMP (#1011-#1016)
 - [x] Input handling: `.xls` (#1018), binary files, JSON Lines, ragged rows, unterminated quotes, NUL bytes and JSON `NaN` (#1019, #1023-#1027)
 - [x] Reports and gates: `compare --fail-on-drift` with nothing to compare (#1017), long group labels (#1021), an empty proxy-hint result (#1022), blank reference shares (#1028), the em-dash check's file types (#1020) and labels that differ only in case (#1009)
-- [ ] Engine parity follow-ups: JSON strings `NA` and empty (#1036), XLSX dates (#1039), numeric and blank headers (#1045, #1046), long labels that still collide (#1038)
+- [x] Engine parity follow-ups: JSON strings `NA` and empty (#1036), XLSX dates (#1039), numeric and blank headers (#1045, #1046), long labels that still collide (#1038)
 - [x] Scale and flags: quadratic flag building and tens of thousands of flags for a high-cardinality column in the profile and compare views (#1042, #1043, #1052)
 - [x] MCP, CLI and docs follow-ups: `--fail-under` range (#1037), undocumented benchmark flags (#1040), unknown benchmark filters (#1041), proxy hints on one dimension (#1044), the citation version (#1047), stale benchmark and snapshot wording (#1048, #1049), workflow timeouts (#1050), the leaked workbook handle (#1051), subprocess coverage (#986) and the contributor notes for the new checks (#989)
 - [x] Tooling and tests for the results workflow: `scripts/diff_results.py` (#1065) with `--audit` and `--summary` (#1081), `get_benchmark_results` with a `source` argument (#1049) and its README parameters (#1082), a public `load_audit()` helper (#1078), browser tests for the flag caps (#1080), an opt-in `benchmark-diff` workflow for lockfile bumps (#1079), grouped Dependabot updates (#1069), a check that README and `llms.txt` list every explainer (#1077), 1904-system XLSX dates (#1076), and the no-op `frozen-files` workflow removed (#1061)
 - [x] Metrics, SEO and test hardening: no `disparate_impact_ratio` when the advantaged group is almost never selected (#1094), page titles and meta descriptions within search limits (#1104, #1105), a Limitations section and two inbound links for every explainer (#1107, #1108), and the explainer build tested end to end (#1110)
+- [x] Tooling sweep: an ignore list for links the external-link check cannot verify (#1174), the dead NIJ dataset link (#1175, #1186), OG images that are no longer rewritten on another machine (#1144), `scripts/check_contributors.py` (#1149) and `check_traction.py --live` with a weekly workflow (#1148)
+- [ ] Tooling follow-ups: a failing generated-files test on a clean checkout (#1192), stale ignore entries and a shared retry path in the link check (#1193, #1194, #1196), archive lookups for 403 links (#1195), OG card inputs (#1197, #1198), contributor checks (#1199, #1200, #1201), traction and METRICS (#1202), partial benchmark reruns, progress and convergence tests (#1203, #1204, #1205), workflow docs, templates and tests (#1206, #1207, #1209, #1210) and a dataset-link check (#1208)
 
 ---
 

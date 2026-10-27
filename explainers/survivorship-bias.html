@@ -202,7 +202,7 @@
 <p><a href="selection-bias.html">Selection Bias</a> is the general family. Survivorship is the case where the filter is an earlier stage of the same process, and <a href="reject-inference.html">Reject Inference</a> is the lending-specific attempt to correct for it.</p>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p><a href="../index.html#project-hiring">AI Fair Recruitment</a>: the data has the hiring decision for every candidate, so the full picture is available for comparison. We then impose a gate: only candidates with a technical test score of 70 or more &quot;reach&quot; the stage we pretend to have data on. Logistic regression on every feature, standardized.</p>
-<pre><code>candidates 115309, passed the test gate 34695 (30.1%)
+<pre tabindex="0" aria-label="Scrollable code block"><code>candidates 115309, passed the test gate 34695 (30.1%)
 hire rate, everyone 0.259 | survivors only 0.473
 gender gap in hire rate (women minus men), everyone -0.0292 | survivors only -0.0354
 
@@ -215,7 +215,7 @@ coefficient (per standard deviation), fitted on everyone vs on survivors only
 <p>The size of the distortion depends on how hard the gate is. A gate that keeps one in three is already enough to move the base rate and the effect of the gating feature.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/survivorship-bias.py</code>; that file is generated from the block below). The audit has the outcome for everyone, so we can compare against it; with real survivorship data you cannot, and the check is to ask what the gate was and model it.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

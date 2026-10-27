@@ -197,14 +197,14 @@
 <p>A global importance ranking says which features matter on average. If one feature drives decisions for one group and barely touches another, the average hides it, and that is where aggregation effects and proxy use tend to show up (<a href="aggregation-bias.html">Aggregation Bias</a>). It is also a check on a fairness claim: &quot;the model doesn&#x27;t rely on X&quot; should hold for every group, not just overall.</p>
 <p>The measurement is permutation importance (Breiman, 2001): shuffle one column among the rows you are looking at and see how much the score drops. Run it on a group&#x27;s rows and you get that group&#x27;s importance. It is model-agnostic and needs no assumptions about the model&#x27;s form.</p>
 <h3 id="core-concept-shuffle-one-column-on-one-group-s-rows">Core Concept: Shuffle One Column, On One Group&#x27;s Rows</h3>
-<pre><code>for each group:
+<pre tabindex="0" aria-label="Scrollable code block"><code>for each group:
     for each feature:
         repeat 20 times: shuffle that column within the group&#x27;s test rows, record the drop in accuracy
     importance = mean drop (with its standard deviation over the shuffles)</code></pre>
 <p>Two things to keep in mind. The importance is in units of the score, so it depends on how much score there is to lose: a group where the model is nearly always right has less room to drop. And the shuffles give a standard deviation, which tells you whether a difference between two features or two groups is large enough to mean anything.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: a gradient-boosted model on the audit&#x27;s five core columns (sex and race are not inputs), the benchmark&#x27;s split, test rows split into men and women. The score is accuracy.</p>
-<pre><code>gradient boosting, accuracy 0.832; test rows: 4360 men, 2153 women
+<pre tabindex="0" aria-label="Scrollable code block"><code>gradient boosting, accuracy 0.832; test rows: 4360 men, 2153 women
 feature           everyone                men              women
 workclass          +0.0016    +0.0012 +/-0.0009    +0.0006 +/-0.0010
 education          -0.0000    +0.0001 +/-0.0003    +0.0001 +/-0.0003
@@ -215,7 +215,7 @@ capital.loss       +0.0261    +0.0302 +/-0.0018    +0.0121 +/-0.0011</code></pre
 <p>Part of the gap is mechanical. Women are a minority of the positive class in this data, a model can get most of them right by predicting &quot;no&quot;, and accuracy has less to lose. That does not make the difference unimportant, but it is a reason to also check with a measure that does not depend on the base rate, such as AUC, before concluding the model reasons differently.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/feature-importance-by-group.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.inspection import permutation_importance
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

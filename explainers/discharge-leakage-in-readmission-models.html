@@ -200,7 +200,7 @@
 <ol><li><strong>When is it known?</strong> If it is not available when the model will run, it leaks. If it is, it is allowed but it is carrying information from the end of the stay.</li><li><strong>What does it do to the rows?</strong> Some values (expired, hospice) change who can have the outcome at all. Those rows belong in the training data only if the deployed model will see them.</li></ol>
 <h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
 <p><a href="../index.html#project-readmission">Healthcare Readmission</a>: about 99,500 patients with diabetes, 30-day readmission, a gradient-boosted model on the audit&#x27;s core and proxy columns (no race, gender or age), the benchmark&#x27;s split. The audit&#x27;s two row filters remove unknown race and gender and do not remove patients who died or went to hospice. The model flags the top 11% of scores, about the base rate.</p>
-<pre><code>rows 99,492; died or went to hospice 2,384 (2.4%); readmitted within 30 days: 1.8% of them, 11.5% of everyone else
+<pre tabindex="0" aria-label="Scrollable code block"><code>rows 99,492; died or went to hospice 2,384 (2.4%); readmitted within 30 days: 1.8% of them, 11.5% of everyone else
 share of African American patients among them: 18.4% (all rows: 19.3%)
 
 all rows, with discharge disposition                 AUC 0.671 | flagged rate: African American 0.126, others 0.106, gap +0.0194
@@ -211,7 +211,7 @@ patients who left alive only, without disposition    AUC 0.639 | flagged rate: A
 <p>If the model is meant to run on admission, the disposition column is a leak and the 0.671 is not achievable. If it runs at discharge, the column is legitimate and the 11.5% base rate that excludes end-of-life patients is the one to use.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/discharge-leakage-in-readmission-models.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

@@ -198,14 +198,14 @@
 <p>It also generalizes. The adversary can read a score, a hidden layer or a whole representation, which is why the idea is the basis of many neural-network fairness methods.</p>
 <h3 id="core-concept-a-two-player-game">Core Concept: A Two-Player Game</h3>
 <p>There are two models.</p>
-<pre><code>predictor:  p = sigmoid(w . x + b)          trained to predict the label y
+<pre tabindex="0" aria-label="Scrollable code block"><code>predictor:  p = sigmoid(w . x + b)          trained to predict the label y
 adversary:  a = sigmoid(u * z + c)          trained to predict the group s from the predictor&#x27;s logit z</code></pre>
 <p>The adversary minimizes its own loss. The predictor minimizes its task loss minus <code>alpha</code> times the adversary&#x27;s loss:</p>
-<pre><code>predictor step:   d(task loss) / dz   -   alpha * d(adversary loss) / dz</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>predictor step:   d(task loss) / dz   -   alpha * d(adversary loss) / dz</code></pre>
 <p><code>alpha</code> is the single dial. At <code>alpha = 0</code> it is ordinary logistic regression. As <code>alpha</code> grows, the predictor is pushed harder to produce scores the adversary cannot use. For demographic parity the adversary sees only the score. For equalized odds Zhang, Lemoine and Mitchell also feed it the true label.</p>
 <h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
 <p><a href="../index.html#project-tenant">Tenant Screening</a>: the model flags an applicant as likely to reoffend within three years, the disadvantaged group is Black applicants, the features are the audit&#x27;s core columns, and the split is the benchmark&#x27;s. Everything is plain NumPy: a predictor and an adversary updated in turn by gradient descent.</p>
-<pre><code>alpha  0.0: accuracy 0.639 | parity gap +0.1136 | race recoverable from the score, AUC 0.598
+<pre tabindex="0" aria-label="Scrollable code block"><code>alpha  0.0: accuracy 0.639 | parity gap +0.1136 | race recoverable from the score, AUC 0.598
 alpha  0.5: accuracy 0.639 | parity gap +0.0927 | race recoverable from the score, AUC 0.580
 alpha  1.0: accuracy 0.637 | parity gap +0.0739 | race recoverable from the score, AUC 0.566
 alpha  2.0: accuracy 0.637 | parity gap +0.0469 | race recoverable from the score, AUC 0.547
@@ -213,7 +213,7 @@ alpha  4.0: accuracy 0.628 | parity gap +0.0296 | race recoverable from the scor
 <p>The <code>alpha = 0</code> row is the benchmark&#x27;s S2 baseline in <code>results/</code> (the current results): 0.639 accuracy and a parity gap of +0.1139 (this run: +0.1136, because it is trained by gradient descent rather than scikit-learn&#x27;s solver). Raising <code>alpha</code> to 4.0 cuts the gap to +0.0296 for 1.1 points of accuracy, and the adversary&#x27;s ability to recover race from the score falls from an AUC of 0.598 toward chance (0.5). For comparison, the benchmark&#x27;s S3 row (Fairlearn&#x27;s <code>ExponentiatedGradient</code>) has a gap of +0.0172 at 0.626 accuracy, and its S4 row (<code>ThresholdOptimizer</code>) has -0.0054 at 0.639.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/adversarial-debiasing.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

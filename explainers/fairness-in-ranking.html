@@ -198,12 +198,12 @@
 <p>So two candidates with nearly identical scores can get very different outcomes, and the damage is a group-level one that only appears when a ranking function and an attention model are stacked on top of the scores.</p>
 <h3 id="core-concept-exposure">Core Concept: Exposure</h3>
 <p>Exposure is a position-weighted measure of the attention an item receives. A standard choice borrowed from information retrieval discounts by the log of the rank:</p>
-<pre><code>exposure(rank) = 1 / log2(rank + 1)       rank 1 -&gt; 1.00,  rank 3 -&gt; 0.50,  rank 7 -&gt; 0.33</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>exposure(rank) = 1 / log2(rank + 1)       rank 1 -&gt; 1.00,  rank 3 -&gt; 0.50,  rank 7 -&gt; 0.33</code></pre>
 <p>Fairness of exposure (Singh and Joachims, 2018) asks whether groups with the same average relevance get the same average exposure. It is not enough for the groups&#x27; average <em>scores</em> to match. Compare it with demographic parity: parity looks at a rate over a decision, exposure looks at a distribution over positions.</p>
 <p>Where the list is cut off matters. A hiring team that looks at the top 1,000 of 23,062 candidates gives zero exposure to everyone below rank 1,000, and averaging a discount over the full list washes that out.</p>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p>The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit, logistic regression, the benchmark&#x27;s own split (23,062 test candidates, 36.5% of them women). Instead of thresholding at 0.5, sort the test candidates by predicted hire probability. Two rankings: the baseline model with <code>Gender</code> as a feature, and the same model with <code>Gender</code> removed.</p>
-<pre><code>baseline (Gender is a feature)
+<pre tabindex="0" aria-label="Scrollable code block"><code>baseline (Gender is a feature)
   female share of the top 1000: 0.070 (pool 0.365)
   exposure ratio female/male, whole list: 0.955
   exposure ratio female/male, top 1000 only: 0.107
@@ -217,7 +217,7 @@ mitigated (Gender removed)
 <p>For scale, the benchmark&#x27;s classification rows for the same audit in <code>results/</code> (the current results) show a demographic parity gap of -0.0656 for the baseline and -0.0065 without <code>Gender</code>. A 6.6 point gap in a threshold decision became a shortlist with 7% women. The classification metric understates it.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fairness-in-ranking.py</code>; that file is generated from the block below). The code ranks by score, applies the log discount, and reports exposure ratios with and without a cutoff.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest
 from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses

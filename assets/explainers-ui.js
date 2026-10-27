@@ -177,7 +177,7 @@
 
     function flushCode() {
       if (codeLines.length) {
-        blocks.push(`<pre><code${codeLang ? ` class="language-${escapeHtml(codeLang)}"` : ''}>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+        blocks.push(`<pre tabindex="0" aria-label="Scrollable code block"><code${codeLang ? ` class="language-${escapeHtml(codeLang)}"` : ''}>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
         codeLines = [];
         codeLang = '';
       }

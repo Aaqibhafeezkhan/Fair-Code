@@ -201,7 +201,7 @@
 <p>A supervised model is handed <code>(features, label)</code> pairs and learns a function from one to the other. An unsupervised model is handed features only. K-means, the clustering algorithm used below, works by placing <code>k</code> centroids in feature space and iteratively assigning each row to its nearest centroid, then moving each centroid to the mean of the rows assigned to it, repeating until assignments stop changing. Nothing in that loop references sex, race, or any other protected attribute. It only minimises distance in whatever feature space it was given.</p>
 <h4 id="walking-through-the-clustering-code">Walking Through the Clustering Code</h4>
 <p>The Benefits Denial audit&#x27;s <code>unfair.py</code> already identified <code>relationship</code> and <code>marital.status</code> as near-perfect proxies for sex (<code>Husband</code> is 0% female, <code>Wife</code> is 0% male; married applicants skew heavily male). Running k-means on a feature set that includes those columns, but excludes <code>sex</code>, <code>race</code>, and <code>native.country</code> outright, shows the same proxy effect appearing without supervision:</p>
-<pre><code class="language-python">from sklearn.cluster import KMeans
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 feature_cols = [&#x27;age&#x27;, &#x27;workclass&#x27;, &#x27;education.num&#x27;, &#x27;marital.status&#x27;,
@@ -219,7 +219,7 @@ df[&#x27;cluster&#x27;] = km.fit_predict(Xs)</code></pre>
 <p>Cluster 1 is 89.3% male against cluster 0&#x27;s near-even split, and Black applicants appear at more than double the rate in cluster 0 versus cluster 1. Nobody asked the algorithm to separate applicants by sex or race. It separated them by <code>relationship</code>, <code>marital.status</code>, <code>occupation</code>, and <code>hours.per.week</code>, and a sex and race split came out the other side as a side effect, exactly the mechanism <a href="proxy-variables.html">What Is a Proxy Variable?</a> describes for supervised models, now showing up with no label in sight.</p>
 <p>National origin is the counterexample worth keeping: foreign-born applicants land at essentially the same rate in both clusters (10.2% vs 10.7%). Not every protected attribute reappears in every clustering. Whether one does depends on how strongly it correlates with the specific features chosen and the number of clusters requested, which is precisely the fragility this explainer&#x27;s limitations section covers next.</p>
 <h3 id="detection-code">Detection Code</h3>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 

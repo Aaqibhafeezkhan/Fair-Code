@@ -18,7 +18,16 @@ only supports one image per page.
 
 Fonts are bundled (not system fonts) so this runs identically in CI
 (ubuntu-latest) and locally. Run with: python3 scripts/generate_og_images.py
+
+A card whose PNG already exists is skipped (#1144): the PNG bytes depend on the
+Pillow and zlib build, so on another machine every committed image would come out
+byte-different and a one-explainer change would touch hundreds of binary files.
+Adding an explainer therefore writes only its two new PNGs. Pass --force to
+re-render every card, which is what to do after editing a card's design in this
+file or an explainer's title or summary (a changed title does not invalidate its
+existing PNG).
 """
+import argparse
 import json
 import textwrap
 from pathlib import Path
@@ -171,16 +180,29 @@ def render_card(out_path, kicker, title, subtitle, theme, footer="thefaircode.xy
     img.save(out_path, "PNG", compress_level=9)
 
 
-def render_card_both_themes(slug, kicker, title, subtitle):
+def render_card_both_themes(slug, kicker, title, subtitle, force=True):
+    """Render the card in each theme; with force=False a theme whose PNG exists is left alone.
+    Returns how many PNGs were written."""
+    written = 0
     for theme, colors in THEMES.items():
-        render_card(colors["out_dir"] / f"{slug}.png", kicker, title, subtitle, theme)
+        out_path = colors["out_dir"] / f"{slug}.png"
+        if out_path.exists() and not force:
+            continue
+        render_card(out_path, kicker, title, subtitle, theme)
+        written += 1
+    return written
 
 
-def main():
+def main(force=False):
     for colors in THEMES.values():
         colors["out_dir"].mkdir(parents=True, exist_ok=True)
+    written = 0
 
-    render_card_both_themes(
+    def render(*args, **kwargs):
+        nonlocal written
+        written += render_card_both_themes(*args, force=force, **kwargs)
+
+    render(
         "home",
         kicker="Algorithmic bias research · Open source",
         title="The bias is real. So is the fix.",
@@ -189,7 +211,7 @@ def main():
                  "before/after fairness results.",
     )
 
-    render_card_both_themes(
+    render(
         "profiler",
         kicker="Fair Code · Open Dataset Profiler",
         title="Audit any CSV for demographic imbalance",
@@ -197,7 +219,7 @@ def main():
                  "100% client-side, your data never leaves your browser.",
     )
 
-    render_card_both_themes(
+    render(
         "benchmark",
         kicker="Fair Code · Benchmark Results",
         title="Benchmark Results Dashboard",
@@ -206,17 +228,19 @@ def main():
 
     entries = json.loads(DATA_JSON.read_text(encoding="utf-8"))
     for entry in entries:
-        render_card_both_themes(
+        render(
             entry["slug"],
             kicker="Fair Code · Explainer",
             title=entry["title"],
             subtitle=entry["summary"],
         )
 
-    count = 2 + len(entries)
+    total = (3 + len(entries)) * len(THEMES)
     dirs = ", ".join(str(c["out_dir"].relative_to(ROOT)) for c in THEMES.values())
-    print(f"Generated {count} OG images x {len(THEMES)} themes in {dirs}")
+    print(f"Wrote {written} of {total} OG images ({total - written} already existed; --force re-renders them) in {dirs}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--force", action="store_true", help="re-render every card, even when its PNG already exists")
+    main(force=parser.parse_args().force)

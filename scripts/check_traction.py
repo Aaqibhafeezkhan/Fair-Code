@@ -10,19 +10,34 @@ section. It compares the files with each other, never with GitHub, so it works o
 count has its own checker, scripts/check_explainer_count.py.
 
     python3 scripts/check_traction.py
+    python3 scripts/check_traction.py --live              # also compare with GitHub (needs gh; opt-in) (#1148)
+    python3 scripts/check_traction.py --live-data FILE    # same, from a saved {"stars", "forks", "watching", "contributors"}
 
 Exit code: 0 = everything agrees, 1 = at least one disagreement or a figure that could not be found.
+
+The files can all agree and still be stale (stars were 52 in all three while GitHub said 53), so --live reads
+stars, forks, watchers (subscribers) and contributors without bots from `gh api` and names every place whose
+figure differs. It is off by default, so `make lint` and a pull request never depend on the network; the weekly
+traction workflow runs it. The social reach, countries and audits figures have no GitHub source and are not
+compared. Contributors count everyone the contributors API lists who is not a bot, owner included, matching
+ROADMAP.md and METRICS.md.
 
 The README table calls its contributor figure "External Contributors", which excludes the repository
 owner, so it is expected to be exactly one lower than the total used in ROADMAP.md and METRICS.md.
 """
 from __future__ import annotations
 
+import argparse
+import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+REPO = "yakew7/Fair-Code"
+LIVE_FIGURES = ("stars", "forks", "watching", "contributors")
 
 FIGURES = ("stars", "contributors", "forks", "watching", "social", "countries", "audits")
 
@@ -120,8 +135,8 @@ def completed_items(text: str) -> tuple[int | None, int | None]:
     return int(m.group(1)), len(re.findall(r"^- \[x\]", section, re.M))
 
 
-def check(root: Path = ROOT) -> list[str]:
-    """Every disagreement or missing figure, as one message each (empty when all agree)."""
+def collect(root: Path = ROOT) -> tuple[list[Observation], list[str], dict[str, str]]:
+    """(every figure as written, the problems finding them, the file texts)."""
     texts = {}
     for name in ("README.md", "ROADMAP.md", "METRICS.md"):
         path = root / name
@@ -132,6 +147,12 @@ def check(root: Path = ROOT) -> list[str]:
                            metrics_observations(texts["METRICS.md"])):
         observations += found
         problems += missing
+    return observations, problems, texts
+
+
+def check(root: Path = ROOT) -> list[str]:
+    """Every disagreement or missing figure, as one message each (empty when all agree)."""
+    observations, problems, texts = collect(root)
     for figure in FIGURES:
         seen = [(where, value) for fig, where, value in observations if fig == figure]
         if len({value for _, value in seen}) > 1:
@@ -145,16 +166,54 @@ def check(root: Path = ROOT) -> list[str]:
     return problems
 
 
-def main() -> int:
+def fetch_live(repo: str = REPO) -> dict[str, int] | None:
+    """{"stars", "forks", "watching", "contributors"} from `gh api`, or None when gh is missing or fails."""
+    if shutil.which("gh") is None:
+        return None
+
+    def api(*args: str):
+        done = subprocess.run(["gh", "api", *args], capture_output=True, text=True)
+        return json.loads(done.stdout) if done.returncode == 0 and done.stdout.strip() else None
+
+    info = api(f"repos/{repo}")
+    people = api("--paginate", "--slurp", f"repos/{repo}/contributors?per_page=100")
+    if info is None or people is None:
+        return None
+    people = [p for page in people for p in (page if isinstance(page, list) else [])]
+    return {"stars": info["stargazers_count"], "forks": info["forks_count"],
+            "watching": info["subscribers_count"],
+            "contributors": sum(1 for p in people if p.get("type") != "Bot" and not p.get("login", "").endswith("[bot]"))}
+
+
+def live_differences(observations: list[Observation], live: dict[str, int]) -> list[str]:
+    """One message per place whose figure differs from GitHub (a figure written as "30K+" is not numeric and is skipped)."""
+    return [f"{figure}: {where} says {value}, GitHub says {live[figure]}"
+            for figure, where, value in observations
+            if figure in live and _number(value) is not None and int(value) != live[figure]]
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--live", action="store_true", help="also compare stars, forks, watching and contributors with GitHub (needs gh)")
+    parser.add_argument("--live-data", metavar="FILE", help="GitHub's figures as JSON instead of asking gh (implies --live)")
+    args = parser.parse_args(argv or [])
     problems = check()
+    if args.live or args.live_data:
+        live = json.loads(Path(args.live_data).read_text(encoding="utf-8")) if args.live_data else fetch_live()
+        if live is None:
+            print("error: --live needs the GitHub CLI (gh) signed in and online", file=sys.stderr)
+            return 2
+        observations, _, _ = collect()
+        problems += live_differences(observations, live)
     if problems:
         print("Traction figures are out of step:", file=sys.stderr)
         for problem in problems:
             print(f"  - {problem}", file=sys.stderr)
         return 1
-    print("Traction figures agree across README.md, ROADMAP.md and METRICS.md.")
+    print("Traction figures agree across README.md, ROADMAP.md and METRICS.md"
+          + (" and with GitHub." if args.live or args.live_data else "."))
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

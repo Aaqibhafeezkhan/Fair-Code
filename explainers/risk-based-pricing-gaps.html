@@ -197,21 +197,21 @@
 <p>Every metric in this repo&#x27;s benchmark is built on a decision that is yes or no: <a href="demographic-parity.html">Demographic Parity</a>, <a href="equalized-odds.html">Equalized Odds</a>, <a href="disparate-impact.html">Disparate Impact</a>. A lender that approves every applicant passes all of them. It can still offer a smaller line of credit, a higher rate or a shorter term to one group, and that is a decision with the same consequences.</p>
 <p>The measurement is simpler than it sounds. The quantity is a number, so the gap is a difference of means, and the uncertainty is a bootstrap interval (<a href="bootstrap-confidence-intervals.html">Bootstrap Confidence Intervals</a>). The hard parts are choosing the quantity and remembering that the same gap can be fair or unfair depending on whether the difference in price tracks a real difference in risk.</p>
 <h3 id="core-concept-a-regression-then-a-gap-in-its-output">Core Concept: A Regression, Then a Gap in Its Output</h3>
-<pre><code>1. train a regression for the quoted amount (rate, limit, term) on the non-protected features
+<pre tabindex="0" aria-label="Scrollable code block"><code>1. train a regression for the quoted amount (rate, limit, term) on the non-protected features
 2. predict it for the test applicants
 3. gap = mean(quoted | disadvantaged) - mean(quoted | advantaged), with a bootstrap interval
 4. compare it with the gap in the amounts people actually received, and with the approve or deny gap</code></pre>
 <p>If the quoted gap is larger than the real-world gap, the model has widened a difference. If it is zero while the approval gap is not, price is not where the unfairness sits.</p>
 <h3 id="concrete-example-german-credit-lending">Concrete Example: German Credit Lending</h3>
 <p><a href="../index.html#project-credit">German Credit Lending</a> has a continuous <code>credit_amount</code>, which stands in for the amount a lender would offer. Everyone is treated as approved; the model predicts the amount from every other core column, with age left out, using the benchmark&#x27;s split (200 test applicants, 69 of them under 30).</p>
-<pre><code>real amounts: under 30 3,277, 30 and over 3,790 (gap -513)
+<pre tabindex="0" aria-label="Scrollable code block"><code>real amounts: under 30 3,277, 30 and over 3,790 (gap -513)
 linear regression  quoted amount, under 30 minus 30 and over: -233 (-7%), 95% interval [-802, +308]
 gradient boosting  quoted amount, under 30 minus 30 and over: -477 (-13%), 95% interval [-1,039, +94]</code></pre>
 <p>In the data, under-30s received 513 less on average (3,277 against 3,790). Both models quote a smaller amount to the under-30s too: 233 less (7%) from the linear regression and 477 less (13%) from gradient boosting. The intervals say how much to read into that: [-802, +308] and [-1,039, +94] both include zero. With 200 test rows the data cannot separate a real 13% gap from noise, which is the situation <a href="permutation-test-fairness-gaps.html">Permutation Tests for Fairness Gaps</a> describes.</p>
 <p>For comparison, the same audit&#x27;s approve-or-deny parity gap in <code>results/</code> (the current results, S2 strategy) is -0.0914 with an interval of -0.218 to +0.041. Both are the same direction and both are inconclusive on this sample, and neither alone would show the other.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/risk-based-pricing-gaps.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

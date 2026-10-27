@@ -21,6 +21,10 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Added
 
+- `scripts/check_contributors.py` (#1149): compares every CONTRIBUTORS.md entry's merged PR count and first-merged date with `gh pr list --state merged` up to the snapshot PR, checks the file's order rule and lists merged-PR authors with no entry; `--prs FILE` works offline. Runs in `make lint`.
+- `scripts/check_traction.py --live` (#1148) compares stars, forks, watchers and contributors with GitHub, and a weekly `traction-live` workflow keeps one issue up to date.
+- `scripts/external-links-ignore.txt` (#1174): URLs the link check does not request, each with a reason, counted as "ignored" in the report.
+- `scripts/generate_og_images.py --force` (#1144).
 - Six more explainers, each run against a real audit: [AUC Gaps by Group](explainers/auc-gaps-by-group.md), [Decision Curve Analysis by Group](explainers/decision-curve-analysis-by-group.md) and [Cost-Sensitive Evaluation](explainers/cost-sensitive-evaluation.md) (#1137), then [Popularity Bias](explainers/popularity-bias.md), [Two-Sided Fairness in a Marketplace](explainers/two-sided-fairness.md) and [Position Bias and Click Models](explainers/position-bias-and-click-models.md) (#1134). Explainer count `108 → 114`.
 - `explainers/code/<slug>.py` (#1125): the first Python block of an explainer that names its own path is written to that file by `scripts/build_explainers.py`, so the "run from the repo root" sentence is true for 52 explainers, and the files are checked as generated files and compiled by a test.
 - `scripts/check_external_links.py` and a weekly workflow (#1127): reports dead external links in the docs and explainers as one issue that is opened, updated and closed by the run. A report, never a gate.
@@ -30,6 +34,8 @@ All notable changes to Fair Code are documented here, newest first.
 
 ### Changed
 
+- `scripts/generate_og_images.py` skips a card whose PNG already exists (#1144), so adding one explainer writes only its two images.
+- The Tenant Screening dataset link in the README points at the NIJ Recidivism Forecasting Challenge page (#1175, #1186).
 - `scripts/diff_results.py` reports a withheld ratio as `withheld`, with the benchmark's reason, instead of `n/a` (#1132).
 - `scripts/check_issue_refs.py` accepts a pull request that cites the issues it closes with a closing keyword as closing them, and has an `--assume-closed` option (#1139).
 - Explainer headings follow the structure `check_explainer_structure.py` expects, and its list of known exceptions is empty (#1130); the differential-privacy explainer gained a benefits-denial example.

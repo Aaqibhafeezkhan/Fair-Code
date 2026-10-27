@@ -207,7 +207,7 @@
 <p>Because the underlying base rates of arrest were different for the two groups, it was mathematically impossible for the model to have both equal Positive Predictive Value and equal False Positive/Negative Rates. The confusion matrix made this trade-off visible, sparking the modern debate on algorithmic fairness.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>This code computes the four core values (TP, TN, FP, FN) and the key derived rates for each demographic group, allowing you to spot disparities in how errors are distributed.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.metrics import confusion_matrix
 
 def group_confusion_metrics(df, y_true_col, y_pred_col, group_col):

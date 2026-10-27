@@ -1,0 +1,64 @@
+name: Traction vs GitHub
+
+# Weekly check that the traction figures in README.md, ROADMAP.md and METRICS.md still match GitHub (#1148).
+# scripts/check_traction.py (run by `make lint`) only compares the three files with each other, so all three can
+# agree and be stale. `--live` also reads stars, forks, watchers and contributors from the API. This is a report,
+# never a gate: nothing here is a required check. When a figure differs it opens (or edits) ONE issue, "Traction
+# figures out of date (weekly check)"; when they all match it closes that issue.
+
+on:
+  schedule:
+    - cron: "43 5 * * 1"      # Mondays, 05:43 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: "Traction figures out of date (weekly check)"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Compare the figures with GitHub
+        run: |
+          set +e
+          python3 scripts/check_traction.py --live > "$RUNNER_TEMP/out.txt" 2> "$RUNNER_TEMP/err.txt"
+          echo "$?" > "$RUNNER_TEMP/status"
+          cat "$RUNNER_TEMP/out.txt" "$RUNNER_TEMP/err.txt"
+          exit 0
+
+      - name: Open, update or close the tracking issue
+        run: |
+          set -euo pipefail
+          status="$(cat "$RUNNER_TEMP/status")"
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$ISSUE_TITLE\" in:title" --json number,title -q ".[] | select(.title == \"$ISSUE_TITLE\") | .number" | head -n 1)"
+          if [ "$status" = "1" ]; then
+            {
+              echo "The weekly \`check_traction.py --live\` run found figures that differ from GitHub or from each other:"
+              echo
+              sed 's/^  - /- /' "$RUNNER_TEMP/err.txt" | tail -n +2
+              echo
+              echo "Update the figures in README.md, ROADMAP.md and METRICS.md together, then run \`python3 scripts/check_traction.py --live\`. This issue closes itself on the next weekly run once they match."
+            } > "$RUNNER_TEMP/body.md"
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/body.md"
+            else
+              gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --label documentation --body-file "$RUNNER_TEMP/body.md"
+            fi
+          elif [ "$status" = "0" ] && [ -n "$existing" ]; then
+            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed --comment "The weekly check found every traction figure matching GitHub."
+          fi

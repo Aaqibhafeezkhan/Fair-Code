@@ -201,7 +201,7 @@
 <p>To understand why proxy label choice corrupts fairness, compare the true clinical target with the proxy target:</p>
 <ul><li>*<em>True Target (<code>Y</em></code>):** Actual health need (e.g., severity of chronic diseases, organ dysfunction, uncontrolled hypertension, risk of emergency complications).</li><li><strong>Proxy Target (<code>Y_cost</code>):</strong> Total annual healthcare expenditures in dollars.</li></ul>
 <p>In a fair system without structural barriers, healthcare spending would be directly proportional to health need (<code>Y_cost</code> proportional to <code>Y*</code>) across all demographic groups. In reality, historical healthcare expenditures exhibit severe racial disparity at equal levels of illness:</p>
-<pre><code class="language-text">Expected_Cost(Race = Black, Illness = k) &lt; Expected_Cost(Race = White, Illness = k)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-text">Expected_Cost(Race = Black, Illness = k) &lt; Expected_Cost(Race = White, Illness = k)</code></pre>
 <p>Because less money is spent caring for Black patients at any given illness level <code>k</code>, an algorithm trained to predict <code>Y_cost</code> learns a biased spending score. When the algorithm ranks patients by predicted risk to enroll the top 3% (or 5%) into specialized care programs:</p>
 <div class="explainer-table-wrap"><table class="explainer-table"><thead><tr><th scope="col">Metric at Shared Enrollment Score Threshold</th><th scope="col">White Patients</th><th scope="col">Black Patients</th><th scope="col">Structural Disparity</th></tr></thead><tbody><tr><td><strong>Predicted Healthcare Cost</strong></td><td>Equal</td><td>Equal</td><td>Algorithm appears calibrated on cost</td></tr><tr><td><strong>Actual Chronic Conditions Count</strong></td><td>Baseline</td><td><strong>~28% Higher</strong></td><td>Black patients are substantially sicker</td></tr><tr><td><strong>Biomedical Biomarkers (e.g., HbA1c, BP)</strong></td><td>Baseline</td><td><strong>Significantly Worse</strong></td><td>Black patients have worse physiological health</td></tr><tr><td><strong>Care Program Auto-Enrollment Rate</strong></td><td>Baseline</td><td><strong>Substantially Reduced</strong></td><td>Sicker Black patients are systematically bypassed</td></tr></tbody></table></div>
 <p>The algorithm is not broken in a mathematical sense - it predicts future spending with high accuracy for both groups. The failure lies in the <strong>semantic gap</strong> between the proxy label (<code>Y_cost</code>) and the human goal (<code>Y*</code>).</p>
@@ -214,14 +214,14 @@
 <p>In clinical risk modeling, target labels such as 30-day hospital readmission (<code>readmitted = 1</code>) or total inpatient visit counts can suffer from proxy distortion:</p>
 <ul><li>A patient who lives near a tertiary care center and has comprehensive insurance may be readmitted quickly when symptoms recur.</li><li>A patient with severe care access barriers, transportation deficits, or lack of insurance may delay returning to the hospital until emergency status, or may present at a different non-reporting facility.</li></ul>
 <p>In the frozen benchmark results for Audit 06 (<code>paper/results-frozen/summary.csv</code>), baseline models for <code>healthcare_readmission</code> evaluate fairness across race and age:</p>
-<pre><code class="language-csv">audit,strategy,protected_attribute,metric,mean_value
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-csv">audit,strategy,protected_attribute,metric,mean_value
 healthcare_readmission,baseline,race,demographic_parity_diff,-0.0000858
 healthcare_readmission,baseline,race,equalized_odds_diff,0.0017434
 healthcare_readmission,baseline,race,predictive_parity_diff,0.0336660</code></pre>
 <p>While on-paper demographic parity and equalized odds gaps for race appear small in aggregate baseline benchmarks, aggregate metrics cannot detect whether the target variable itself under-counts true health need in under-resourced subgroups. If the target label only records encounters that resulted in a hospital admission, unrecorded out-of-hospital deterioration creates silent proxy label bias.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>The following Python function audits a dataset for Obermeyer-style proxy-label disparity. It evaluates whether patients from different demographic groups at the same predicted risk threshold possess unequal levels of true health need, and calculates the population re-allocation percentage if the target is switched from cost to health status.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 

@@ -211,24 +211,24 @@
 <h3 id="concrete-example-compas-and-custodystatus">Concrete Example: COMPAS and CustodyStatus</h3>
 <p>The COMPAS audit in this repo trains a Random Forest to predict recidivism. The biased model&#x27;s Black/White fairness gap - the percentage-point difference in defendants flagged as high risk - is <strong>86.77%</strong>.</p>
 <p>The standard naive fix is to drop <code>race</code>:</p>
-<pre><code class="language-python"># unfair.py: features include race + CustodyStatus + priors_count + charge_degree + age
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># unfair.py: features include race + CustodyStatus + priors_count + charge_degree + age
 # Black/White fairness gap: 86.77%
 
 # Drop race only, retrain:
 features_no_race = [&#x27;age&#x27;, &#x27;priors_count&#x27;, &#x27;CustodyStatus&#x27;, &#x27;charge_degree&#x27;]
 # Black/White fairness gap: still ~84% - dropping race alone changes almost nothing</code></pre>
 <p>The reason: <code>race</code> was not the direct driver. The confounding path runs through <code>CustodyStatus</code>:</p>
-<pre><code>Over-policing (systemic) ──→ CustodyStatus (elevated for Black defendants)
+<pre tabindex="0" aria-label="Scrollable code block"><code>Over-policing (systemic) ──→ CustodyStatus (elevated for Black defendants)
                          ──→ Recidivism label (inflated by differential surveillance)</code></pre>
 <p>Both arrows are caused by the same systemic factor. <code>CustodyStatus</code> is associated with the recidivism label not because custody history is a reliable individual risk signal, but because the same structural forces that produce elevated custody records also produce more recidivism label events - through monitoring, not through behavior.</p>
 <p>Removing both <code>race</code> and <code>CustodyStatus</code> breaks this path:</p>
-<pre><code class="language-python"># fair.py: features include only priors_count + charge_degree + age
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># fair.py: features include only priors_count + charge_degree + age
 # Black/White fairness gap: 15.69% - 82% reduction</code></pre>
 <p>The residual 15.69% reflects other confounding paths (differential bail rates, charge severity distributions, surveillance-driven label noise) that require changes upstream of the model to eliminate entirely.</p>
 <hr>
 <h3 id="detection-code">Detection Code</h3>
 <p>The standard statistical approach is stratified analysis: check whether the association between a feature and the outcome disappears or reverses within strata of the confounder. A marginal association that weakens substantially after stratification is the signature of confounding - known in extreme cases as Simpson&#x27;s Paradox.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from scipy.stats import chi2_contingency
 
 
@@ -289,7 +289,7 @@ def check_confounding(df, feature_col, outcome_col, confounder_col, protected_co
 
     return results</code></pre>
 <h4 id="applying-it-to-the-compas-audit">Applying it to the COMPAS audit</h4>
-<pre><code class="language-python"># Load the COMPAS dataset and generate predictions from unfair.py
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Load the COMPAS dataset and generate predictions from unfair.py
 # (compas-scores-raw.csv has no raw `race` column - race_binary is derived
 # from Ethnic_Code_Text, exactly as unfair.py does)
 result = check_confounding(

@@ -198,14 +198,14 @@
 <p>Max-min fairness comes from John Rawls&#x27; difference principle in <em>A Theory of Justice</em> (1971): inequalities are acceptable only if they work to the benefit of the least advantaged. It flips the priority. A model that lifts the worst group from 75.7% to 77.0% accuracy is better under max-min, even if the groups end up further apart. That is a real conflict with the parity family, and <a href="fairness-metric-conflicts.html">Fairness Metric Conflicts</a> does not cover it, because it only compares parity-style metrics against each other.</p>
 <h3 id="core-concept-minimize-the-maximum-group-loss">Core Concept: Minimize the Maximum Group Loss</h3>
 <p>Demographic parity constrains a rate: the positive-prediction rate must match across groups. Max-min changes the objective instead of adding a constraint.</p>
-<pre><code>parity:   minimize overall loss   subject to   rate(group A) = rate(group B)
+<pre tabindex="0" aria-label="Scrollable code block"><code>parity:   minimize overall loss   subject to   rate(group A) = rate(group B)
 max-min:  minimize   max over groups g of   loss(g)</code></pre>
 <p>The second line has no fairness constraint at all. It has a different definition of &quot;best&quot;: the model whose worst group does best. Two choices decide everything:</p>
 <ol><li><strong>What &quot;loss&quot; means.</strong> Error rate, log-loss and false-negative rate can rank the same groups in different orders.</li><li><strong>Which groups are allowed to be &quot;worst&quot;.</strong> A group of 12 rows will have a wild error rate by chance. Without a minimum group size, the objective chases noise.</li></ol>
 <p>A simple way to optimize it is iterative reweighting: train, find the group with the highest error, give its rows more weight, retrain, repeat.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p>This uses the <a href="../index.html#project-benefits">Benefits Denial</a> audit (UCI Adult, income above 50K as the eligibility proxy), a logistic regression on the audit&#x27;s core features with sex and race left out of the inputs, and four groups: sex crossed with race. The test split is the benchmark&#x27;s own (20%, <code>random_state=42</code>).</p>
-<pre><code>baseline  overall 0.811 | male, White/Asian 0.757 | male, other race 0.872 | female, White/Asian 0.894 | female, other race 0.938 | worst group 0.757 | sex parity gap -0.0509
+<pre tabindex="0" aria-label="Scrollable code block"><code>baseline  overall 0.811 | male, White/Asian 0.757 | male, other race 0.872 | female, White/Asian 0.894 | female, other race 0.938 | worst group 0.757 | sex parity gap -0.0509
 max-min   overall 0.811 | male, White/Asian 0.770 | male, other race 0.852 | female, White/Asian 0.874 | female, other race 0.914 | worst group 0.770 | sex parity gap -0.0563
 group weights [11.39  1.    1.    1.  ]</code></pre>
 <p>Read it against the benchmark&#x27;s own rows in <code>results/</code> (the current results, not the frozen snapshot). The baseline here is the benchmark&#x27;s S2 strategy (<code>unawareness_proxy_removal</code>): 0.811 accuracy and a sex parity gap of -0.0509. The in-processing strategy S3 (Fairlearn&#x27;s <code>ExponentiatedGradient</code>, a parity constraint) reaches a gap of -0.0219 at 0.784 accuracy.</p>
@@ -214,7 +214,7 @@ group weights [11.39  1.    1.    1.  ]</code></pre>
 <ul><li><strong>The worst-off group by accuracy is the largest one</strong> (male, White or Asian: 4,008 of 6,513 test rows), not a small or marginalized one. Accuracy is the loss here, so that is what &quot;worst off&quot; means. Pick a different loss and the answer changes.</li><li><strong>The worst group gained 1.3 points and everyone else lost some</strong>: the female groups dropped from 0.894 and 0.938 to 0.874 and 0.914. Overall accuracy did not move.</li><li><strong>The parity gap got slightly wider</strong> (-0.0509 to -0.0563). The max-min model did better by its own measure and worse by demographic parity&#x27;s.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/maxmin-fairness.py</code>; that file is generated from the block below). <code>_load_dataset</code> is the loader the benchmark harness uses, so the split matches <code>results/</code>.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest
 from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses

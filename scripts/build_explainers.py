@@ -194,7 +194,7 @@ def render_markdown(markdown_text, known_slugs):
         nonlocal code_lines, code_lang
         if code_lines:
             lang_attr = f' class="language-{escape_html(code_lang)}"' if code_lang else ""
-            blocks.append(f"<pre><code{lang_attr}>{escape_html(chr(10).join(code_lines))}</code></pre>")
+            blocks.append(f'<pre tabindex="0" aria-label="Scrollable code block"><code{lang_attr}>{escape_html(chr(10).join(code_lines))}</code></pre>')
             code_lines = []
             code_lang = ""
 

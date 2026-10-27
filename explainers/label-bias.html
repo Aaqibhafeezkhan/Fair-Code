@@ -209,7 +209,7 @@
 <p>The problem: over those ten years, the company&#x27;s hiring managers disproportionately rejected women for senior roles - not because women were less qualified, but because of documented managerial bias. That pattern is now encoded in the label column.</p>
 <p>The model learned that a woman with 8 years of experience and a high technical score is, historically, <code>hired = 0</code>. It&#x27;s not discriminating against women directly. It&#x27;s accurately predicting what biased humans would have decided.</p>
 <p>This is label bias. The features are clean. The pipeline is clean. The metric passes. The harm is still real.</p>
-<pre><code class="language-python"># Simulated example of how label bias manifests silently
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Simulated example of how label bias manifests silently
 
 import pandas as pd
 import numpy as np
@@ -260,7 +260,7 @@ print(rates)
 <p>There is no single metric for label bias. Detection requires a combination of approaches.</p>
 <h4 id="1-label-distribution-audit">1. Label distribution audit</h4>
 <p>Start by checking whether positive labels are distributed equally across protected groups, conditional on merit-based features. If two groups with equivalent qualifications receive different label rates, the labels may be biased.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 def label_bias_audit(df, label_col, group_col, feature_cols, n_bins=4):
     &quot;&quot;&quot;
@@ -292,7 +292,7 @@ def label_bias_audit(df, label_col, group_col, feature_cols, n_bins=4):
     return result</code></pre>
 <h4 id="2-consistency-test">2. Consistency test</h4>
 <p>Within the same merit tier, the label rate should be roughly equal across groups. If it is not - if highly-qualified members of one group received <code>0</code> labels at higher rates - that is a signal of label bias.</p>
-<pre><code class="language-python"># Apply it to the hiring simulation above
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Apply it to the hiring simulation above
 label_bias_audit(
     df=df,
     label_col=&#x27;hired&#x27;,
@@ -310,7 +310,7 @@ label_bias_audit(
 <p>A consistent gap that does not shrink as merit rises - exactly where it should disappear if the labels reflected merit alone - is a strong label-bias signal.</p>
 <h4 id="3-counterfactual-label-audit">3. Counterfactual label audit</h4>
 <p>Where records exist for both groups with matched features, compare label rates directly. This is the methodological approach used in audit studies - the &quot;matched resume&quot; experiments in hiring research - and it can be replicated computationally on historical datasets via propensity score matching.</p>
-<pre><code class="language-python">from sklearn.linear_model import LogisticRegression
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.linear_model import LogisticRegression
 import numpy as np
 
 def propensity_matched_label_audit(df, label_col, group_col, feature_cols, protected_val):
@@ -365,7 +365,7 @@ def propensity_matched_label_audit(df, label_col, group_col, feature_cols, prote
 <p>The most direct approach: convene a structured review of a sample of labels, specifically looking for cases where a protected-group member received a negative label despite strong merit signals. This is expensive and impractical at scale, but it is the only way to produce genuinely clean labels.</p>
 <h4 id="2-learning-with-noisy-labels">2. Learning with noisy labels</h4>
 <p>If you believe labels are biased but cannot relabel, noise-robust training methods can reduce the model&#x27;s tendency to fit the biased signal. The key assumption: label errors are not random - they are correlated with the protected attribute.</p>
-<pre><code class="language-python"># Conceptual example: downweight training examples where label is
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Conceptual example: downweight training examples where label is
 # suspected to be biased (low merit, wrong-group negative outcome)
 
 def compute_sample_weights(df, label_col, group_col, feature_cols, protected_val):
@@ -405,7 +405,7 @@ model.fit(X_train, y_train, sample_weight=weights[X_train.index])</code></pre>
 <p>This is not always available (historical data may not include follow-up) and has its own complications (outcomes also reflect systemic inequities), but it is a stronger label where it exists.</p>
 <h4 id="4-fairness-constraints-at-training-time">4. Fairness constraints at training time</h4>
 <p>If you cannot fix the labels, you can constrain the model to ignore the discriminatory signal in them. Fairlearn&#x27;s <code>ExponentiatedGradient</code> and <code>GridSearch</code> reducers can enforce Demographic Parity or Equalized Odds constraints regardless of what is in the label column - effectively refusing to learn the biased pattern even when it is present.</p>
-<pre><code class="language-python">from fairlearn.reductions import ExponentiatedGradient, DemographicParity
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from fairlearn.reductions import ExponentiatedGradient, DemographicParity
 from sklearn.ensemble import RandomForestClassifier
 
 estimator = RandomForestClassifier(n_estimators=100, random_state=42)

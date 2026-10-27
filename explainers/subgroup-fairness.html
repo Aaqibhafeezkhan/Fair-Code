@@ -200,7 +200,7 @@
 <p>This is the more general, adversarial version of <a href="intersectional-bias.html">intersectional bias</a>. Intersectional bias is about checking one specific human-chosen pair (Black women, say) and finding a compounding gap. Subgroup fairness replaces &quot;the pair a human picked&quot; with &quot;an automated search over a whole hypothesis class of subgroups&quot; - for example, every group definable by a linear threshold over the features - looking for the subgroup where a fairness constraint is violated by the most.</p>
 <h3 id="how-it-works">How It Works</h3>
 <p>Fix a fairness metric - selection rate, false positive rate, whatever the audit uses. For a subgroup <code>g</code> (a subset of the population picked out by some rule over attributes and features), define its violation as how far that metric inside <code>g</code> sits from the population value:</p>
-<pre><code>violation(g) = | metric(g) - metric(overall) |   weighted by how large g is</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>violation(g) = | metric(g) - metric(overall) |   weighted by how large g is</code></pre>
 <p>Marginal fairness only bounds <code>violation(g)</code> for <code>g</code> in a short list: <code>g = {race = A}</code>, <code>g = {sex = F}</code>, and so on. Subgroup fairness bounds it for <code>g</code> in a much larger class <code>G</code> - all subgroups definable by a rule of a chosen form (conjunctions of a few attributes, or a linear threshold over features).</p>
 <p>You cannot enumerate <code>G</code> when it is large, so the audit is framed as a search: an <strong>auditor</strong> tries to find the <code>g</code> in <code>G</code> with the biggest violation; if it finds one above a threshold, the model fails. Kearns et al. formalize this as a two-player game between a learner (trying to build a model with no high-violation subgroup) and an auditor (trying to find one). The practical brute-force version, for a small feature set, is just: enumerate every combination of a few columns&#x27; values and check the metric in each cell.</p>
 <p>The reason this is worth doing rather than just checking more pairs by hand: the number of subgroups grows combinatorially, and the worst one is rarely the one an auditor would have guessed.</p>
@@ -215,7 +215,7 @@
 <p>Two honest caveats, both of which the Limitations section expands:</p>
 <ul><li>The Asian subgroup has n = 641. That is above this repo&#x27;s default <code>min_group_size</code> of 100, but small enough that a 5-point rate is not a precise estimate - exactly the case this repo&#x27;s small-sample warnings exist for.</li><li>This is on raw labels, not model predictions. The gerrymandering concern is strongest for a <em>model</em> that was optimized against marginal fairness metrics; a raw-label reversal like this is evidence that the phenomenon is present in the data the models are trained on.</li></ul>
 <p>This repo&#x27;s <code>--cross</code> flag (or the MCP <code>profile_dataset</code> <code>cross</code> option) computes exactly one such pairwise combination - the specific pair you name. It does not perform an open-ended search. Subgroup fairness is what you would need on top of it: a scan over many candidate subgroups, not one.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 
 df = pd.read_csv(&quot;Healthcare Readmission/diabetic_data.csv&quot;, low_memory=False)
 df[&quot;y&quot;] = (df[&quot;readmitted&quot;] == &quot;&lt;30&quot;).astype(int)
@@ -230,7 +230,7 @@ by_sex_asian = asian.groupby(&quot;gender&quot;)[&quot;y&quot;].mean()
 print(by_sex_asian[&quot;Female&quot;] - by_sex_asian[&quot;Male&quot;])   # -0.0515</code></pre>
 <h3 id="detection-code">Detection Code</h3>
 <p>The following module runs a brute-force subgroup scan: it enumerates every combination of values over a chosen set of columns, computes a rate metric inside each cell, and reports the cells whose deviation from the population rate exceeds a threshold - the manual, small-feature-set version of an auditor. It is contrasted with the single fixed pair <code>--cross</code> checks.</p>
-<pre><code class="language-python">import itertools
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import itertools
 
 import numpy as np
 import pandas as pd

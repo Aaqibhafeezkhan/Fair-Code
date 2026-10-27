@@ -10,11 +10,17 @@ keeps one issue up to date, and nothing in `make lint` or a pull request depends
     python3 scripts/check_external_links.py --limit 20       # only the first 20 links
     python3 scripts/check_external_links.py --json           # machine-readable, for the workflow
     python3 scripts/check_external_links.py --fail-on-broken # exit 1 when something is broken (off by default)
+    python3 scripts/check_external_links.py --ignore-file F  # use another ignore list (default: the one below)
 
 Each URL is requested with a browser-like user agent and a timeout (HEAD first, then GET when the server does
-not allow HEAD). 2xx and 3xx (after redirects) are fine. 404, 410 and a name that does not resolve are
-broken. Everything else (403, 429, 5xx, timeouts, refused connections) is unknown: it is listed but never
-counted as broken, because it usually means the site blocks scripts or is down for a moment.
+not allow HEAD). A 404 gets one retry with a fuller browser-like user agent. For a DOI URL blocked with 403,
+the DOI handle API is used to distinguish a registered identifier from a missing one. Other 404, 410 and a
+name that does not resolve are broken. Everything else (403, 429, 5xx, timeouts, refused connections) is
+unknown: it is listed but never counted as broken, because it usually means the site blocks scripts or is down.
+
+A link that is correct but cannot pass an anonymous check (a page behind a login, a deleted account a document
+names on purpose) goes in scripts/external-links-ignore.txt: one URL per line, then a reason. The URL is not
+requested and does not appear in the broken list, but the report counts it ("N ignored") so the list stays visible.
 """
 from __future__ import annotations
 
@@ -26,15 +32,21 @@ import socket
 import ssl
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 USER_AGENT = "Mozilla/5.0 (compatible; FairCodeLinkCheck/1.0; +https://github.com/yakew7/Fair-Code)"
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 FairCodeLinkCheck/1.0"
+)
 LINK = re.compile(r"\]\((https?://[^)\s]+)\)")
 BARE = re.compile(r"<(https?://[^>\s]+)>")
 SKIP_HOSTS = {"localhost", "127.0.0.1", "example.com", "www.example.com"}
 BROKEN_STATUSES = {404, 410}
+IGNORE_FILE = ROOT / "scripts" / "external-links-ignore.txt"
 
 
 def _ssl_context():
@@ -46,6 +58,23 @@ def _ssl_context():
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         return ssl.create_default_context()
+
+
+def load_ignore_list(path: Path | None = IGNORE_FILE) -> dict[str, str]:
+    """{url: reason} from an ignore file: `URL reason` per line, blank lines and `#` comments skipped. A missing file
+    is an empty list; a line without a reason is an error, so every exception says why it exists."""
+    if path is None or not Path(path).exists():
+        return {}
+    ignored: dict[str, str] = {}
+    for number, line in enumerate(Path(path).read_text(encoding="utf-8").splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        url, _, reason = line.partition(" ")
+        if not re.match(r"https?://\S+$", url) or not reason.strip():
+            raise ValueError(f"{path}:{number}: expected `URL reason`, got {line!r}")
+        ignored[url.rstrip(".,;")] = reason.strip()
+    return ignored
 
 
 def default_paths():
@@ -77,8 +106,37 @@ def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
             with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
                 return "ok", str(response.status)
         except urllib.error.HTTPError as error:
+            if error.code == 404:
+                retry_method = "GET" if method == "HEAD" else method
+                retry = urllib.request.Request(
+                    url, method=retry_method,
+                    headers={"User-Agent": BROWSER_USER_AGENT, "Accept": "*/*"},
+                )
+                try:
+                    with urllib.request.urlopen(retry, timeout=timeout, context=_ssl_context()) as response:
+                        return "ok", str(response.status)
+                except urllib.error.HTTPError as retry_error:
+                    if retry_error.code in BROKEN_STATUSES:
+                        return "broken", str(retry_error.code)
+                    if retry_error.code == 403:
+                        doi = _extract_doi(url)
+                        if doi:
+                            return _check_doi(doi, timeout)
+                    if retry_error.code in (405, 501) and method == "HEAD":
+                        continue
+                    return "unknown", str(retry_error.code)
+                except urllib.error.URLError as retry_error:
+                    if isinstance(retry_error.reason, socket.gaierror):
+                        return "broken", "name does not resolve"
+                    return "unknown", str(retry_error.reason)
+                except (TimeoutError, OSError) as retry_error:
+                    return "unknown", type(retry_error).__name__
             if error.code in BROKEN_STATUSES:
                 return "broken", str(error.code)
+            if error.code == 403:
+                doi = _extract_doi(url)
+                if doi:
+                    return _check_doi(doi, timeout)
             if error.code in (405, 501) and method == "HEAD":
                 continue                      # the server does not allow HEAD: try GET
             return "unknown", str(error.code)
@@ -91,23 +149,60 @@ def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
     return "unknown", "no response"
 
 
-def run(urls: dict[str, list[str]], limit: int | None = None, workers: int = 8, timeout: float = 15.0) -> dict:
+def _extract_doi(url: str) -> str | None:
+    path = urllib.parse.unquote(urllib.parse.urlsplit(url).path)
+    match = re.search(r"10\.\d{4,9}/[^\s?#]+", path, re.IGNORECASE)
+    return match.group().rstrip(".,;:)]}") if match else None
+
+
+def _check_doi(doi: str, timeout: float) -> tuple[str, str]:
+    endpoint = f"https://doi.org/api/handles/{urllib.parse.quote(doi, safe='/')}"
+    request = urllib.request.Request(endpoint, headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        if error.code == 404:
+            return "broken", "DOI not found"
+        return "unknown", f"DOI resolver HTTP {error.code}"
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
+        return "unknown", f"DOI resolver {type(error).__name__}"
+
+    code = result.get("responseCode")
+    if code == 1:
+        return "ok", "DOI exists"
+    if code == 100:
+        return "broken", "DOI not found"
+    if code == 200:
+        return "broken", "DOI has no resolution values"
+    return "unknown", f"DOI resolver response {code}"
+
+
+def run(urls: dict[str, list[str]], limit: int | None = None, workers: int = 8, timeout: float = 15.0,
+        ignore: dict[str, str] | None = None) -> dict:
+    ignore = ignore or {}
+    ignored = [{"url": url, "reason": ignore[url], "files": urls[url]} for url in sorted(urls) if url in ignore]
+    urls = {url: files for url, files in urls.items() if url not in ignore}
     items = sorted(urls)[:limit] if limit else sorted(urls)
     results = {"ok": [], "broken": [], "unknown": []}
     with concurrent.futures.ThreadPoolExecutor(workers) as pool:
         for url, (kind, detail) in zip(items, pool.map(lambda u: check_url(u, timeout), items)):
             results[kind].append({"url": url, "detail": detail, "files": urls[url]})
-    return {"checked": len(items), **{kind: results[kind] for kind in results}}
+    return {"checked": len(items), **{kind: results[kind] for kind in results}, "ignored": ignored}
 
 
 def render(report: dict) -> str:
     lines = [f"Checked {report['checked']} external links: {len(report['ok'])} ok, "
-             f"{len(report['broken'])} broken, {len(report['unknown'])} unknown."]
+             f"{len(report['broken'])} broken, {len(report['unknown'])} unknown."
+             + (f" {len(report['ignored'])} ignored." if report.get("ignored") else "")]
     for title, key in (("Broken (404, 410 or a name that does not resolve)", "broken"),
                        ("Unknown (blocked, rate limited or unreachable; not counted as broken)", "unknown")):
         if report[key]:
             lines += ["", title + ":"]
             lines += [f"  {item['detail']:>22}  {item['url']}  ({', '.join(item['files'][:3])})" for item in report[key]]
+    if report.get("ignored"):
+        lines += ["", "Ignored (listed in scripts/external-links-ignore.txt, not requested):"]
+        lines += [f"  {item['url']}  ({item['reason']})" for item in report["ignored"]]
     return "\n".join(lines)
 
 
@@ -117,10 +212,12 @@ def main(argv=None) -> int:
     parser.add_argument("--limit", type=int, help="check at most this many links")
     parser.add_argument("--timeout", type=float, default=15.0)
     parser.add_argument("--check-local", action="store_true", help="also check localhost and example.com links (for tests)")
+    parser.add_argument("--ignore-file", type=Path, default=IGNORE_FILE, help="URL-and-reason list of links not to check")
     parser.add_argument("--json", action="store_true", help="print the report as JSON")
     parser.add_argument("--fail-on-broken", action="store_true", help="exit 1 when a link is broken (off by default)")
     args = parser.parse_args(argv)
-    report = run(collect_urls(args.paths or default_paths(), () if args.check_local else SKIP_HOSTS), args.limit, timeout=args.timeout)
+    report = run(collect_urls(args.paths or default_paths(), () if args.check_local else SKIP_HOSTS), args.limit,
+                 timeout=args.timeout, ignore=load_ignore_list(args.ignore_file))
     print(json.dumps(report, indent=2) if args.json else render(report))
     return 1 if args.fail_on_broken and report["broken"] else 0
 

@@ -203,7 +203,7 @@
 <p>This creates a realistic suggestion someone could actually act on, unlike mathematical nearest-neighbors that might suggest impossible changes.</p>
 <h3 id="concrete-example-benefits-denial-audit-05">Concrete Example: Benefits Denial - Audit 05</h3>
 <p>For an applicant denied benefits under the baseline model, here&#x27;s what each group needs to flip their decision:</p>
-<pre><code>--- DENIED APPLICANT (predicted: ineligible) ---
+<pre tabindex="0" aria-label="Scrollable code block"><code>--- DENIED APPLICANT (predicted: ineligible) ---
 income: $28,000 annual
 employment: part-time (20 hrs/wk)
 marital.status: single
@@ -227,7 +227,7 @@ DISADVANTAGED GROUP (Women):
 CONCLUSION: White applicants need 40% less income increase to flip their decision, revealing a structural bias in the model&#x27;s treatment of demographic groups with different economic opportunities.</code></pre>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>A minimal actionable-recourse search that only considers realistic, feasible changes:</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
@@ -323,7 +323,7 @@ if actionable_recourse is not None:
     ]])</code></pre>
 <h3 id="real-implementation-comparing-groups">Real Implementation: Comparing Groups</h3>
 <p>Here&#x27;s how the actionable-recourse search compares different demographic groups:</p>
-<pre><code class="language-python"># Define which groups to compare
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Define which groups to compare
 comparison_groups = [
     {&quot;name&quot;: &quot;White men&quot;, &quot;is_female&quot;: 0, &quot;is_minority&quot;: 0},
     {&quot;name&quot;: &quot;Women&quot;, &quot;is_female&quot;: 1, &quot;is_minority&quot;: 0},

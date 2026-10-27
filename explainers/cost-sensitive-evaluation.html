@@ -195,16 +195,16 @@
 <p><strong>Cost-sensitive evaluation</strong> scores a classifier by its expected cost, <code>c_fp</code> for each false positive and <code>c_fn</code> for each false negative, instead of by accuracy or by error counts that treat both mistakes alike.</p>
 <h3 id="why-it-matters">Why It Matters</h3>
 <p>Wrongly flagging a tenant, wrongly denying a benefit, and missing a patient who will be readmitted are different mistakes with different prices, and the price can differ by group. A false positive for someone with fewer options to appeal costs more. Evaluating at 0.5 assumes <code>c_fp = c_fn</code> without saying so. Elkan (2001) showed the consequence: for a calibrated score, the cost-minimizing threshold is not 0.5, it is</p>
-<pre><code>t* = c_fp / (c_fp + c_fn)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>t* = c_fp / (c_fp + c_fn)</code></pre>
 <p>So a cost ratio is a threshold, and a threshold is a cost ratio. Changing the costs changes which model decisions are good, which groups pay for them, and how large the fairness gap is.</p>
 <h3 id="core-concept-expected-cost-per-group">Core Concept: Expected Cost per Group</h3>
 <p>For a group <code>g</code> and a cutoff <code>t_g</code>, the expected cost per person is</p>
-<pre><code>cost_g = (FP_g * c_fp + FN_g * c_fn) / n_g</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>cost_g = (FP_g * c_fp + FN_g * c_fn) / n_g</code></pre>
 <p>Three things follow, and the example below shows each:</p>
 <ul><li><strong>Cost can be compared across groups.</strong> Two groups with the same accuracy can have very different expected costs if one&#x27;s errors are mostly the expensive kind.</li><li><strong>The best cutoff per group comes from the costs.</strong> Minimizing <code>cost_g</code> over <code>t_g</code>, on training scores, gives a cutoff per group. When the cost ratio is the same in both groups and the scores are calibrated, the cutoffs coincide with Elkan&#x27;s formula and with each other.</li><li><strong>Always compare with &quot;flag nobody&quot;.</strong> If a false positive is expensive enough, the cheapest policy can be to flag almost no one, which is a finding about the model, not a success.</li></ul>
 <h3 id="concrete-example-tenant-screening-three-cost-settings">Concrete Example: Tenant Screening, Three Cost Settings</h3>
 <p>The <a href="../index.html#project-tenant">Tenant Screening</a> audit: positive means the model flags a person as likely to reoffend, so a false positive wrongly denies housing and a false negative lets through someone who then reoffends. Logistic regression, core features, the benchmark split. Costs are per 100 applicants on the test set; the cutoffs for &quot;cost-optimal&quot; are fit on training scores.</p>
-<pre><code>Tenant Screening - race: expected cost per 100 applicants on the test set (a positive is a flagged applicant)
+<pre tabindex="0" aria-label="Scrollable code block"><code>Tenant Screening - race: expected cost per 100 applicants on the test set (a positive is a flagged applicant)
 a false positive costs 1, a false negative costs 1
   threshold 0.5            thresholds 0.500 / 0.500 | flagged 0.612 / 0.725 | cost   35.4 /   36.6
   Elkan c_fp/(c_fp+c_fn)   thresholds 0.500 / 0.500 | flagged 0.612 / 0.725 | cost   35.4 /   36.6
@@ -228,7 +228,7 @@ a false positive costs 5 for the advantaged group and 8 for the disadvantaged gr
 <ul><li>With equal costs in both groups, cost-optimal cutoffs are nearly the same for both groups (0.833 and 0.833, or 0.845 and 0.840), so they do <strong>not</strong> equalize positive rates (0.016 and 0.042 flagged at Elkan&#x27;s cutoff). Cost-optimality is not a fairness criterion.</li><li>With unequal costs, cost-optimal cutoffs <em>differ</em> by group, and a rule that treats the groups differently because their costs differ is a decision that needs a stated justification and a legal check (see that explainer&#x27;s Limitations).</li><li>Both rest on the same dial, one cutoff per group. The difference is what sets it: a fairness constraint, or a stated price per error.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/cost-sensitive-evaluation.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit
 from faircode.models import build_model
 

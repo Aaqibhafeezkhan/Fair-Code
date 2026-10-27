@@ -205,7 +205,7 @@
 <p>A revised-calculator study of cardiovascular risk scores found the same shape of problem in a different tool: Yadlowsky et al. (2018) re-evaluated the widely used Pooled Cohort Equations for predicting atherosclerotic cardiovascular disease and found the equations overestimated risk in some race/sex/age strata and underestimated it in others, at the exact score thresholds that trigger a statin prescription - meaning the calculator&#x27;s single validated &quot;well-calibrated&quot; reputation was hiding threshold-level miscalibration for the specific groups clinicians use it to make prescribing decisions about.</p>
 <h3 id="concrete-example-healthcare-readmission-audit-06">Concrete Example: Healthcare Readmission - Audit 06</h3>
 <p>Audit 06 predicts 30-day hospital readmission from the Diabetes 130-US Hospitals dataset. Running a reliability check (illustrative code below, not <code>unfair.py</code>/<code>fair.py</code> and not a published Audit 06 result - this doesn&#x27;t touch any frozen file) against the same dataset by race shows why a single dataset can tell two different calibration stories depending on where you look:</p>
-<pre><code class="language-text">Caucasian (n=15,247)
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-text">Caucasian (n=15,247)
   predicted 0-10%:  mean predicted 7.8%  | actual rate  8.1%   (n=6,008)
   predicted 10-20%: mean predicted 13.1% | actual rate 12.8%   (n=8,876)
   predicted 20%+:   mean predicted 23.6% | actual rate 26.2%   (n=363)
@@ -217,7 +217,7 @@ African American (n=3,815)
 <p>In the two lower bins - which hold the vast majority of both groups - calibration is close for both races, within a point or two either way. That is a genuinely reassuring result, and it would be dishonest to manufacture a bigger gap than the data shows. But look at the group sizes in the highest-risk bin: 363 Caucasian patients versus only 128 African American patients, a quarter of the sample the calibration claim for that bin actually rests on. That bin is exactly where a clinician would want the score to be most trustworthy - it is the group flagged as highest risk - and it is exactly where this dataset gives the least statistical power to confirm it. A model can look calibrated for a small subgroup&#x27;s high-risk bin purely because there were too few patients in it to detect a real gap, not because the gap isn&#x27;t there. This is the practical failure mode: it is not that the score is visibly wrong, it is that there usually isn&#x27;t enough data in the group and bin that matter most to know.</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>Computes a per-group reliability table and a calibration slope/intercept summary, so a subgroup that is systematically over- or under-scored cannot hide inside a model that looks calibrated on average.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 

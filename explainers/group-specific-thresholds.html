@@ -202,7 +202,7 @@
 <p>Both are quantile lookups on the scores. The one honest rule: fit the thresholds on training scores, then apply them to the test set. Choosing a cutoff on the test set that you then report on is circular.</p>
 <h3 id="concrete-example-tenant-screening">Concrete Example: Tenant Screening</h3>
 <p>The <a href="../index.html#project-tenant">Tenant Screening</a> audit: positive means the model flags a person as likely to reoffend within three years, the disadvantaged group is Black applicants, logistic regression, core features only, benchmark split.</p>
-<pre><code>one threshold (0.5)                accuracy 0.639 | positive rate advantaged 0.612 disadvantaged 0.725 | parity gap +0.1139 | TPR gap +0.0837
+<pre tabindex="0" aria-label="Scrollable code block"><code>one threshold (0.5)                accuracy 0.639 | positive rate advantaged 0.612 disadvantaged 0.725 | parity gap +0.1139 | TPR gap +0.0837
 group thresholds, parity           accuracy 0.639 | positive rate advantaged 0.612 disadvantaged 0.598 | parity gap -0.0138 | TPR gap -0.0256
   disadvantaged-group threshold: 0.565 (advantaged stays 0.500)
 group thresholds, equal opportunity accuracy 0.640 | positive rate advantaged 0.612 disadvantaged 0.611 | parity gap -0.0002 | TPR gap -0.0133
@@ -211,7 +211,7 @@ group thresholds, equal opportunity accuracy 0.640 | positive rate advantaged 0.
 <p>The benchmark&#x27;s S2 baseline in <code>results/</code> (the current results) is the same model: accuracy 0.639 and a gap of +0.1139. Its S4 <code>post_processing</code> row, Fairlearn&#x27;s <code>ThresholdOptimizer</code>, has a gap of -0.0054 at 0.639 accuracy. The hand-written version lands in the same place.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/group-specific-thresholds.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.model_selection import train_test_split
 from faircode.manifest import load_manifest
 from faircode.benchmark import _load_dataset      # the loader the benchmark harness uses

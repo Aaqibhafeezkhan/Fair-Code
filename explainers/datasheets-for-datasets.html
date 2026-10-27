@@ -201,7 +201,7 @@
 <p>Half of the composition answers can be computed from the file. The other half cannot, and an honest datasheet says so instead of guessing.</p>
 <h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
 <p>This datasheet is generated for the <a href="../index.html#project-readmission">Healthcare Readmission</a> audit data (the 130-hospital diabetes dataset). Everything computable is read from the file and the audit manifest; the questions the repo cannot answer are printed as UNKNOWN.</p>
-<pre><code>Datasheet: Healthcare Readmission - Clinical Bias
+<pre tabindex="0" aria-label="Scrollable code block"><code>Datasheet: Healthcare Readmission - Clinical Bias
 
 MOTIVATION
   Why was the dataset created, by whom, who funded it?    UNKNOWN: not recorded in this repo
@@ -231,7 +231,7 @@ USES
 <p>Three questions cannot be answered from the repo: why the data was created, how it was acquired, and whether the patients consented to this use. Those unknowns are part of the dataset&#x27;s description.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/datasheets-for-datasets.py</code>; that file is generated from the block below). Change the folder name to produce one for another audit.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from faircode.benchmark import load_audit
 
 data = load_audit(&quot;Healthcare Readmission&quot;)                  # applies the manifest&#x27;s row filters and target

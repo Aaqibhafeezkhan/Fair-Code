@@ -34,7 +34,7 @@ ordered by merged PR count, most first - ties broken by commit count, then by ea
 date. Within each entry, the PR numbers link the claim to the actual diff, so nothing here is an
 unverifiable "thanks to".
 
-**Snapshot:** 2026-10-24, covering everything merged through **PR #1141**.
+**Snapshot:** 2026-10-27, covering everything merged through **PR #1191**.
 Anything merged after that date is real and welcome, but is not yet reflected here - the
 [contributors graph](https://github.com/yakew7/Fair-Code/graphs/contributors) is always the live
 source of truth, and the `contrib.rocks` grid above regenerates from it automatically.
@@ -127,6 +127,14 @@ Ordered by merged PR count, most first (ties broken by commit count, then by ear
 
 Most recently, documentation sync PRs for [SPEC.md](faircode/SPEC.md) ([#477](https://github.com/yakew7/Fair-Code/pull/477)), the `new_explainer.yml` issue template ([#478](https://github.com/yakew7/Fair-Code/pull/478)) and [README.md](README.md) ([#479](https://github.com/yakew7/Fair-Code/pull/479)).
 
+### dxnnystyles - [@dxnnystyles](https://github.com/dxnnystyles)
+
+**15 merged PRs · 16 commits · first merged 2026-10-22**
+
+Fixed three small input and wording problems found by reading error messages: flags now say `1 row` instead of `1 rows` in both the Python and JavaScript engines ([#1121](https://github.com/yakew7/Fair-Code/pull/1121), closing issue #1106), `load_audit` names the manifest path it tried, lists nearby audit folders and suggests close matches ([#1123](https://github.com/yakew7/Fair-Code/pull/1123), closing issue #1112), and `profile()` and `compare()` raise a clear `TypeError` for the wrong kind of input ([#1124](https://github.com/yakew7/Fair-Code/pull/1124), closing issue #1113).
+
+Then a run of test coverage and fixes across the tooling: tests for the `check_em_dash.py` failure and skip paths, the weekly traction parsing and item counts, the explainer-count checker and the issue-reference checker ([#1159](https://github.com/yakew7/Fair-Code/pull/1159), [#1161](https://github.com/yakew7/Fair-Code/pull/1161), [#1163](https://github.com/yakew7/Fair-Code/pull/1163), [#1187](https://github.com/yakew7/Fair-Code/pull/1187)); a console-script smoke test that uses a checkout ([#1160](https://github.com/yakew7/Fair-Code/pull/1160)); generated-file checks that include unstaged assets ([#1162](https://github.com/yakew7/Fair-Code/pull/1162)); separate concurrency groups for the benchmark smoke and rerun jobs ([#1164](https://github.com/yakew7/Fair-Code/pull/1164)); a guard so a subset benchmark cannot overwrite other audits' results ([#1165](https://github.com/yakew7/Fair-Code/pull/1165)); actionable errors for missing manifest keys and dataset columns ([#1188](https://github.com/yakew7/Fair-Code/pull/1188)); keyboard-scrollable explainer code blocks ([#1189](https://github.com/yakew7/Fair-Code/pull/1189)); better external link verification ([#1190](https://github.com/yakew7/Fair-Code/pull/1190)); and a note on the optional dependency lock exclusions ([#1191](https://github.com/yakew7/Fair-Code/pull/1191)).
+
 ### Tiyatrotist - [@Tiyatrotist](https://github.com/Tiyatrotist)
 
 **15 merged PRs · 15 commits · first merged 2026-09-27**
@@ -167,13 +175,15 @@ issue #352).
 
 ### Rayan Abdul Cader - [@minutechreview](https://github.com/minutechreview)
 
-**10 merged PRs · 10 commits · first merged 2026-10-07**
+**13 merged PRs · 13 commits · first merged 2026-10-07**
 
 Documented the MCP tools' `alpha`, `correction`, `held_out_with_a`/`held_out_with_b` and `format` parameters, with their defaults and error behaviour taken from the code and its tests, in SPEC.md section 11 ([#851](https://github.com/yakew7/Fair-Code/pull/851), closing issue #815) and as a table in the README ([#852](https://github.com/yakew7/Fair-Code/pull/852), closing issue #818), and made `.xls`, `.ods` and other known binary formats fail with "unsupported format" instead of blaming the encoding ([#1034](https://github.com/yakew7/Fair-Code/pull/1034), closing issue #1018).
 
 Then made `faircode --fail-under` reject a value outside 0 to 100 with exit code 2 ([#1053](https://github.com/yakew7/Fair-Code/pull/1053), closing issue #1037), documented `faircode benchmark --root` and `--no-plots` ([#1054](https://github.com/yakew7/Fair-Code/pull/1054), closing issue #1040), made the MCP `proxy_hints` result say in `notes` why an empty hints list is empty ([#1058](https://github.com/yakew7/Fair-Code/pull/1058), closing issue #1044), and refreshed the ROADMAP's stale header date and issue-count line ([#1075](https://github.com/yakew7/Fair-Code/pull/1075), closing issue #1066).
 
 Then fixed the web engine's reading of XLSX workbooks that use the 1904 date system ([#1092](https://github.com/yakew7/Fair-Code/pull/1092), closing issue #1076), made `check_explainer_count.py` fail when README.md or `llms.txt` leaves out an explainer ([#1091](https://github.com/yakew7/Fair-Code/pull/1091), closing issue #1077), and added `--audit` and `--summary` to `scripts/diff_results.py` ([#1093](https://github.com/yakew7/Fair-Code/pull/1093), closing issue #1081).
+
+Then accessibility and docs touches on the explainer pages and CI notes: the Python versions CI actually uses ([#1182](https://github.com/yakew7/Fair-Code/pull/1182)), `scope="col"` on explainer table header cells ([#1183](https://github.com/yakew7/Fair-Code/pull/1183)) and a skip link on every explainer page ([#1184](https://github.com/yakew7/Fair-Code/pull/1184)).
 
 ### [@be-student](https://github.com/be-student)
 
@@ -245,12 +255,6 @@ Added a "Skip to main content" link and a semantic `<main id="main">` landmark t
 
 Fixed three of the previous sweep's follow-up issues in one evening, each with a focused change and a test in both engines: `compare --rename A=A` is rejected instead of adding a misleading flag ([#941](https://github.com/yakew7/Fair-Code/pull/941), closing #919); the rename tokeniser keeps accented and non-Latin column-name words whole, so `género` and `性别` tokenise correctly ([#942](https://github.com/yakew7/Fair-Code/pull/942), closing #917); and an all-numeric held-out column such as a raw age is exempt from the near-unique identifier screen ([#943](https://github.com/yakew7/Fair-Code/pull/943), closing #937).
 
-### dxnnystyles - [@dxnnystyles](https://github.com/dxnnystyles)
-
-**3 merged PRs · 3 commits · first merged 2026-10-22**
-
-Fixed three small input and wording problems found by reading error messages: flags now say `1 row` instead of `1 rows` in both the Python and JavaScript engines ([#1121](https://github.com/yakew7/Fair-Code/pull/1121), closing issue #1106), `load_audit` names the manifest path it tried, lists nearby audit folders and suggests close matches ([#1123](https://github.com/yakew7/Fair-Code/pull/1123), closing issue #1112), and `profile()` and `compare()` raise a clear `TypeError` for the wrong kind of input ([#1124](https://github.com/yakew7/Fair-Code/pull/1124), closing issue #1113).
-
 ### Lovish Menaria - [@lovishmenaria14-gif](https://github.com/lovishmenaria14-gif)
 
 **2 merged PRs · 3 commits · first merged 2026-08-29**
@@ -290,6 +294,12 @@ Made `scripts/generate_key_fold.py` handle a missing `node` with a plain message
 **2 merged PRs · 2 commits · first merged 2026-10-20**
 
 Documented the `get_benchmark_results` MCP tool's parameters in [README.md](README.md) ([#1089](https://github.com/yakew7/Fair-Code/pull/1089), closing issue #1082) and then clarified how its result lookup behaves ([#1090](https://github.com/yakew7/Fair-Code/pull/1090)).
+
+### [@bfs2021](https://github.com/bfs2021)
+
+**2 merged PRs · 2 commits · first merged 2026-10-25**
+
+Two manifest and benchmark error-message fixes: the manifest is now named once in validation errors ([#1181](https://github.com/yakew7/Fair-Code/pull/1181)) and a manifest that is not a mapping is rejected with a clear message ([#1185](https://github.com/yakew7/Fair-Code/pull/1185)).
 
 ### [@YashKewlani1](https://github.com/YashKewlani1)
 
@@ -535,6 +545,18 @@ Added the warning for group labels that differ only in case or spacing (`M` and 
 
 Clarified the frozen results workflow in [README.md](README.md) and [CONTRIBUTING.md](CONTRIBUTING.md) after the paper freeze lifted ([#1072](https://github.com/yakew7/Fair-Code/pull/1072)).
 
+### [@d4rshnn](https://github.com/d4rshnn)
+
+**1 merged PR · 1 commit · first merged 2026-10-24**
+
+Fixed boolean XLSX header parity between the Python and web engines ([#1157](https://github.com/yakew7/Fair-Code/pull/1157)).
+
+### [@mohakmanjrekar](https://github.com/mohakmanjrekar)
+
+**1 merged PR · 1 commit · first merged 2026-10-24**
+
+Improved the suggestions shown for an unknown audit name ([#1158](https://github.com/yakew7/Fair-Code/pull/1158)).
+
 ---
 
 ## Contributions by area
@@ -545,11 +567,11 @@ A cross-cut of the same work, for anyone looking for who to ask about what.
 |------|--------------|
 | **Audits** (`*/unfair.py`, `*/fair.py`, `audit.yaml`) | [@yakew7](https://github.com/yakew7), [@YashKewlani1](https://github.com/YashKewlani1), [@Rajveerx11](https://github.com/Rajveerx11), [@cannotdoit13](https://github.com/cannotdoit13), [@thadidaniel-ctrl](https://github.com/thadidaniel-ctrl) |
 | **Explainers** (`explainers/`) | [@yakew7](https://github.com/yakew7), [@Shreyash0712](https://github.com/Shreyash0712), [@evanjain-dot](https://github.com/evanjain-dot), [@AnayDhawan](https://github.com/AnayDhawan), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Rajveerx11](https://github.com/Rajveerx11), `TanishGoyal-Dev` (account deleted), [@shwetagupta1234](https://github.com/shwetagupta1234), [@Aarav1611](https://github.com/Aarav1611), [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) |
-| **Profiler - CLI & loaders** (`faircode/`) | [@yakew7](https://github.com/yakew7), [@prami25r](https://github.com/prami25r), [@minutechreview](https://github.com/minutechreview), [@ahmdkaml](https://github.com/ahmdkaml), [@tomatotomata](https://github.com/tomatotomata), [@ImMortaL0P](https://github.com/ImMortaL0P), [@propcgamer20-png](https://github.com/propcgamer20-png), [@evanjain-dot](https://github.com/evanjain-dot), [@AnayDhawan](https://github.com/AnayDhawan), [@VedantMadane](https://github.com/VedantMadane), [@mahirhir](https://github.com/mahirhir), [@StudentSuite3](https://github.com/StudentSuite3), [@oxura](https://github.com/oxura), [@nitishchauhan002](https://github.com/nitishchauhan002), [@be-student](https://github.com/be-student), [@slsgzs-cloud](https://github.com/slsgzs-cloud), [@wangzhengzhuo05](https://github.com/wangzhengzhuo05), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@KingEmma7](https://github.com/KingEmma7), [@readyagentsdev](https://github.com/readyagentsdev), [@happymode-25](https://github.com/happymode-25), [@Tiyatrotist](https://github.com/Tiyatrotist), [@Detoy](https://github.com/Detoy), [@adity982](https://github.com/adity982), [@peda-cos](https://github.com/peda-cos), [@sammist2](https://github.com/sammist2), [@dxnnystyles](https://github.com/dxnnystyles) |
-| **Profiler - web** (`profiler.html`, `assets/profiler-*.js`) | [@yakew7](https://github.com/yakew7), [@prami25r](https://github.com/prami25r), [@ahmdkaml](https://github.com/ahmdkaml), [@ImMortaL0P](https://github.com/ImMortaL0P), [@AnayDhawan](https://github.com/AnayDhawan), [@Shreyash0712](https://github.com/Shreyash0712), [@lovishmenaria14-gif](https://github.com/lovishmenaria14-gif), [@be-student](https://github.com/be-student), [@propcgamer20-png](https://github.com/propcgamer20-png), [@wangzhengzhuo05](https://github.com/wangzhengzhuo05), [@kevin-lozada-santos](https://github.com/kevin-lozada-santos), [@ege-arhan](https://github.com/ege-arhan), [@Tiyatrotist](https://github.com/Tiyatrotist), [@DevKhizerer](https://github.com/DevKhizerer), [@Aditya3021](https://github.com/Aditya3021), [@adity982](https://github.com/adity982), [@peda-cos](https://github.com/peda-cos) |
-| **Benchmark harness & paper freeze** | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@shauryagangrade](https://github.com/shauryagangrade), [@be-student](https://github.com/be-student), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Yipjunwei](https://github.com/Yipjunwei), [@Abitha1861](https://github.com/Abitha1861), [@sammist2](https://github.com/sammist2) |
-| **CI & workflows** (`.github/`) | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@cannotdoit13](https://github.com/cannotdoit13), [@Shreyash0712](https://github.com/Shreyash0712), [@evanjain-dot](https://github.com/evanjain-dot), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@AnayDhawan](https://github.com/AnayDhawan), [@raonishanth2000-hub](https://github.com/raonishanth2000-hub), [@saikeerthanakavuri](https://github.com/saikeerthanakavuri) |
-| **Website & explainer build** | [@yakew7](https://github.com/yakew7), [@anujkamdar](https://github.com/anujkamdar), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@Ayaan-20-11](https://github.com/Ayaan-20-11), [@sushicat75](https://github.com/sushicat75), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan), [@slsgzs-cloud](https://github.com/slsgzs-cloud), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@AnayDhawan](https://github.com/AnayDhawan), [@thadidaniel-ctrl](https://github.com/thadidaniel-ctrl), [@Abitha1861](https://github.com/Abitha1861) |
+| **Profiler - CLI & loaders** (`faircode/`) | [@yakew7](https://github.com/yakew7), [@prami25r](https://github.com/prami25r), [@minutechreview](https://github.com/minutechreview), [@ahmdkaml](https://github.com/ahmdkaml), [@tomatotomata](https://github.com/tomatotomata), [@ImMortaL0P](https://github.com/ImMortaL0P), [@propcgamer20-png](https://github.com/propcgamer20-png), [@evanjain-dot](https://github.com/evanjain-dot), [@AnayDhawan](https://github.com/AnayDhawan), [@VedantMadane](https://github.com/VedantMadane), [@mahirhir](https://github.com/mahirhir), [@StudentSuite3](https://github.com/StudentSuite3), [@oxura](https://github.com/oxura), [@nitishchauhan002](https://github.com/nitishchauhan002), [@be-student](https://github.com/be-student), [@slsgzs-cloud](https://github.com/slsgzs-cloud), [@wangzhengzhuo05](https://github.com/wangzhengzhuo05), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@KingEmma7](https://github.com/KingEmma7), [@readyagentsdev](https://github.com/readyagentsdev), [@happymode-25](https://github.com/happymode-25), [@Tiyatrotist](https://github.com/Tiyatrotist), [@Detoy](https://github.com/Detoy), [@adity982](https://github.com/adity982), [@peda-cos](https://github.com/peda-cos), [@sammist2](https://github.com/sammist2), [@dxnnystyles](https://github.com/dxnnystyles) |, [@mohakmanjrekar](https://github.com/mohakmanjrekar), [@bfs2021](https://github.com/bfs2021)
+| **Profiler - web** (`profiler.html`, `assets/profiler-*.js`) | [@yakew7](https://github.com/yakew7), [@prami25r](https://github.com/prami25r), [@ahmdkaml](https://github.com/ahmdkaml), [@ImMortaL0P](https://github.com/ImMortaL0P), [@AnayDhawan](https://github.com/AnayDhawan), [@Shreyash0712](https://github.com/Shreyash0712), [@lovishmenaria14-gif](https://github.com/lovishmenaria14-gif), [@be-student](https://github.com/be-student), [@propcgamer20-png](https://github.com/propcgamer20-png), [@wangzhengzhuo05](https://github.com/wangzhengzhuo05), [@kevin-lozada-santos](https://github.com/kevin-lozada-santos), [@ege-arhan](https://github.com/ege-arhan), [@Tiyatrotist](https://github.com/Tiyatrotist), [@DevKhizerer](https://github.com/DevKhizerer), [@Aditya3021](https://github.com/Aditya3021), [@adity982](https://github.com/adity982), [@peda-cos](https://github.com/peda-cos) |, [@d4rshnn](https://github.com/d4rshnn)
+| **Benchmark harness & paper freeze** | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@shauryagangrade](https://github.com/shauryagangrade), [@be-student](https://github.com/be-student), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Yipjunwei](https://github.com/Yipjunwei), [@Abitha1861](https://github.com/Abitha1861), [@sammist2](https://github.com/sammist2) |, [@bfs2021](https://github.com/bfs2021), [@dxnnystyles](https://github.com/dxnnystyles)
+| **CI & workflows** (`.github/`) | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@cannotdoit13](https://github.com/cannotdoit13), [@Shreyash0712](https://github.com/Shreyash0712), [@evanjain-dot](https://github.com/evanjain-dot), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@AnayDhawan](https://github.com/AnayDhawan), [@raonishanth2000-hub](https://github.com/raonishanth2000-hub), [@saikeerthanakavuri](https://github.com/saikeerthanakavuri) |, [@dxnnystyles](https://github.com/dxnnystyles)
+| **Website & explainer build** | [@yakew7](https://github.com/yakew7), [@anujkamdar](https://github.com/anujkamdar), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@Ayaan-20-11](https://github.com/Ayaan-20-11), [@sushicat75](https://github.com/sushicat75), [@propcgamer20-png](https://github.com/propcgamer20-png), [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan), [@slsgzs-cloud](https://github.com/slsgzs-cloud), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@AnayDhawan](https://github.com/AnayDhawan), [@thadidaniel-ctrl](https://github.com/thadidaniel-ctrl), [@Abitha1861](https://github.com/Abitha1861) |, [@minutechreview](https://github.com/minutechreview)
 | **Tests** (`tests/`) | [@yakew7](https://github.com/yakew7), [@ahmdkaml](https://github.com/ahmdkaml), [@tomatotomata](https://github.com/tomatotomata), [@ImMortaL0P](https://github.com/ImMortaL0P), [@evanjain-dot](https://github.com/evanjain-dot), [@propcgamer20-png](https://github.com/propcgamer20-png), [@mahirhir](https://github.com/mahirhir), [@StudentSuite3](https://github.com/StudentSuite3), [@oxura](https://github.com/oxura), [@shauryagangrade](https://github.com/shauryagangrade), [@nitishchauhan002](https://github.com/nitishchauhan002), [@be-student](https://github.com/be-student), [@wangzhengzhuo05](https://github.com/wangzhengzhuo05), [@Rayan-and-beyond](https://github.com/Rayan-and-beyond), [@KingEmma7](https://github.com/KingEmma7), [@dxnnystyles](https://github.com/dxnnystyles), [@Aaqibhafeezkhan](https://github.com/Aaqibhafeezkhan) |
 | **Contributor tooling & docs** | [@yakew7](https://github.com/yakew7), [@Enard52](https://github.com/Enard52), [@propcgamer20-png](https://github.com/propcgamer20-png), [@ahmdkaml](https://github.com/ahmdkaml), [@Swastik-Yadav](https://github.com/Swastik-Yadav), [@Circout-sudo](https://github.com/Circout-sudo), [@nivedmahendran](https://github.com/nivedmahendran), [@lovishmenaria14-gif](https://github.com/lovishmenaria14-gif), [@Zinniacodes01](https://github.com/Zinniacodes01), [@carryok](https://github.com/carryok), [@SatvikMishra08](https://github.com/SatvikMishra08), [@minutechreview](https://github.com/minutechreview), [@Asmit-08](https://github.com/Asmit-08), [@Gauravbhati2099](https://github.com/Gauravbhati2099) |
 

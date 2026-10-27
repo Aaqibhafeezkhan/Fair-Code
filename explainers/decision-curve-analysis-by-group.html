@@ -112,7 +112,7 @@
         "url": "https://www.thefaircode.xyz/index.html#explainers"
       },
       "datePublished": "2026-10-24",
-      "dateModified": "2026-10-24"
+      "dateModified": "2026-10-25"
     },
     {
       "@type": "FAQPage",
@@ -198,14 +198,14 @@
 <p>Per group, the same curve can tell a different story. A threshold that is useful for one group can be no better than flagging everyone for another, even when the model is &quot;the same&quot; for both. That is a fairness finding that a single aggregate curve, or a metric at 0.5, cannot show.</p>
 <h3 id="core-concept-net-benefit">Core Concept: Net Benefit</h3>
 <p>At threshold probability <code>t</code>, the model flags everyone whose score is at least <code>t</code>. The net benefit is</p>
-<pre><code>net benefit(t) = TP / n  -  FP / n * t / (1 - t)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>net benefit(t) = TP / n  -  FP / n * t / (1 - t)</code></pre>
 <p>True positives count as gains. Each false positive is a loss weighted by the odds <code>t / (1 - t)</code>: at <code>t = 0.2</code> a false positive costs a quarter of a true positive&#x27;s gain, at <code>t = 0.5</code> it costs the same. Choosing <code>t</code> is therefore the same as stating the cost ratio: acting at <code>t = 0.2</code> says a missed case is four times worse than a false alarm.</p>
 <p>Two reference lines come with it:</p>
 <ul><li><strong>Treat everyone:</strong> <code>prevalence - (1 - prevalence) * t / (1 - t)</code>, a model that flags every person.</li><li><strong>Treat no one:</strong> zero by definition.</li></ul>
 <p>The model is useful at <code>t</code> only if its net benefit is above both. Computing all three per group, with each group&#x27;s own prevalence in its treat-everyone line, gives a curve per group.</p>
 <h3 id="concrete-example-compas-race">Concrete Example: COMPAS, Race</h3>
 <p>The <a href="../index.html#project-compas">COMPAS</a> audit: the label is whether the COMPAS risk score text is High or Medium, a logistic regression on the core features (sex and marital status) predicts it, the disadvantaged group is African-American defendants. This audit models the score COMPAS issued, not whether anyone reoffended, so &quot;net benefit&quot; here measures how well the model reproduces that score. Prevalence differs a lot: 31% of the advantaged group&#x27;s test rows are positive against 59% for the disadvantaged group.</p>
-<pre><code>COMPAS - race: net benefit per 100 people at each threshold probability
+<pre tabindex="0" aria-label="Scrollable code block"><code>COMPAS - race: net benefit per 100 people at each threshold probability
   threshold | advantaged: model  treat-all | disadvantaged: model  treat-all
        0.15 |   19.02    19.02      |   51.81    51.81
        0.20 |   14.72    13.95      |   48.48    48.79
@@ -221,7 +221,7 @@ disadvantaged beats treat-all and treat-none at thresholds: 0.32 to 0.52</code><
 <p>The takeaway is not that the model is fine in one range: it is that any single threshold serves one group better than the other, and that the right one depends on the cost ratio each group faces.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/decision-curve-analysis-by-group.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit
 from faircode.models import build_model
 

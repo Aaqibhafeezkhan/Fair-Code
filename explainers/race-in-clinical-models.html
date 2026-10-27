@@ -201,7 +201,7 @@
 <p>Only the third is what a patient experiences, and it needs a rule for how many places there are. The example uses the top 10% of scores.</p>
 <h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
 <p><a href="../index.html#project-readmission">Healthcare Readmission</a>: 30-day readmission after a hospital stay with diabetes, about 99,500 patients, logistic regression on the audit&#x27;s core and proxy columns, the benchmark&#x27;s split. One model also receives race, gender and age; the other receives none of them.</p>
-<pre><code>with race in the model
+<pre tabindex="0" aria-label="Scrollable code block"><code>with race in the model
   AUC 0.635
   African American: mean predicted risk 0.115 vs observed 0.103 | given a place 0.114 | of those who were readmitted, given a place 0.213
   other patients : mean predicted risk 0.112 vs observed 0.114 | given a place 0.097 | of those who were readmitted, given a place 0.203
@@ -213,7 +213,7 @@ without race (and without gender and age)
 <p>So on this model the debate is not a trade between accuracy and fairness: the variable carries almost no signal, and the group-level calibration gap exists with or without it. A model where race carried real signal would tell a different story, and the check above is how to find out.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/race-in-clinical-models.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness

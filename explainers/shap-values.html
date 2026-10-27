@@ -207,12 +207,12 @@
 <p>SHAP applies this same logic to features. For a single prediction:</p>
 <ul><li>Your model outputs a score of 0.82 (high recidivism risk)</li><li>SHAP asks: across all possible subsets of features, how much does each feature shift the prediction away from the average?</li><li>The result is a signed contribution value for every feature - positive means it pushed the prediction up, negative means it pushed it down</li></ul>
 <p><strong>The key property:</strong> the SHAP values for all features sum exactly to the difference between the model&#x27;s prediction and the global average prediction.</p>
-<pre><code>model_output = base_value + shap(age) + shap(custody_status) + shap(race) + ...</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>model_output = base_value + shap(age) + shap(custody_status) + shap(race) + ...</code></pre>
 <hr>
 <h3 id="real-world-proof-compas-analysis">Real-World Proof: COMPAS Analysis</h3>
 <p>We applied SHAP to the <a href="https://github.com/propublica/compas-analysis" target="_blank" rel="noreferrer noopener">ProPublica COMPAS dataset</a> to inspect what the biased model was actually using.</p>
 <h4 id="setup">Setup</h4>
-<pre><code class="language-python">import shap
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import shap
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -237,7 +237,7 @@ explainer = shap.TreeExplainer(model)
 shap_values = explainer.shap_values(X_test)[:, :, 1]</code></pre>
 <h4 id="what-shap-revealed">What SHAP Revealed</h4>
 <p><strong>Actual output</strong> (mean absolute SHAP value per feature, this repo&#x27;s <code>COMPAS/compas-scores-raw.csv</code>):</p>
-<pre><code>--- MEAN ABSOLUTE SHAP VALUES (biased model) ---
+<pre tabindex="0" aria-label="Scrollable code block"><code>--- MEAN ABSOLUTE SHAP VALUES (biased model) ---
 
 Feature                     Mean |SHAP|
 ----------------------------------------------
@@ -249,7 +249,7 @@ MaritalStatus_Divorced      0.0126</code></pre>
 <p><strong>The model&#x27;s single largest driver was race.</strong> <code>MaritalStatus_Single</code> was the second largest; <code>CustodyStatus_Probation</code> - a proxy for race - ranks fourth. Race alone accounted for roughly 48% of the top-5 features&#x27; combined influence (and roughly 42% of all features&#x27; combined influence).</p>
 <p>Without SHAP, you would not know this. The model&#x27;s accuracy numbers alone tell you nothing about which features drove individual predictions.</p>
 <h4 id="after-the-fix-fair-model-shap">After the Fix - Fair Model SHAP</h4>
-<pre><code class="language-python"># Fair feature set (race + proxy removed)
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Fair feature set (race + proxy removed)
 X_fair = pd.get_dummies(df[[&#x27;Sex_Code_Text&#x27;, &#x27;MaritalStatus&#x27;]])
 X_train_fair, X_test_fair, y_train_fair, y_test_fair = train_test_split(
     X_fair, y, test_size=0.2, random_state=42, stratify=y)
@@ -259,7 +259,7 @@ model_fair.fit(X_train_fair, y_train_fair)
 explainer_fair = shap.TreeExplainer(model_fair)
 shap_values_fair = explainer_fair.shap_values(X_test_fair)[:, :, 1]</code></pre>
 <p><strong>Actual output:</strong></p>
-<pre><code>--- MEAN ABSOLUTE SHAP VALUES (fair model) ---
+<pre tabindex="0" aria-label="Scrollable code block"><code>--- MEAN ABSOLUTE SHAP VALUES (fair model) ---
 
 Feature                     Mean |SHAP|
 ----------------------------------------------
@@ -270,9 +270,9 @@ MaritalStatus_Divorced      0.0195</code></pre>
 <hr>
 <h3 id="detection-code-how-to-use-shap-in-practice">Detection Code: How to Use SHAP in Practice</h3>
 <h4 id="installation">Installation</h4>
-<pre><code class="language-bash">pip install shap</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-bash">pip install shap</code></pre>
 <h4 id="for-tree-models-random-forest-xgboost-lightgbm">For Tree Models (Random Forest, XGBoost, LightGBM)</h4>
-<pre><code class="language-python">import shap
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import shap
 
 # TreeExplainer is fast and exact for tree-based models
 explainer = shap.TreeExplainer(model)
@@ -281,11 +281,11 @@ shap_values = explainer.shap_values(X_test)
 # shap_values shape: [n_samples, n_features] for binary classification (class 1)
 # For multi-class: list of arrays, one per class</code></pre>
 <h4 id="for-any-model-model-agnostic">For Any Model (Model-Agnostic)</h4>
-<pre><code class="language-python"># KernelExplainer works with any model; slower but universal
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># KernelExplainer works with any model; slower but universal
 explainer = shap.KernelExplainer(model.predict_proba, shap.sample(X_train, 100))
 shap_values = explainer.shap_values(X_test[:10])</code></pre>
 <h4 id="explaining-a-single-prediction">Explaining a Single Prediction</h4>
-<pre><code class="language-python">def explain_decision(model, explainer, X_test, sample_idx):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def explain_decision(model, explainer, X_test, sample_idx):
     &quot;&quot;&quot;
     Return a sorted explanation for one prediction.
     Positive values → pushed prediction UP (toward flagged/rejected/denied)
@@ -304,7 +304,7 @@ shap_values = explainer.shap_values(X_test[:10])</code></pre>
 # Actual output for test row 0 (a real high-risk COMPAS prediction):
 # [(&#x27;MaritalStatus_Single&#x27;, -0.122), (&#x27;race_binary&#x27;, +0.104), (&#x27;MaritalStatus_Significant Other&#x27;, +0.027), ...]</code></pre>
 <h4 id="bias-audit-using-shap">Bias Audit Using SHAP</h4>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 
 def shap_bias_audit(shap_values, feature_names, protected_features):
     &quot;&quot;&quot;
@@ -328,7 +328,7 @@ protected = [&#x27;race_binary&#x27;, &#x27;CustodyStatus&#x27;]
 audit = shap_bias_audit(shap_values, X_test.columns, protected)
 print(audit.head(6))</code></pre>
 <p><strong>Actual output:</strong></p>
-<pre><code>                feature  mean_abs_shap          bias_flag
+<pre tabindex="0" aria-label="Scrollable code block"><code>                feature  mean_abs_shap          bias_flag
             race_binary       0.106622 PROTECTED OR PROXY
    MaritalStatus_Single       0.062441
   MaritalStatus_Married       0.023384

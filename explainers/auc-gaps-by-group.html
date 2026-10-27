@@ -203,7 +203,7 @@
 <p>The per-group AUC is also sensitive to group size. A group with only a few dozen people of each label to rank has a wide interval, and a gap can look large and still be indistinguishable from noise.</p>
 <h3 id="concrete-example-three-audits-three-different-stories">Concrete Example: Three Audits, Three Different Stories</h3>
 <p>Logistic regression, core features only, the benchmark split, scores on the test set. &quot;Advantaged&quot; and &quot;disadvantaged&quot; follow each audit&#x27;s manifest. The error rates are at the default 0.5 cutoff.</p>
-<pre><code>Tenant Screening - race  (test rows: advantaged 2224, disadvantaged 2943)
+<pre tabindex="0" aria-label="Scrollable code block"><code>Tenant Screening - race  (test rows: advantaged 2224, disadvantaged 2943)
   advantaged    AUC 0.680 | FPR at 0.5 0.460 | TPR at 0.5 0.725
   disadvantaged AUC 0.672 | FPR at 0.5 0.610 | TPR at 0.5 0.809
   AUC gap -0.008 | bootstrap 95% interval [-0.037, +0.023] | DeLong z -0.53, p 0.593
@@ -220,7 +220,7 @@ Insurance Denial - gender  (test rows: advantaged 133, disadvantaged 134)
 <p><strong>A big gap that is mostly noise (Insurance Denial, gender).</strong> The gap is +0.095, which looks larger than either of the above, but each group has only about 130 test rows and the interval is [-0.038, +0.221] with p = 0.149. Reporting this as &quot;the model is better for women&quot; would be reading noise.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/auc-gaps-by-group.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from math import erf, sqrt
 from sklearn.metrics import roc_auc_score
 from faircode.benchmark import load_audit

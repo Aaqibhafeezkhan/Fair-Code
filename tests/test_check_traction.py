@@ -206,8 +206,10 @@ def test_main_reports_success_and_failure(monkeypatch, capsys):
     assert "stars disagree" in capsys.readouterr().err
 
 
-def test_script_entry_point_exits_with_the_checker_result():
+def test_script_entry_point_exits_with_the_checker_result(monkeypatch):
     import runpy
+
+    monkeypatch.setattr("sys.argv", ["check_traction.py"])
 
     try:
         runpy.run_path(str(Path(check.__file__)), run_name="__main__")
@@ -215,3 +217,52 @@ def test_script_entry_point_exits_with_the_checker_result():
         assert exc.code == 0
     else:
         raise AssertionError("script entry point did not exit")
+
+
+LIVE = {"stars": 51, "forks": 63, "watching": 8, "contributors": 54}
+
+
+def _observations(tmp_path, **overrides):
+    return check.collect(_site(tmp_path, **overrides))[0]
+
+
+def test_live_figures_that_match_report_nothing(tmp_path):
+    assert check.live_differences(_observations(tmp_path), LIVE) == []
+
+
+def test_live_names_every_place_that_differs_from_github(tmp_path):
+    # the files agree with each other (51 stars everywhere) and are still one behind GitHub (#1148)
+    messages = check.live_differences(_observations(tmp_path), {**LIVE, "stars": 53})
+    assert messages and all(m.startswith("stars: ") and m.endswith("GitHub says 53") for m in messages)
+    assert any("README.md (GitHub Stars) says 51" in m for m in messages)
+    assert any("ROADMAP.md" in m for m in messages) and any("METRICS.md (badge Stars)" in m for m in messages)
+    assert any("latest weekly row, 2026-W43" in m for m in messages)
+
+
+def test_live_ignores_figures_github_cannot_supply(tmp_path):
+    messages = check.live_differences(_observations(tmp_path), {"stars": 51})
+    assert messages == []
+    assert check.live_differences([("social", "README.md", "30K+")], {"social": 1}) == []
+
+
+def test_main_live_data_fails_on_a_stale_figure_and_passes_when_current(tmp_path, monkeypatch, capsys):
+    import json
+    _site(tmp_path)
+    original_check, original_collect = check.check, check.collect
+    monkeypatch.setattr(check, "check", lambda root=tmp_path: original_check(root))
+    monkeypatch.setattr(check, "collect", lambda root=tmp_path: original_collect(root))
+    live = tmp_path / "live.json"
+
+    live.write_text(json.dumps(LIVE), encoding="utf-8")
+    assert check.main(["--live-data", str(live)]) == 0
+    assert "and with GitHub." in capsys.readouterr().out
+
+    live.write_text(json.dumps({**LIVE, "stars": 52}), encoding="utf-8")
+    assert check.main(["--live-data", str(live)]) == 1
+    assert "stars: README.md (GitHub Stars) says 51, GitHub says 52" in capsys.readouterr().err
+
+
+def test_live_without_gh_is_an_error_not_a_pass(monkeypatch, capsys):
+    monkeypatch.setattr(check, "fetch_live", lambda repo=check.REPO: None)
+    assert check.main(["--live"]) == 2
+    assert "needs the GitHub CLI" in capsys.readouterr().err

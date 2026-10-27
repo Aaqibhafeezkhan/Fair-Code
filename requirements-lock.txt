@@ -8,6 +8,12 @@
 #
 # Install with: pip install -r requirements-lock.txt
 # (faircode itself is installed separately, in editable mode, from this checkout: pip install -e ".[benchmark]")
+# This results-reproduction lock intentionally excludes optional tools outside the benchmark environment:
+#   certifi - only used by the external-link checker's trust-store fallback
+#   mcp - only used by the optional MCP server
+#   playwright - only used by the optional browser tests
+#   pyarrow - only used by the optional parquet extra
+#   pytest-cov - only used by the optional coverage/test tooling
 
 appnope==0.1.4
 asttokens==3.0.2

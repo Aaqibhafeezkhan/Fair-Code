@@ -201,7 +201,7 @@
 <p>All three need enough selected rows in both groups. The standard error above shows why: <code>1/x_b</code> grows as the number selected shrinks.</p>
 <h3 id="concrete-example-two-real-ratios-and-one-hypothetical-sweep">Concrete Example: Two Real Ratios and One Hypothetical Sweep</h3>
 <p>First a well-behaved ratio, then the COMPAS gradient-boosting case behind the harness change, then the same arithmetic with the denominator set to 3, 10 and 30 selected rows.</p>
-<pre><code>Benefits Denial, women vs men                    126/2153  vs   477/4360  ratio     0.535 | percentile bootstrap [   0.441,      0.642] | log-ratio (delta) [   0.443,      0.646]
+<pre tabindex="0" aria-label="Scrollable code block"><code>Benefits Denial, women vs men                    126/2153  vs   477/4360  ratio     0.535 | percentile bootstrap [   0.441,      0.642] | log-ratio (delta) [   0.443,      0.646]
 COMPAS gradient boosting: 1 of 1444 White defendants are selected
 COMPAS gradient boosting, Black vs White        1564/1804  vs     1/1444  ratio  1251.894 | percentile bootstrap [ 314.374,   1271.104] | log-ratio (delta) [ 176.451,   8881.992]
 3 selected in the advantaged group               800/1804  vs     3/1444  ratio   213.452 | percentile bootstrap [  91.479,    655.563] | log-ratio (delta) [  68.842,    661.825]
@@ -211,7 +211,7 @@ COMPAS gradient boosting, Black vs White        1564/1804  vs     1/1444  ratio 
 <p>So the fix for the benchmark was not a better interval. It was a rule: with fewer than about 30 selected rows in the denominator group, report no ratio.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/confidence-intervals-for-ratios.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from scipy.stats import norm
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

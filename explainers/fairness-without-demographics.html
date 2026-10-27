@@ -197,13 +197,13 @@
 <p><a href="distributionally-robust-optimization.html">Distributionally Robust Optimization</a> and <a href="maxmin-fairness.html">Max-Min (Rawlsian) Fairness</a> both need group labels during training, which many teams do not have, are not allowed to use, or do not trust. They also only protect the groups you thought to define.</p>
 <p>The label-free idea is that groups a model fails are usually groups with high loss, so high loss stands in for membership. Hashimoto and colleagues showed a worst-case objective can be optimized without labels, and Liu and colleagues made it practical with a two-step recipe: train once, find the rows it got wrong, train again with those rows weighted up.</p>
 <h3 id="core-concept-upweight-the-errors">Core Concept: Upweight the Errors</h3>
-<pre><code>1. train a first model
+<pre tabindex="0" aria-label="Scrollable code block"><code>1. train a first model
 2. find the training rows it misclassifies
 3. train a second model, giving those rows a weight greater than 1</code></pre>
 <p>No group appears anywhere. Group labels are used only afterwards, to <em>evaluate</em> whether the worst group improved. The weight is the dial: a modest value shifts attention toward hard rows, a large one makes the model chase noise and the rare errors of a class, and the model degrades.</p>
 <h3 id="concrete-example-benefits-denial">Concrete Example: Benefits Denial</h3>
 <p><a href="../index.html#project-benefits">Benefits Denial</a>: logistic regression on the core columns, the benchmark&#x27;s split. The four evaluation groups are sex crossed with age 55 and over, and they are used only to report results.</p>
-<pre><code>baseline                           overall 0.811 | male &lt;55 0.776 male 55+ 0.712 female &lt;55 0.900 female 55+ 0.901 | worst group 0.712
+<pre tabindex="0" aria-label="Scrollable code block"><code>baseline                           overall 0.811 | male &lt;55 0.776 male 55+ 0.712 female &lt;55 0.900 female 55+ 0.901 | worst group 0.712
 upweight the errors x1.5           overall 0.811 | male &lt;55 0.778 male 55+ 0.717 female &lt;55 0.898 female 55+ 0.891 | worst group 0.717
 upweight the errors x2             overall 0.815 | male &lt;55 0.789 male 55+ 0.725 female &lt;55 0.889 female 55+ 0.874 | worst group 0.725
 upweight the errors x3             overall 0.773 | male &lt;55 0.765 male 55+ 0.742 female &lt;55 0.792 female 55+ 0.816 | worst group 0.742
@@ -213,7 +213,7 @@ upweight the errors x5             overall 0.607 | male &lt;55 0.626 male 55+ 0.
 <p>The &quot;worst group&quot; can change identity: at 5x it is a different group from the baseline&#x27;s. A label-free method has no way to prefer one group&#x27;s accuracy over another&#x27;s; it moves all of them.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/fairness-without-demographics.py</code>; that file is generated from the block below). Group labels appear only in the evaluation lines.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model
 

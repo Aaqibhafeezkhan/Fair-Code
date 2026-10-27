@@ -198,11 +198,11 @@
 <p>This is why <a href="hiring-pipeline-adverse-impact.html">Hiring Pipeline Adverse Impact</a> reports every stage and the whole funnel. It is also why an audit of one stage can be accurate and misleading: it tells you the stage&#x27;s own ratio and nothing about what the other stages add.</p>
 <h3 id="core-concept-the-funnel-ratio-is-the-product-of-the-conditional-ratios">Core Concept: The Funnel Ratio Is the Product of the Conditional Ratios</h3>
 <p>For stages <code>1..k</code>, where <code>r_i</code> is the ratio of women&#x27;s pass rate to men&#x27;s among those who reached stage <code>i</code>:</p>
-<pre><code>whole-funnel ratio  =  r_1 * r_2 * ... * r_k</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>whole-funnel ratio  =  r_1 * r_2 * ... * r_k</code></pre>
 <p>This holds exactly for the conditional ratios, whatever the correlation between stages. The unconditional ratios (each computed over everyone, not just those who reached the stage) multiply only if the stages are independent, and the two can differ when they are not.</p>
 <h3 id="concrete-example-a-simulated-four-stage-funnel">Concrete Example: A Simulated Four-Stage Funnel</h3>
 <p>This is a simulation, because the benchmark&#x27;s hiring audit has no gap at its score stages (see the previous explainer). We put a known ratio into each of four stages with a base pass rate of 70%, run 200,000 applicants through, and measure.</p>
-<pre><code>ratio put in at each of 4 stages           measured at each stage  product of the four  whole funnel
+<pre tabindex="0" aria-label="Scrollable code block"><code>ratio put in at each of 4 stages           measured at each stage  product of the four  whole funnel
                               1.00        1.000 1.001 0.991 1.008                0.999         0.999
                               0.95        0.953 0.943 0.950 0.952                0.813         0.813
                               0.90        0.897 0.904 0.904 0.907                0.666         0.666
@@ -212,7 +212,7 @@ correlated stages, 0.95 at each: unconditional stage ratios 0.948 0.952 0.948 0.
 <ul><li><strong>The measured stage ratios match what was put in</strong> (0.953, 0.943, 0.950, 0.952 for an input of 0.95) within sampling noise.</li><li><strong>The product of the four equals the whole-funnel ratio.</strong> 0.95 per stage gives 0.813; 0.90 gives 0.666; 0.85 gives 0.521. Any input of 0.95 or below keeps every stage above 0.9 and still leaves the funnel near or below the threshold.</li><li><strong>Correlated stages behave the same here.</strong> When the pass decision at each stage depends on a shared underlying ability, the unconditional stage ratios multiply to 0.808 and the funnel ratio is 0.811, close but not identical, which is the case where the product of unconditional ratios is only an approximation.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/compounding-disparities.py</code>; that file is generated from the block below). It needs only NumPy.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 
 rng = np.random.default_rng(0)
 N = 200_000                                      # applicants per run, half of them women

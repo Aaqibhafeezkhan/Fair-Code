@@ -201,7 +201,7 @@
 <p>The baseline for comparison is S2, the same model without the protected column or its proxies, because that is what most careful teams start with.</p>
 <h3 id="concrete-example-the-benchmark-s-seven-audits">Concrete Example: The Benchmark&#x27;s Seven Audits</h3>
 <p>The logistic regression rows of <code>results/</code> (the current results) for every audit and protected attribute, 13 pairs (intersections left out), with S2 as the reference.</p>
-<pre><code>logistic regression, 13 audit/attribute pairs, compared with S2 (the same model without the protected column or proxies)
+<pre tabindex="0" aria-label="Scrollable code block"><code>logistic regression, 13 audit/attribute pairs, compared with S2 (the same model without the protected column or proxies)
 strategy              median accuracy change  median |parity gap|  gap smaller than S2  still significant   needs group labels: training / prediction
 S0 baseline                           +0.000                0.054                 4/13              10/13   no (it uses the column as a feature) / yes, as a feature
 S1 unawareness                        +0.000                0.041                 4/13               6/13   no / no
@@ -212,7 +212,7 @@ S4 post-processing                    +0.000                0.007               
 <p>A short decision rule follows: if you cannot use the attribute at prediction time, choose S3; if you can and may, S4 gives the smallest gaps for the least accuracy; if neither is possible, S2 with a proxy audit is the floor, and its remaining gaps need explaining.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/choosing-a-mitigation-strategy.py</code>; that file is generated from the block below). It reads the benchmark&#x27;s current results.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 
 fair = pd.read_csv(&quot;results/results_fairness.csv&quot;)          # the benchmark&#x27;s current results

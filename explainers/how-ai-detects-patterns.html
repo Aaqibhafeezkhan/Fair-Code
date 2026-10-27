@@ -204,7 +204,7 @@
 <p>A single tree overfits to noise. A forest of 100 trees (<code>n_estimators=100</code>, as used throughout this repo), each trained on a random subset of data and features, averages out that noise. What survives the averaging are the patterns that are <em>consistently</em> useful - which includes consistent societal patterns, not just consistent physical ones.</p>
 <h4 id="3-ranking-features-by-importance">3. Ranking features by importance</h4>
 <p>After training, each feature gets an importance score based on how much it improved splits across the forest. In the COMPAS audit, <code>race_binary</code> scores highly - not because the model was told it matters, but because it correlated with the recidivism label in the training data. <code>CustodyStatus</code>, despite also correlating with race (see <a href="confounding-variable.html">confounding-variable.md</a>), ends up with much lower importance here - a reminder that &quot;correlates with a protected attribute&quot; and &quot;is highly ranked by this particular model&quot; are different claims.</p>
-<pre><code class="language-python"># Feature importance after training on COMPAS data (importances summed
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># Feature importance after training on COMPAS data (importances summed
 # back to their source column, since pd.get_dummies() one-hot-encodes
 # CustodyStatus and MaritalStatus into several columns each)
 importances = pd.Series(model.feature_importances_, index=X.columns)
@@ -218,7 +218,7 @@ print(importances.sort_values(ascending=False).head())
 <h3 id="concrete-example-compas-audit-01">Concrete Example: COMPAS - Audit 01</h3>
 <p>The COMPAS dataset gives a Random Forest two protected-adjacent features: <code>race</code> and <code>CustodyStatus</code>. Trained on these alongside other inputs, the model produces an 87.16% high-risk flag rate for Black defendants versus 0.40% for White defendants - an 86.77% fairness gap.</p>
 <p>The pattern the model found was real, in the sense that it exists in the data. Black defendants in this dataset genuinely were flagged at higher rates historically. But the pattern is not a measure of who is more likely to reoffend - it is a measure of who was more likely to be <em>flagged</em> by a system already shaped by over-policing.</p>
-<pre><code class="language-python"># unfair.py pattern: race_binary and CustodyStatus both carry signal
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python"># unfair.py pattern: race_binary and CustodyStatus both carry signal
 # (compas-scores-raw.csv has no raw `race` column - race_binary is
 # derived from Ethnic_Code_Text, exactly as unfair.py does)
 X = pd.get_dummies(df[[&#x27;Sex_Code_Text&#x27;, &#x27;MaritalStatus&#x27;, &#x27;race_binary&#x27;, &#x27;CustodyStatus&#x27;]])
@@ -227,7 +227,7 @@ model.fit(X_train, y_train)</code></pre>
 <p>When <code>race_binary</code> is dropped and <code>CustodyStatus</code> is kept, the gap falls from 86.77pp to 18.38pp - a ~79% reduction from dropping race alone, not &quot;barely moves.&quot; Only when both <code>race_binary</code> and <code>CustodyStatus</code> are removed does the gap fall further to 15.69%, an 82% reduction overall from the original 86.77pp. <code>CustodyStatus</code>&#x27;s own marginal contribution beyond race is therefore only about 2.7 percentage points - it does not &quot;reconstruct&quot; the racial gap on its own, despite correlating with race (see <a href="confounding-variable.html">confounding-variable.md</a> for how that correlation still matters even at low feature importance).</p>
 <h3 id="detection-code">Detection Code</h3>
 <p>The following functions inspect what patterns a trained model relied on, and flag features whose importance may be inflated by correlation with a protected attribute.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from scipy.stats import chi2_contingency, pearsonr
 

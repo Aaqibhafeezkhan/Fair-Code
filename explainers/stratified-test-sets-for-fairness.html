@@ -200,7 +200,7 @@
 <ol><li><strong>Choose the target size</strong> for each group (or cell) from how narrow an interval you need, see <a href="minimum-detectable-gap.html">Minimum Detectable Gap</a>.</li><li><strong>Sample the groups at different rates</strong> to hit those sizes.</li><li><strong>Report per-group metrics unweighted:</strong> they are valid inside each group.</li><li><strong>Report any overall metric with weights</strong> <code>population share / sample share</code> per group.</li></ol>
 <h3 id="concrete-example-german-credit-lending">Concrete Example: German Credit Lending</h3>
 <p><a href="../index.html#project-credit">German Credit Lending</a>: the model is logistic regression on the core columns, with out-of-fold predictions for all 1,000 applicants so each has an honest prediction. The disadvantaged group is the 371 applicants under 30. Evaluation sets of 200 rows are drawn 100 times each way: a plain random sample, and a stratified sample that is half under-30s.</p>
-<pre><code>all 1,000 rows: accuracy 0.709 overall, 0.663 for under-30s (371 people)
+<pre tabindex="0" aria-label="Scrollable code block"><code>all 1,000 rows: accuracy 0.709 overall, 0.663 for under-30s (371 people)
 
 evaluation sets of 200 rows, 100 draws each
 design                            under-30s in it   width of the under-30 interval    overall accuracy: unweighted / reweighted
@@ -209,7 +209,7 @@ stratified: half under 30                     100                            0.1
 <ul><li><strong>Narrower interval for the group that matters.</strong> The random sample holds 74 under-30s on average and gives a bootstrap interval for their accuracy 0.213 wide. The stratified one holds 100 and gives 0.183, about 14% narrower for the same 200 labels. The gain is modest because 100 is not much more than 74; a more extreme mix would narrow it further at the cost of the other group&#x27;s interval.</li><li><strong>The unweighted overall number is biased.</strong> The stratified sample&#x27;s plain accuracy is 0.694 against a true 0.709 for all 1,000 rows, because under-30s are less accurately predicted (0.663) and are over-represented. Weighting each row by its group&#x27;s population share over its sample share gives 0.703, within sampling noise of the truth.</li></ul>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/stratified-test-sets-for-fairness.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from sklearn.model_selection import cross_val_predict
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 from faircode.models import build_model

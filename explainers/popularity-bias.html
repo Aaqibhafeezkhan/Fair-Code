@@ -203,7 +203,7 @@
 <ul><li><strong>The shown set freezes.</strong> An item below <code>K</code> has no clicks, so its popularity stays at zero and it cannot rise.</li><li><strong>Inside the shown set, luck replaces merit.</strong> Early clicks are partly chance, and the loop turns them into rank.</li><li><strong>Whatever group imbalance the first ranking had is locked in</strong>, because the unseen items are exactly the ones that would change it.</li></ul>
 <h3 id="concrete-example-ai-fair-recruitment">Concrete Example: AI Fair Recruitment</h3>
 <p>The <a href="../index.html#project-hiring">AI Fair Recruitment</a> audit: the 23,062 test candidates are the items, <code>K</code> is 1,000, clicks are simulated from the hire label with probability <code>exposure <em> (0.2 + 0.6 </em> hired)</code>, and the simulation runs 30 rounds. Merit is the logistic regression&#x27;s predicted hire probability. <code>w</code> is the weight of popularity in the ranker. The same loop runs twice: once with a ranker that does not use <code>Gender</code> (the benchmark&#x27;s S2 feature set) and once with one that does (the baseline).</p>
-<pre><code>Gender not used by the ranker: female share of the pool 0.365, of the first top 1000 0.356
+<pre tabindex="0" aria-label="Scrollable code block"><code>Gender not used by the ranker: female share of the pool 0.365, of the first top 1000 0.356
   w 0.00 | gini of exposure 0.962 | rank correlation of exposure with merit 1.000 | female share of exposure 0.368 | ever shown 1000 | hired never shown 5389
   w 0.10 | gini of exposure 0.961 | rank correlation of exposure with merit 0.855 | female share of exposure 0.369 | ever shown 1000 | hired never shown 5389
   w 0.25 | gini of exposure 0.961 | rank correlation of exposure with merit 0.614 | female share of exposure 0.368 | ever shown 1000 | hired never shown 5389
@@ -219,7 +219,7 @@ Gender used by the ranker: female share of the pool 0.365, of the first top 1000
 <p><strong>A group imbalance is frozen, not fixed.</strong> When the ranker does not use <code>Gender</code>, women are 36.8% of the exposure and 36.5% of the pool, and the loop leaves that where it is. When it does use <code>Gender</code>, women are 7.0% of the first top 1,000 against 36.5% of the pool, and the share of exposure they receive over 30 rounds is 5.8% with no popularity and 6.4% at <code>w = 0.50</code>. The small rise is reshuffling inside the shown set. Nothing enters from below.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/popularity-bias.py</code>; that file is generated from the block below).</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 from scipy.stats import spearmanr
 from faircode.benchmark import load_audit
 from faircode.models import build_model

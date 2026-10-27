@@ -201,7 +201,7 @@
 <p>A material gap at the same burden is the signature of an access-driven label.</p>
 <h3 id="concrete-example-healthcare-readmission">Concrete Example: Healthcare Readmission</h3>
 <p><a href="../index.html#project-readmission">Healthcare Readmission</a>: about 99,500 patients with diabetes, the target is readmission within 30 days, the groups are African American patients against everyone else, and the burden is the number of diagnoses recorded for the stay.</p>
-<pre><code>what the label records is a hospital return, which needs access to a hospital
+<pre tabindex="0" aria-label="Scrollable code block"><code>what the label records is a hospital return, which needs access to a hospital
 readmitted within 30 days: African American patients 0.112, others 0.112
 
 readmission rate by recorded diagnoses (columns: others, African American)
@@ -228,7 +228,7 @@ visits in the year before: African American patients 1.20, others 1.22</code></p
 <p>That is a finding. It says that for this label the Obermeyer mechanism is not visible in the columns available; it does not say the label is a good measure of need, only that the same-burden comparison is clean. A label based on cost or on total visits could still fail, and the check above should be repeated for any label before it is used.</p>
 <h3 id="detection-implementation-code">Detection/Implementation Code</h3>
 <p>Run from the repo root (<code>PYTHONPATH=. python3 explainers/code/utilization-as-a-label.py</code>; that file is generated from the block below). <code>data.df</code> holds the raw rows, so columns the harness does not encode can still be used to define strata.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import pandas as pd
 from faircode.benchmark import load_audit        # same loader, encoding and split as the benchmark harness
 

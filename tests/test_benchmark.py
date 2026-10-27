@@ -322,6 +322,61 @@ def test_run_benchmark_wraps_malformed_yaml_with_manifest_path(tmp_path):
         run_benchmark(root=str(tmp_path), n_resamples=N_RESAMPLES, n_permutations=N_PERMUTATIONS)
 
 
+@pytest.mark.parametrize(("feature", "expected"), [
+    ("incom", "did you mean 'income'?"),
+    ("zqx", "Available columns: 'label', 'group', 'income'."),
+])
+def test_run_benchmark_explains_missing_dataset_features(tmp_path, feature, expected):
+    audit_dir = tmp_path / "Bad Columns"
+    audit_dir.mkdir()
+    pd.DataFrame({"label": [0, 1], "group": ["a", "b"], "income": [10, 20]}).to_csv(
+        audit_dir / "toy.csv", index=False,
+    )
+    (audit_dir / "audit.yaml").write_text(yaml.dump({
+        "name": "toy",
+        "dataset": {"path": "toy.csv"},
+        "target": {"column": "label", "method": "binary"},
+        "protected_attributes": [{
+            "name": "group", "type": "categorical", "column": "group",
+            "disadvantaged_values": ["a"], "advantaged_values": ["b"],
+        }],
+        "core_features": [feature],
+    }))
+
+    with pytest.raises(ValueError) as excinfo:
+        run_benchmark(root=str(tmp_path), n_resamples=N_RESAMPLES,
+                      n_permutations=N_PERMUTATIONS)
+
+    message = str(excinfo.value)
+    assert str(audit_dir / "audit.yaml") in message
+    assert "dataset 'toy.csv' is missing column(s):" in message
+    assert expected in message
+
+
+def test_benchmark_cli_reports_a_missing_dataset_feature(tmp_path, capsys):
+    from faircode.cli import main
+
+    audit_dir = tmp_path / "Bad Columns"
+    audit_dir.mkdir()
+    pd.DataFrame({"label": [0, 1], "group": ["a", "b"], "income": [10, 20]}).to_csv(
+        audit_dir / "toy.csv", index=False,
+    )
+    (audit_dir / "audit.yaml").write_text(
+        "name: toy\n"
+        "dataset:\n  path: toy.csv\n"
+        "target:\n  column: label\n  method: binary\n"
+        "protected_attributes:\n"
+        "  - name: group\n    type: categorical\n    column: group\n"
+        "    disadvantaged_values: [a]\n    advantaged_values: [b]\n"
+        "core_features: [zqx]\n"
+    )
+
+    assert main(["benchmark", "--root", str(tmp_path)]) == 2
+    error = capsys.readouterr().err
+    assert "error:" in error
+    assert "'zqx'" in error
+
+
 def test_run_benchmark_wraps_missing_required_key_with_manifest_path(tmp_path):
     audit_dir = tmp_path / "Bad Audit"
     audit_dir.mkdir()
@@ -336,8 +391,9 @@ def test_run_benchmark_wraps_missing_required_key_with_manifest_path(tmp_path):
         "core_features": ["x"],
     }))
 
-    with pytest.raises(ValueError, match=str(audit_dir / "audit.yaml")):
+    with pytest.raises(ValueError, match=str(audit_dir / "audit.yaml")) as excinfo:
         run_benchmark(root=str(tmp_path), n_resamples=N_RESAMPLES, n_permutations=N_PERMUTATIONS)
+    assert "manifest is missing required 'target' section; add it to audit.yaml" in str(excinfo.value)
 
 
 def test_run_benchmark_wraps_degenerate_zero_row_dataset_with_manifest_path(tmp_path):

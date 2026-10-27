@@ -206,16 +206,16 @@
 <p>These are the three most commonly cited fairness criteria in AI systems:</p>
 <h4 id="1-demographic-parity">1. Demographic Parity</h4>
 <p>The model produces positive outcomes at equal rates across groups.</p>
-<pre><code>P(Ŷ=1 | Group=A) = P(Ŷ=1 | Group=B)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Ŷ=1 | Group=A) = P(Ŷ=1 | Group=B)</code></pre>
 <p><em>Used in:</em> hiring, lending, admissions audits. Underpins the 80% rule in disparate impact law.</p>
 <h4 id="2-equalized-odds">2. Equalized Odds</h4>
 <p>The model makes errors at equal rates across groups - equal true positive rates <em>and</em> equal false positive rates.</p>
-<pre><code>P(Ŷ=1 | Y=1, Group=A) = P(Ŷ=1 | Y=1, Group=B)   [equal TPR]
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Ŷ=1 | Y=1, Group=A) = P(Ŷ=1 | Y=1, Group=B)   [equal TPR]
 P(Ŷ=1 | Y=0, Group=A) = P(Ŷ=1 | Y=0, Group=B)   [equal FPR]</code></pre>
 <p><em>Used in:</em> criminal risk assessment, medical screening. ProPublica&#x27;s COMPAS critique was built on this metric.</p>
 <h4 id="3-predictive-parity-calibration">3. Predictive Parity (Calibration)</h4>
 <p>When the model flags someone as high-risk, that flag is equally accurate regardless of group membership.</p>
-<pre><code>P(Y=1 | Ŷ=1, Group=A) = P(Y=1 | Ŷ=1, Group=B)</code></pre>
+<pre tabindex="0" aria-label="Scrollable code block"><code>P(Y=1 | Ŷ=1, Group=A) = P(Y=1 | Ŷ=1, Group=B)</code></pre>
 <p><em>Used in:</em> credit scoring, recidivism prediction. Northpointe&#x27;s defence of COMPAS was built on this metric.</p>
 <hr>
 <h3 id="the-formal-impossibility">The Formal Impossibility</h3>
@@ -224,7 +224,7 @@ P(Ŷ=1 | Y=0, Group=A) = P(Ŷ=1 | Y=0, Group=B)   [equal FPR]</code></pre>
 <hr>
 <h3 id="real-world-proof-compas">Real-World Proof: COMPAS</h3>
 <p>The COMPAS debate is the clearest public illustration of this impossibility. ProPublica and Northpointe were both right - using different metrics.</p>
-<pre><code class="language-python">import pandas as pd
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
@@ -265,7 +265,7 @@ white = test_df[test_df[&#x27;race&#x27;] == &#x27;Caucasian&#x27;]
 print(&quot;Black defendants: &quot;, compute_metrics(black))
 print(&quot;White defendants: &quot;, compute_metrics(white))</code></pre>
 <p><strong>Actual output</strong> (this repo&#x27;s <code>COMPAS/compas-scores-raw.csv</code>, same model/features <code>COMPAS/unfair.py</code> uses):</p>
-<pre><code>Black defendants:  {&#x27;TPR&#x27;: 0.929, &#x27;FPR&#x27;: 0.781, &#x27;PPV (Precision)&#x27;: 0.628, &#x27;n_predicted_positive&#x27;: 1552}
+<pre tabindex="0" aria-label="Scrollable code block"><code>Black defendants:  {&#x27;TPR&#x27;: 0.929, &#x27;FPR&#x27;: 0.781, &#x27;PPV (Precision)&#x27;: 0.628, &#x27;n_predicted_positive&#x27;: 1552}
 White defendants:  {&#x27;TPR&#x27;: 0.006, &#x27;FPR&#x27;: 0.003, &#x27;PPV (Precision)&#x27;: 0.5, &#x27;n_predicted_positive&#x27;: 6}</code></pre>
 <p>A seeded <code>RandomForestClassifier</code>&#x27;s output can shift slightly across CPU/BLAS backends (see issue #521); the White group&#x27;s PPV in particular rests on only 6 predicted-positive rows and should be read as illustrative, not a precise estimate.</p>
 <p>Now look at what each party claimed, and why both were technically correct:</p>
@@ -276,7 +276,7 @@ White defendants:  {&#x27;TPR&#x27;: 0.006, &#x27;FPR&#x27;: 0.003, &#x27;PPV (P
 <h3 id="detection-code-the-impossibility-visualised">Detection Code: The Impossibility Visualised</h3>
 <p>Imagine two groups with different base rates: Group A reoffends at 40%, Group B at 20%.</p>
 <p>A calibrated model (predictive parity) assigns risk scores that reflect these real rates. Now you want to equalise false positive rates - the rate at which truly low-risk people are wrongly flagged. To bring Group A&#x27;s FPR down to match Group B&#x27;s, you must raise the risk threshold for Group A. But raising the threshold also reduces Group A&#x27;s true positive rate - now you catch fewer actual reoffenders from Group A. To compensate, you&#x27;d need to lower the threshold - which raises the FPR again. The system resists. The math won&#x27;t let you square this circle.</p>
-<pre><code class="language-python">import numpy as np
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">import numpy as np
 import matplotlib
 matplotlib.use(&#x27;Agg&#x27;)
 import matplotlib.pyplot as plt
@@ -353,7 +353,7 @@ print(&quot;Saved: fairness-tradeoffs.png&quot;)</code></pre>
 <hr>
 <h3 id="how-to-navigate-the-conflict">How to Navigate the Conflict</h3>
 <h4 id="step-1-audit-your-base-rates-first">Step 1 - Audit your base rates first</h4>
-<pre><code class="language-python">def base_rate_audit(df, outcome_col, group_col):
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">def base_rate_audit(df, outcome_col, group_col):
     &quot;&quot;&quot;
     Print base rates per group. If they differ significantly,
     fairness metric conflicts are guaranteed.
@@ -369,7 +369,7 @@ print(&quot;Saved: fairness-tradeoffs.png&quot;)</code></pre>
 # Example
 base_rate_audit(df, outcome_col=&#x27;high_risk&#x27;, group_col=&#x27;Ethnic_Code_Text&#x27;)</code></pre>
 <h4 id="step-2-compute-all-three-metrics-simultaneously">Step 2 - Compute all three metrics simultaneously</h4>
-<pre><code class="language-python">from sklearn.metrics import confusion_matrix
+<pre tabindex="0" aria-label="Scrollable code block"><code class="language-python">from sklearn.metrics import confusion_matrix
 
 def full_fairness_audit(y_true, y_pred, groups):
     &quot;&quot;&quot;

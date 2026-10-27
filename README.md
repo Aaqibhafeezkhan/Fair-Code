@@ -131,8 +131,10 @@ Fair-Code/
 │   │   └── codeql-config.yml
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.yml
+│   │   ├── config.yml
 │   │   ├── new_audit.yml
-│   │   └── new_explainer.yml
+│   │   ├── new_explainer.yml
+│   │   └── tooling.yml
 │   └── workflows/
 │       ├── audits.yml                   # CI: runs all audit scripts on every push/PR
 │       ├── benchmark-diff.yml           # opt-in: reruns the benchmark on a lockfile-bump PR and comments the diff

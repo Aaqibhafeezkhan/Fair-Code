@@ -101,52 +101,50 @@ def collect_urls(paths, skip_hosts=SKIP_HOSTS) -> dict[str, list[str]]:
 def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
     """(status class, detail) with the class one of 'ok', 'broken' or 'unknown'."""
     for method in ("HEAD", "GET"):
-        request = urllib.request.Request(url, method=method, headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
         try:
-            with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
-                return "ok", str(response.status)
+            try:
+                return _open(url, method, USER_AGENT, timeout)
+            except urllib.error.HTTPError as error:
+                if error.code != 404:
+                    raise
+                # Some sites answer 404 to a non-browser user agent: retry once as a browser, with GET.
+                return _open(url, "GET" if method == "HEAD" else method, BROWSER_USER_AGENT, timeout)
         except urllib.error.HTTPError as error:
-            if error.code == 404:
-                retry_method = "GET" if method == "HEAD" else method
-                retry = urllib.request.Request(
-                    url, method=retry_method,
-                    headers={"User-Agent": BROWSER_USER_AGENT, "Accept": "*/*"},
-                )
-                try:
-                    with urllib.request.urlopen(retry, timeout=timeout, context=_ssl_context()) as response:
-                        return "ok", str(response.status)
-                except urllib.error.HTTPError as retry_error:
-                    if retry_error.code in BROKEN_STATUSES:
-                        return "broken", str(retry_error.code)
-                    if retry_error.code == 403:
-                        doi = _extract_doi(url)
-                        if doi:
-                            return _check_doi(doi, timeout)
-                    if retry_error.code in (405, 501) and method == "HEAD":
-                        continue
-                    return "unknown", str(retry_error.code)
-                except urllib.error.URLError as retry_error:
-                    if isinstance(retry_error.reason, socket.gaierror):
-                        return "broken", "name does not resolve"
-                    return "unknown", str(retry_error.reason)
-                except (TimeoutError, OSError) as retry_error:
-                    return "unknown", type(retry_error).__name__
-            if error.code in BROKEN_STATUSES:
-                return "broken", str(error.code)
-            if error.code == 403:
-                doi = _extract_doi(url)
-                if doi:
-                    return _check_doi(doi, timeout)
-            if error.code in (405, 501) and method == "HEAD":
+            result = _classify_http_error(error, url, method, timeout)
+            if result is None:
                 continue                      # the server does not allow HEAD: try GET
-            return "unknown", str(error.code)
-        except urllib.error.URLError as error:
-            if isinstance(error.reason, socket.gaierror):
-                return "broken", "name does not resolve"
-            return "unknown", str(error.reason)
-        except (TimeoutError, OSError) as error:
-            return "unknown", type(error).__name__
+            return result
+        except (urllib.error.URLError, TimeoutError, OSError) as error:
+            return _classify_network_error(error)
     return "unknown", "no response"
+
+
+def _open(url: str, method: str, user_agent: str, timeout: float) -> tuple[str, str]:
+    request = urllib.request.Request(url, method=method, headers={"User-Agent": user_agent, "Accept": "*/*"})
+    with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
+        return "ok", str(response.status)
+
+
+def _classify_http_error(error: urllib.error.HTTPError, url: str, method: str,
+                         timeout: float) -> tuple[str, str] | None:
+    """The result for an HTTP error status, or None when a HEAD request should be retried as GET."""
+    if error.code in BROKEN_STATUSES:
+        return "broken", str(error.code)
+    if error.code == 403:
+        doi = _extract_doi(url)
+        if doi:
+            return _check_doi(doi, timeout)
+    if error.code in (405, 501) and method == "HEAD":
+        return None
+    return "unknown", str(error.code)
+
+
+def _classify_network_error(error: OSError) -> tuple[str, str]:
+    if isinstance(error, urllib.error.URLError):
+        if isinstance(error.reason, socket.gaierror):
+            return "broken", "name does not resolve"
+        return "unknown", str(error.reason)
+    return "unknown", type(error).__name__
 
 
 def _extract_doi(url: str) -> str | None:

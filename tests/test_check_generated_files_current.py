@@ -314,3 +314,79 @@ def test_text_globs_covers_the_results_current_mcp_mirror():
     # faircode/_results_current/*.csv (#1049): the live-results mirror must be as
     # tamper-evident as the frozen one.
     assert "faircode/_results_current/*.csv" in _script().TEXT_GLOBS
+
+
+def test_tracked_paths_ignores_blank_lines(tmp_path, monkeypatch):
+    script = _script()
+    monkeypatch.setattr(script, "ROOT", tmp_path)
+
+    def run(cmd, cwd=None, capture_output=True, text=True, check=True):
+        import types
+        assert cmd == ["git", "ls-files", "example/*"]
+        return types.SimpleNamespace(stdout="example/one.txt\n\n  \nexample/two.txt\n")
+
+    monkeypatch.setattr(script.subprocess, "run", run)
+
+    assert script._tracked_paths("example/*") == [
+        tmp_path / "example/one.txt",
+        tmp_path / "example/two.txt",
+    ]
+
+
+def test_expected_og_slugs_includes_builtin_and_explainer_slugs(tmp_path, monkeypatch):
+    script = _script()
+    data_json = tmp_path / "explainers-data.json"
+    data_json.write_text(
+        json.dumps([{"slug": "demographic-parity"}, {"slug": "equal-opportunity"}]),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(script, "DATA_JSON", data_json)
+
+    assert script._expected_og_slugs() == [
+        "home",
+        "profiler",
+        "demographic-parity",
+        "equal-opportunity",
+    ]
+
+
+def test_main_flags_empty_og_images(tmp_path, monkeypatch, capsys):
+    script = _script()
+    _empty_repo(tmp_path, monkeypatch, script)
+    monkeypatch.setattr(script, "TEXT_GLOBS", [])
+    monkeypatch.setattr(script, "_expected_og_slugs", lambda: ["empty"])
+    monkeypatch.setattr(script, "_fresh_build_dir", _fake_fresh_build_dir(tmp_path, {}))
+    monkeypatch.setattr(script.subprocess, "run", _fake_run(""))
+
+    for theme_dir in ("assets/og", "assets/og-light"):
+        path = tmp_path / theme_dir / "empty.png"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"")
+
+    exit_code = script.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "assets/og/empty.png: empty file" in captured.out
+    assert "assets/og-light/empty.png: empty file" in captured.out
+
+
+def test_main_flags_undecodable_og_images(tmp_path, monkeypatch, capsys):
+    script = _script()
+    _empty_repo(tmp_path, monkeypatch, script)
+    monkeypatch.setattr(script, "TEXT_GLOBS", [])
+    monkeypatch.setattr(script, "_expected_og_slugs", lambda: ["corrupt"])
+    monkeypatch.setattr(script, "_fresh_build_dir", _fake_fresh_build_dir(tmp_path, {}))
+    monkeypatch.setattr(script.subprocess, "run", _fake_run(""))
+
+    for theme_dir in ("assets/og", "assets/og-light"):
+        path = tmp_path / theme_dir / "corrupt.png"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"not a PNG")
+
+    exit_code = script.main()
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "assets/og/corrupt.png: could not decode:" in captured.out
+    assert "assets/og-light/corrupt.png: could not decode:" in captured.out

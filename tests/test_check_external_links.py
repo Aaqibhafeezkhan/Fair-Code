@@ -27,9 +27,13 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                     "/nohead": 200}.get(self.path, 404)
         if self.path == "/nohead" and self.command == "HEAD":
             code = 405
-        if self.path == "/redirect":
-            self.send_response(302)
-            self.send_header("Location", "/ok")
+        redirects = {"/redirect": (302, "/ok"), "/temporary": (307, "/ok"), "/moved": (301, "/ok"),
+                     "/moved-permanently": (308, "/ok"), "/moved-twice": (301, "/redirect"),
+                     "/moved-to-gone": (301, "/gone")}
+        if self.path in redirects:
+            status, location = redirects[self.path]
+            self.send_response(status)
+            self.send_header("Location", location)
             self.end_headers()
             return
         self.send_response(code)
@@ -51,7 +55,8 @@ def server():
     thread.join()
 
 
-@pytest.mark.parametrize("path,kind", [("/ok", "ok"), ("/redirect", "ok"), ("/nohead", "ok"), ("/gone", "broken"),
+@pytest.mark.parametrize("path,kind", [("/ok", "ok"), ("/redirect", "ok"), ("/temporary", "ok"), ("/nohead", "ok"),
+                                       ("/moved", "moved"), ("/moved-permanently", "moved"), ("/gone", "broken"),
                                        ("/removed", "broken"), ("/blocked", "unknown"), ("/slow-down", "unknown"),
                                        ("/down", "unknown")])
 def test_each_status_class(server, path, kind):
@@ -157,7 +162,7 @@ def test_main_reports_without_failing_unless_asked(server, tmp_path, capsys):
     assert script.main([str(doc), "--timeout", "5", "--json", "--limit", "2", "--check-local"]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["checked"] == 2 and set(report) == {
-        "checked", "ok", "broken", "unknown", "ignored", "stale_ignored"
+        "checked", "ok", "moved", "broken", "unknown", "ignored", "stale_ignored"
     }
 
 

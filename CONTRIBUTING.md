@@ -75,7 +75,7 @@ python3 scripts/generate_og_images.py --force  # re-render every existing OG ima
 make fix-explainer-count  # correct any stale "N explainers" mention in README/CONTRIBUTORS/METRICS/ROADMAP after adding/removing an explainer
 make key-fold         # regenerate the JS case-folding table (assets/profiler-engine.js KEY_FOLD) after a Unicode upgrade
 make favicons          # regenerate favicon.ico, apple-touch-icon.png, icon-{192,512}.png after editing logo.svg
-make external-links    # report dead external links (a report, never a gate); a link that is correct but cannot pass an anonymous check goes in scripts/external-links-ignore.txt as `URL reason`, and the report still counts it
+make external-links    # report dead external links (a report, never a gate); a link that is correct but cannot pass an anonymous check goes in scripts/external-links-ignore.txt as `URL reason`, and the report still counts it; a link that moved permanently (301 or 308) is listed with its new address
 make lint              # em-dash-free check + broken internal doc link check + issue-number check + explainer counts + traction figures + dataset source links + CONTRIBUTORS.md vs merged PRs + ruff
 ```
 

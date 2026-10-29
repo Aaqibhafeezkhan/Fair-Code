@@ -27,9 +27,13 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                     "/nohead": 200}.get(self.path, 404)
         if self.path == "/nohead" and self.command == "HEAD":
             code = 405
-        if self.path == "/redirect":
-            self.send_response(302)
-            self.send_header("Location", "/ok")
+        redirects = {"/redirect": (302, "/ok"), "/temporary": (307, "/ok"), "/moved": (301, "/ok"),
+                     "/moved-permanently": (308, "/ok"), "/moved-twice": (301, "/redirect"),
+                     "/moved-to-gone": (301, "/gone")}
+        if self.path in redirects:
+            status, location = redirects[self.path]
+            self.send_response(status)
+            self.send_header("Location", location)
             self.end_headers()
             return
         self.send_response(code)
@@ -51,7 +55,8 @@ def server():
     thread.join()
 
 
-@pytest.mark.parametrize("path,kind", [("/ok", "ok"), ("/redirect", "ok"), ("/nohead", "ok"), ("/gone", "broken"),
+@pytest.mark.parametrize("path,kind", [("/ok", "ok"), ("/redirect", "ok"), ("/temporary", "ok"), ("/nohead", "ok"),
+                                       ("/moved", "moved"), ("/moved-permanently", "moved"), ("/gone", "broken"),
                                        ("/removed", "broken"), ("/blocked", "unknown"), ("/slow-down", "unknown"),
                                        ("/down", "unknown")])
 def test_each_status_class(server, path, kind):
@@ -156,7 +161,32 @@ def test_main_reports_without_failing_unless_asked(server, tmp_path, capsys):
     capsys.readouterr()
     assert script.main([str(doc), "--timeout", "5", "--json", "--limit", "2", "--check-local"]) == 0
     report = json.loads(capsys.readouterr().out)
-    assert report["checked"] == 2 and set(report) == {"checked", "ok", "broken", "unknown", "ignored"}
+    assert report["checked"] == 2 and set(report) == {"checked", "ok", "moved", "broken", "unknown", "ignored"}
+
+
+def test_a_permanent_redirect_reports_the_new_address(server):
+    assert script.check_url(server + "/moved", timeout=5) == ("moved", server + "/ok")
+    assert script.check_url(server + "/moved-permanently", timeout=5) == ("moved", server + "/ok")
+    # The first hop decides: a 301 to a page that then redirects again still ends on its final address.
+    assert script.check_url(server + "/moved-twice", timeout=5) == ("moved", server + "/ok")
+    # A temporary redirect keeps the old address, which is still the one to cite.
+    assert script.check_url(server + "/redirect", timeout=5) == ("ok", "200")
+
+
+def test_a_permanent_redirect_to_a_dead_page_is_broken_not_moved(server):
+    assert script.check_url(server + "/moved-to-gone", timeout=5) == ("broken", "404")
+
+
+def test_main_lists_moved_links_with_their_new_address_and_still_exits_0(server, tmp_path, capsys):
+    doc = tmp_path / "doc.md"
+    doc.write_text(f"[ok]({server}/ok) [moved]({server}/moved)\n", encoding="utf-8")
+    assert script.main([str(doc), "--timeout", "5", "--check-local", "--fail-on-broken"]) == 0
+    out = capsys.readouterr().out
+    assert "1 ok, 0 broken, 0 unknown. 1 moved." in out
+    assert f"{server}/moved  ->  {server}/ok  ({doc})" in out
+    assert script.main([str(doc), "--timeout", "5", "--check-local", "--json"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["moved"] == [{"url": f"{server}/moved", "detail": f"{server}/ok", "files": [str(doc)]}]
 
 
 def test_ignore_list_skips_a_url_and_reports_it(server, tmp_path, capsys):

@@ -17,6 +17,8 @@ not allow HEAD). A 404 gets one retry with a fuller browser-like user agent. For
 the DOI handle API is used to distinguish a registered identifier from a missing one. Other 404, 410 and a
 name that does not resolve are broken. Everything else (403, 429, 5xx, timeouts, refused connections) is
 unknown: it is listed but never counted as broken, because it usually means the site blocks scripts or is down.
+A link whose redirect chain starts with a permanent 301 or 308 and ends on a page that answers is moved: the
+report lists it with its new address so the document can be updated, and it is never counted as broken (#1196).
 
 A link that is correct but cannot pass an anonymous check (a page behind a login, a deleted account a document
 names on purpose) goes in scripts/external-links-ignore.txt: one URL per line, then a reason. The URL is not
@@ -46,6 +48,7 @@ LINK = re.compile(r"\]\((https?://[^)\s]+)\)")
 BARE = re.compile(r"<(https?://[^>\s]+)>")
 SKIP_HOSTS = {"localhost", "127.0.0.1", "example.com", "www.example.com"}
 BROKEN_STATUSES = {404, 410}
+MOVED_STATUSES = {301, 308}
 IGNORE_FILE = ROOT / "scripts" / "external-links-ignore.txt"
 
 
@@ -99,7 +102,10 @@ def collect_urls(paths, skip_hosts=SKIP_HOSTS) -> dict[str, list[str]]:
 
 
 def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
-    """(status class, detail) with the class one of 'ok', 'broken' or 'unknown'."""
+    """(status class, detail) with the class one of 'ok', 'moved', 'broken' or 'unknown'.
+
+    For 'moved' the detail is the address the redirect chain ended on.
+    """
     for method in ("HEAD", "GET"):
         try:
             try:
@@ -122,7 +128,27 @@ def check_url(url: str, timeout: float = 15.0) -> tuple[str, str]:
 def _open(url: str, method: str, user_agent: str, timeout: float) -> tuple[str, str]:
     request = urllib.request.Request(url, method=method, headers={"User-Agent": user_agent, "Accept": "*/*"})
     with urllib.request.urlopen(request, timeout=timeout, context=_ssl_context()) as response:
-        return "ok", str(response.status)
+        final_url, status = response.url, str(response.status)
+    if final_url != url and _first_redirect_status(request, timeout) in MOVED_STATUSES:
+        return "moved", final_url
+    return "ok", status
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None                           # urllib then raises HTTPError with the redirect's own status
+
+
+def _first_redirect_status(request: urllib.request.Request, timeout: float) -> int | None:
+    """The status of the first hop for a URL that redirected, so a temporary 302 or 307 stays 'ok'."""
+    opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=_ssl_context()), _NoRedirect())
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            return response.status
+    except urllib.error.HTTPError as error:
+        return error.code
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
 
 
 def _classify_http_error(error: urllib.error.HTTPError, url: str, method: str,
@@ -182,7 +208,7 @@ def run(urls: dict[str, list[str]], limit: int | None = None, workers: int = 8, 
     ignored = [{"url": url, "reason": ignore[url], "files": urls[url]} for url in sorted(urls) if url in ignore]
     urls = {url: files for url, files in urls.items() if url not in ignore}
     items = sorted(urls)[:limit] if limit else sorted(urls)
-    results = {"ok": [], "broken": [], "unknown": []}
+    results = {"ok": [], "moved": [], "broken": [], "unknown": []}
     with concurrent.futures.ThreadPoolExecutor(workers) as pool:
         for url, (kind, detail) in zip(items, pool.map(lambda u: check_url(u, timeout), items)):
             results[kind].append({"url": url, "detail": detail, "files": urls[url]})
@@ -192,12 +218,16 @@ def run(urls: dict[str, list[str]], limit: int | None = None, workers: int = 8, 
 def render(report: dict) -> str:
     lines = [f"Checked {report['checked']} external links: {len(report['ok'])} ok, "
              f"{len(report['broken'])} broken, {len(report['unknown'])} unknown."
+             + (f" {len(report['moved'])} moved." if report.get("moved") else "")
              + (f" {len(report['ignored'])} ignored." if report.get("ignored") else "")]
     for title, key in (("Broken (404, 410 or a name that does not resolve)", "broken"),
                        ("Unknown (blocked, rate limited or unreachable; not counted as broken)", "unknown")):
         if report[key]:
             lines += ["", title + ":"]
             lines += [f"  {item['detail']:>22}  {item['url']}  ({', '.join(item['files'][:3])})" for item in report[key]]
+    if report.get("moved"):
+        lines += ["", "Moved (permanent 301 or 308 redirect; update the link, not counted as broken):"]
+        lines += [f"  {item['url']}  ->  {item['detail']}  ({', '.join(item['files'][:3])})" for item in report["moved"]]
     if report.get("ignored"):
         lines += ["", "Ignored (listed in scripts/external-links-ignore.txt, not requested):"]
         lines += [f"  {item['url']}  ({item['reason']})" for item in report["ignored"]]

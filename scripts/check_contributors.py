@@ -18,9 +18,11 @@ GitHub (its pull requests show a ghost author), so its counts are listed as skip
 
     python3 scripts/check_contributors.py                 # asks `gh` for the merged pull requests
     python3 scripts/check_contributors.py --prs FILE      # FILE: gh pr list --state merged --limit 5000 --json number,author,mergedAt
+    python3 scripts/check_contributors.py --fix            # refresh known counts/dates and sort entries in place
 
 Without `gh` (or a network) it prints a note and exits 0, so `make lint` works offline; pass `--require` to make
-that an error. Exit code: 0 = consistent (or skipped), 1 = a stale count, date, order or missing entry.
+that an error. `--fix` requires GitHub data or `--prs FILE` and preserves entry prose and commit counts. Exit code:
+0 = consistent (or skipped), 1 = a stale count, date, order or missing entry.
 """
 from __future__ import annotations
 
@@ -118,6 +120,53 @@ def check(entries: list[dict], prs: list[dict], through: int | None) -> tuple[li
     return problems, skipped
 
 
+def fix_document(text: str, prs: list[dict], through: int | None) -> str:
+    """Refresh known PR counts/dates and order entries without editing their prose."""
+    entries, _ = parse(text)
+    authors = merged_by_author(prs, through)
+    by_login = {login.lower(): info for login, info in authors.items()}
+    refreshed_entries = []
+    for entry in entries:
+        refreshed = dict(entry)
+        actual = by_login.get(entry["handle"].lower())
+        if actual is not None and not entry["deleted"]:
+            refreshed["merged"] = actual["count"]
+            refreshed["first"] = actual["first"]
+        refreshed_entries.append(refreshed)
+
+    section_heads = [(m.start(), m.group(1)) for m in re.finditer(r"^## (.+)$", text, re.MULTILINE)]
+    entry_matches = list(ENTRY.finditer(text))
+    replacements = []
+    stats_pattern = re.compile(r"\*\*\d+ merged PRs? · \d+ commits? · first merged \d{4}-\d{2}-\d{2}\*\*")
+    for section_index, (section_start, section) in enumerate(section_heads):
+        if section not in SECTIONS:
+            continue
+        section_end = section_heads[section_index + 1][0] if section_index + 1 < len(section_heads) else len(text)
+        matches = [m for m in entry_matches if section_start < m.start() < section_end]
+        if not matches:
+            continue
+        start = matches[0].start()
+        section_entries = [entry for entry in refreshed_entries if entry["section"] == section]
+        blocks = []
+        for index, match in enumerate(matches):
+            end = matches[index + 1].start() if index + 1 < len(matches) else section_end
+            block = text[match.start():end]
+            entry = section_entries[index]
+            stats = (f"**{entry['merged']} merged PR{'s' if entry['merged'] != 1 else ''} · "
+                     f"{entry['commits']} commit{'s' if entry['commits'] != 1 else ''} · "
+                     f"first merged {entry['first']}**")
+            block, count = stats_pattern.subn(stats, block, count=1)
+            if count != 1:
+                raise ValueError(f"could not locate statistics line for {entry['handle']}")
+            blocks.append((entry, block))
+        blocks.sort(key=lambda item: (-item[0]["merged"], -item[0]["commits"], item[0]["first"]))
+        replacements.append((start, section_end, "".join(block for _, block in blocks)))
+
+    for start, end, replacement in reversed(replacements):
+        text = text[:start] + replacement + text[end:]
+    return text
+
+
 def fetch_prs() -> list[dict] | None:
     if shutil.which("gh") is None:
         return None
@@ -131,17 +180,29 @@ def main(argv=None) -> int:
     parser.add_argument("--file", type=Path, default=ROOT / "CONTRIBUTORS.md")
     parser.add_argument("--prs", metavar="FILE", help="merged pull requests as JSON instead of asking gh")
     parser.add_argument("--require", action="store_true", help="fail instead of skipping when GitHub cannot be reached")
+    parser.add_argument("--fix", action="store_true", help="rewrite known PR counts/dates and sort contributor entries")
     args = parser.parse_args(argv)
 
-    entries, through = parse(args.file.read_text(encoding="utf-8"))
+    text = args.file.read_text(encoding="utf-8")
+    entries, through = parse(text)
     if not entries:
         print(f"error: no contributor entries found in {args.file}")
         return 1
     prs = json.loads(Path(args.prs).read_text(encoding="utf-8")) if args.prs else fetch_prs()
     if prs is None:
+        if args.fix:
+            print("error: --fix needs merged pull request data from GitHub or --prs FILE")
+            return 2
         print("note: could not fetch merged pull requests from GitHub (gh missing or offline); "
               "skipping the contributors check")
         return 1 if args.require else 0
+    if args.fix:
+        fixed = fix_document(text, prs, through)
+        if fixed != text:
+            args.file.write_text(fixed, encoding="utf-8")
+            print(f"updated: {args.file}")
+        text = fixed
+        entries, through = parse(text)
     if through is None:
         print("note: no 'covering everything merged through **PR #N**' snapshot line found; counting every merged PR")
 

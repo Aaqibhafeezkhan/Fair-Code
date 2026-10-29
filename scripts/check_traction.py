@@ -10,13 +10,13 @@ section. It compares the files with each other, never with GitHub, so it works o
 count has its own checker, scripts/check_explainer_count.py.
 
     python3 scripts/check_traction.py
-    python3 scripts/check_traction.py --live              # also compare with GitHub (needs gh; opt-in) (#1148)
-    python3 scripts/check_traction.py --live-data FILE    # same, from a saved {"stars", "forks", "watching", "contributors"}
+    python3 scripts/check_traction.py --live              # compare live figures, including Issues Closed for the latest ISO week
+    python3 scripts/check_traction.py --live-data FILE    # same, from saved GitHub figures including issues_closed
 
 Exit code: 0 = everything agrees, 1 = at least one disagreement or a figure that could not be found.
 
 The files can all agree and still be stale (stars were 52 in all three while GitHub said 53), so --live reads
-stars, forks, watchers (subscribers) and contributors without bots from `gh api` and names every place whose
+stars, forks, watchers (subscribers), contributors without bots, and Issues Closed for the latest ISO week from `gh api` and names every place whose
 figure differs. It is off by default, so `make lint` and a pull request never depend on the network; the weekly
 traction workflow runs it. The social reach, countries and audits figures have no GitHub source and are not
 compared. Contributors count everyone the contributors API lists who is not a bot, owner included, matching
@@ -33,11 +33,12 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "yakew7/Fair-Code"
-LIVE_FIGURES = ("stars", "forks", "watching", "contributors")
+LIVE_FIGURES = ("stars", "forks", "watching", "contributors", "issues_closed")
 
 FIGURES = ("stars", "contributors", "forks", "watching", "social", "countries", "audits")
 
@@ -60,7 +61,7 @@ METRICS_BADGES = {"Stars": "stars", "Contributors": "contributors", "Forks": "fo
                   "Watching": "watching", "Countries": "countries"}
 # | Week | Stars | Forks | Watching | Contributors | Social Views | Countries | Issues Closed | Code Audits |
 METRICS_ROW_COLUMNS = {1: "stars", 2: "forks", 3: "watching", 4: "contributors", 5: "social",
-                       6: "countries", 8: "audits"}
+                       6: "countries", 7: "issues_closed", 8: "audits"}
 
 # Observations are (figure, where, value), value being the number as written, e.g. "30K+" or "51".
 Observation = tuple[str, str, str]
@@ -125,6 +126,28 @@ def metrics_observations(text: str) -> tuple[list[Observation], list[str]]:
     return found, problems
 
 
+def latest_metrics_week(text: str) -> str | None:
+    """The ISO year-week on the newest weekly row, or None when no row exists."""
+    rows = [line for line in text.splitlines() if re.match(r"\|\s*\d{4}-W\d+", line)]
+    if not rows:
+        return None
+    cells = [_clean(cell) for cell in rows[-1].strip().strip("|").split("|")]
+    return cells[0] if cells else None
+
+
+def iso_week_bounds(week: str) -> tuple[str, str]:
+    """Inclusive Monday and Sunday dates for an ISO year-week label."""
+    match = re.fullmatch(r"(?P<year>\d{4})-W(?P<week>\d{2})", week)
+    if not match:
+        raise ValueError(f"METRICS.md: latest week {week!r} is not a valid ISO year-week")
+    try:
+        monday = date.fromisocalendar(int(match["year"]), int(match["week"]), 1)
+    except ValueError as exc:
+        raise ValueError(f"METRICS.md: latest week {week!r} is not a valid ISO year-week") from exc
+    sunday = monday + timedelta(days=6)
+    return monday.isoformat(), sunday.isoformat()
+
+
 def completed_items(text: str) -> tuple[int | None, int | None]:
     """(claimed, counted) for the README's "Show N completed items" section; None if not found."""
     m = re.search(r"Show (\d+) completed items", text)
@@ -166,23 +189,37 @@ def check(root: Path = ROOT) -> list[str]:
     return problems
 
 
-def fetch_live(repo: str = REPO) -> dict[str, int] | None:
-    """{"stars", "forks", "watching", "contributors"} from `gh api`, or None when gh is missing or fails."""
+def fetch_live(repo: str = REPO, week_bounds: tuple[str, str] | None = None) -> dict[str, int] | None:
+    """Live repository figures and, when requested, closed issues for an inclusive ISO-week date range."""
     if shutil.which("gh") is None:
         return None
 
     def api(*args: str):
         done = subprocess.run(["gh", "api", *args], capture_output=True, text=True)
-        return json.loads(done.stdout) if done.returncode == 0 and done.stdout.strip() else None
+        if done.returncode != 0 or not done.stdout.strip():
+            return None
+        try:
+            return json.loads(done.stdout)
+        except json.JSONDecodeError:
+            return None
 
     info = api(f"repos/{repo}")
     people = api("--paginate", "--slurp", f"repos/{repo}/contributors?per_page=100")
-    if info is None or people is None:
+    if not isinstance(info, dict) or not isinstance(people, list):
         return None
     people = [p for page in people for p in (page if isinstance(page, list) else [])]
-    return {"stars": info["stargazers_count"], "forks": info["forks_count"],
+    live = {"stars": info["stargazers_count"], "forks": info["forks_count"],
             "watching": info["subscribers_count"],
             "contributors": sum(1 for p in people if p.get("type") != "Bot" and not p.get("login", "").endswith("[bot]"))}
+    if week_bounds is not None:
+        start, end = week_bounds
+        query = f"repo:{repo} is:issue is:closed closed:{start}..{end}"
+        closed = api("--method", "GET", "search/issues", "-f", f"q={query}")
+        if (not isinstance(closed, dict) or closed.get("incomplete_results") is not False
+                or not isinstance(closed.get("total_count"), int)):
+            return None
+        live["issues_closed"] = closed["total_count"]
+    return live
 
 
 def live_differences(observations: list[Observation], live: dict[str, int]) -> list[str]:
@@ -194,16 +231,32 @@ def live_differences(observations: list[Observation], live: dict[str, int]) -> l
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--live", action="store_true", help="also compare stars, forks, watching and contributors with GitHub (needs gh)")
-    parser.add_argument("--live-data", metavar="FILE", help="GitHub's figures as JSON instead of asking gh (implies --live)")
+    parser.add_argument("--live", action="store_true", help="also compare live figures, including Issues Closed for the latest METRICS week (needs gh)")
+    parser.add_argument("--live-data", metavar="FILE", help="GitHub's figures, including issues_closed, as JSON instead of asking gh (implies --live)")
     args = parser.parse_args(argv or [])
     problems = check()
     if args.live or args.live_data:
-        live = json.loads(Path(args.live_data).read_text(encoding="utf-8")) if args.live_data else fetch_live()
+        observations, _, texts = collect()
+        week_bounds = None
+        week = latest_metrics_week(texts["METRICS.md"])
+        if week is not None:
+            try:
+                week_bounds = iso_week_bounds(week)
+            except ValueError as exc:
+                problems.append(str(exc))
+        if args.live_data:
+            live = json.loads(Path(args.live_data).read_text(encoding="utf-8"))
+            needs_issues_closed = any(figure == "issues_closed" for figure, _, _ in observations)
+            if needs_issues_closed and (not isinstance(live, dict) or type(live.get("issues_closed")) is not int):
+                print("error: --live-data JSON must include an integer issues_closed count for the latest METRICS week", file=sys.stderr)
+                return 2
+        else:
+            if not any(figure == "issues_closed" for figure, _, _ in observations):
+                week_bounds = None
+            live = fetch_live(week_bounds=week_bounds)
         if live is None:
-            print("error: --live needs the GitHub CLI (gh) signed in and online", file=sys.stderr)
+            print("error: --live could not fetch GitHub figures; check that gh is installed, signed in and online, and that search results are complete", file=sys.stderr)
             return 2
-        observations, _, _ = collect()
         problems += live_differences(observations, live)
     if problems:
         print("Traction figures are out of step:", file=sys.stderr)

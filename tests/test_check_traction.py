@@ -163,6 +163,7 @@ def test_weekly_row_skips_empty_and_dash_cells():
         "contributors",
         "social",
         "countries",
+        "issues_closed",
         "audits",
     }
 
@@ -219,7 +220,7 @@ def test_script_entry_point_exits_with_the_checker_result(monkeypatch):
         raise AssertionError("script entry point did not exit")
 
 
-LIVE = {"stars": 51, "forks": 63, "watching": 8, "contributors": 54}
+LIVE = {"stars": 51, "forks": 63, "watching": 8, "contributors": 54, "issues_closed": 28}
 
 
 def _observations(tmp_path, **overrides):
@@ -245,6 +246,63 @@ def test_live_ignores_figures_github_cannot_supply(tmp_path):
     assert check.live_differences([("social", "README.md", "30K+")], {"social": 1}) == []
 
 
+def test_live_reports_a_weekly_issues_closed_mismatch(tmp_path):
+    messages = check.live_differences(_observations(tmp_path), {**LIVE, "issues_closed": 29})
+
+    assert messages == [
+        "issues_closed: METRICS.md (latest weekly row, 2026-W43) says 28, GitHub says 29"
+    ]
+
+
+def test_latest_metrics_iso_week_uses_monday_sunday_and_crosses_year_boundaries():
+    assert check.latest_metrics_week(METRICS) == "2026-W43"
+    assert check.iso_week_bounds("2026-W43") == ("2026-10-19", "2026-10-25")
+    assert check.iso_week_bounds("2026-W01") == ("2025-12-29", "2026-01-04")
+    assert check.iso_week_bounds("2020-W53") == ("2020-12-28", "2021-01-03")
+
+
+def test_iso_week_bounds_rejects_malformed_or_nonexistent_weeks():
+    import pytest
+
+    for week in ("2026-W1", "2026-W54", "not-a-week"):
+        with pytest.raises(ValueError, match="not a valid ISO year-week"):
+            check.iso_week_bounds(week)
+
+
+def test_fetch_live_queries_issue_only_count_for_the_week_and_fails_on_incomplete_results(monkeypatch):
+    import json
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(check.shutil, "which", lambda command: "/usr/bin/gh")
+    calls = []
+    replies = [
+        {"stargazers_count": 51, "forks_count": 63, "subscribers_count": 8},
+        [[{"login": "person"}, {"login": "helper[bot]", "type": "Bot"}]],
+        {"total_count": 28, "incomplete_results": False, "items": []},
+    ]
+
+    def run(command, capture_output, text):
+        calls.append(command)
+        return SimpleNamespace(returncode=0, stdout=json.dumps(replies[len(calls) - 1]))
+
+    monkeypatch.setattr(check.subprocess, "run", run)
+    live = check.fetch_live(week_bounds=("2026-10-19", "2026-10-25"))
+
+    assert live == {"stars": 51, "forks": 63, "watching": 8, "contributors": 1, "issues_closed": 28}
+    assert calls[2] == [
+        "gh", "api", "--method", "GET", "search/issues", "-f",
+        "q=repo:yakew7/Fair-Code is:issue is:closed closed:2026-10-19..2026-10-25",
+    ]
+
+    replies[2] = {"total_count": 28, "incomplete_results": True, "items": []}
+    calls.clear()
+    assert check.fetch_live(week_bounds=("2026-10-19", "2026-10-25")) is None
+
+    replies[2] = []
+    calls.clear()
+    assert check.fetch_live(week_bounds=("2026-10-19", "2026-10-25")) is None
+
+
 def test_main_live_data_fails_on_a_stale_figure_and_passes_when_current(tmp_path, monkeypatch, capsys):
     import json
     _site(tmp_path)
@@ -257,12 +315,21 @@ def test_main_live_data_fails_on_a_stale_figure_and_passes_when_current(tmp_path
     assert check.main(["--live-data", str(live)]) == 0
     assert "and with GitHub." in capsys.readouterr().out
 
+    live.write_text(json.dumps({**LIVE, "issues_closed": 29}), encoding="utf-8")
+    assert check.main(["--live-data", str(live)]) == 1
+    assert "issues_closed: METRICS.md (latest weekly row, 2026-W43) says 28, GitHub says 29" in capsys.readouterr().err
+
+    legacy_live = {key: value for key, value in LIVE.items() if key != "issues_closed"}
+    live.write_text(json.dumps(legacy_live), encoding="utf-8")
+    assert check.main(["--live-data", str(live)]) == 2
+    assert "must include an integer issues_closed count" in capsys.readouterr().err
+
     live.write_text(json.dumps({**LIVE, "stars": 52}), encoding="utf-8")
     assert check.main(["--live-data", str(live)]) == 1
     assert "stars: README.md (GitHub Stars) says 51, GitHub says 52" in capsys.readouterr().err
 
 
 def test_live_without_gh_is_an_error_not_a_pass(monkeypatch, capsys):
-    monkeypatch.setattr(check, "fetch_live", lambda repo=check.REPO: None)
+    monkeypatch.setattr(check, "fetch_live", lambda repo=check.REPO, week_bounds=None: None)
     assert check.main(["--live"]) == 2
-    assert "needs the GitHub CLI" in capsys.readouterr().err
+    assert "could not fetch GitHub figures" in capsys.readouterr().err

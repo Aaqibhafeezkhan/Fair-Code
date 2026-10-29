@@ -1288,12 +1288,15 @@ faircode benchmark --out results/ --n-resamples 2000 --n-permutations 2000
 faircode benchmark COMPAS/audit.yaml                # run a subset explicitly
 faircode benchmark --root ~/audits                  # search ~/audits/*/audit.yaml instead of the current directory
 faircode benchmark --no-plots                       # CSVs only: no figures/ and matplotlib is not needed
+faircode benchmark --quiet                          # suppress per-combination progress on stderr
 ```
 
 `--root PATH` is the directory searched for `*/audit.yaml` (one level down; default: the current
 directory), so the harness can run from outside the repository. It is ignored when you pass manifest
 paths. `--no-plots` skips the `figures/*.png` files; `results_fairness.csv`, `results_performance.csv`
 and `summary.csv` are still written.
+By default, progress is written to stderr after each audit/strategy/model combination completes.
+`--quiet` suppresses those progress lines; the existing final summary and warnings remain on stderr.
 
 Writes `results_fairness.csv`, `results_performance.csv`, `summary.csv`, and one
 `figures/<audit>_strategies.png` per audit (300 dpi, rendered by `faircode/figures.py` straight from

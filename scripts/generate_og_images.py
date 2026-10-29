@@ -193,6 +193,15 @@ def render_card_both_themes(slug, kicker, title, subtitle, force=True):
     return written
 
 
+def home_card_subtitle():
+    return ("Open-source audits across real-world domains, with measurable "
+            "before/after fairness results.")
+
+
+def benchmark_card_subtitle():
+    return "Explore fairness results across seven audits, five mitigation strategies, and three model families."
+
+
 def main(force=False):
     for colors in THEMES.values():
         colors["out_dir"].mkdir(parents=True, exist_ok=True)
@@ -206,9 +215,7 @@ def main(force=False):
         "home",
         kicker="Algorithmic bias research · Open source",
         title="The bias is real. So is the fix.",
-        subtitle="Open-source audits across criminal justice, hiring, lending, "
-                 "healthcare, welfare, and tenant screening - with measurable "
-                 "before/after fairness results.",
+        subtitle=home_card_subtitle(),
     )
 
     render(
@@ -223,7 +230,7 @@ def main(force=False):
         "benchmark",
         kicker="Fair Code · Benchmark Results",
         title="Benchmark Results Dashboard",
-        subtitle="Explore fairness results across seven audits, five mitigation strategies, and three model families.",
+        subtitle=benchmark_card_subtitle(),
     )
 
     entries = json.loads(DATA_JSON.read_text(encoding="utf-8"))

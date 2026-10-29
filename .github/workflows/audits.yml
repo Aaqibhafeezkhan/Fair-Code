@@ -126,7 +126,7 @@ jobs:
       - name: Install faircode + pytest
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[excel,parquet,proxy,mcp]" pytest pytest-cov
+          pip install -e ".[test,excel,parquet,proxy,mcp]"
 
       # One run: the whole suite with line coverage printed at the end. A test failure fails the
       # job; the coverage figure itself is informational, not a gate (#932).

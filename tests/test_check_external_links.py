@@ -162,7 +162,7 @@ def test_main_reports_without_failing_unless_asked(server, tmp_path, capsys):
     assert script.main([str(doc), "--timeout", "5", "--json", "--limit", "2", "--check-local"]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["checked"] == 2 and set(report) == {
-        "checked", "ok", "broken", "unknown", "ignored", "stale_ignored"
+        "checked", "ok", "moved", "broken", "unknown", "ignored", "stale_ignored"
     }
 
 

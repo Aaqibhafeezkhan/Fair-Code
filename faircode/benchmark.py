@@ -33,8 +33,11 @@ import difflib
 import hashlib
 import itertools
 import json
+import os
 import platform
+import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
@@ -411,7 +414,7 @@ def write_provenance(out_dir, runs) -> Path:
     return path
 
 
-def _validate_existing_result_outputs(out_dir, requested_audits, provenance) -> None:
+def _validate_existing_result_outputs(out_dir, requested_audits, provenance, *, allow_other_audits=False):
     """Validate existing results before report writes to prevent partial replacement."""
     out_dir = Path(out_dir)
     paths = {name: out_dir / name for name in RESULT_FILES}
@@ -480,7 +483,7 @@ def _validate_existing_result_outputs(out_dir, requested_audits, provenance) -> 
             )
 
     other_audits = existing_audits - requested_audits
-    if other_audits:
+    if other_audits and not allow_other_audits:
         names = ", ".join(sorted(other_audits))
         raise ValueError(
             f"existing benchmark output contains results for other audits ({names}); "
@@ -488,15 +491,89 @@ def _validate_existing_result_outputs(out_dir, requested_audits, provenance) -> 
         )
 
 
+def _write_merged_report(fairness_df, performance_df, out_dir, make_plots, plot_metric, provenance):
+    """Stage a merged result set and roll back replaced files if installation fails."""
+    out_dir = Path(out_dir)
+    old_fairness = pd.read_csv(out_dir / RESULT_FILES[0])
+    old_performance = pd.read_csv(out_dir / RESULT_FILES[1])
+    old_record = json.loads((out_dir / PROVENANCE_FILE).read_text(encoding="utf-8"))
+    if list(old_fairness.columns) != list(fairness_df.columns) or list(old_performance.columns) != list(performance_df.columns):
+        raise ValueError("--merge requires result tables with the existing column layout")
+    selected = set(fairness_df["audit"].astype(str))
+    merged_fairness = pd.concat(
+        [old_fairness[~old_fairness["audit"].astype(str).isin(selected)], fairness_df],
+        ignore_index=True,
+    )
+    merged_performance = pd.concat(
+        [old_performance[~old_performance["audit"].astype(str).isin(selected)], performance_df],
+        ignore_index=True,
+    )
+
+    with tempfile.TemporaryDirectory(prefix=".faircode-merge-", dir=out_dir.parent) as temporary:
+        stage = Path(temporary) / "stage"
+        stage.mkdir()
+        merged_fairness.to_csv(stage / RESULT_FILES[0], index=False)
+        merged_performance.to_csv(stage / RESULT_FILES[1], index=False)
+        summarize(merged_fairness).to_csv(stage / RESULT_FILES[2], index=False)
+        if make_plots and not merged_fairness.empty:
+            from .figures import generate_figures
+            generate_figures(stage, metric=plot_metric)
+        write_provenance(stage, [*old_record["runs"], provenance])
+
+        staged = [stage / name for name in RESULT_FILES]
+        if make_plots and (stage / "figures").is_dir():
+            staged.extend(sorted((stage / "figures").glob("*.png")))
+        staged.append(stage / PROVENANCE_FILE)
+        backup = Path(temporary) / "backup"
+        backup.mkdir()
+        installed = []
+        saved = []
+        try:
+            for source in staged:
+                relative = source.relative_to(stage)
+                destination = out_dir / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if destination.exists():
+                    saved_path = backup / relative
+                    saved_path.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(destination, saved_path)
+                    saved.append((saved_path, destination))
+                installed.append(destination)
+                os.replace(source, destination)
+        except BaseException:
+            for destination in reversed(installed):
+                destination.unlink(missing_ok=True)
+            for saved_path, destination in reversed(saved):
+                os.replace(saved_path, destination)
+            raise
+    return out_dir
+
+
 def write_report(fairness_df: pd.DataFrame, performance_df: pd.DataFrame, out_dir,
-                 make_plots: bool = True, plot_metric: str = "demographic_parity_diff", provenance=None):
+                 make_plots: bool = True, plot_metric: str = "demographic_parity_diff", provenance=None,
+                 merge: bool = False):
     """Write results_fairness.csv, results_performance.csv, and a summary.csv
     to out_dir, plus (if make_plots) render figures/*.png via faircode.figures.
-    With `provenance` (a dict from collect_provenance) also write PROVENANCE.json (#1129)."""
+    With `provenance` (a dict from collect_provenance) also write PROVENANCE.json (#1129).
+    `merge=True` replaces only the requested audits in an existing verified result set."""
     fairness_audits = set(fairness_df["audit"].astype(str)) if "audit" in fairness_df else set()
     performance_audits = set(performance_df["audit"].astype(str)) if "audit" in performance_df else set()
     if fairness_audits != performance_audits:
         raise ValueError("benchmark result tables contain different audit sets; refusing to write output")
+    if merge:
+        out_dir = Path(out_dir)
+        if not fairness_audits:
+            raise ValueError("--merge requires at least one audit")
+        if not isinstance(provenance, dict):
+            raise ValueError("--merge requires provenance for the new benchmark run")
+        run_audits = provenance.get("audits")
+        if not isinstance(run_audits, list) or set(map(str, run_audits)) != fairness_audits:
+            raise ValueError("--merge provenance audits do not match the benchmark result tables")
+        if not (out_dir / PROVENANCE_FILE).is_file():
+            raise ValueError("--merge requires an existing, provenance-verified benchmark output")
+        _validate_existing_result_outputs(out_dir, fairness_audits, provenance, allow_other_audits=True)
+        return _write_merged_report(fairness_df, performance_df, out_dir, make_plots, plot_metric, provenance)
+
     _validate_existing_result_outputs(out_dir, fairness_audits, provenance)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

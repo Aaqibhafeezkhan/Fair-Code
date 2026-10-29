@@ -540,6 +540,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="skip rendering figures/*.png (no matplotlib needed)")
     b.add_argument("--quiet", action="store_true",
                    help="suppress per-combination benchmark progress on stderr")
+    b.add_argument("--merge", action="store_true",
+                   help="replace selected audits in existing provenance-verified results")
 
     return parser
 
@@ -932,7 +934,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             write_report(fairness_df, performance_df, args.out, make_plots=not args.no_plots,
                          provenance=collect_provenance(fairness_df["audit"].unique(), args.n_resamples, args.n_permutations,
-                                                       description="faircode benchmark"))
+                                                       description="faircode benchmark"),
+                         merge=args.merge)
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2

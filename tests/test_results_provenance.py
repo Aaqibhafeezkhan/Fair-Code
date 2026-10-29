@@ -95,6 +95,136 @@ def test_subset_run_refuses_other_audits_without_changing_any_output(tmp_path):
     assert _output_bytes(out_dir) == before
 
 
+def test_merge_replaces_selected_audits_preserves_other_rows_and_appends_provenance(tmp_path):
+    out_dir = tmp_path / "results"
+    _write_result_set(out_dir, ["audit_a", "audit_b"])
+    fairness, performance = _result_frames(["audit_b", "audit_c"])
+    fairness.loc[0, "value"] = 0.4
+    performance.loc[0, "value"] = 0.8
+    run = {"audits": ["audit_b", "audit_c"], "description": "selected rerun"}
+
+    benchmark.write_report(fairness, performance, out_dir, make_plots=False,
+                           provenance=run, merge=True)
+
+    merged = pd.read_csv(out_dir / "results_fairness.csv").set_index("audit")
+    assert set(merged.index) == {"audit_a", "audit_b", "audit_c"}
+    assert merged.loc["audit_a", "value"] == pytest.approx(0.1)
+    assert merged.loc["audit_b", "value"] == pytest.approx(0.4)
+    for name in ("results_performance.csv", "summary.csv"):
+        assert set(pd.read_csv(out_dir / name)["audit"]) == {"audit_a", "audit_b", "audit_c"}
+    performance_merged = pd.read_csv(out_dir / "results_performance.csv").set_index("audit")
+    assert performance_merged.loc["audit_a", "value"] == pytest.approx(0.7)
+    assert performance_merged.loc["audit_b", "value"] == pytest.approx(0.8)
+    record = json.loads((out_dir / "PROVENANCE.json").read_text(encoding="utf-8"))
+    assert record["runs"] == [{"audits": ["audit_a", "audit_b"]}, run]
+    assert set().union(*(set(item["audits"]) for item in record["runs"])) == set(merged.index)
+    for name, digest in record["files"].items():
+        assert hashlib.sha256((out_dir / name).read_bytes()).hexdigest() == digest
+
+
+def test_merge_requires_provenance_and_leaves_existing_outputs_unchanged(tmp_path):
+    out_dir = tmp_path / "results"
+    _write_result_set(out_dir, ["audit_a", "audit_b"])
+    before = _output_bytes(out_dir)
+    fairness, performance = _result_frames(["audit_b"])
+
+    with pytest.raises(ValueError, match="requires provenance"):
+        benchmark.write_report(fairness, performance, out_dir, make_plots=False, merge=True)
+
+    assert _output_bytes(out_dir) == before
+
+
+def test_merge_rejects_invalid_existing_output_without_changing_any_file(tmp_path):
+    out_dir = tmp_path / "results"
+    _write_result_set(out_dir, ["audit_a"])
+    (out_dir / "results_performance.csv").write_text("broken", encoding="utf-8")
+    before = _output_bytes(out_dir)
+    fairness, performance = _result_frames(["audit_b"])
+
+    with pytest.raises(ValueError):
+        benchmark.write_report(fairness, performance, out_dir, make_plots=False,
+                               provenance={"audits": ["audit_b"]}, merge=True)
+
+    assert _output_bytes(out_dir) == before
+
+
+def test_merge_rejects_partial_first_run_without_creating_output(tmp_path):
+    out_dir = tmp_path / "results"
+    out_dir.mkdir()
+    (out_dir / "results_fairness.csv").write_text("audit\naudit_a\n", encoding="utf-8")
+    before = _output_bytes(out_dir)
+    fairness, performance = _result_frames(["audit_b"])
+
+    with pytest.raises(ValueError, match="requires an existing, provenance-verified"):
+        benchmark.write_report(fairness, performance, out_dir, make_plots=False,
+                               provenance={"audits": ["audit_b"]}, merge=True)
+
+    assert _output_bytes(out_dir) == before
+
+
+def test_merge_rolls_back_replaced_files_when_installation_fails(tmp_path, monkeypatch):
+    out_dir = tmp_path / "results"
+    _write_result_set(out_dir, ["audit_a"])
+    before = _output_bytes(out_dir)
+    fairness, performance = _result_frames(["audit_b"])
+    real_replace = benchmark.os.replace
+    failed = False
+
+    def fail_once(source, destination):
+        nonlocal failed
+        if not failed and Path(source).name == "summary.csv" and "stage" in Path(source).parts:
+            failed = True
+            raise OSError("simulated installation failure")
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(benchmark.os, "replace", fail_once)
+    with pytest.raises(OSError, match="simulated installation failure"):
+        benchmark.write_report(fairness, performance, out_dir, make_plots=False,
+                               provenance={"audits": ["audit_b"]}, merge=True)
+
+    assert failed
+    assert _output_bytes(out_dir) == before
+
+
+def test_merge_rolls_back_replaced_files_on_keyboard_interrupt(tmp_path, monkeypatch):
+    out_dir = tmp_path / "results"
+    _write_result_set(out_dir, ["audit_a"])
+    before = _output_bytes(out_dir)
+    fairness, performance = _result_frames(["audit_b"])
+    real_replace = benchmark.os.replace
+    interrupted = False
+
+    def interrupt_once(source, destination):
+        nonlocal interrupted
+        if not interrupted and Path(source).name == "summary.csv" and "stage" in Path(source).parts:
+            interrupted = True
+            raise KeyboardInterrupt
+        return real_replace(source, destination)
+
+    monkeypatch.setattr(benchmark.os, "replace", interrupt_once)
+    with pytest.raises(KeyboardInterrupt):
+        benchmark.write_report(fairness, performance, out_dir, make_plots=False,
+                               provenance={"audits": ["audit_b"]}, merge=True)
+
+    assert interrupted
+    assert _output_bytes(out_dir) == before
+
+
+def test_merge_renders_figures_for_preserved_and_replaced_audits(tmp_path):
+    out_dir = tmp_path / "results"
+    _write_result_set(out_dir, ["audit_a"])
+    from faircode.figures import generate_figures
+
+    generate_figures(out_dir)
+    fairness, performance = _result_frames(["audit_b"])
+
+    benchmark.write_report(fairness, performance, out_dir,
+                           provenance={"audits": ["audit_b"]}, merge=True)
+
+    assert (out_dir / "figures" / "audit_a_strategies.png").is_file()
+    assert (out_dir / "figures" / "audit_b_strategies.png").is_file()
+
+
 def test_fresh_and_compatible_same_audit_outputs_can_be_written(tmp_path):
     out_dir = tmp_path / "results"
     _write_result_set(out_dir, ["audit_a"])
@@ -171,6 +301,21 @@ def test_benchmark_cli_reports_a_refused_subset_run_cleanly(tmp_path, monkeypatc
     assert status == 2
     assert "refusing to overwrite" in capsys.readouterr().err
     assert _output_bytes(out_dir) == before
+
+
+def test_benchmark_cli_forwards_merge_flag(tmp_path, monkeypatch):
+    fairness, performance = _result_frames(["audit_a"])
+    received = {}
+    monkeypatch.setattr(benchmark, "run_benchmark", lambda **_: (fairness, performance))
+
+    def capture_report(*args, **kwargs):
+        received.update(kwargs)
+
+    monkeypatch.setattr(benchmark, "write_report", capture_report)
+    from faircode.cli import main
+
+    assert main(["benchmark", "--no-plots", "--merge", "--out", str(tmp_path / "results")]) == 0
+    assert received["merge"] is True
 
 
 def test_the_committed_provenance_matches_the_committed_result_files():

@@ -48,7 +48,12 @@ side. What actually matters - and *is* platform-independent - is that a
 current dark and light OG image exists for every explainer, is non-empty,
 and has the right dimensions; `tests/test_generate_images.py` already
 verifies the *generator* satisfies that in a temp directory, so this
-script checks the same thing for what's actually committed.
+script checks the same thing for what's actually committed. Whether a
+card's text is current is checked through the card-inputs.json file in
+each OG folder (#1197): the generator stores a hash of each card's inputs
+there, so it is compared byte-for-byte like the other text files, and an
+explainer whose title or summary changed without a re-render reads as
+stale.
 
 This script is self-sufficient: it builds a fresh copy of the site itself
 (via `git worktree`, with every tracked file and every untracked,
@@ -90,6 +95,8 @@ TEXT_GLOBS = [
     "faircode/_results_frozen/*.csv",
     "faircode/_results_current/*.csv",
     "explainers/code/*.py",
+    "assets/og/card-inputs.json",
+    "assets/og-light/card-inputs.json",
 ]
 
 _JSONLD_DATE_LINE = re.compile(

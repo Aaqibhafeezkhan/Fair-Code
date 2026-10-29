@@ -149,6 +149,33 @@ def test_text_globs_covers_the_results_frozen_mcp_mirror():
     assert "faircode/_results_frozen/*.csv" in script.TEXT_GLOBS
 
 
+def test_text_globs_cover_the_og_card_input_hashes():
+    # #1197: an explainer's title or summary edited without re-rendering its card.
+    script = _script()
+    assert "assets/og/card-inputs.json" in script.TEXT_GLOBS
+    assert "assets/og-light/card-inputs.json" in script.TEXT_GLOBS
+
+
+def test_main_flags_a_stale_og_card_input_hash(tmp_path, monkeypatch, capsys):
+    script = _script()
+    _empty_repo(tmp_path, monkeypatch, script)
+    monkeypatch.setattr(script, "TEXT_GLOBS", ["assets/og/card-inputs.json"])
+    monkeypatch.setattr(script, "_expected_og_slugs", lambda: [])
+    stored = tmp_path / "assets" / "og" / "card-inputs.json"
+    stored.parent.mkdir(parents=True)
+    stored.write_text('{\n  "example": "1111111111111111"\n}\n', encoding="utf-8")
+    monkeypatch.setattr(script.subprocess, "run", _fake_run("assets/og/card-inputs.json\n"))
+    monkeypatch.setattr(script, "_fresh_build_dir", _fake_fresh_build_dir(tmp_path, {
+        "assets/og/card-inputs.json": '{\n  "example": "2222222222222222"\n}\n',
+    }))
+
+    exit_code = script.main()
+
+    assert exit_code == 1
+    assert "assets/og/card-inputs.json: content differs from a fresh regeneration" \
+        in capsys.readouterr().out
+
+
 def test_normalize_dates_strips_jsonld_dates_and_lastmod():
     script = _script()
     text = (

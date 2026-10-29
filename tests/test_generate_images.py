@@ -213,3 +213,55 @@ def test_main_leaves_existing_cards_alone_and_force_rewrites_them(tmp_path, monk
         assert sentinel.read_bytes() != b"sentinel"
     finally:
         shutil.rmtree(test_root, ignore_errors=True)
+
+
+def test_a_changed_title_re_renders_only_that_cards_two_pngs(tmp_path, monkeypatch, capsys):
+    # #1197: card-inputs.json holds a hash of each card's inputs, so an edited title or
+    # summary re-renders its card although the PNG exists, and nothing else is touched.
+    script = importlib.import_module("scripts.generate_og_images")
+    test_root = Path(tempfile.mkdtemp(dir=script.ROOT, prefix=".tmp-test-"))
+    try:
+        monkeypatch.setitem(script.THEMES["dark"], "out_dir", test_root / "og")
+        monkeypatch.setitem(script.THEMES["light"], "out_dir", test_root / "og-light")
+        monkeypatch.setattr(script, "DATA_JSON", test_root / "explainers.json")
+        entries = [{"slug": "first", "title": "First", "summary": "One."},
+                   {"slug": "second", "title": "Second", "summary": "Two."}]
+        script.DATA_JSON.write_text(json.dumps(entries), encoding="utf-8")
+        script.main()
+        capsys.readouterr()
+
+        pngs = {theme: sorted((test_root / theme).glob("*.png")) for theme in ("og", "og-light")}
+        for paths in pngs.values():
+            for path in paths:
+                path.write_bytes(b"sentinel")
+        before = {theme: json.loads((test_root / theme / "card-inputs.json").read_text(encoding="utf-8"))
+                  for theme in ("og", "og-light")}
+
+        entries[1]["title"] = "Second, renamed"
+        script.DATA_JSON.write_text(json.dumps(entries), encoding="utf-8")
+        script.main()
+        assert "Wrote 2 of 10" in capsys.readouterr().out
+
+        for theme, paths in pngs.items():
+            rewritten = [path.name for path in paths if path.read_bytes() != b"sentinel"]
+            assert rewritten == ["second.png"]
+            after = json.loads((test_root / theme / "card-inputs.json").read_text(encoding="utf-8"))
+            assert after["second"] != before[theme]["second"]
+            assert {k: v for k, v in after.items() if k != "second"} == \
+                {k: v for k, v in before[theme].items() if k != "second"}
+
+        script.main()
+        assert "Wrote 0 of 10" in capsys.readouterr().out
+    finally:
+        shutil.rmtree(test_root, ignore_errors=True)
+
+
+def test_card_inputs_hash_depends_on_every_input():
+    script = importlib.import_module("scripts.generate_og_images")
+    base = ("Kicker", "Title", "Subtitle", "dark")
+    digest = script.card_inputs_hash(*base)
+    assert digest == script.card_inputs_hash(*base)
+    for i, changed in enumerate(("Other kicker", "Other title", "Other subtitle", "light")):
+        args = list(base)
+        args[i] = changed
+        assert script.card_inputs_hash(*args) != digest

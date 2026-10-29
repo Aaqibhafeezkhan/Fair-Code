@@ -538,6 +538,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="permutation-test shuffles per metric (positive integer, default: 2000)")
     b.add_argument("--no-plots", action="store_true",
                    help="skip rendering figures/*.png (no matplotlib needed)")
+    b.add_argument("--quiet", action="store_true",
+                   help="suppress per-combination benchmark progress on stderr")
 
     return parser
 
@@ -911,10 +913,14 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
 
+        def report_progress(audit, strategy, model):
+            print(f"completed {audit} / {strategy} / {model}", file=sys.stderr, flush=True)
+
         try:
             fairness_df, performance_df = run_benchmark(
                 root=args.root, audits=args.manifests or None,
                 n_resamples=args.n_resamples, n_permutations=args.n_permutations,
+                progress_callback=None if args.quiet else report_progress,
             )
         except ValueError as exc:
             print(f"error: {exc}", file=sys.stderr)

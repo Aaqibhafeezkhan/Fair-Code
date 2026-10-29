@@ -232,14 +232,17 @@ def load_audit(folder, strategy=None, random_state=None) -> AuditData:
     return prepare_audit(manifest, strategy, random_state)
 
 
-def run_audit(manifest, n_resamples=2000, n_permutations=2000, random_state=None):
+def run_audit(
+    manifest, n_resamples=2000, n_permutations=2000, random_state=None, progress_callback=None
+):
     """Run the full strategy x model x metric grid for one manifest.
 
     Returns (fairness_rows, performance_rows). fairness_rows has one dict per
     (strategy, model, protected attribute, metric), plus one per (strategy,
     model, attribute pair) for the intersectional gap when two or more
     protected attributes are declared. performance_rows has one dict per
-    (strategy, model, performance metric).
+    (strategy, model, performance metric). If provided, progress_callback is
+    called with the audit, strategy and model after each combination completes.
     """
     data = prepare_audit(manifest, random_state=random_state)
     rs, X_all, y, protected_masks = data.random_state, data.X_all, data.y, data.masks
@@ -297,12 +300,17 @@ def run_audit(manifest, n_resamples=2000, n_permutations=2000, random_state=None
                         "note": ("empty_intersectional_cell" if cell_empty
                                   else "superadditive" if inter["superadditive"] else None),
                     })
+            if progress_callback is not None:
+                progress_callback(manifest.name, strategy, model_name)
     return fairness_rows, performance_rows
 
 
-def run_benchmark(root=".", audits=None, n_resamples=2000, n_permutations=2000):
+def run_benchmark(
+    root=".", audits=None, n_resamples=2000, n_permutations=2000, progress_callback=None
+):
     """Discover every audit.yaml under root (or use explicit manifest paths)
-    and run them all. Returns (fairness_df, performance_df) across every audit."""
+    and run them all. Returns (fairness_df, performance_df) across every audit.
+    If provided, progress_callback is passed to each audit run."""
     np.random.seed(GLOBAL_SEED)  # defense-in-depth; see module docstring
     paths = [Path(a) for a in audits] if audits else discover_manifests(root)
     all_fairness = []
@@ -310,7 +318,13 @@ def run_benchmark(root=".", audits=None, n_resamples=2000, n_permutations=2000):
     for path in paths:
         try:
             manifest = load_manifest(path)
-            fairness_rows, performance_rows = run_audit(manifest, n_resamples, n_permutations)
+            if progress_callback is None:
+                fairness_rows, performance_rows = run_audit(manifest, n_resamples, n_permutations)
+            else:
+                fairness_rows, performance_rows = run_audit(
+                    manifest, n_resamples, n_permutations,
+                    progress_callback=progress_callback,
+                )
         except (yaml.YAMLError, KeyError, ValueError, FileNotFoundError) as exc:
             # A malformed manifest (bad YAML syntax, a missing required key)
             # or a degenerate dataset (e.g. filtered down to 0 rows, which

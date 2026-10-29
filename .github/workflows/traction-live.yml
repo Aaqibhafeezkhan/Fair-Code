@@ -25,7 +25,6 @@ jobs:
     timeout-minutes: 10
     env:
       GH_TOKEN: ${{ github.token }}
-      ISSUE_TITLE: "Traction figures out of date (weekly check)"
     steps:
       - uses: actions/checkout@v7
 
@@ -42,23 +41,4 @@ jobs:
           exit 0
 
       - name: Open, update or close the tracking issue
-        run: |
-          set -euo pipefail
-          status="$(cat "$RUNNER_TEMP/status")"
-          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$ISSUE_TITLE\" in:title" --json number,title -q ".[] | select(.title == \"$ISSUE_TITLE\") | .number" | head -n 1)"
-          if [ "$status" = "1" ]; then
-            {
-              echo "The weekly \`check_traction.py --live\` run found figures that differ from GitHub or from each other:"
-              echo
-              sed 's/^  - /- /' "$RUNNER_TEMP/err.txt" | tail -n +2
-              echo
-              echo "Update the figures in README.md, ROADMAP.md and METRICS.md together, then run \`python3 scripts/check_traction.py --live\`. This issue closes itself on the next weekly run once they match."
-            } > "$RUNNER_TEMP/body.md"
-            if [ -n "$existing" ]; then
-              gh issue edit "$existing" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/body.md"
-            else
-              gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --label documentation --body-file "$RUNNER_TEMP/body.md"
-            fi
-          elif [ "$status" = "0" ] && [ -n "$existing" ]; then
-            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed --comment "The weekly check found every traction figure matching GitHub."
-          fi
+        run: python3 scripts/update_weekly_issue.py traction "$RUNNER_TEMP/status" "$RUNNER_TEMP/err.txt"

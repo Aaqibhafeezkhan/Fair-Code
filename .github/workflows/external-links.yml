@@ -24,7 +24,6 @@ jobs:
     timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
-      ISSUE_TITLE: "Dead external links (weekly check)"
     steps:
       - uses: actions/checkout@v7
 
@@ -46,23 +45,4 @@ jobs:
           PY
 
       - name: Open, update or close the tracking issue
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, os
-          from scripts.check_external_links import render_issue_body, report_needs_issue
-          report = json.load(open(os.environ["RUNNER_TEMP"] + "/report.json"))
-          open(os.environ["RUNNER_TEMP"] + "/body.md", "w").write(render_issue_body(report))
-          open(os.environ["RUNNER_TEMP"] + "/report_needs_issue", "w").write("1" if report_needs_issue(report) else "0")
-          PY
-          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$ISSUE_TITLE\" in:title" --json number,title -q ".[] | select(.title == \"$ISSUE_TITLE\") | .number" | head -n 1)"
-          report_needs_issue="$(cat "$RUNNER_TEMP/report_needs_issue")"
-          if [ "$report_needs_issue" = "1" ]; then
-            if [ -n "$existing" ]; then
-              gh issue edit "$existing" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/body.md"
-            else
-              gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --label documentation --body-file "$RUNNER_TEMP/body.md"
-            fi
-          elif [ -n "$existing" ]; then
-            gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed --comment "The weekly check found no broken links or stale ignore entries."
-          fi
+        run: python3 scripts/update_weekly_issue.py external-links "$RUNNER_TEMP/report.json"

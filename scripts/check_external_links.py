@@ -206,16 +206,19 @@ def run(urls: dict[str, list[str]], limit: int | None = None, workers: int = 8, 
         ignore: dict[str, str] | None = None) -> dict:
     ignore = ignore or {}
     ignored = [{"url": url, "reason": ignore[url], "files": urls[url]} for url in sorted(urls) if url in ignore]
+    stale_ignored = [{"url": url, "reason": reason} for url, reason in sorted(ignore.items()) if url not in urls]
     urls = {url: files for url, files in urls.items() if url not in ignore}
     items = sorted(urls)[:limit] if limit else sorted(urls)
     results = {"ok": [], "moved": [], "broken": [], "unknown": []}
     with concurrent.futures.ThreadPoolExecutor(workers) as pool:
         for url, (kind, detail) in zip(items, pool.map(lambda u: check_url(u, timeout), items)):
             results[kind].append({"url": url, "detail": detail, "files": urls[url]})
-    return {"checked": len(items), **{kind: results[kind] for kind in results}, "ignored": ignored}
+    return {"checked": len(items), **{kind: results[kind] for kind in results},
+            "ignored": ignored, "stale_ignored": stale_ignored}
 
 
 def render(report: dict) -> str:
+    stale_ignored = report.get("stale_ignored", [])
     lines = [f"Checked {report['checked']} external links: {len(report['ok'])} ok, "
              f"{len(report['broken'])} broken, {len(report['unknown'])} unknown."
              + (f" {len(report['moved'])} moved." if report.get("moved") else "")
@@ -231,7 +234,30 @@ def render(report: dict) -> str:
     if report.get("ignored"):
         lines += ["", "Ignored (listed in scripts/external-links-ignore.txt, not requested):"]
         lines += [f"  {item['url']}  ({item['reason']})" for item in report["ignored"]]
+    if stale_ignored:
+        lines += ["", f"Stale ignored URLs ({len(stale_ignored)} not found in checked documents):"]
+        lines += [f"  {item['url']}  ({item['reason']})" for item in stale_ignored]
     return "\n".join(lines)
+
+
+def render_issue_body(report: dict) -> str:
+    stale_count = len(report.get("stale_ignored", []))
+    stale_label = "entry" if stale_count == 1 else "entries"
+    lines = [f"The weekly external link check found {len(report['broken'])} broken link(s) among {report['checked']} checked "
+             f"({len(report['unknown'])} more could not be verified: blocked, rate limited or unreachable; "
+             f"{len(report['ignored'])} listed in `scripts/external-links-ignore.txt` were skipped). "
+             f"It also found {stale_count} stale ignore-list {stale_label} with no matching document.", ""]
+    for item in report["broken"]:
+        lines.append(f"- `{item['detail']}` {item['url']} (in {', '.join('`' + path + '`' for path in item['files'][:5])})")
+    lines += ["", "Fix any reported broken links and remove stale ignore-list entries, then run `make build-explainers`. "
+              "This issue closes itself on the next weekly run once both are clear. "
+              "Reproduce locally with `python3 scripts/check_external_links.py`."]
+    return "\n".join(lines) + "\n"
+
+
+def report_needs_issue(report: dict) -> bool:
+    """Keep the weekly issue open while broken links or stale ignores remain."""
+    return bool(report["broken"] or report.get("stale_ignored"))
 
 
 def main(argv=None) -> int:

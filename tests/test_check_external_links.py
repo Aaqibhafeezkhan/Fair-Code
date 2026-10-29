@@ -156,21 +156,35 @@ def test_main_reports_without_failing_unless_asked(server, tmp_path, capsys):
     capsys.readouterr()
     assert script.main([str(doc), "--timeout", "5", "--json", "--limit", "2", "--check-local"]) == 0
     report = json.loads(capsys.readouterr().out)
-    assert report["checked"] == 2 and set(report) == {"checked", "ok", "broken", "unknown", "ignored"}
+    assert report["checked"] == 2 and set(report) == {
+        "checked", "ok", "broken", "unknown", "ignored", "stale_ignored"
+    }
 
 
 def test_ignore_list_skips_a_url_and_reports_it(server, tmp_path, capsys):
     doc = tmp_path / "doc.md"
     doc.write_text(f"[ok]({server}/ok) [gone]({server}/gone)\n", encoding="utf-8")
     ignore = tmp_path / "ignore.txt"
-    ignore.write_text(f"# a comment\n\n{server}/gone needs a login\n", encoding="utf-8")
+    ignore.write_text(f"# a comment\n\n{server}/gone needs a login\n{server}/retired no longer referenced\n", encoding="utf-8")
     assert script.main([str(doc), "--timeout", "5", "--check-local", "--ignore-file", str(ignore)]) == 0
     out = capsys.readouterr().out
     assert "0 broken" in out and "1 ignored" in out and "(needs a login)" in out
+    assert "Stale ignored URLs (1 not found in checked documents)" in out
+    assert f"{server}/retired  (no longer referenced)" in out
     assert script.main([str(doc), "--timeout", "5", "--check-local", "--json", "--ignore-file", str(ignore)]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["checked"] == 1 and [item["url"] for item in report["ignored"]] == [f"{server}/gone"]
     assert report["ignored"][0]["files"] == [str(doc)]
+    assert report["stale_ignored"] == [{"url": f"{server}/retired", "reason": "no longer referenced"}]
+    assert "1 stale ignore-list entry" in script.render_issue_body(report)
+    assert "remove stale ignore-list entries" in script.render_issue_body(report)
+    assert script.report_needs_issue(report)
+
+
+def test_weekly_issue_state_closes_only_when_broken_and_stale_lists_are_empty():
+    assert script.report_needs_issue({"broken": [], "stale_ignored": []}) is False
+    assert script.report_needs_issue({"broken": [{"url": "https://example.org/gone"}], "stale_ignored": []}) is True
+    assert script.report_needs_issue({"broken": [], "stale_ignored": [{"url": "https://example.org/old"}]}) is True
 
 
 def test_ignore_list_requires_a_reason_and_tolerates_a_missing_file(tmp_path):

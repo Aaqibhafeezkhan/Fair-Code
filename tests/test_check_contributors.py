@@ -91,6 +91,46 @@ def test_a_mis_sorted_section_fails(tmp_path, capsys):
     assert code == 1 and "Contributors: entry 1 is bob" in out and "puts carol" in out
 
 
+def test_fix_refreshes_counts_dates_and_order_without_changing_entry_prose(tmp_path, capsys):
+    bob = ("### Bob Builder - [@bob](https://github.com/bob)\n\n"
+           "**1 merged PR · 4 commits · first merged 2026-06-08**\n\n"
+           "bob's original profile prose stays exactly as written.\n\n")
+    carol = ("### Carol - [@carol](https://github.com/carol)\n\n"
+             "**3 merged PRs · 3 commits · first merged 2026-06-09**\n\n"
+             "carol's original profile prose stays exactly as written.\n\n")
+    doc = DOC[:DOC.index("### Bob Builder")]
+    doc += carol + bob + DOC[DOC.index("### Old Timer"):]
+    # Carol is deliberately ahead of Bob and has the wrong count and date.
+    path = tmp_path / "CONTRIBUTORS.md"
+    prs_path = tmp_path / "prs.json"
+    path.write_text(doc, encoding="utf-8")
+    prs_path.write_text(json.dumps(PRS), encoding="utf-8")
+
+    assert script.main(["--file", str(path), "--prs", str(prs_path), "--fix"]) == 0
+    output = capsys.readouterr().out
+    fixed = path.read_text(encoding="utf-8")
+    assert "updated:" in output and "OK: 4 entries" in output
+    assert fixed.index("Bob Builder") < fixed.index("Carol")
+    assert "**2 merged PRs · 4 commits · first merged 2026-06-01**" in fixed
+    assert "**2 merged PRs · 3 commits · first merged 2026-06-02**" in fixed
+    assert "bob's original profile prose stays exactly as written." in fixed
+    assert "carol's original profile prose stays exactly as written." in fixed
+
+    assert script.main(["--file", str(path), "--prs", str(prs_path), "--fix"]) == 0
+    assert "updated:" not in capsys.readouterr().out
+    assert path.read_text(encoding="utf-8") == fixed
+
+
+def test_fix_requires_pr_data_and_does_not_change_the_file(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "CONTRIBUTORS.md"
+    path.write_text(DOC, encoding="utf-8")
+    monkeypatch.setattr(script, "fetch_prs", lambda: None)
+
+    assert script.main(["--file", str(path), "--fix"]) == 2
+    assert "needs merged pull request data" in capsys.readouterr().out
+    assert path.read_text(encoding="utf-8") == DOC
+
+
 def test_an_author_with_no_entry_fails_but_the_maintainer_and_bots_do_not(tmp_path, capsys):
     code, out = run(tmp_path, capsys, prs=PRS + [pr(12, "dave", "2026-07-02")])
     assert code == 1 and "dave: 1 merged PRs on GitHub but no entry" in out

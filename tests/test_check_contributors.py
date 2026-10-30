@@ -155,3 +155,35 @@ def test_the_real_file_parses_in_rule_order():
     assert through and len(entries) > 40
     problems, _ = script.check(entries, [], through)
     assert not [p for p in problems if "entry" in p and "puts" in p]
+
+
+COMMITS = {"live": {"alice": 6, "Bob": 5, "carol": 3}, "after_snapshot": {"alice": 1, "Bob": 1}}
+
+
+def test_commit_counts_are_live_minus_commits_after_the_snapshot(tmp_path, capsys):
+    # alice 6 live - 1 after = 5 (file 5), bob 5 - 1 = 4 (file 4), carol 3 - 0 = 3 (file 3)  (#1199)
+    (tmp_path / "commits.json").write_text(json.dumps(COMMITS), encoding="utf-8")
+    code, out = run(tmp_path, capsys, extra=("--commits-data", str(tmp_path / "commits.json")))
+    assert code == 0 and "with commit counts at the snapshot" in out
+
+
+def test_a_wrong_commit_count_fails_and_a_missing_login_is_skipped(tmp_path, capsys):
+    data = {"live": {"alice": 6, "bob": 9}, "after_snapshot": {"alice": 1}}
+    (tmp_path / "commits.json").write_text(json.dumps(data), encoding="utf-8")
+    code, out = run(tmp_path, capsys, extra=("--commits-data", str(tmp_path / "commits.json")))
+    assert code == 1
+    assert "bob: file says 4 commits, GitHub says 9 at the snapshot (9 now, 0 since)" in out
+    assert "carol: not in the contributors API" in out
+
+
+def test_snapshot_time_is_one_second_after_the_snapshot_pr_merged():
+    prs = [{"number": 100, "mergedAt": "2026-10-26T19:51:50Z"}]
+    assert script.snapshot_time(prs, 100) == "2026-10-26T19:51:51Z"
+    assert script.snapshot_time(prs, 99) is None
+
+
+def test_commits_without_gh_is_an_error(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(script, "fetch_commit_data", lambda entries, since: None)
+    code, out = run(tmp_path, capsys, prs=PRS + [{"number": 100, "author": {"login": "x", "is_bot": True},
+                                                  "mergedAt": "2026-10-26T19:51:50Z"}], extra=("--commits",))
+    assert code == 2 and "needs the GitHub CLI" in out

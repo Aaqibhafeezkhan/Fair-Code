@@ -12,12 +12,17 @@ Contributors):
   * the order of the entries against the rule above;
   * that every merged-PR author up to the snapshot (bots and the maintainer aside) has an entry.
 
-Commit counts come from the contributors API, which counts differently, so they are only used to break ties
-in the order, never compared with GitHub. An entry whose header says "account deleted" has no login left on
-GitHub (its pull requests show a ghost author), so its counts are listed as skipped, not failed.
+Commit counts are only used to break ties in the order unless `--commits` is given (#1199). The contributors API is
+live and cannot be asked for a past date, so with `--commits` the expected count at the snapshot is the live
+contributors-graph count minus the commits the author made after the snapshot PR was merged (the commits API with
+`since`), which keeps the file's meaning of "GitHub's contributors graph" and costs one request per entry. An entry
+whose header says "account deleted" has no login left on GitHub (its pull requests show a ghost author), so its
+counts are listed as skipped, not failed.
 
     python3 scripts/check_contributors.py                 # asks `gh` for the merged pull requests
     python3 scripts/check_contributors.py --prs FILE      # FILE: gh pr list --state merged --limit 5000 --json number,author,mergedAt
+    python3 scripts/check_contributors.py --commits       # also compare commit counts (about 60 gh requests)
+    python3 scripts/check_contributors.py --commits-data F # F: {"live": {login: n}, "after_snapshot": {login: n}}
     python3 scripts/check_contributors.py --fix            # refresh known counts/dates and sort entries in place
 
 Without `gh` (or a network) it prints a note and exits 0, so `make lint` works offline; pass `--require` to make
@@ -27,6 +32,7 @@ that an error. `--fix` requires GitHub data or `--prs FILE` and preserves entry 
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import re
 import shutil
@@ -120,6 +126,63 @@ def check(entries: list[dict], prs: list[dict], through: int | None) -> tuple[li
     return problems, skipped
 
 
+def commit_problems(entries: list[dict], live: dict[str, int], after: dict[str, int]) -> tuple[list[str], list[str]]:
+    """(problems, skipped notes): each entry's commit count against live contributors count minus commits after the snapshot."""
+    live = {login.lower(): n for login, n in live.items()}
+    after = {login.lower(): n for login, n in after.items()}
+    problems, skipped = [], []
+    for entry in entries:
+        handle = entry["handle"].lower()
+        if entry["deleted"]:
+            continue
+        if handle not in live:
+            skipped.append(f"{entry['handle']}: not in the contributors API, commit count not compared")
+            continue
+        expected = live[handle] - after.get(handle, 0)
+        if expected != entry["commits"]:
+            problems.append(f"{entry['handle']}: file says {entry['commits']} commits, GitHub says {expected} at the snapshot "
+                            f"({live[handle]} now, {after.get(handle, 0)} since)")
+    return problems, skipped
+
+
+def fetch_commit_data(entries: list[dict], since: str, repo: str = "yakew7/Fair-Code") -> dict | None:
+    """{"live": {login: commits}, "after_snapshot": {login: commits since `since`}} from gh api, or None on failure."""
+    if shutil.which("gh") is None:
+        return None
+
+    def api(*args: str):
+        done = subprocess.run(["gh", "api", *args], capture_output=True, text=True)
+        return json.loads(done.stdout) if done.returncode == 0 and done.stdout.strip() else None
+
+    people = api("--paginate", "--slurp", f"repos/{repo}/contributors?per_page=100")
+    if people is None:
+        return None
+    live = {p["login"]: p["contributions"] for page in people for p in page if p.get("type") != "Bot"}
+    logins = [e["handle"] for e in entries if not e["deleted"] and e["handle"].lower() in {k.lower() for k in live}]
+
+    def since_count(login: str) -> int | None:
+        done = subprocess.run(["gh", "api", "--paginate", f"repos/{repo}/commits?author={login}&since={since}&per_page=100",
+                               "--jq", ".[].sha"], capture_output=True, text=True)
+        return len(done.stdout.split()) if done.returncode == 0 else None
+
+    with concurrent.futures.ThreadPoolExecutor(8) as pool:
+        counts = list(pool.map(since_count, logins))
+    if any(count is None for count in counts):
+        return None
+    after = dict(zip(logins, counts))
+    return {"live": live, "after_snapshot": after}
+
+
+def snapshot_time(prs: list[dict], through: int | None) -> str | None:
+    """One second after the snapshot PR was merged, so its own merge commit is not counted as 'after'."""
+    from datetime import datetime, timedelta, timezone
+    merged = next((pr.get("mergedAt") for pr in prs if pr["number"] == through), None)
+    if not merged:
+        return None
+    moment = datetime.strptime(merged, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) + timedelta(seconds=1)
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def fix_document(text: str, prs: list[dict], through: int | None) -> str:
     """Refresh known PR counts/dates and order entries without editing their prose."""
     entries, _ = parse(text)
@@ -180,6 +243,8 @@ def main(argv=None) -> int:
     parser.add_argument("--file", type=Path, default=ROOT / "CONTRIBUTORS.md")
     parser.add_argument("--prs", metavar="FILE", help="merged pull requests as JSON instead of asking gh")
     parser.add_argument("--require", action="store_true", help="fail instead of skipping when GitHub cannot be reached")
+    parser.add_argument("--commits", action="store_true", help="also compare commit counts with GitHub's contributors graph at the snapshot (needs gh)")
+    parser.add_argument("--commits-data", metavar="FILE", help="commit data as JSON instead of asking gh (implies --commits)")
     parser.add_argument("--fix", action="store_true", help="rewrite known PR counts/dates and sort contributor entries")
     args = parser.parse_args(argv)
 
@@ -207,6 +272,21 @@ def main(argv=None) -> int:
         print("note: no 'covering everything merged through **PR #N**' snapshot line found; counting every merged PR")
 
     problems, skipped = check(entries, prs, through)
+    if args.commits or args.commits_data:
+        since = snapshot_time(prs, through)
+        if args.commits_data:
+            data = json.loads(Path(args.commits_data).read_text(encoding="utf-8"))
+        elif since is None:
+            print("error: --commits needs the snapshot PR in the merged pull request data")
+            return 2
+        else:
+            data = fetch_commit_data(entries, since)
+        if data is None:
+            print("error: --commits needs the GitHub CLI (gh) signed in and online")
+            return 2
+        more_problems, more_skipped = commit_problems(entries, data["live"], data.get("after_snapshot", {}))
+        problems += more_problems
+        skipped += more_skipped
     for note in skipped:
         print(f"skipped: {note}")
     if problems:
@@ -214,7 +294,8 @@ def main(argv=None) -> int:
         for problem in problems:
             print(f"  - {problem}")
         return 1
-    print(f"OK: {len(entries)} entries match the merged pull requests through #{through} and are in rule order.")
+    print(f"OK: {len(entries)} entries match the merged pull requests through #{through} and are in rule order"
+          + (", with commit counts at the snapshot." if args.commits or args.commits_data else "."))
     return 0
 
 

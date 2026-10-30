@@ -21,6 +21,10 @@ REPORTS = {
         "title": "Traction figures out of date (weekly check)",
         "close_comment": "The weekly check found every traction figure matching GitHub.",
     },
+    "contributors": {
+        "title": "CONTRIBUTORS.md is behind the merged pull requests (weekly check)",
+        "close_comment": "The weekly check found nobody who merged since the CONTRIBUTORS.md snapshot.",
+    },
 }
 
 
@@ -47,6 +51,19 @@ def traction_issue_body(stderr: str) -> str:
         "This issue closes itself on the next weekly run once they match.",
     ]
     return "\n".join(lines) + "\n"
+
+
+def contributors_issue_body(stdout: str) -> str:
+    """Build the contributors report body from `check_contributors.py --pending` output (the last line is a summary)."""
+    lines = stdout.strip().splitlines()
+    people = lines[:-1]
+    body = ["The weekly `check_contributors.py --pending` run found people who merged pull requests after the "
+            "snapshot in CONTRIBUTORS.md:", ""]
+    body += [f"- {line}" for line in people]
+    body += ["", "Add or update their entries, move the snapshot line to the newest merged PR and run "
+             "`python3 scripts/check_contributors.py --fix` (then `--commits` to check commit counts). "
+             "This issue closes itself on the next weekly run once nobody is pending."]
+    return "\n".join(body) + "\n"
 
 
 def external_links_issue_body(report: dict) -> str:
@@ -116,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("kind", choices=REPORTS)
     parser.add_argument("report", type=Path, help="external-links JSON report or traction status file")
-    parser.add_argument("details", type=Path, nargs="?", help="traction stderr file")
+    parser.add_argument("details", type=Path, nargs="?", help="traction stderr file or contributors stdout file")
     args = parser.parse_args(argv)
     repo = os.environ["GITHUB_REPOSITORY"]
 
@@ -126,10 +143,11 @@ def main(argv: list[str] | None = None) -> int:
         body = external_links_issue_body(report)
     else:
         if args.details is None:
-            parser.error("traction requires a status file and stderr file")
+            parser.error(f"{args.kind} requires a status file and an output file")
         status = args.report.read_text(encoding="utf-8").strip()
         state = True if status == "1" else False if status == "0" else None
-        body = traction_issue_body(args.details.read_text(encoding="utf-8")) if state else ""
+        build = traction_issue_body if args.kind == "traction" else contributors_issue_body
+        body = build(args.details.read_text(encoding="utf-8")) if state else ""
 
     update_issue(repo, args.kind, state, body)
     return 0

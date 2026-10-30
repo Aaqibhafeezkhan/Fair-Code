@@ -92,3 +92,36 @@ def test_update_issue_runs_only_the_selected_github_operation(
     if expected_command:
         assert calls[-1][2] == expected_command
     assert len(calls) == (0 if state is None else 1 + (expected_command is not None))
+
+
+def test_contributors_issue_body_lists_each_pending_author_and_the_next_steps():
+    body = script.contributors_issue_body(
+        "dxnnystyles: 9 merged PR(s) after the snapshot (#1216, #1217); count to update\n"
+        "newperson: 1 merged PR(s) after the snapshot (#1230); no entry yet\n"
+        "2 author(s) merged after the snapshot (PR #1191).\n"
+    )
+
+    assert "- dxnnystyles: 9 merged PR(s) after the snapshot (#1216, #1217); count to update" in body
+    assert "- newperson: 1 merged PR(s) after the snapshot (#1230); no entry yet" in body
+    assert "2 author(s)" not in body
+    assert "check_contributors.py --fix" in body
+
+
+def test_contributors_report_is_registered_with_its_own_title():
+    assert script.REPORTS["contributors"]["title"] == "CONTRIBUTORS.md is behind the merged pull requests (weekly check)"
+
+
+def test_contributors_main_opens_an_issue_only_when_someone_is_pending(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+    monkeypatch.setattr(script, "update_issue", lambda repo, kind, state, body="": calls.append((kind, state, body)) or "x")
+    status, out = tmp_path / "status", tmp_path / "out.txt"
+    out.write_text("someone: 1 merged PR(s) after the snapshot (#9); no entry yet\n1 author(s) merged after the snapshot (PR #1).\n")
+
+    status.write_text("1\n")
+    script.main(["contributors", str(status), str(out)])
+    status.write_text("0\n")
+    script.main(["contributors", str(status), str(out)])
+
+    assert calls[0][:2] == ("contributors", True) and "someone" in calls[0][2]
+    assert calls[1] == ("contributors", False, "")

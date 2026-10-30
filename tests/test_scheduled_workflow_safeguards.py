@@ -14,6 +14,7 @@ EXPECTED_SCHEDULED_PERMISSIONS = {
     },
     "external-links.yml": {"contents": "read", "issues": "write"},
     "traction-live.yml": {"contents": "read", "issues": "write"},
+    "contributors-drift.yml": {"contents": "read", "issues": "write"},
 }
 
 

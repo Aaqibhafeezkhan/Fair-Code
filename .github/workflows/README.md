@@ -14,6 +14,7 @@ or conditional; their presence alone does not make them merge requirements.
 | [CODEOWNERS Access](codeowners-access.yml) | Changes to `.github/CODEOWNERS`; weekly schedule; manual dispatch | Informational | `actions/github-script` checks declared owners' access |
 | [CodeQL](codeql.yml) | Push or pull request to `main`; weekly schedule | Informational | GitHub CodeQL actions |
 | [External links](external-links.yml) | Weekly schedule; manual dispatch | Informational | `scripts/check_external_links.py` |
+| [Contributors vs merged pull requests](contributors-drift.yml) | Weekly schedule; manual dispatch | Informational | `scripts/check_contributors.py --pending` |
 | [Favicons](favicons.yml) | Changes to the logo or favicon generator | Informational | `scripts/generate_favicons.py` |
 | [First Interaction](first.interaction.yml) | New issue opened | Informational | `actions/github-script` sends the first-contributor greeting |
 | [lint](lint.yml) | Push; pull request | Informational | `make lint` and `scripts/check_issue_refs.py` |

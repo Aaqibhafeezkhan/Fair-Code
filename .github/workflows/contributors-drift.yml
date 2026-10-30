@@ -1,0 +1,44 @@
+name: Contributors vs merged pull requests
+
+# Weekly report of people who merged pull requests after the snapshot in CONTRIBUTORS.md (#1200).
+# scripts/check_contributors.py (run by `make lint`) only counts up to the snapshot PR, so a missed contributor is
+# otherwise found at the next manual sweep. `--pending` lists the authors since. This is a report, never a gate:
+# nothing here is a required check. When anyone is pending it opens (or edits) ONE issue, "CONTRIBUTORS.md is behind
+# the merged pull requests (weekly check)"; when nobody is it closes that issue.
+
+on:
+  schedule:
+    - cron: "11 6 * * 1"      # Mondays, 06:11 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: List who merged after the snapshot
+        run: |
+          set +e
+          python3 scripts/check_contributors.py --pending > "$RUNNER_TEMP/out.txt"
+          echo "$?" > "$RUNNER_TEMP/status"
+          cat "$RUNNER_TEMP/out.txt"
+          exit 0
+
+      - name: Open, update or close the tracking issue
+        run: python3 scripts/update_weekly_issue.py contributors "$RUNNER_TEMP/status" "$RUNNER_TEMP/out.txt"

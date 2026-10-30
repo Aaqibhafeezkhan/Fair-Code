@@ -187,3 +187,19 @@ def test_commits_without_gh_is_an_error(tmp_path, capsys, monkeypatch):
     code, out = run(tmp_path, capsys, prs=PRS + [{"number": 100, "author": {"login": "x", "is_bot": True},
                                                   "mergedAt": "2026-10-26T19:51:50Z"}], extra=("--commits",))
     assert code == 2 and "needs the GitHub CLI" in out
+
+
+def test_pending_lists_authors_who_merged_after_the_snapshot(tmp_path, capsys):
+    prs = PRS + [pr(101, "bob", "2026-10-30"), pr(102, "bob", "2026-10-31"), pr(103, "newbie", "2026-10-31"),
+                 pr(104, "yakew7", "2026-10-31"), pr(105, "app/dependabot", "2026-10-31", bot=True)]
+    code, out = run(tmp_path, capsys, prs=prs, extra=("--pending",))
+    assert code == 1
+    assert "bob: 2 merged PR(s) after the snapshot (#101, #102); count to update" in out
+    assert "newbie: 1 merged PR(s) after the snapshot (#103); no entry yet" in out
+    assert "yakew7" not in out and "dependabot" not in out
+    assert out.strip().endswith("2 author(s) merged after the snapshot (PR #100).")
+
+
+def test_pending_is_clean_when_nobody_merged_since(tmp_path, capsys):
+    code, out = run(tmp_path, capsys, extra=("--pending",))
+    assert code == 0 and "Nobody has merged since the snapshot (PR #100)." in out

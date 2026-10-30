@@ -23,6 +23,7 @@ counts are listed as skipped, not failed.
     python3 scripts/check_contributors.py --prs FILE      # FILE: gh pr list --state merged --limit 5000 --json number,author,mergedAt
     python3 scripts/check_contributors.py --commits       # also compare commit counts (about 60 gh requests)
     python3 scripts/check_contributors.py --commits-data F # F: {"live": {login: n}, "after_snapshot": {login: n}}
+    python3 scripts/check_contributors.py --pending       # who merged after the snapshot (exit 1 if anyone), for the weekly report
     python3 scripts/check_contributors.py --fix            # refresh known counts/dates and sort entries in place
 
 Without `gh` (or a network) it prints a note and exits 0, so `make lint` works offline; pass `--require` to make
@@ -183,6 +184,25 @@ def snapshot_time(prs: list[dict], through: int | None) -> str | None:
     return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def pending(entries: list[dict], prs: list[dict], through: int | None) -> list[str]:
+    """One line per human author with merged PRs after the snapshot PR: who has no entry yet and whose count has grown."""
+    listed = {e["handle"].lower() for e in entries}
+    later: dict[str, list[int]] = {}
+    for pr in prs:
+        author = pr.get("author") or {}
+        login = author.get("login") or ""
+        if author.get("is_bot") or login.startswith("app/") or not login or login.lower() == MAINTAINER:
+            continue
+        if through is not None and pr["number"] > through:
+            later.setdefault(login, []).append(pr["number"])
+    lines = []
+    for login in sorted(later, key=str.lower):
+        numbers = ", ".join(f"#{n}" for n in sorted(later[login]))
+        lines.append(f"{login}: {len(later[login])} merged PR(s) after the snapshot ({numbers}); "
+                     + ("count to update" if login.lower() in listed else "no entry yet"))
+    return lines
+
+
 def fix_document(text: str, prs: list[dict], through: int | None) -> str:
     """Refresh known PR counts/dates and order entries without editing their prose."""
     entries, _ = parse(text)
@@ -245,6 +265,7 @@ def main(argv=None) -> int:
     parser.add_argument("--require", action="store_true", help="fail instead of skipping when GitHub cannot be reached")
     parser.add_argument("--commits", action="store_true", help="also compare commit counts with GitHub's contributors graph at the snapshot (needs gh)")
     parser.add_argument("--commits-data", metavar="FILE", help="commit data as JSON instead of asking gh (implies --commits)")
+    parser.add_argument("--pending", action="store_true", help="list authors who merged after the snapshot and exit 1 if there are any")
     parser.add_argument("--fix", action="store_true", help="rewrite known PR counts/dates and sort contributor entries")
     args = parser.parse_args(argv)
 
@@ -270,6 +291,14 @@ def main(argv=None) -> int:
         entries, through = parse(text)
     if through is None:
         print("note: no 'covering everything merged through **PR #N**' snapshot line found; counting every merged PR")
+
+    if args.pending:
+        later = pending(entries, prs, through)
+        for line in later:
+            print(line)
+        print(f"{len(later)} author(s) merged after the snapshot (PR #{through})." if later
+              else f"Nobody has merged since the snapshot (PR #{through}).")
+        return 1 if later else 0
 
     problems, skipped = check(entries, prs, through)
     if args.commits or args.commits_data:

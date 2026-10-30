@@ -396,7 +396,7 @@ Fair-Code/
 ├── assets/                              # web assets (CSS + JS)
 │   ├── fonts/
 │   ├── icons/                           #   favicons + PWA icons
-│   ├── og/                              #   dark-theme OG share images, per explainer
+│   ├── og/                              #   dark-theme OG share images, per explainer, + card-inputs.json hashes
 │   ├── og-light/                        #   light-theme counterparts
 │   ├── profiler-engine.js, profiler-ui.js, profiler-compare.js, profiler.css   # client-side profiler
 │   ├── benchmark-dashboard.js, benchmark.css   # client-side benchmark results dashboard

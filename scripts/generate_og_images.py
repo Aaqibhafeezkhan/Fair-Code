@@ -22,12 +22,18 @@ Fonts are bundled (not system fonts) so this runs identically in CI
 A card whose PNG already exists is skipped (#1144): the PNG bytes depend on the
 Pillow and zlib build, so on another machine every committed image would come out
 byte-different and a one-explainer change would touch hundreds of binary files.
-Adding an explainer therefore writes only its two new PNGs. Pass --force to
-re-render every card, which is what to do after editing a card's design in this
-file or an explainer's title or summary (a changed title does not invalidate its
-existing PNG).
+Adding an explainer therefore writes only its two new PNGs.
+
+Each theme folder also holds card-inputs.json (#1197), a hash of every card's
+inputs (kicker, title, subtitle, theme). A card whose stored hash no longer matches,
+because an explainer's title or summary changed, is re-rendered even though its PNG
+exists, so editing one explainer rewrites only its two PNGs.
+check_generated_files_current.py compares these files with a fresh regeneration, so
+a stale hash fails CI. Pass --force to re-render every card, which is what to do
+after editing a card's design in this file.
 """
 import argparse
+import hashlib
 import json
 import textwrap
 from pathlib import Path
@@ -37,6 +43,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 FONTS_DIR = ROOT / "assets" / "fonts"
 DATA_JSON = ROOT / "assets" / "explainers-data.json"
+
+HASHES_FILENAME = "card-inputs.json"  # one per theme folder, see the module docstring
 
 W, H = 1200, 630
 MARK_GREEN = (79, 122, 91)  # #4F7A5B - the corrected-F crossbar accent, fixed across themes, see logo.svg
@@ -180,13 +188,41 @@ def render_card(out_path, kicker, title, subtitle, theme, footer="thefaircode.xy
     img.save(out_path, "PNG", compress_level=9)
 
 
-def render_card_both_themes(slug, kicker, title, subtitle, force=True):
+def card_inputs_hash(kicker, title, subtitle, theme):
+    """A short, stable hash of everything a card's text depends on."""
+    payload = json.dumps([kicker, title, subtitle, theme], ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def load_card_hashes():
+    """Returns {theme: {slug: hash}} from each theme folder's card-inputs.json ({} if absent)."""
+    hashes = {}
+    for theme, colors in THEMES.items():
+        path = colors["out_dir"] / HASHES_FILENAME
+        hashes[theme] = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    return hashes
+
+
+def write_card_hashes(hashes):
+    for theme, colors in THEMES.items():
+        path = colors["out_dir"] / HASHES_FILENAME
+        path.write_text(json.dumps(hashes[theme], indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def render_card_both_themes(slug, kicker, title, subtitle, force=True, stored=None, current=None):
     """Render the card in each theme; with force=False a theme whose PNG exists is left alone.
-    Returns how many PNGs were written."""
+
+    With `stored` ({theme: {slug: hash}}, from load_card_hashes) an existing PNG is only left
+    alone while its stored hash matches the card's inputs. The card's current hash is recorded
+    in `current`, when given. Returns how many PNGs were written."""
     written = 0
     for theme, colors in THEMES.items():
         out_path = colors["out_dir"] / f"{slug}.png"
-        if out_path.exists() and not force:
+        digest = card_inputs_hash(kicker, title, subtitle, theme)
+        if current is not None:
+            current.setdefault(theme, {})[slug] = digest
+        up_to_date = stored is None or stored.get(theme, {}).get(slug) == digest
+        if out_path.exists() and up_to_date and not force:
             continue
         render_card(out_path, kicker, title, subtitle, theme)
         written += 1
@@ -206,10 +242,12 @@ def main(force=False):
     for colors in THEMES.values():
         colors["out_dir"].mkdir(parents=True, exist_ok=True)
     written = 0
+    stored = load_card_hashes()
+    current = {theme: {} for theme in THEMES}
 
     def render(*args, **kwargs):
         nonlocal written
-        written += render_card_both_themes(*args, force=force, **kwargs)
+        written += render_card_both_themes(*args, force=force, stored=stored, current=current, **kwargs)
 
     render(
         "home",
@@ -242,9 +280,11 @@ def main(force=False):
             subtitle=entry["summary"],
         )
 
+    write_card_hashes(current)
+
     total = (3 + len(entries)) * len(THEMES)
     dirs = ", ".join(str(c["out_dir"].relative_to(ROOT)) for c in THEMES.values())
-    print(f"Wrote {written} of {total} OG images ({total - written} already existed; --force re-renders them) in {dirs}")
+    print(f"Wrote {written} of {total} OG images ({total - written} already current; --force re-renders them) in {dirs}")
 
 
 if __name__ == "__main__":

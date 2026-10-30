@@ -60,6 +60,9 @@ def _git_repo(root, *, failing_builder=False, require_new_assets=False):
     (root / "tracked.txt").write_text("committed content\n", encoding="utf-8")
     scripts = root / "scripts"
     scripts.mkdir()
+    # a regular package like the real repo's: without it `from scripts.freeze_paper_results import ...` can resolve
+    # to an unrelated `scripts` package installed in site-packages (#1192)
+    (scripts / "__init__.py").write_text("", encoding="utf-8")
     if failing_builder:
         builder = "import sys\nprint('builder-specific failure', file=sys.stderr)\nsys.exit(7)\n"
     elif require_new_assets:

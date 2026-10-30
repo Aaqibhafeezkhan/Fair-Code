@@ -160,6 +160,7 @@ def _classify_http_error(error: urllib.error.HTTPError, url: str, method: str,
         doi = _extract_doi(url)
         if doi:
             return _check_doi(doi, timeout)
+        return _check_archive(url, timeout)
     if error.code in (405, 501) and method == "HEAD":
         return None
     return "unknown", str(error.code)
@@ -177,6 +178,24 @@ def _extract_doi(url: str) -> str | None:
     path = urllib.parse.unquote(urllib.parse.urlsplit(url).path)
     match = re.search(r"10\.\d{4,9}/[^\s?#]+", path, re.IGNORECASE)
     return match.group().rstrip(".,;:)]}") if match else None
+
+
+def _check_archive(url: str, timeout: float) -> tuple[str, str]:
+    """A page that answers scripts with 403 cannot be checked directly. Ask the Internet Archive whether it holds a copy:
+    'unknown, 403 (archived copy exists)' says the page existed at some point; 'unknown, 403 (no archive copy)' is the
+    list to look at by hand. Neither is counted as broken (#1195). A local address or a failed lookup stays a plain 403."""
+    host = urllib.parse.urlsplit(url).hostname or ""
+    if host in SKIP_HOSTS or host.startswith("127.") or host.endswith(".local"):
+        return "unknown", "403"
+    endpoint = "https://archive.org/wayback/available?url=" + urllib.parse.quote(url, safe="")
+    try:
+        with urllib.request.urlopen(urllib.request.Request(endpoint, headers={"Accept": "application/json"}),
+                                    timeout=timeout, context=_ssl_context()) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+        return "unknown", "403"
+    closest = (result.get("archived_snapshots") or {}).get("closest") or {}
+    return "unknown", "403 (archived copy exists)" if closest.get("available") else "403 (no archive copy)"
 
 
 def _check_doi(doi: str, timeout: float) -> tuple[str, str]:
@@ -223,11 +242,15 @@ def render(report: dict) -> str:
              f"{len(report['broken'])} broken, {len(report['unknown'])} unknown."
              + (f" {len(report['moved'])} moved." if report.get("moved") else "")
              + (f" {len(report['ignored'])} ignored." if report.get("ignored") else "")]
-    for title, key in (("Broken (404, 410 or a name that does not resolve)", "broken"),
-                       ("Unknown (blocked, rate limited or unreachable; not counted as broken)", "unknown")):
-        if report[key]:
+    unverified = [item for item in report["unknown"] if "no archive copy" in item["detail"]]
+    sections = (("Broken (404, 410 or a name that does not resolve)", report["broken"]),
+                ("Unknown (blocked, rate limited or unreachable; not counted as broken)",
+                 [item for item in report["unknown"] if item not in unverified]),
+                ("Unverified (403 to scripts and no Internet Archive copy; check by hand, not counted as broken)", unverified))
+    for title, items in sections:
+        if items:
             lines += ["", title + ":"]
-            lines += [f"  {item['detail']:>22}  {item['url']}  ({', '.join(item['files'][:3])})" for item in report[key]]
+            lines += [f"  {item['detail']:>26}  {item['url']}  ({', '.join(item['files'][:3])})" for item in items]
     if report.get("moved"):
         lines += ["", "Moved (permanent 301 or 308 redirect; update the link, not counted as broken):"]
         lines += [f"  {item['url']}  ->  {item['detail']}  ({', '.join(item['files'][:3])})" for item in report["moved"]]
@@ -245,6 +268,8 @@ def render_issue_body(report: dict) -> str:
     stale_label = "entry" if stale_count == 1 else "entries"
     lines = [f"The weekly external link check found {len(report['broken'])} broken link(s) among {report['checked']} checked "
              f"({len(report['unknown'])} more could not be verified: blocked, rate limited or unreachable; "
+             f"{sum('no archive copy' in item['detail'] for item in report['unknown'])} of those answered 403 and have no "
+             f"Internet Archive copy; "
              f"{len(report['ignored'])} listed in `scripts/external-links-ignore.txt` were skipped). "
              f"It also found {stale_count} stale ignore-list {stale_label} with no matching document.", ""]
     for item in report["broken"]:

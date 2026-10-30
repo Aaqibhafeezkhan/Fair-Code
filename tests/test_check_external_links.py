@@ -204,3 +204,57 @@ def test_the_committed_ignore_list_parses_and_names_the_two_known_links():
     ignored = script.load_ignore_list()
     assert "https://github.com/TanishGoyal-Dev" in ignored
     assert "https://github.com/yakew7/Fair-Code/security/code-scanning" in ignored
+
+
+def _archive_responder(body):
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return body
+
+    def fake_urlopen(request, **_kwargs):
+        if request.full_url.startswith("https://archive.org/wayback/available?url="):
+            if body is None:
+                raise urllib.error.URLError("offline")
+            return Response()
+        raise urllib.error.HTTPError(request.full_url, 403, "blocked", {}, io.BytesIO())
+
+    return fake_urlopen
+
+
+@pytest.mark.parametrize(
+    "body,expected",
+    [
+        (b'{"archived_snapshots": {"closest": {"available": true, "url": "https://web.archive.org/x"}}}',
+         ("unknown", "403 (archived copy exists)")),
+        (b'{"archived_snapshots": {}}', ("unknown", "403 (no archive copy)")),
+        (b"not json", ("unknown", "403")),
+        (None, ("unknown", "403")),
+    ],
+)
+def test_403_page_is_checked_against_the_internet_archive(monkeypatch, body, expected):
+    # #1195: still unknown, never broken, but the report can tell archived from unarchived
+    monkeypatch.setattr(script.urllib.request, "urlopen", _archive_responder(body))
+    assert script.check_url("https://journal.example.org/article/1", timeout=1) == expected
+
+
+def test_a_local_403_never_asks_the_internet_archive(server):
+    assert script.check_url(server + "/blocked", timeout=5) == ("unknown", "403")
+
+
+def test_render_splits_unverified_403_links_out_of_the_unknown_list():
+    report = {"checked": 2, "ok": [], "moved": [], "broken": [], "ignored": [], "stale_ignored": [],
+              "unknown": [{"url": "https://a.example/x", "detail": "403 (archived copy exists)", "files": ["a.md"]},
+                          {"url": "https://b.example/y", "detail": "403 (no archive copy)", "files": ["b.md"]}]}
+    out = script.render(report)
+    unknown_block, unverified_block = out.split("Unverified")
+    assert "https://a.example/x" in unknown_block and "https://b.example/y" not in unknown_block
+    assert "https://b.example/y" in unverified_block
+    assert "1 of those answered 403 and have no Internet Archive copy" in script.render_issue_body(report)
